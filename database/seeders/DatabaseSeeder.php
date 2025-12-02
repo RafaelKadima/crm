@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PipelineSeeder::class,
             ContactSeeder::class,
             LeadSeeder::class,
+            GroupSeeder::class,
         ]);
     }
 }

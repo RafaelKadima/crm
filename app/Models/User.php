@@ -98,6 +98,46 @@ class User extends Authenticatable
     }
 
     /**
+     * Grupos que o usuário tem acesso.
+     */
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, 'group_user')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * Grupos que o usuário é owner.
+     */
+    public function ownedGroups(): BelongsToMany
+    {
+        return $this->groups()->wherePivot('role', 'owner');
+    }
+
+    /**
+     * Obtém todos os tenant_ids que o usuário tem acesso via grupos.
+     */
+    public function getAccessibleTenantIds(): array
+    {
+        $tenantIds = [$this->tenant_id];
+
+        foreach ($this->groups as $group) {
+            $tenantIds = array_merge($tenantIds, $group->getTenantIds());
+        }
+
+        return array_unique(array_filter($tenantIds));
+    }
+
+    /**
+     * Verifica se o usuário tem acesso a um tenant específico.
+     */
+    public function hasAccessToTenant(string $tenantId): bool
+    {
+        return in_array($tenantId, $this->getAccessibleTenantIds());
+    }
+
+    /**
      * Verifica se o usuário é admin.
      */
     public function isAdmin(): bool

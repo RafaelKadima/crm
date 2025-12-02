@@ -6,6 +6,7 @@ use App\Enums\PlanEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tenant extends Model
@@ -89,6 +90,23 @@ class Tenant extends Model
     public function leads(): HasMany
     {
         return $this->hasMany(Lead::class);
+    }
+
+    /**
+     * Grupos que o tenant pertence.
+     */
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, 'group_tenant')
+            ->withTimestamps();
+    }
+
+    /**
+     * Verifica se o tenant pertence a algum grupo.
+     */
+    public function belongsToGroup(): bool
+    {
+        return $this->groups()->exists();
     }
 
     /**

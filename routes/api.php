@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\GroupController;
 use App\Http\Controllers\IaWebhookController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\PipelineController;
@@ -118,6 +119,29 @@ Route::middleware('auth:api')->group(function () {
 
     // Webhook externo (ERP -> CRM)
     Route::post('external/webhook', [IaWebhookController::class, 'externalWebhook']);
+
+    // Grupos (Visão Multi-Loja)
+    Route::prefix('groups')->group(function () {
+        Route::get('/', [GroupController::class, 'index']);
+        Route::post('/', [GroupController::class, 'store']);
+        Route::get('{group}', [GroupController::class, 'show']);
+        Route::put('{group}', [GroupController::class, 'update']);
+        Route::delete('{group}', [GroupController::class, 'destroy']);
+
+        // Gerenciamento de tenants do grupo
+        Route::post('{group}/tenants', [GroupController::class, 'addTenant']);
+        Route::delete('{group}/tenants/{tenant}', [GroupController::class, 'removeTenant']);
+
+        // Gerenciamento de usuários do grupo
+        Route::post('{group}/users', [GroupController::class, 'addUser']);
+        Route::delete('{group}/users/{user}', [GroupController::class, 'removeUser']);
+
+        // Relatórios e métricas do grupo
+        Route::get('{group}/dashboard', [GroupController::class, 'dashboard']);
+        Route::get('{group}/metrics-per-tenant', [GroupController::class, 'metricsPerTenant']);
+        Route::get('{group}/funnel', [GroupController::class, 'funnelReport']);
+        Route::get('{group}/ranking', [GroupController::class, 'salesRanking']);
+    });
 });
 
 
