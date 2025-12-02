@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "artisan": {
+      "command": "node",
+      "args": ["tools/artisan-mcp.js"],
+      "cwd": "C:/dev/crm",
+      "stdio": "pipe",
+      "tools": {
+        "run": {}
+      }
+    }
+  }
+}
