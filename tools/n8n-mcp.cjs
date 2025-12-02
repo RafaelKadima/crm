@@ -10,17 +10,20 @@ const server = new McpServer({
 
 server.tool(
   "n8n.run",
-  "Dispara um webhook do n8n",
+  "Executa um webhook do n8n",
   {
     url: { type: "string", description: "URL do webhook n8n" },
-    data: { type: "object", description: "Dados a enviar" }
+    data: { type: "object", description: "Dados para enviar ao webhook" }
   },
   async ({ url, data }) => {
     try {
-      const result = await axios.post(url, data);
+      const result = await axios.post(url, data || {});
       return { content: [{ type: "text", text: JSON.stringify(result.data, null, 2) }] };
     } catch (error) {
-      return { content: [{ type: "text", text: error.message }], isError: true };
+      return { 
+        content: [{ type: "text", text: error.response?.data ? JSON.stringify(error.response.data, null, 2) : error.message }],
+        isError: true 
+      };
     }
   }
 );
