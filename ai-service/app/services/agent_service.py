@@ -16,6 +16,7 @@ from app.rag.vector_store import vector_store
 from app.memory.memory_service import memory_service
 from app.ml.classifier import ml_classifier
 from app.cache import response_cache, history_cache
+from app.services.usage_service import usage_service
 
 logger = structlog.get_logger()
 settings = get_settings()
@@ -377,8 +378,12 @@ class AgentService:
                     category="qualification"
                 )
             
-            # 11. Calcula métricas
-            response.metrics = self._calculate_metrics(start_time)
+            # 11. Calcula métricas (mescla tempo com tokens já capturados)
+            time_metrics = self._calculate_metrics(start_time)
+            if response.metrics:
+                response.metrics.update(time_metrics)
+            else:
+                response.metrics = time_metrics
             response.context_used = {
                 "rag_chunks": len(rag_chunks),
                 "history_messages": len(all_messages),
@@ -398,6 +403,19 @@ class AgentService:
                 tenant_id=request.tenant.id,
                 agent_id=request.agent.id,
                 response=response.model_dump(mode="json")
+            )
+            
+            # 12. Registra uso de tokens no Laravel (para controle de custos)
+            await usage_service.log_ai_usage(
+                tenant_id=request.tenant.id,
+                input_tokens=response.metrics.get("input_tokens", 2000),  # Estimativa se não disponível
+                output_tokens=response.metrics.get("output_tokens", 150),
+                model=request.agent.ai_model,
+                lead_id=request.lead.id,
+                agent_id=request.agent.id,
+                action_type=response.action.value,
+                response_time_ms=response.metrics.get("duration_ms"),
+                from_cache=False
             )
             
             return response
@@ -514,18 +532,29 @@ class AgentService:
             
             assistant_message = response.choices[0].message
             
+            # Captura tokens usados (para tracking de custo)
+            usage_info = response.usage
+            token_metrics = {
+                "input_tokens": usage_info.prompt_tokens if usage_info else 0,
+                "output_tokens": usage_info.completion_tokens if usage_info else 0,
+                "total_tokens": usage_info.total_tokens if usage_info else 0,
+            }
+            
             # Processa function call
             if assistant_message.tool_calls:
                 tool_call = assistant_message.tool_calls[0]
                 function_name = tool_call.function.name
                 function_args = json.loads(tool_call.function.arguments)
                 
-                return self._process_function_call(
+                result = self._process_function_call(
                     function_name=function_name,
                     function_args=function_args,
                     qualification=qualification,
                     intent=intent
                 )
+                # Adiciona métricas de tokens
+                result.metrics = token_metrics
+                return result
             
             # Se não houver function call, usa a mensagem direta
             return AgentRunResponse(
@@ -537,7 +566,8 @@ class AgentService:
                     action=AgentAction.SEND_MESSAGE,
                     confidence=0.8,
                     reasoning="Resposta direta sem ação específica"
-                )
+                ),
+                metrics=token_metrics
             )
             
         except Exception as e:

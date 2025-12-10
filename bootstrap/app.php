@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckFeature;
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\InternalApiMiddleware;
 use App\Http\Middleware\ResolveTenant;
 use App\Http\Middleware\SuperAdminMiddleware;
 use Illuminate\Foundation\Application;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'super_admin' => SuperAdminMiddleware::class,
             'feature' => CheckFeature::class,
             'permission' => CheckPermission::class,
+            'internal.api' => InternalApiMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

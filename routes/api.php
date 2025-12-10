@@ -561,12 +561,97 @@ Route::middleware(['auth:api', 'tenant'])->prefix('agent-learning')->group(funct
 });
 
 // =============================================================================
+// ADS INTELLIGENCE - Gestão de Campanhas (Meta/Google Ads)
+// Requer feature: ads_intelligence
+// =============================================================================
+Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('ads')->group(function () {
+    // Plataformas disponíveis
+    Route::get('platforms', [\App\Http\Controllers\AdAccountController::class, 'platforms']);
+    
+    // Contas de anúncio
+    Route::prefix('accounts')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AdAccountController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\AdAccountController::class, 'store']);
+        Route::get('{account}', [\App\Http\Controllers\AdAccountController::class, 'show']);
+        Route::put('{account}', [\App\Http\Controllers\AdAccountController::class, 'update']);
+        Route::delete('{account}', [\App\Http\Controllers\AdAccountController::class, 'destroy']);
+        Route::post('{account}/sync', [\App\Http\Controllers\AdAccountController::class, 'sync']);
+        Route::post('{account}/test', [\App\Http\Controllers\AdAccountController::class, 'test']);
+    });
+    
+    // Dashboard e métricas gerais
+    Route::get('dashboard', [\App\Http\Controllers\AdCampaignController::class, 'dashboard']);
+    Route::get('ranking', [\App\Http\Controllers\AdCampaignController::class, 'ranking']);
+    
+    // Campanhas
+    Route::prefix('campaigns')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AdCampaignController::class, 'index']);
+        Route::get('{campaign}', [\App\Http\Controllers\AdCampaignController::class, 'show']);
+        Route::get('{campaign}/metrics', [\App\Http\Controllers\AdCampaignController::class, 'metrics']);
+    });
+    
+    // Insights da IA
+    Route::prefix('insights')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AdInsightController::class, 'index']);
+        Route::get('types', [\App\Http\Controllers\AdInsightController::class, 'types']);
+        Route::get('severities', [\App\Http\Controllers\AdInsightController::class, 'severities']);
+        Route::get('{insight}', [\App\Http\Controllers\AdInsightController::class, 'show']);
+        Route::post('{insight}/apply', [\App\Http\Controllers\AdInsightController::class, 'apply']);
+        Route::post('{insight}/dismiss', [\App\Http\Controllers\AdInsightController::class, 'dismiss']);
+    });
+    
+    // Regras de automação
+    Route::prefix('rules')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AdAutomationController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\AdAutomationController::class, 'store']);
+        Route::get('metrics', [\App\Http\Controllers\AdAutomationController::class, 'metrics']);
+        Route::get('actions', [\App\Http\Controllers\AdAutomationController::class, 'actions']);
+        Route::get('{rule}', [\App\Http\Controllers\AdAutomationController::class, 'show']);
+        Route::put('{rule}', [\App\Http\Controllers\AdAutomationController::class, 'update']);
+        Route::delete('{rule}', [\App\Http\Controllers\AdAutomationController::class, 'destroy']);
+        Route::post('{rule}/toggle', [\App\Http\Controllers\AdAutomationController::class, 'toggle']);
+    });
+    
+    // Logs de automação
+    Route::prefix('automation')->group(function () {
+        Route::get('logs', [\App\Http\Controllers\AdAutomationController::class, 'logs']);
+        Route::post('logs/{log}/rollback', [\App\Http\Controllers\AdAutomationController::class, 'rollback']);
+        Route::post('logs/{log}/approve', [\App\Http\Controllers\AdAutomationController::class, 'approve']);
+        Route::post('logs/{log}/reject', [\App\Http\Controllers\AdAutomationController::class, 'reject']);
+    });
+    
+    // Agente de IA para criação de campanhas
+    Route::prefix('agent')->group(function () {
+        Route::post('create-campaign', [\App\Http\Controllers\AdAgentController::class, 'createCampaign']);
+        Route::get('campaigns/{campaign}/full-report', [\App\Http\Controllers\AdAgentController::class, 'getCampaignFullReport']);
+        Route::get('campaigns/{campaign}/ads', [\App\Http\Controllers\AdAgentController::class, 'getCampaignAds']);
+    });
+});
+
+// =============================================================================
 // Rotas para integração com Worker Python (fila de mensagens)
 // Autenticação via X-API-Key header
 // =============================================================================
 Route::prefix('agent')->group(function () {
     Route::post('context', [\App\Http\Controllers\AgentQueueController::class, 'getContext']);
     Route::post('response', [\App\Http\Controllers\AgentQueueController::class, 'handleResponse']);
+});
+
+// =============================================================================
+// Rotas internas para microserviço de IA (Python)
+// Autenticação via X-Internal-Key header
+// =============================================================================
+Route::middleware('internal.api')->prefix('internal')->group(function () {
+    // Uso de IA
+    Route::post('ai-usage', [\App\Http\Controllers\InternalAiUsageController::class, 'logUsage']);
+    Route::post('ai-usage/check', [\App\Http\Controllers\InternalAiUsageController::class, 'checkAiAccess']);
+    
+    // Uso de leads
+    Route::post('leads/check', [\App\Http\Controllers\InternalAiUsageController::class, 'checkLeadAccess']);
+    Route::post('leads/register', [\App\Http\Controllers\InternalAiUsageController::class, 'registerLeadCreation']);
+    
+    // Resumo de uso
+    Route::post('usage/summary', [\App\Http\Controllers\InternalAiUsageController::class, 'getUsageSummary']);
 });
 
 // Rotas públicas (sem autenticação)
@@ -637,6 +722,38 @@ Route::middleware(['auth:api', 'super_admin'])->prefix('super-admin')->group(fun
 
     // Logs
     Route::get('logs', [\App\Http\Controllers\SuperAdminController::class, 'listLogs']);
+
+    // =====================
+    // CUSTOS E USO (Super Admin Only)
+    // =====================
+    Route::prefix('costs')->group(function () {
+        // Dashboard de custos
+        Route::get('dashboard', [\App\Http\Controllers\SuperAdminCostController::class, 'dashboard']);
+        
+        // Listagem de tenants com uso
+        Route::get('tenants', [\App\Http\Controllers\SuperAdminCostController::class, 'listTenantsUsage']);
+        
+        // Detalhes de custo por tenant
+        Route::get('tenants/{tenant}', [\App\Http\Controllers\SuperAdminCostController::class, 'tenantCostDetails']);
+        
+        // Quotas do tenant
+        Route::put('tenants/{tenant}/quota', [\App\Http\Controllers\SuperAdminCostController::class, 'updateTenantQuota']);
+        Route::post('tenants/{tenant}/quota/reset', [\App\Http\Controllers\SuperAdminCostController::class, 'resetTenantQuota']);
+        
+        // Alertas
+        Route::get('alerts', [\App\Http\Controllers\SuperAdminCostController::class, 'listAlerts']);
+        Route::post('alerts/{alert}/acknowledge', [\App\Http\Controllers\SuperAdminCostController::class, 'acknowledgeAlert']);
+        Route::post('alerts/{alert}/resolve', [\App\Http\Controllers\SuperAdminCostController::class, 'resolveAlert']);
+        
+        // Faturamento
+        Route::get('billing', [\App\Http\Controllers\SuperAdminCostController::class, 'listBillingRecords']);
+        Route::post('billing/{tenant}/generate', [\App\Http\Controllers\SuperAdminCostController::class, 'generateBilling']);
+        Route::post('billing/{billing}/mark-paid', [\App\Http\Controllers\SuperAdminCostController::class, 'markBillingPaid']);
+        
+        // Exportação e preços
+        Route::get('export', [\App\Http\Controllers\SuperAdminCostController::class, 'exportReport']);
+        Route::get('pricing', [\App\Http\Controllers\SuperAdminCostController::class, 'getPlanPricing']);
+    });
 });
 
 

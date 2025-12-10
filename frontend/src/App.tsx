@@ -28,6 +28,7 @@ import { WhatsAppTemplatesPage } from '@/pages/whatsapp-templates'
 import { GtmSettingsPage } from '@/pages/settings/GtmSettingsPage'
 import { GtmScript } from '@/components/GtmScript'
 import { BrandingProvider } from '@/components/BrandingProvider'
+import { AdsDashboard, AdsAccounts, AdsCampaigns, AdsInsights, AdsAutomation, AdsAgent } from '@/pages/ads'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -138,6 +139,14 @@ function AppRoutes() {
         <Route path="schedule" element={<ScheduleConfigPage />} />
         <Route path="whatsapp-templates" element={<WhatsAppTemplatesPage />} />
         <Route path="gtm" element={<GtmSettingsPage />} />
+        
+        {/* Ads Intelligence */}
+        <Route path="ads" element={<AdsDashboard />} />
+        <Route path="ads/accounts" element={<AdsAccounts />} />
+        <Route path="ads/campaigns" element={<AdsCampaigns />} />
+        <Route path="ads/insights" element={<AdsInsights />} />
+        <Route path="ads/automation" element={<AdsAutomation />} />
+        <Route path="ads/agent" element={<AdsAgent />} />
       </Route>
     </Routes>
   )

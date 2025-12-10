@@ -95,6 +95,11 @@ class TenantFeature extends Model
                 'description' => 'Gerenciamento de múltiplas unidades',
                 'icon' => 'users',
             ],
+            'ads_intelligence' => [
+                'name' => 'Ads Intelligence',
+                'description' => 'Gestão inteligente de campanhas Meta/Google Ads com automação',
+                'icon' => 'trending-up',
+            ],
         ];
     }
 

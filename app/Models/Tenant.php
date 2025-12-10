@@ -129,6 +129,22 @@ class Tenant extends Model
     }
 
     /**
+     * Relacionamento com quotas do tenant.
+     */
+    public function quota(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TenantQuota::class);
+    }
+
+    /**
+     * Relacionamento com estatísticas de uso do tenant.
+     */
+    public function usageStats(): HasMany
+    {
+        return $this->hasMany(TenantUsageStats::class);
+    }
+
+    /**
      * Grupos que o tenant pertence.
      */
     public function groups(): BelongsToMany

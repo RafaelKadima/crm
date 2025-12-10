@@ -29,6 +29,9 @@ import {
   FileText,
   Cog,
   Home,
+  Target,
+  Zap,
+  Lightbulb,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -90,6 +93,19 @@ const navGroups: NavGroup[] = [
       { icon: Globe, label: 'Landing Pages', path: '/landing-pages', feature: 'landing_pages', permissions: ['landing_pages.view', 'landing_pages.create'] },
       { icon: FileText, label: 'Templates WhatsApp', path: '/whatsapp-templates', permission: 'channels.view' },
       { icon: TrendingUp, label: 'Google Tag Manager', path: '/gtm', adminOnly: true },
+    ],
+  },
+  {
+    id: 'ads',
+    label: 'Ads Intelligence',
+    icon: Target,
+    items: [
+      { icon: Target, label: 'Dashboard Ads', path: '/ads', feature: 'ads_intelligence' },
+      { icon: Zap, label: '🤖 Criar Campanha (IA)', path: '/ads/agent', feature: 'ads_intelligence' },
+      { icon: BarChart3, label: 'Campanhas', path: '/ads/campaigns', feature: 'ads_intelligence' },
+      { icon: Lightbulb, label: 'Insights IA', path: '/ads/insights', feature: 'ads_intelligence' },
+      { icon: Zap, label: 'Automações', path: '/ads/automation', feature: 'ads_intelligence' },
+      { icon: Settings, label: 'Contas de Anúncio', path: '/ads/accounts', feature: 'ads_intelligence' },
     ],
   },
   {

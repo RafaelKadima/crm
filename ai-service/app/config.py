@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     # Laravel API (para callbacks)
     LARAVEL_API_URL: str = "http://localhost:8000"
     LARAVEL_API_KEY: str = ""
+    LARAVEL_INTERNAL_KEY: str = ""  # Chave para API interna (registrar uso)
     
     # Queue Settings
     QUEUE_MAX_WAIT_TIME: int = 5  # segundos

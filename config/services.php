@@ -78,6 +78,16 @@ return [
         'tts_model' => env('OPENAI_TTS_MODEL', 'tts-1'),
         'tts_voice' => env('OPENAI_TTS_VOICE', 'nova'),
         'audio_threshold' => env('OPENAI_AUDIO_THRESHOLD', 500), // caracteres para converter em áudio
+        'exchange_rate' => env('USD_BRL_EXCHANGE_RATE', 6.0), // Taxa de câmbio USD para BRL
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Internal API (comunicação entre microserviços)
+    |--------------------------------------------------------------------------
+    */
+    'internal' => [
+        'api_key' => env('INTERNAL_API_KEY'),
     ],
 
     /*
