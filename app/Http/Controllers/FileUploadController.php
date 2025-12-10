@@ -30,8 +30,12 @@ class FileUploadController extends Controller
         // Audio
         'audio/mpeg' => ['category' => 'audio', 'max_size' => 16 * 1024 * 1024], // 16MB
         'audio/ogg' => ['category' => 'audio', 'max_size' => 16 * 1024 * 1024],
+        'audio/ogg; codecs=opus' => ['category' => 'audio', 'max_size' => 16 * 1024 * 1024],
         'audio/wav' => ['category' => 'audio', 'max_size' => 16 * 1024 * 1024],
         'audio/webm' => ['category' => 'audio', 'max_size' => 16 * 1024 * 1024],
+        'audio/webm;codecs=opus' => ['category' => 'audio', 'max_size' => 16 * 1024 * 1024],
+        'audio/mp4' => ['category' => 'audio', 'max_size' => 16 * 1024 * 1024],
+        'audio/aac' => ['category' => 'audio', 'max_size' => 16 * 1024 * 1024],
         
         // Documents
         'application/pdf' => ['category' => 'document', 'max_size' => 100 * 1024 * 1024], // 100MB
@@ -54,15 +58,28 @@ class FileUploadController extends Controller
             'ticket_id' => 'required|uuid|exists:tickets,id',
         ]);
 
-        // Validate MIME type
-        if (!isset($this->allowedTypes[$validated['mime_type']])) {
+        Log::info('Presigned URL request', [
+            'filename' => $validated['filename'],
+            'mime_type' => $validated['mime_type'],
+            'file_size' => $validated['file_size'],
+            'ticket_id' => $validated['ticket_id'],
+        ]);
+
+        // Validate MIME type (normalize to handle codec variations like audio/webm;codecs=opus)
+        $mimeType = $validated['mime_type'];
+        $typeConfig = $this->getAllowedTypeConfig($mimeType);
+        
+        if (!$typeConfig) {
+            Log::warning('MIME type not allowed', [
+                'mime_type' => $mimeType,
+                'allowed_types' => array_keys($this->allowedTypes),
+            ]);
             return response()->json([
                 'error' => 'Tipo de arquivo não permitido.',
+                'mime_type_received' => $mimeType,
                 'allowed_types' => array_keys($this->allowedTypes),
             ], 400);
         }
-
-        $typeConfig = $this->allowedTypes[$validated['mime_type']];
 
         // Validate file size
         if ($validated['file_size'] > $typeConfig['max_size']) {
@@ -332,6 +349,31 @@ class FileUploadController extends Controller
 
             return response()->json(['error' => 'Erro ao remover arquivo.'], 500);
         }
+    }
+
+    /**
+     * Get allowed type config, handling MIME type variations (e.g., codecs)
+     */
+    protected function getAllowedTypeConfig(string $mimeType): ?array
+    {
+        // Direct match
+        if (isset($this->allowedTypes[$mimeType])) {
+            return $this->allowedTypes[$mimeType];
+        }
+        
+        // Try without codec parameters (e.g., "audio/webm;codecs=opus" -> "audio/webm")
+        $baseMimeType = explode(';', $mimeType)[0];
+        if (isset($this->allowedTypes[$baseMimeType])) {
+            return $this->allowedTypes[$baseMimeType];
+        }
+        
+        // Try with normalized semicolon spacing
+        $normalizedMimeType = str_replace('; ', ';', $mimeType);
+        if (isset($this->allowedTypes[$normalizedMimeType])) {
+            return $this->allowedTypes[$normalizedMimeType];
+        }
+        
+        return null;
     }
 
     /**

@@ -137,7 +137,7 @@ class WhatsAppService
     }
 
     /**
-     * Envia mensagem com mídia (imagem, documento, áudio, vídeo)
+     * Envia mensagem com mídia (imagem, documento, áudio, vídeo) via URL
      */
     public function sendMediaMessage(string $to, string $type, string $mediaUrl, ?string $caption = null): array
     {
@@ -163,6 +163,128 @@ class WhatsAppService
             ]);
 
         $result = $response->json();
+
+        if (!$response->successful()) {
+            throw new \Exception($result['error']['message'] ?? 'Erro ao enviar mídia');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Upload media file directly to WhatsApp (for formats like WebM that need processing)
+     * Returns array with media_id and converted_path (if conversion happened)
+     */
+    public function uploadMedia(string $filePath, string $mimeType): array
+    {
+        $this->validateConfig();
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('media');
+        
+        if (!$disk->exists($filePath)) {
+            throw new \Exception("Arquivo não encontrado: {$filePath}");
+        }
+
+        $fileContents = $disk->get($filePath);
+        $fileName = basename($filePath);
+        
+        // WhatsApp accepts: audio/ogg, audio/opus, audio/mpeg, audio/amr, audio/mp4, audio/aac
+        // WebM is NOT supported - must convert to OGG using FFmpeg
+        $normalizedMimeType = $mimeType;
+        
+        // For WebM, convert to OGG using FFmpeg
+        if (str_contains($mimeType, 'webm')) {
+            $convertedPath = $this->convertWebmToMp3($disk, $filePath);
+            if ($convertedPath) {
+                $filePath = $convertedPath;
+                $fileContents = $disk->get($filePath);
+                $fileName = preg_replace('/\.webm$/', '.mp3', $fileName);
+                $normalizedMimeType = 'audio/mpeg';
+                Log::info('Converted WebM to MP3', ['new_path' => $filePath]);
+            } else {
+                throw new \Exception('FFmpeg não disponível. Instale FFmpeg para enviar áudios via WhatsApp.');
+            }
+        }
+        // Ensure audio/mp4 not video/mp4
+        elseif (str_contains($mimeType, 'mp4') && !str_contains($mimeType, 'audio')) {
+            $normalizedMimeType = 'audio/mp4';
+        }
+
+        Log::info('Uploading media to WhatsApp', [
+            'original_mime' => $mimeType,
+            'normalized_mime' => $normalizedMimeType,
+            'file_name' => $fileName,
+        ]);
+
+        // Upload to WhatsApp Media API
+        $response = Http::withToken($this->accessToken)
+            ->attach('file', $fileContents, $fileName, ['Content-Type' => $normalizedMimeType])
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/media", [
+                'messaging_product' => 'whatsapp',
+                'type' => $normalizedMimeType,
+            ]);
+
+        $result = $response->json();
+
+        if (!$response->successful() || !isset($result['id'])) {
+            Log::error('WhatsApp media upload failed', [
+                'status' => $response->status(),
+                'response' => $result,
+                'mime_type' => $normalizedMimeType,
+            ]);
+            throw new \Exception($result['error']['message'] ?? 'Erro ao fazer upload da mídia');
+        }
+
+        Log::info('WhatsApp media uploaded', ['media_id' => $result['id']]);
+
+        return [
+            'media_id' => $result['id'],
+            'converted_path' => $filePath, // Returns the converted file path (e.g., .mp3 instead of .webm)
+            'mime_type' => $normalizedMimeType,
+        ];
+    }
+
+    /**
+     * Send media message using media_id (after uploading via uploadMedia)
+     */
+    public function sendMediaById(string $to, string $type, string $mediaId, ?string $caption = null): array
+    {
+        $this->validateConfig();
+
+        $mediaTypes = ['image', 'document', 'audio', 'video', 'sticker'];
+        if (!in_array($type, $mediaTypes)) {
+            throw new \Exception("Tipo de mídia inválido: {$type}");
+        }
+
+        $mediaPayload = ['id' => $mediaId];
+        
+        if ($caption && in_array($type, ['image', 'video', 'document'])) {
+            $mediaPayload['caption'] = $caption;
+        }
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => $this->formatPhoneNumber($to),
+            'type' => $type,
+            $type => $mediaPayload,
+        ];
+
+        Log::info('Sending media by ID to WhatsApp', [
+            'to' => $this->formatPhoneNumber($to),
+            'media_id' => $mediaId,
+            'type' => $type,
+        ]);
+
+        $response = Http::withToken($this->accessToken)
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", $payload);
+
+        $result = $response->json();
+
+        Log::info('WhatsApp send media response', [
+            'status' => $response->status(),
+            'response' => $result,
+        ]);
 
         if (!$response->successful()) {
             throw new \Exception($result['error']['message'] ?? 'Erro ao enviar mídia');
@@ -595,6 +717,103 @@ class WhatsAppService
     }
 
     /**
+     * Convert WebM audio to MP3 format using FFmpeg
+     * MP3 is universally compatible with WhatsApp
+     * Returns the path to the converted file, or null if FFmpeg is not available
+     */
+    protected function convertWebmToMp3($disk, string $inputPath): ?string
+    {
+        // Check if FFmpeg is available
+        $ffmpegPath = $this->findFfmpeg();
+        if (!$ffmpegPath) {
+            Log::warning('FFmpeg not found - cannot convert WebM to MP3');
+            return null;
+        }
+
+        try {
+            // Create temp files
+            $tempDir = sys_get_temp_dir();
+            $inputFile = $tempDir . '/' . uniqid('webm_') . '.webm';
+            $outputFile = $tempDir . '/' . uniqid('mp3_') . '.mp3';
+
+            // Write input file
+            file_put_contents($inputFile, $disk->get($inputPath));
+
+            // Convert using FFmpeg (WebM -> MP3)
+            // Settings for good voice quality:
+            // - libmp3lame codec (standard MP3)
+            // - 44.1kHz sample rate
+            // - mono channel (voice)
+            // - 128k bitrate
+            $command = sprintf(
+                '"%s" -i "%s" -acodec libmp3lame -ar 44100 -ac 1 -b:a 128k "%s" -y 2>&1',
+                $ffmpegPath,
+                $inputFile,
+                $outputFile
+            );
+
+            Log::info('Running FFmpeg conversion WebM->MP3', ['command' => $command]);
+            $output = shell_exec($command);
+
+            // Check if output file was created
+            if (!file_exists($outputFile) || filesize($outputFile) === 0) {
+                Log::error('FFmpeg conversion failed', ['output' => $output]);
+                @unlink($inputFile);
+                return null;
+            }
+
+            // Save converted file to storage
+            $outputPath = str_replace('.webm', '.mp3', $inputPath);
+            $disk->put($outputPath, file_get_contents($outputFile));
+
+            // Cleanup temp files
+            @unlink($inputFile);
+            @unlink($outputFile);
+
+            return $outputPath;
+
+        } catch (\Exception $e) {
+            Log::error('FFmpeg conversion error', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Find FFmpeg executable path
+     */
+    protected function findFfmpeg(): ?string
+    {
+        // Common paths to check
+        $paths = [
+            'ffmpeg', // In PATH
+            '/usr/bin/ffmpeg',
+            '/usr/local/bin/ffmpeg',
+            'C:\\ffmpeg\\bin\\ffmpeg.exe',
+            'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
+        ];
+
+        foreach ($paths as $path) {
+            // Check if command exists
+            if (PHP_OS_FAMILY === 'Windows') {
+                $check = shell_exec("where $path 2>nul");
+            } else {
+                $check = shell_exec("which $path 2>/dev/null");
+            }
+            
+            if ($check) {
+                return trim($check);
+            }
+            
+            // Check direct path
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Get file extension from MIME type
      */
     protected function getExtensionFromMimeType(string $mimeType): string
@@ -629,10 +848,13 @@ class WhatsAppService
     {
         $messageId = $status['id'];
         $statusType = $status['status']; // sent, delivered, read, failed
+        $errors = $status['errors'] ?? null;
 
         Log::info('WhatsApp status update', [
             'message_id' => $messageId,
             'status' => $statusType,
+            'errors' => $errors,
+            'full_status' => $status,
         ]);
 
         // Update message metadata if needed

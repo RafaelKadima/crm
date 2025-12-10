@@ -41,6 +41,7 @@ import { TransferModal } from '@/components/chat/TransferModal'
 import { CloseConversationModal } from '@/components/chat/CloseConversationModal'
 import { TemplateSelector } from '@/components/chat/TemplateSelector'
 import { FileUploadButton } from '@/components/chat/FileUploadButton'
+import { AudioRecorder } from '@/components/chat/AudioRecorder'
 import { MessageAttachment } from '@/components/chat/MessageAttachment'
 import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import { useLeadMessages } from '@/hooks/useWebSocket'
@@ -1075,6 +1076,25 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       <Smile className="h-5 w-5 text-muted-foreground" />
                     </Button>
                   </div>
+                  
+                  {/* Audio recorder - only for WhatsApp */}
+                  <AudioRecorder
+                    ticketId={ticketId}
+                    channelType={lead?.channel?.type}
+                    onAudioSent={(audioMessage) => {
+                      // Adiciona mensagem localmente para exibição em tempo real
+                      setMessages((prev) => [...prev, audioMessage as Message])
+                      // Scroll para a última mensagem
+                      setTimeout(() => {
+                        if (messagesContainerRef.current) {
+                          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+                        }
+                      }, 50)
+                      queryClient.invalidateQueries({ queryKey: ['leads'] })
+                    }}
+                    disabled={isSending}
+                  />
+                  
                   <Button
                     onClick={handleSend}
                     disabled={!message.trim() || isSending}

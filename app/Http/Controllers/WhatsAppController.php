@@ -223,29 +223,79 @@ class WhatsAppController extends Controller
         }
 
         try {
-            // Get public URL for the attachment
-            $mediaUrl = $attachment->url;
+            $this->whatsAppService->loadFromChannel($channel);
             
-            if (!$mediaUrl) {
-                // Generate temporary URL if needed
+            Log::info('Sending media via WhatsApp', [
+                'attachment_id' => $attachment->id,
+                'mime_type' => $attachment->mime_type,
+                'file_path' => $attachment->file_path,
+                'media_type' => $mediaType,
+            ]);
+            
+            // Use direct upload for all audio files (more reliable than URL method)
+            // WhatsApp often can't access S3 URLs due to timing/security issues
+            $needsDirectUpload = $mediaType === 'audio' || str_contains($attachment->mime_type ?? '', 'webm');
+
+            if ($needsDirectUpload) {
+                // Upload file directly to WhatsApp, then send using media_id
+                Log::info('Using direct upload for unsupported format', [
+                    'mime_type' => $attachment->mime_type,
+                    'file_path' => $attachment->file_path,
+                ]);
+                
+                $uploadResult = $this->whatsAppService->uploadMedia(
+                    $attachment->file_path,
+                    $attachment->mime_type
+                );
+                
+                $mediaId = $uploadResult['media_id'];
+                $convertedPath = $uploadResult['converted_path'];
+                $convertedMimeType = $uploadResult['mime_type'];
+                
+                $result = $this->whatsAppService->sendMediaById(
+                    $contact->phone,
+                    $mediaType,
+                    $mediaId,
+                    $validated['caption'] ?? null
+                );
+                
+                // Use the converted file URL for display in chat
                 $disk = Storage::disk($attachment->storage_disk);
                 if (config("filesystems.disks.{$attachment->storage_disk}.driver") === 's3') {
-                    $mediaUrl = $disk->temporaryUrl($attachment->file_path, now()->addHour());
+                    $mediaUrl = $disk->temporaryUrl($convertedPath, now()->addDays(7));
                 } else {
-                    // For local storage, we need a public URL
-                    return response()->json([
-                        'error' => 'Não é possível enviar arquivos do storage local via WhatsApp. Configure um storage S3 compatível.',
-                    ], 400);
+                    $mediaUrl = $disk->url($convertedPath);
                 }
-            }
+                
+                // Update attachment with converted file info
+                $attachment->update([
+                    'file_path' => $convertedPath,
+                    'mime_type' => $convertedMimeType,
+                ]);
+            } else {
+                // Get public URL for the attachment
+                $mediaUrl = $attachment->url;
+                
+                if (!$mediaUrl) {
+                    // Generate temporary URL if needed
+                    $disk = Storage::disk($attachment->storage_disk);
+                    if (config("filesystems.disks.{$attachment->storage_disk}.driver") === 's3') {
+                        $mediaUrl = $disk->temporaryUrl($attachment->file_path, now()->addHour());
+                    } else {
+                        // For local storage, we need a public URL
+                        return response()->json([
+                            'error' => 'Não é possível enviar arquivos do storage local via WhatsApp. Configure um storage S3 compatível.',
+                        ], 400);
+                    }
+                }
 
-            $this->whatsAppService->loadFromChannel($channel);
-            $result = $this->whatsAppService->sendMediaMessage(
-                $contact->phone,
-                $mediaType,
-                $mediaUrl,
-                $validated['caption'] ?? null
-            );
+                $result = $this->whatsAppService->sendMediaMessage(
+                    $contact->phone,
+                    $mediaType,
+                    $mediaUrl,
+                    $validated['caption'] ?? null
+                );
+            }
 
             // Create message record
             $caption = $validated['caption'] ?? null;
@@ -271,15 +321,21 @@ class WhatsAppController extends Controller
                 ],
             ]);
 
-            // Associate attachment with message
-            $attachment->update(['ticket_message_id' => $ticketMessage->id]);
+            // Associate attachment with message and update URL
+            $attachment->update([
+                'ticket_message_id' => $ticketMessage->id,
+                'url' => $mediaUrl, // Store the accessible URL
+            ]);
+            
+            // Refresh attachment to get updated URL
+            $attachment->refresh();
 
             // Dispatch broadcast event for real-time updates
             event(new \App\Events\TicketMessageCreated($ticketMessage, $ticket));
 
             return response()->json([
                 'success' => true,
-                'message' => $ticketMessage,
+                'message' => $ticketMessage->load('attachments'),
                 'attachment' => $attachment,
                 'whatsapp_response' => $result,
             ]);
