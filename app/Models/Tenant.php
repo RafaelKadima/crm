@@ -27,6 +27,10 @@ class Tenant extends Model
         'ia_workflow_id',
         'settings',
         'is_active',
+        'logo_url',
+        'logo_dark_url',
+        'favicon_url',
+        'branding',
     ];
 
     /**
@@ -40,9 +44,25 @@ class Tenant extends Model
             'plan' => PlanEnum::class,
             'ia_enabled' => 'boolean',
             'settings' => 'array',
+            'branding' => 'array',
             'is_active' => 'boolean',
         ];
     }
+
+    /**
+     * Branding padrão.
+     */
+    public const DEFAULT_BRANDING = [
+        'primary_color' => '#3B82F6',
+        'secondary_color' => '#8B5CF6',
+        'accent_color' => '#10B981',
+        'sidebar_color' => '#111827',
+        'sidebar_text_color' => '#F9FAFB',
+        'header_color' => '#1F2937',
+        'header_text_color' => '#F9FAFB',
+        'button_radius' => '8',
+        'font_family' => 'DM Sans',
+    ];
 
     /**
      * Relacionamento com usuários do tenant.
@@ -90,6 +110,22 @@ class Tenant extends Model
     public function leads(): HasMany
     {
         return $this->hasMany(Lead::class);
+    }
+
+    /**
+     * Relacionamento com produtos do tenant.
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Relacionamento com agentes SDR do tenant.
+     */
+    public function sdrAgents(): HasMany
+    {
+        return $this->hasMany(SdrAgent::class);
     }
 
     /**
@@ -142,6 +178,59 @@ class Tenant extends Model
         data_set($settings, $key, $value);
         $this->settings = $settings;
         $this->save();
+    }
+
+    /**
+     * Retorna configuração de branding específica.
+     */
+    public function getBranding(string $key, mixed $default = null): mixed
+    {
+        $branding = $this->branding ?? self::DEFAULT_BRANDING;
+        return data_get($branding, $key, $default ?? data_get(self::DEFAULT_BRANDING, $key));
+    }
+
+    /**
+     * Retorna todo o branding mesclado com valores padrão.
+     */
+    public function getFullBranding(): array
+    {
+        return array_merge(self::DEFAULT_BRANDING, $this->branding ?? []);
+    }
+
+    /**
+     * Define configuração de branding específica.
+     */
+    public function setBranding(string $key, mixed $value): void
+    {
+        $branding = $this->branding ?? [];
+        data_set($branding, $key, $value);
+        $this->branding = $branding;
+        $this->save();
+    }
+
+    /**
+     * Atualiza múltiplas configurações de branding.
+     */
+    public function updateBranding(array $values): void
+    {
+        $branding = $this->branding ?? [];
+        foreach ($values as $key => $value) {
+            data_set($branding, $key, $value);
+        }
+        $this->branding = $branding;
+        $this->save();
+    }
+
+    /**
+     * Retorna a logo apropriada baseada no tema.
+     */
+    public function getLogo(string $theme = 'dark'): ?string
+    {
+        if ($theme === 'light' && $this->logo_url) {
+            return $this->logo_url;
+        }
+        
+        return $this->logo_dark_url ?? $this->logo_url;
     }
 }
 

@@ -21,6 +21,7 @@ class LeadAssignmentLog extends Model
         'tenant_id',
         'user_id',
         'channel_id',
+        'queue_id',
         'last_assigned_at',
     ];
 
@@ -50,6 +51,14 @@ class LeadAssignmentLog extends Model
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::class);
+    }
+
+    /**
+     * Fila do log.
+     */
+    public function queue(): BelongsTo
+    {
+        return $this->belongsTo(Queue::class);
     }
 }
 

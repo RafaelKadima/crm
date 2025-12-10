@@ -6,6 +6,8 @@ use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pipeline extends Model
@@ -22,6 +24,8 @@ class Pipeline extends Model
         'name',
         'description',
         'is_default',
+        'is_public',
+        'sdr_agent_id',
     ];
 
     /**
@@ -33,6 +37,7 @@ class Pipeline extends Model
     {
         return [
             'is_default' => 'boolean',
+            'is_public' => 'boolean',
         ];
     }
 
@@ -50,6 +55,22 @@ class Pipeline extends Model
     public function leads(): HasMany
     {
         return $this->hasMany(Lead::class);
+    }
+
+    /**
+     * Agente SDR associado a este pipeline.
+     */
+    public function sdrAgent(): BelongsTo
+    {
+        return $this->belongsTo(SdrAgent::class);
+    }
+
+    /**
+     * Verifica se este pipeline tem um agente SDR configurado.
+     */
+    public function hasSdrAgent(): bool
+    {
+        return $this->sdr_agent_id !== null;
     }
 
     /**
@@ -79,6 +100,90 @@ class Pipeline extends Model
             ->update(['is_default' => false]);
 
         $this->update(['is_default' => true]);
+    }
+
+    /**
+     * Usuários com acesso a este pipeline.
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'pipeline_user')
+            ->withPivot(['can_view', 'can_edit', 'can_delete', 'can_manage_leads'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Verifica se um usuário tem acesso a este pipeline.
+     */
+    public function userHasAccess(?User $user): bool
+    {
+        if (!$user) return false;
+        
+        // Admin e gestor sempre têm acesso
+        if (in_array($user->role->value, ['admin', 'gestor']) || $user->is_super_admin) {
+            return true;
+        }
+
+        // Pipeline público
+        if ($this->is_public) {
+            return true;
+        }
+
+        // Verifica permissão específica
+        return $this->users()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Verifica se usuário pode editar o pipeline.
+     */
+    public function userCanEdit(?User $user): bool
+    {
+        if (!$user) return false;
+        
+        if (in_array($user->role->value, ['admin', 'gestor']) || $user->is_super_admin) {
+            return true;
+        }
+
+        $pivot = $this->users()->where('user_id', $user->id)->first()?->pivot;
+        return $pivot?->can_edit ?? false;
+    }
+
+    /**
+     * Verifica se usuário pode gerenciar leads no pipeline.
+     */
+    public function userCanManageLeads(?User $user): bool
+    {
+        if (!$user) return false;
+        
+        if (in_array($user->role->value, ['admin', 'gestor']) || $user->is_super_admin) {
+            return true;
+        }
+
+        // Pipeline público permite gerenciar leads
+        if ($this->is_public) {
+            return true;
+        }
+
+        $pivot = $this->users()->where('user_id', $user->id)->first()?->pivot;
+        return $pivot?->can_manage_leads ?? false;
+    }
+
+    /**
+     * Scope para pipelines acessíveis por um usuário.
+     */
+    public function scopeAccessibleBy($query, User $user)
+    {
+        // Admin e gestor veem tudo
+        if (in_array($user->role->value, ['admin', 'gestor']) || $user->is_super_admin) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($user) {
+            $q->where('is_public', true)
+              ->orWhereHas('users', function ($q2) use ($user) {
+                  $q2->where('user_id', $user->id)->where('can_view', true);
+              });
+        });
     }
 }
 

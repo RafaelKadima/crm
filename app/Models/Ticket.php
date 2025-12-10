@@ -27,6 +27,9 @@ class Ticket extends Model
         'assigned_user_id',
         'status',
         'closed_at',
+        'ia_enabled',
+        'ia_disabled_by',
+        'ia_disabled_at',
     ];
 
     /**
@@ -39,7 +42,50 @@ class Ticket extends Model
         return [
             'status' => TicketStatusEnum::class,
             'closed_at' => 'datetime',
+            'ia_enabled' => 'boolean',
+            'ia_disabled_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Usuário que desligou a IA.
+     */
+    public function iaDisabledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ia_disabled_by');
+    }
+
+    /**
+     * Verifica se a IA está habilitada para este ticket.
+     */
+    public function hasIaEnabled(): bool
+    {
+        return $this->ia_enabled ?? true;
+    }
+
+    /**
+     * Habilita a IA para este ticket.
+     */
+    public function enableIa(): void
+    {
+        $this->update([
+            'ia_enabled' => true,
+            'ia_disabled_by' => null,
+            'ia_disabled_at' => null,
+        ]);
+    }
+
+    /**
+     * Desabilita a IA para este ticket.
+     * O vendedor assume o atendimento, mas a IA continua aprendendo.
+     */
+    public function disableIa(?User $user = null): void
+    {
+        $this->update([
+            'ia_enabled' => false,
+            'ia_disabled_by' => $user?->id,
+            'ia_disabled_at' => now(),
+        ]);
     }
 
     /**
@@ -64,6 +110,35 @@ class Ticket extends Model
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::class);
+    }
+
+    /**
+     * Agente SDR associado.
+     * Prioridade:
+     * 1. Agente do Pipeline do Lead
+     * 2. Agente do Canal
+     */
+    public function sdrAgent()
+    {
+        // 1. Primeiro verifica se o lead tem um pipeline com agente SDR
+        if ($this->lead && $this->lead->pipeline && $this->lead->pipeline->sdr_agent_id) {
+            return SdrAgent::find($this->lead->pipeline->sdr_agent_id);
+        }
+
+        // 2. Se não, verifica o canal
+        if ($this->channel && $this->channel->sdr_agent_id) {
+            return SdrAgent::find($this->channel->sdr_agent_id);
+        }
+
+        return null;
+    }
+
+    /**
+     * Accessor para carregar sdrAgent como relação.
+     */
+    public function getSdrAgentAttribute()
+    {
+        return $this->sdrAgent();
     }
 
     /**

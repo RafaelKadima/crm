@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Models\RolePermission;
+use App\Models\Permission;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 
@@ -30,6 +32,7 @@ class User extends Authenticatable
         'phone',
         'avatar',
         'is_active',
+        'is_super_admin',
     ];
 
     /**
@@ -54,6 +57,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => RoleEnum::class,
             'is_active' => 'boolean',
+            'is_super_admin' => 'boolean',
         ];
     }
 
@@ -79,6 +83,24 @@ class User extends Authenticatable
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'assigned_user_id');
+    }
+
+    /**
+     * Filas/Setores que o usuário participa.
+     */
+    public function queues(): BelongsToMany
+    {
+        return $this->belongsToMany(Queue::class, 'queue_user')
+            ->withPivot(['is_active', 'priority'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Filas ativas do usuário.
+     */
+    public function activeQueues(): BelongsToMany
+    {
+        return $this->queues()->wherePivot('is_active', true);
     }
 
     /**
@@ -167,5 +189,80 @@ class User extends Authenticatable
     public function canViewAllLeads(): bool
     {
         return $this->role->canViewAllLeads();
+    }
+
+    /**
+     * Verifica se o usuário é super admin.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_super_admin === true;
+    }
+
+    /**
+     * Verifica se o usuário tem uma permissão específica.
+     */
+    public function hasPermission(string $permissionKey): bool
+    {
+        // Super admin tem todas as permissões
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Verifica permissões customizadas do usuário primeiro
+        $customPermission = $this->customPermissions()
+            ->whereHas('permission', fn($q) => $q->where('key', $permissionKey))
+            ->first();
+
+        if ($customPermission) {
+            return $customPermission->pivot->granted;
+        }
+
+        // Verifica permissões do role
+        return RolePermission::where('role', $this->role->value)
+            ->whereHas('permission', fn($q) => $q->where('key', $permissionKey))
+            ->exists();
+    }
+
+    /**
+     * Permissões customizadas do usuário.
+     */
+    public function customPermissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'user_permissions')
+            ->withPivot('granted')
+            ->withTimestamps();
+    }
+
+    /**
+     * Retorna todas as permissões efetivas do usuário.
+     */
+    public function getEffectivePermissions(): array
+    {
+        if ($this->isSuperAdmin()) {
+            return Permission::pluck('key')->toArray();
+        }
+
+        // Permissões do role
+        $rolePermissions = RolePermission::getPermissionsForRole($this->role->value);
+
+        // Aplica customizações do usuário
+        $customPermissions = $this->customPermissions()
+            ->get()
+            ->mapWithKeys(fn($p) => [$p->key => $p->pivot->granted])
+            ->toArray();
+
+        // Mescla: adiciona concedidas, remove revogadas
+        $effective = $rolePermissions;
+        
+        foreach ($customPermissions as $key => $granted) {
+            if ($granted && !in_array($key, $effective)) {
+                $effective[] = $key;
+            } elseif (!$granted) {
+                $effective = array_filter($effective, fn($k) => $k !== $key);
+            }
+        }
+
+        return array_values($effective);
     }
 }

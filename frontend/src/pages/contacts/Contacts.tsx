@@ -1,0 +1,173 @@
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Plus, Search, Phone, Mail, Building2, MoreHorizontal, Loader2, UserPlus } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Avatar } from '@/components/ui/Avatar'
+import { formatPhone } from '@/lib/utils'
+import { useContacts } from '@/hooks/useContacts'
+import { ContactModal } from './ContactModal'
+import type { Contact } from '@/types'
+
+export function ContactsPage() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  
+  const { data: contactsData, isLoading } = useContacts({ search: searchQuery || undefined })
+
+  const contacts = contactsData?.data || []
+
+  const handleNewContact = () => {
+    setSelectedContact(null)
+    setIsModalOpen(true)
+  }
+
+  const handleEditContact = (contact: Contact) => {
+    setSelectedContact(contact)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedContact(null)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Contatos</h1>
+          <p className="text-muted-foreground mt-1">
+            {contactsData?.total || 0} contatos cadastrados
+          </p>
+        </div>
+        <Button onClick={handleNewContact}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Contato
+        </Button>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar contatos..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Contacts Grid */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
+        {contacts.map((contact: Contact, index: number) => (
+          <motion.div
+            key={contact.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+          >
+            <Card 
+              className="hover:shadow-lg hover:border-blue-500/50 transition-all cursor-pointer group"
+              onClick={() => handleEditContact(contact)}
+            >
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <Avatar fallback={contact.name} size="lg" />
+                    <div>
+                      <h3 className="font-semibold group-hover:text-blue-400 transition-colors">
+                        {contact.name}
+                      </h3>
+                      {contact.company && (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                          <Building2 className="h-3 w-3" />
+                          {contact.company}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEditContact(contact)
+                    }}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {contact.email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="truncate">{contact.email}</span>
+                    </div>
+                  )}
+                  {contact.phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span>{formatPhone(contact.phone)}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Empty State */}
+      {contacts.length === 0 && !isLoading && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-16"
+        >
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center">
+            <UserPlus className="w-8 h-8 text-gray-500" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-300 mb-2">
+            {searchQuery ? 'Nenhum contato encontrado' : 'Nenhum contato cadastrado'}
+          </h3>
+          <p className="text-gray-500 mb-6">
+            {searchQuery 
+              ? 'Tente buscar por outro termo' 
+              : 'Comece adicionando seu primeiro contato'
+            }
+          </p>
+          {!searchQuery && (
+            <Button onClick={handleNewContact}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Contato
+            </Button>
+          )}
+        </motion.div>
+      )}
+
+      {/* Modal */}
+      <ContactModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        contact={selectedContact}
+      />
+    </div>
+  )
+}

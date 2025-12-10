@@ -60,6 +60,44 @@ return [
             'report' => false,
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Media Disk - For Chat Attachments
+        |--------------------------------------------------------------------------
+        |
+        | Disk for storing chat media files (images, videos, documents).
+        | Compatible with S3, Cloudflare R2, MinIO, or local storage.
+        |
+        | For S3/R2/MinIO, set MEDIA_DISK=s3 and configure:
+        |   MEDIA_AWS_ACCESS_KEY_ID, MEDIA_AWS_SECRET_ACCESS_KEY,
+        |   MEDIA_AWS_DEFAULT_REGION, MEDIA_AWS_BUCKET, MEDIA_AWS_ENDPOINT
+        |
+        | For local development, set MEDIA_DISK=media_local
+        |
+        */
+        'media' => [
+            'driver' => env('MEDIA_DISK_DRIVER', 's3'),
+            'key' => env('MEDIA_AWS_ACCESS_KEY_ID', env('AWS_ACCESS_KEY_ID')),
+            'secret' => env('MEDIA_AWS_SECRET_ACCESS_KEY', env('AWS_SECRET_ACCESS_KEY')),
+            'region' => env('MEDIA_AWS_DEFAULT_REGION', env('AWS_DEFAULT_REGION', 'us-east-1')),
+            'bucket' => env('MEDIA_AWS_BUCKET', env('AWS_BUCKET')),
+            'url' => env('MEDIA_AWS_URL', env('AWS_URL')),
+            'endpoint' => env('MEDIA_AWS_ENDPOINT', env('AWS_ENDPOINT')),
+            'use_path_style_endpoint' => env('MEDIA_AWS_USE_PATH_STYLE_ENDPOINT', env('AWS_USE_PATH_STYLE_ENDPOINT', false)),
+            'throw' => false,
+            'report' => false,
+            'visibility' => 'private',
+        ],
+
+        'media_local' => [
+            'driver' => 'local',
+            'root' => storage_path('app/media'),
+            'url' => env('APP_URL').'/storage/media',
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

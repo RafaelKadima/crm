@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -28,6 +29,7 @@ class Lead extends Model
         'pipeline_id',
         'stage_id',
         'channel_id',
+        'queue_id',
         'owner_id',
         'status',
         'value',
@@ -35,6 +37,12 @@ class Lead extends Model
         'ia_mode_at_creation',
         'last_message_at',
         'last_interaction_source',
+        'custom_fields',
+        'temperature',
+        'score',
+        'needs_human_attention',
+        'human_attention_reason',
+        'human_attention_priority',
     ];
 
     /**
@@ -51,6 +59,9 @@ class Lead extends Model
             'ia_mode_at_creation' => IaModeEnum::class,
             'last_message_at' => 'datetime',
             'last_interaction_source' => InteractionSourceEnum::class,
+            'custom_fields' => 'array',
+            'score' => 'integer',
+            'needs_human_attention' => 'boolean',
         ];
     }
 
@@ -84,6 +95,38 @@ class Lead extends Model
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::class);
+    }
+
+    /**
+     * Fila/Setor do lead.
+     */
+    public function queue(): BelongsTo
+    {
+        return $this->belongsTo(Queue::class);
+    }
+
+    /**
+     * Carteirizações por fila (um lead pode ter donos diferentes em filas diferentes).
+     */
+    public function queueOwners(): HasMany
+    {
+        return $this->hasMany(LeadQueueOwner::class);
+    }
+
+    /**
+     * Retorna o dono do lead em uma fila específica.
+     */
+    public function getOwnerInQueue(Queue $queue): ?User
+    {
+        return LeadQueueOwner::getOwnerForQueue($this, $queue);
+    }
+
+    /**
+     * Verifica se o lead tem dono em uma fila específica.
+     */
+    public function hasOwnerInQueue(Queue $queue): bool
+    {
+        return LeadQueueOwner::hasOwnerInQueue($this, $queue);
     }
 
     /**
@@ -124,6 +167,53 @@ class Lead extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(LeadActivity::class)->orderByDesc('created_at');
+    }
+
+    /**
+     * Produtos de interesse do lead.
+     */
+    public function products(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'lead_products')
+            ->withPivot(['quantity', 'unit_price', 'notes'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Dados do cliente (para fechamento).
+     */
+    public function customerData(): HasOne
+    {
+        return $this->hasOne(CustomerData::class);
+    }
+
+    /**
+     * Agendamentos do lead.
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class)->orderByDesc('scheduled_at');
+    }
+
+    /**
+     * Próximo agendamento.
+     */
+    public function nextAppointment(): HasOne
+    {
+        return $this->hasOne(Appointment::class)
+            ->whereIn('status', ['scheduled', 'confirmed'])
+            ->where('scheduled_at', '>', now())
+            ->orderBy('scheduled_at');
+    }
+
+    /**
+     * Valor total dos produtos de interesse.
+     */
+    public function getProductsTotalAttribute(): float
+    {
+        return $this->products->sum(function ($product) {
+            return $product->pivot->unit_price * $product->pivot->quantity;
+        });
     }
 
     /**

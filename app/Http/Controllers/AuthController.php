@@ -49,20 +49,24 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Login realizado com sucesso.',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
+                'phone' => $user->phone,
+                'avatar' => $user->avatar,
+                'is_active' => $user->is_active,
                 'tenant_id' => $user->tenant_id,
-                'tenant' => $user->tenant ? [
-                    'id' => $user->tenant->id,
-                    'name' => $user->tenant->name,
-                    'plan' => $user->tenant->plan,
-                ] : null,
             ],
-            'token' => $token,
-            'token_type' => 'Bearer',
+            'tenant' => $user->tenant ? [
+                'id' => $user->tenant->id,
+                'name' => $user->tenant->name,
+                'slug' => $user->tenant->slug,
+                'plan' => $user->tenant->plan,
+            ] : null,
         ]);
     }
 

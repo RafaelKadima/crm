@@ -1,0 +1,989 @@
+<?php
+
+namespace App\Services;
+
+use App\Events\TicketMessageCreated;
+use App\Models\Channel;
+use App\Models\Contact;
+use App\Models\Lead;
+use App\Models\Ticket;
+use App\Models\TicketMessage;
+use App\Enums\ChannelTypeEnum;
+use App\Enums\SenderTypeEnum;
+use App\Enums\MessageDirectionEnum;
+use App\Enums\TicketStatusEnum;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class WhatsAppService
+{
+    protected string $apiVersion = 'v18.0';
+    protected string $baseUrl;
+    protected ?string $phoneNumberId;
+    protected ?string $accessToken;
+    protected ?string $businessAccountId;
+
+    public function __construct(?Channel $channel = null)
+    {
+        $this->baseUrl = "https://graph.facebook.com/{$this->apiVersion}";
+        
+        if ($channel) {
+            $this->loadFromChannel($channel);
+        }
+    }
+
+    /**
+     * Carrega configurações do canal
+     */
+    public function loadFromChannel(Channel $channel): self
+    {
+        $config = $channel->config ?? [];
+        
+        $this->phoneNumberId = $config['phone_number_id'] ?? null;
+        $this->accessToken = $config['access_token'] ?? null;
+        $this->businessAccountId = $config['business_account_id'] ?? null;
+
+        return $this;
+    }
+
+    /**
+     * Configura manualmente (para testes)
+     */
+    public function configure(string $phoneNumberId, string $accessToken, ?string $businessAccountId = null): self
+    {
+        $this->phoneNumberId = $phoneNumberId;
+        $this->accessToken = $accessToken;
+        $this->businessAccountId = $businessAccountId;
+
+        return $this;
+    }
+
+    /**
+     * Envia mensagem de texto
+     */
+    public function sendTextMessage(string $to, string $message): array
+    {
+        $this->validateConfig();
+
+        $response = Http::withToken($this->accessToken)
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", [
+                'messaging_product' => 'whatsapp',
+                'recipient_type' => 'individual',
+                'to' => $this->formatPhoneNumber($to),
+                'type' => 'text',
+                'text' => [
+                    'preview_url' => true,
+                    'body' => $message,
+                ],
+            ]);
+
+        $result = $response->json();
+
+        if (!$response->successful()) {
+            Log::error('WhatsApp send message failed', [
+                'to' => $to,
+                'error' => $result,
+            ]);
+            throw new \Exception($result['error']['message'] ?? 'Erro ao enviar mensagem');
+        }
+
+        Log::info('WhatsApp message sent', [
+            'to' => $to,
+            'message_id' => $result['messages'][0]['id'] ?? null,
+        ]);
+
+        return $result;
+    }
+
+    /**
+     * Envia template de mensagem
+     */
+    public function sendTemplateMessage(string $to, string $templateName, string $languageCode = 'pt_BR', array $components = []): array
+    {
+        $this->validateConfig();
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => $this->formatPhoneNumber($to),
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName,
+                'language' => [
+                    'code' => $languageCode,
+                ],
+            ],
+        ];
+
+        if (!empty($components)) {
+            $payload['template']['components'] = $components;
+        }
+
+        $response = Http::withToken($this->accessToken)
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", $payload);
+
+        $result = $response->json();
+
+        if (!$response->successful()) {
+            Log::error('WhatsApp send template failed', [
+                'to' => $to,
+                'template' => $templateName,
+                'error' => $result,
+            ]);
+            throw new \Exception($result['error']['message'] ?? 'Erro ao enviar template');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Envia mensagem com mídia (imagem, documento, áudio, vídeo)
+     */
+    public function sendMediaMessage(string $to, string $type, string $mediaUrl, ?string $caption = null): array
+    {
+        $this->validateConfig();
+
+        $mediaTypes = ['image', 'document', 'audio', 'video', 'sticker'];
+        if (!in_array($type, $mediaTypes)) {
+            throw new \Exception("Tipo de mídia inválido: {$type}");
+        }
+
+        $mediaPayload = ['link' => $mediaUrl];
+        if ($caption && in_array($type, ['image', 'video', 'document'])) {
+            $mediaPayload['caption'] = $caption;
+        }
+
+        $response = Http::withToken($this->accessToken)
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", [
+                'messaging_product' => 'whatsapp',
+                'recipient_type' => 'individual',
+                'to' => $this->formatPhoneNumber($to),
+                'type' => $type,
+                $type => $mediaPayload,
+            ]);
+
+        $result = $response->json();
+
+        if (!$response->successful()) {
+            throw new \Exception($result['error']['message'] ?? 'Erro ao enviar mídia');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Marca mensagem como lida
+     */
+    public function markAsRead(string $messageId): bool
+    {
+        $this->validateConfig();
+
+        $response = Http::withToken($this->accessToken)
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", [
+                'messaging_product' => 'whatsapp',
+                'status' => 'read',
+                'message_id' => $messageId,
+            ]);
+
+        return $response->successful();
+    }
+
+    /**
+     * Processa webhook de mensagem recebida
+     */
+    public function processIncomingWebhook(array $payload, Channel $channel): ?TicketMessage
+    {
+        $entry = $payload['entry'][0] ?? null;
+        if (!$entry) return null;
+
+        $changes = $entry['changes'][0] ?? null;
+        if (!$changes || $changes['field'] !== 'messages') return null;
+
+        $value = $changes['value'] ?? null;
+        if (!$value) return null;
+
+        // Status updates (delivered, read, etc)
+        if (isset($value['statuses'])) {
+            $this->processStatusUpdate($value['statuses'][0]);
+            return null;
+        }
+
+        $message = $value['messages'][0] ?? null;
+        if (!$message) return null;
+
+        $contactInfo = $value['contacts'][0] ?? null;
+        $phoneNumber = $message['from'];
+        $messageType = $message['type'];
+        $messageId = $message['id'];
+        $timestamp = $message['timestamp'];
+
+        // Find or create contact
+        $contact = $this->findOrCreateContact($channel, $phoneNumber, $contactInfo);
+
+        // Find or create ticket
+        $ticket = $this->findOrCreateTicket($channel, $contact);
+
+        // Extract message content and media metadata
+        $content = $this->extractMessageContent($message);
+        $metadata = $this->extractMediaMetadata($message, $channel);
+
+        // Create ticket message
+        $ticketMessage = TicketMessage::create([
+            'tenant_id' => $channel->tenant_id,
+            'ticket_id' => $ticket->id,
+            'sender_type' => SenderTypeEnum::CONTACT,
+            'sender_id' => $contact->id,
+            'direction' => MessageDirectionEnum::INBOUND,
+            'message' => $content,
+            'metadata' => $metadata,
+            'sent_at' => now(),
+        ]);
+
+        // Update ticket last message
+        $ticket->update(['updated_at' => now()]);
+
+        // 🔥 Disparar evento broadcast para notificar o frontend em tempo real
+        event(new TicketMessageCreated($ticketMessage, $ticket));
+
+        // 🤖 Processar resposta do SDR IA se configurado
+        // Verifica: canal tem IA + ticket tem lead + IA está habilitada no ticket
+        if ($channel->hasIa() && $ticket->lead) {
+            if ($ticket->hasIaEnabled()) {
+                // IA habilitada: responde automaticamente
+                $this->triggerSdrResponse($ticketMessage, $ticket, $ticket->lead, $channel);
+            } else {
+                // IA desabilitada: apenas salva contexto para aprendizado
+                Log::info('IA disabled for ticket, skipping auto-response but saving for learning', [
+                    'ticket_id' => $ticket->id,
+                    'lead_id' => $ticket->lead_id,
+                    'disabled_by' => $ticket->ia_disabled_by,
+                ]);
+                
+                // Salva contexto para memória/aprendizado mesmo sem responder
+                $this->saveContextForLearning($ticketMessage, $ticket, $channel);
+            }
+        }
+
+        // Mark as read
+        $this->loadFromChannel($channel);
+        $this->markAsRead($messageId);
+
+        Log::info('WhatsApp message received', [
+            'from' => $phoneNumber,
+            'ticket_id' => $ticket->id,
+            'message_id' => $ticketMessage->id,
+        ]);
+
+        return $ticketMessage;
+    }
+
+    /**
+     * Encontra ou cria contato
+     */
+    protected function findOrCreateContact(Channel $channel, string $phone, ?array $contactInfo): Contact
+    {
+        $formattedPhone = $this->formatPhoneNumber($phone);
+
+        $contact = Contact::where('tenant_id', $channel->tenant_id)
+            ->where('phone', $formattedPhone)
+            ->first();
+
+        if (!$contact) {
+            $name = $contactInfo['profile']['name'] ?? "WhatsApp {$phone}";
+            
+            $contact = Contact::create([
+                'tenant_id' => $channel->tenant_id,
+                'name' => $name,
+                'phone' => $formattedPhone,
+            ]);
+        }
+
+        return $contact;
+    }
+
+    /**
+     * Encontra ou cria ticket
+     */
+    protected function findOrCreateTicket(Channel $channel, Contact $contact): Ticket
+    {
+        // SEMPRE garantir que existe um lead para o contato
+        $lead = $this->findOrCreateLead($channel, $contact);
+
+        // Find open ticket for this contact
+        $ticket = Ticket::where('tenant_id', $channel->tenant_id)
+            ->where('contact_id', $contact->id)
+            ->where('channel_id', $channel->id)
+            ->whereNotIn('status', [TicketStatusEnum::CLOSED])
+            ->first();
+
+        if (!$ticket) {
+            $ticket = Ticket::create([
+                'tenant_id' => $channel->tenant_id,
+                'contact_id' => $contact->id,
+                'channel_id' => $channel->id,
+                'lead_id' => $lead->id,
+                'status' => TicketStatusEnum::OPEN,
+            ]);
+
+            Log::info('Ticket created from WhatsApp', ['ticket_id' => $ticket->id, 'lead_id' => $lead->id]);
+        } else if (!$ticket->lead_id) {
+            // Se ticket existe mas não tem lead, associa
+            $ticket->update(['lead_id' => $lead->id]);
+            Log::info('Ticket associated with lead', ['ticket_id' => $ticket->id, 'lead_id' => $lead->id]);
+        }
+
+        return $ticket;
+    }
+
+    /**
+     * Encontra ou cria lead para o contato
+     * 
+     * IMPORTANTE: Se o canal tem menu de filas habilitado, o lead é criado
+     * SEM owner_id. A distribuição acontece DEPOIS que o lead escolher a fila.
+     * Isso evita atribuir o lead a um vendedor errado antes da escolha do setor.
+     */
+    protected function findOrCreateLead(Channel $channel, Contact $contact): Lead
+    {
+        $lead = Lead::where('tenant_id', $channel->tenant_id)
+            ->where('contact_id', $contact->id)
+            ->first();
+
+        if (!$lead) {
+            // Get the first pipeline and its first stage
+            $pipeline = \App\Models\Pipeline::where('tenant_id', $channel->tenant_id)
+                ->where('is_default', true)
+                ->first();
+
+            if (!$pipeline) {
+                $pipeline = \App\Models\Pipeline::where('tenant_id', $channel->tenant_id)->first();
+            }
+
+            $firstStage = null;
+            if ($pipeline) {
+                $firstStage = \App\Models\PipelineStage::where('pipeline_id', $pipeline->id)
+                    ->orderBy('order')
+                    ->first();
+            }
+
+            // Create the lead
+            $lead = Lead::create([
+                'tenant_id' => $channel->tenant_id,
+                'contact_id' => $contact->id,
+                'channel_id' => $channel->id,
+                'pipeline_id' => $pipeline?->id,
+                'stage_id' => $firstStage?->id,
+                'status' => \App\Enums\LeadStatusEnum::OPEN,
+                'name' => $contact->name,
+                'phone' => $contact->phone,
+            ]);
+
+            // =====================================================
+            // DISTRIBUIÇÃO CONDICIONAL
+            // =====================================================
+            // SÓ distribui automaticamente se o canal NÃO tem menu de filas.
+            // Se tem menu de filas, a distribuição acontece DEPOIS que o lead
+            // escolher a fila no método triggerSdrResponse() → routeLeadToQueue()
+            // =====================================================
+            if (!$channel->hasQueueMenu()) {
+                try {
+                    $assignmentService = app(\App\Services\LeadAssignmentService::class);
+                    $owner = $assignmentService->assignLeadOwner($lead);
+                    Log::info('Lead auto-assigned to owner (no queue menu)', [
+                        'lead_id' => $lead->id, 
+                        'owner_id' => $owner->id, 
+                        'owner_name' => $owner->name,
+                        'channel_id' => $channel->id,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Could not auto-assign lead', ['lead_id' => $lead->id, 'error' => $e->getMessage()]);
+                }
+            } else {
+                Log::info('Lead created without owner - waiting for queue selection', [
+                    'lead_id' => $lead->id,
+                    'channel_id' => $channel->id,
+                    'has_queue_menu' => true,
+                ]);
+            }
+
+            Log::info('Lead created from WhatsApp', ['lead_id' => $lead->id, 'contact_id' => $contact->id]);
+        }
+
+        return $lead;
+    }
+
+    /**
+     * Extrai conteúdo da mensagem
+     */
+    protected function extractMessageContent(array $message): string
+    {
+        $type = $message['type'];
+
+        return match ($type) {
+            'text' => $message['text']['body'] ?? '',
+            'image' => '[Imagem] ' . ($message['image']['caption'] ?? ''),
+            'video' => '[Vídeo] ' . ($message['video']['caption'] ?? ''),
+            'audio' => '[Áudio]',
+            'document' => '[Documento] ' . ($message['document']['filename'] ?? ''),
+            'sticker' => '[Sticker]',
+            'location' => "[Localização] {$message['location']['latitude']}, {$message['location']['longitude']}",
+            'contacts' => '[Contato compartilhado]',
+            'interactive' => $this->extractInteractiveContent($message['interactive'] ?? []),
+            'button' => $message['button']['text'] ?? '[Botão]',
+            default => "[{$type}]",
+        };
+    }
+
+    /**
+     * Extrai conteúdo interativo
+     */
+    protected function extractInteractiveContent(array $interactive): string
+    {
+        $type = $interactive['type'] ?? '';
+        
+        return match ($type) {
+            'button_reply' => $interactive['button_reply']['title'] ?? '[Resposta de botão]',
+            'list_reply' => $interactive['list_reply']['title'] ?? '[Resposta de lista]',
+            default => '[Mensagem interativa]',
+        };
+    }
+
+    /**
+     * Extrai metadata de mídia da mensagem
+     */
+    protected function extractMediaMetadata(array $message, Channel $channel): ?array
+    {
+        $type = $message['type'];
+        $mediaTypes = ['image', 'video', 'audio', 'document', 'sticker'];
+        
+        if (!in_array($type, $mediaTypes)) {
+            return null;
+        }
+
+        $mediaData = $message[$type] ?? null;
+        if (!$mediaData) {
+            return null;
+        }
+
+        $mediaId = $mediaData['id'] ?? null;
+        if (!$mediaId) {
+            return null;
+        }
+
+        // Get media URL from Meta API
+        $mediaUrl = $this->getMediaUrl($mediaId, $channel);
+
+        return [
+            'media_type' => $type,
+            'media_id' => $mediaId,
+            'media_url' => $mediaUrl,
+            'mime_type' => $mediaData['mime_type'] ?? null,
+            'file_name' => $mediaData['filename'] ?? null,
+            'file_size' => $mediaData['file_size'] ?? null,
+            'caption' => $mediaData['caption'] ?? null,
+            "{$type}_url" => $mediaUrl, // image_url, video_url, etc.
+        ];
+    }
+
+    /**
+     * Obtém URL de download da mídia da API do Meta e salva localmente
+     */
+    protected function getMediaUrl(string $mediaId, Channel $channel): ?string
+    {
+        try {
+            $this->loadFromChannel($channel);
+            
+            // First, get the media info to get the download URL
+            $response = Http::withToken($this->accessToken)
+                ->get("https://graph.facebook.com/v21.0/{$mediaId}");
+
+            if (!$response->successful()) {
+                Log::error('Failed to get media info', [
+                    'media_id' => $mediaId,
+                    'error' => $response->json(),
+                ]);
+                return null;
+            }
+
+            $mediaInfo = $response->json();
+            $downloadUrl = $mediaInfo['url'] ?? null;
+            $mimeType = $mediaInfo['mime_type'] ?? 'application/octet-stream';
+
+            if (!$downloadUrl) {
+                return null;
+            }
+
+            // Download the media immediately and store on S3
+            $s3Url = $this->downloadAndStoreMedia($downloadUrl, $mediaId, $mimeType, $channel);
+            
+            if ($s3Url) {
+                return $s3Url;
+            }
+
+            // Fallback to Meta URL if download failed (will expire)
+            Log::warning('Media download failed, using temporary Meta URL', ['media_id' => $mediaId]);
+            return $downloadUrl;
+
+        } catch (\Exception $e) {
+            Log::error('Error getting media URL', [
+                'media_id' => $mediaId,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Downloads media from Meta and stores it on S3
+     */
+    protected function downloadAndStoreMedia(string $downloadUrl, string $mediaId, string $mimeType, Channel $channel): ?string
+    {
+        try {
+            $this->loadFromChannel($channel);
+            
+            // Download the media
+            $response = Http::withToken($this->accessToken)
+                ->timeout(60)
+                ->get($downloadUrl);
+
+            if (!$response->successful()) {
+                Log::error('Failed to download media from Meta', [
+                    'media_id' => $mediaId,
+                    'status' => $response->status(),
+                ]);
+                return null;
+            }
+
+            // Determine file extension from mime type
+            $extension = $this->getExtensionFromMimeType($mimeType);
+            
+            // Create directory structure: whatsapp/{tenant_id}/{date}/
+            $tenantId = $channel->tenant_id;
+            $date = now()->format('Y-m-d');
+            $directory = "whatsapp/{$tenantId}/{$date}";
+            
+            // Generate unique filename
+            $filename = $mediaId . '.' . $extension;
+            $fullPath = $directory . '/' . $filename;
+
+            // Store the file on S3 (media disk)
+            $disk = \Illuminate\Support\Facades\Storage::disk('media');
+            $disk->put($fullPath, $response->body());
+
+            // Return signed URL that allows public access without authentication
+            // URL is valid for 7 days (WhatsApp conversation window is 24h, but messages are stored)
+            $signedUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                'media.public',
+                now()->addDays(7),
+                ['path' => $fullPath]
+            );
+
+            Log::info('Media stored on S3', [
+                'media_id' => $mediaId,
+                'path' => $fullPath,
+                'url' => $signedUrl,
+            ]);
+
+            return $signedUrl;
+
+        } catch (\Exception $e) {
+            Log::error('Error downloading and storing media', [
+                'media_id' => $mediaId,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Get file extension from MIME type
+     */
+    protected function getExtensionFromMimeType(string $mimeType): string
+    {
+        $extensions = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            'video/mp4' => 'mp4',
+            'video/3gpp' => '3gp',
+            'audio/ogg' => 'ogg',
+            'audio/mpeg' => 'mp3',
+            'audio/aac' => 'aac',
+            'audio/amr' => 'amr',
+            'application/pdf' => 'pdf',
+            'application/vnd.ms-powerpoint' => 'ppt',
+            'application/msword' => 'doc',
+            'application/vnd.ms-excel' => 'xls',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
+        ];
+
+        return $extensions[$mimeType] ?? 'bin';
+    }
+
+    /**
+     * Processa atualização de status
+     */
+    protected function processStatusUpdate(array $status): void
+    {
+        $messageId = $status['id'];
+        $statusType = $status['status']; // sent, delivered, read, failed
+
+        Log::info('WhatsApp status update', [
+            'message_id' => $messageId,
+            'status' => $statusType,
+        ]);
+
+        // Update message metadata if needed
+        $message = TicketMessage::whereJsonContains('metadata->whatsapp_message_id', $messageId)->first();
+        if ($message) {
+            $metadata = $message->metadata ?? [];
+            $metadata['delivery_status'] = $statusType;
+            $metadata['status_timestamp'] = $status['timestamp'];
+            $message->update(['metadata' => $metadata]);
+        }
+    }
+
+    /**
+     * Formata número de telefone
+     */
+    protected function formatPhoneNumber(string $phone): string
+    {
+        // Remove tudo exceto números
+        $phone = preg_replace('/\D/', '', $phone);
+        
+        // Adiciona código do Brasil se não tiver
+        if (strlen($phone) === 11 || strlen($phone) === 10) {
+            $phone = '55' . $phone;
+        }
+
+        return $phone;
+    }
+
+    /**
+     * Valida configuração
+     */
+    protected function validateConfig(): void
+    {
+        if (!$this->phoneNumberId || !$this->accessToken) {
+            throw new \Exception('WhatsApp não configurado. Configure phone_number_id e access_token.');
+        }
+    }
+
+    /**
+     * Testa a conexão com a API do WhatsApp
+     */
+    public function testConnection(): array
+    {
+        $this->validateConfig();
+
+        try {
+            $response = Http::withToken($this->accessToken)
+                ->get("{$this->baseUrl}/{$this->phoneNumberId}");
+
+            $result = $response->json();
+
+            if (!$response->successful()) {
+                return [
+                    'success' => false,
+                    'error' => $result['error']['message'] ?? 'Erro ao conectar com a API',
+                ];
+            }
+
+            return [
+                'success' => true,
+                'phone_number' => $result['display_phone_number'] ?? $result['id'],
+                'verified_name' => $result['verified_name'] ?? '',
+                'quality_rating' => $result['quality_rating'] ?? '',
+                'id' => $result['id'],
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Verifica token do webhook
+     */
+    public static function verifyWebhookToken(string $mode, string $token, string $challenge, string $verifyToken): ?string
+    {
+        if ($mode === 'subscribe' && $token === $verifyToken) {
+            return $challenge;
+        }
+        return null;
+    }
+
+    /**
+     * Dispara processamento do SDR IA para responder automaticamente.
+     * 
+     * Arquitetura consolidada: sempre usa Python Agent (ai-service)
+     * com fallback básico embutido no ProcessAgentResponse.
+     * 
+     * Inclui suporte a filas/setores: se o canal tem filas configuradas
+     * e o lead ainda não escolheu, envia o menu de opções.
+     */
+    protected function triggerSdrResponse(TicketMessage $message, Ticket $ticket, Lead $lead, Channel $channel): void
+    {
+        // =====================
+        // ROTEAMENTO DE FILAS
+        // =====================
+        $routingService = app(\App\Services\QueueRoutingService::class);
+        
+        // Verifica se o canal tem filas e o lead precisa escolher
+        if ($routingService->needsQueueMenu($lead, $channel)) {
+            // Verifica se a mensagem é uma resposta válida do menu
+            $messageContent = $message->message;
+            
+            if ($routingService->isValidMenuResponse($channel, $messageContent)) {
+                // Processa a escolha da fila
+                $queue = $routingService->processMenuResponse($lead, $channel, $messageContent);
+                
+                if ($queue) {
+                    Log::info('Lead routed to queue from menu response', [
+                        'lead_id' => $lead->id,
+                        'queue_id' => $queue->id,
+                        'queue_name' => $queue->name,
+                    ]);
+                    
+                    $this->loadFromChannel($channel);
+                    $phone = $lead->contact->phone;
+                    
+                    // Envia mensagem de boas-vindas da fila se configurada
+                    if (!empty($queue->welcome_message)) {
+                        $this->sendTextMessage($phone, $queue->welcome_message);
+                    } else {
+                        // Mensagem padrão de confirmação
+                        $welcomeMsg = "Perfeito! Você selecionou *{$queue->menu_label}*. Em que posso ajudá-lo?";
+                        $this->sendTextMessage($phone, $welcomeMsg);
+                    }
+                    
+                    // IMPORTANTE: Após escolher a fila, para aqui.
+                    // A próxima mensagem do lead será processada normalmente pela IA.
+                    return;
+                } else {
+                    // Resposta inválida, reenvia o menu com mensagem de erro
+                    $invalidMsg = $routingService->getInvalidResponseText($channel);
+                    $menuText = $routingService->getFormattedMenuText($channel, $invalidMsg);
+                    $this->loadFromChannel($channel);
+                    $phone = $lead->contact->phone;
+                    $this->sendTextMessage($phone, $menuText);
+                    return;
+                }
+            } else {
+                // Primeira interação - envia menu configurado no canal
+                $menuText = $routingService->getFormattedMenuText($channel);
+                $this->loadFromChannel($channel);
+                $phone = $lead->contact->phone;
+                $this->sendTextMessage($phone, $menuText);
+                
+                Log::info('Queue menu sent to lead', [
+                    'lead_id' => $lead->id,
+                    'channel_id' => $channel->id,
+                ]);
+                return;
+            }
+        }
+        
+        // Se é um lead de retorno (já teve interação), trata especialmente
+        if ($lead->owner_id && !$lead->queue_id && $channel->hasQueues()) {
+            $routingService->handleReturningLead($lead, $channel);
+        }
+        
+        // =====================
+        // SELEÇÃO DO SDR AGENT
+        // =====================
+        // Prioridade: Fila > Pipeline > Canal
+        $sdrAgent = null;
+        
+        // 1. PRIORIDADE MÁXIMA: Se o lead está em uma fila, busca o agente da fila
+        if ($lead->queue_id && $lead->queue) {
+            $queue = $lead->queue;
+            
+            // Primeiro tenta o agente configurado diretamente na fila
+            if ($queue->sdr_agent_id) {
+                $queueAgent = $queue->sdrAgent;
+                if ($queueAgent && $queueAgent->is_active) {
+                    $sdrAgent = $queueAgent;
+                    Log::info('Using SDR Agent from queue', [
+                        'queue_id' => $queue->id,
+                        'queue_name' => $queue->name,
+                        'sdr_agent_id' => $sdrAgent->id,
+                        'agent_name' => $sdrAgent->name,
+                    ]);
+                }
+            }
+            
+            // Fallback: agente do pipeline da fila
+            if (!$sdrAgent && $queue->pipeline && $queue->pipeline->sdr_agent_id) {
+                $pipelineAgent = $queue->pipeline->sdrAgent;
+                if ($pipelineAgent && $pipelineAgent->is_active) {
+                    $sdrAgent = $pipelineAgent;
+                    Log::info('Using SDR Agent from queue pipeline', [
+                        'queue_id' => $queue->id,
+                        'pipeline_id' => $queue->pipeline_id,
+                        'sdr_agent_id' => $sdrAgent->id,
+                    ]);
+                }
+            }
+        }
+        
+        // 2. Se não tem agente da fila, verifica o pipeline do lead
+        if (!$sdrAgent && $lead->pipeline && $lead->pipeline->sdr_agent_id) {
+            $pipelineAgent = $lead->pipeline->sdrAgent;
+            if ($pipelineAgent && $pipelineAgent->is_active) {
+                $sdrAgent = $pipelineAgent;
+                Log::info('Using SDR Agent from lead pipeline', [
+                    'pipeline_id' => $lead->pipeline_id,
+                    'sdr_agent_id' => $sdrAgent->id,
+                    'agent_name' => $sdrAgent->name,
+                ]);
+            }
+        }
+
+        // 3. FALLBACK: Se não tem no pipeline, tenta o SDR Agent vinculado ao canal
+        if (!$sdrAgent && $channel->sdr_agent_id) {
+            $channelAgent = $channel->sdrAgent;
+            if ($channelAgent && $channelAgent->is_active) {
+                $sdrAgent = $channelAgent;
+                Log::info('Using SDR Agent from channel (fallback)', [
+                    'channel_id' => $channel->id,
+                    'sdr_agent_id' => $sdrAgent->id,
+                    'agent_name' => $sdrAgent->name,
+                ]);
+            }
+        }
+
+        // 4. Fallback: busca SDR Agent que tem este canal vinculado
+        if (!$sdrAgent) {
+            $sdrAgent = \App\Models\SdrAgent::where('channel_id', $channel->id)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        // 5. Se não tem SDR Agent, usa n8n como fallback externo
+        if (!$sdrAgent) {
+            if (!empty($channel->ia_workflow_id)) {
+                Log::info('No SDR Agent found, using n8n workflow', ['channel_id' => $channel->id]);
+                $n8nService = app(\App\Services\N8nWebhookService::class);
+                $n8nService->notifyNewMessage($message, $ticket, $lead, $channel);
+            } else {
+                Log::warning('No SDR Agent or n8n workflow configured', ['channel_id' => $channel->id]);
+            }
+            return;
+        }
+
+        // 6. Verifica se a OpenAI está configurada (necessário para qualquer processamento)
+        $aiService = app(\App\Services\AI\AiService::class);
+        if (!$aiService->isConfigured()) {
+            Log::warning('OpenAI not configured, falling back to n8n', ['channel_id' => $channel->id]);
+            if (!empty($channel->ia_workflow_id)) {
+                $n8nService = app(\App\Services\N8nWebhookService::class);
+                $n8nService->notifyNewMessage($message, $ticket, $lead, $channel);
+            }
+            return;
+        }
+
+        // =====================================================
+        // 7. DISPARO DO PROCESSAMENTO DE IA
+        // =====================================================
+        // Estratégia de agrupamento de mensagens fragmentadas:
+        // 
+        // PRIORIDADE 1: Redis + Python Worker
+        //   - Agrupa mensagens no Redis por ticket
+        //   - Worker Python processa quando detecta fim de intenção
+        //   - Mais sofisticado e preciso
+        //
+        // PRIORIDADE 2: Job Laravel com Debounce (FALLBACK)
+        //   - Usa Cache do Laravel para debounce
+        //   - Aguarda DEBOUNCE_SECONDS antes de processar
+        //   - Agrupa todas mensagens pendentes do ticket
+        //   - Garante comportamento consistente mesmo sem Redis
+        // =====================================================
+        
+        $queueService = app(\App\Services\AI\MessageQueueService::class);
+        
+        if ($queueService->isAvailable()) {
+            // PRIORIDADE 1: Envia para fila Redis/Python (agrupa mensagens)
+            $queueService->enqueue($message, $ticket, $lead, $channel, $sdrAgent);
+            Log::info('Message sent to Python queue (Redis)', [
+                'message_id' => $message->id,
+                'ticket_id' => $ticket->id,
+                'agent_id' => $sdrAgent->id,
+            ]);
+        } else {
+            // FALLBACK: Usa Job Laravel com Debounce
+            // Isso garante agrupamento de mensagens mesmo sem Redis
+            \App\Jobs\ProcessAgentResponseDebounced::dispatchWithDebounce(
+                $message, 
+                $ticket, 
+                $lead, 
+                $channel, 
+                $sdrAgent
+            );
+            Log::info('Agent job dispatched with debounce (Laravel fallback)', [
+                'message_id' => $message->id,
+                'ticket_id' => $ticket->id,
+                'agent_id' => $sdrAgent->id,
+                'agent_name' => $sdrAgent->name,
+                'debounce_seconds' => \App\Jobs\ProcessAgentResponseDebounced::DEBOUNCE_SECONDS,
+            ]);
+        }
+    }
+
+    /**
+     * Salva contexto da conversa para aprendizado da IA.
+     * Usado quando a IA está desabilitada no ticket mas queremos continuar aprendendo.
+     * 
+     * Isso permite que:
+     * 1. O vendedor humano atenda o cliente
+     * 2. A IA observe as respostas do vendedor
+     * 3. A IA aprenda com as interações para melhorar no futuro
+     */
+    protected function saveContextForLearning(TicketMessage $message, Ticket $ticket, Channel $channel): void
+    {
+        try {
+            // Busca o SDR Agent para salvar o contexto associado
+            $sdrAgent = null;
+            $lead = $ticket->lead;
+            
+            if ($lead && $lead->queue && $lead->queue->sdr_agent_id) {
+                $sdrAgent = $lead->queue->sdrAgent;
+            } elseif ($lead && $lead->pipeline && $lead->pipeline->sdr_agent_id) {
+                $sdrAgent = $lead->pipeline->sdrAgent;
+            } elseif ($channel->sdr_agent_id) {
+                $sdrAgent = $channel->sdrAgent;
+            }
+
+            if (!$sdrAgent || !$lead) {
+                return;
+            }
+
+            // Dispara job para salvar contexto no ai-service (memória)
+            // Isso permite que a IA aprenda com as interações mesmo sem responder
+            \App\Jobs\SaveConversationContext::dispatch(
+                $ticket->id,
+                $lead->id,
+                $sdrAgent->id,
+                $channel->tenant_id
+            );
+
+            Log::info('Conversation context queued for learning', [
+                'ticket_id' => $ticket->id,
+                'lead_id' => $lead->id,
+                'agent_id' => $sdrAgent->id,
+                'ia_enabled' => false,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to save context for learning', [
+                'ticket_id' => $ticket->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+}
+

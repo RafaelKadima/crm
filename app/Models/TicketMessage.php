@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TicketMessage extends Model
 {
@@ -27,6 +28,7 @@ class TicketMessage extends Model
         'message',
         'direction',
         'sent_at',
+        'metadata',
     ];
 
     /**
@@ -40,6 +42,7 @@ class TicketMessage extends Model
             'sender_type' => SenderTypeEnum::class,
             'direction' => MessageDirectionEnum::class,
             'sent_at' => 'datetime',
+            'metadata' => 'array',
         ];
     }
 
@@ -84,6 +87,14 @@ class TicketMessage extends Model
     public function isFromIa(): bool
     {
         return $this->sender_type === SenderTypeEnum::IA;
+    }
+
+    /**
+     * Anexos da mensagem.
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TicketMessageAttachment::class);
     }
 }
 

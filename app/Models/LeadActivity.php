@@ -31,6 +31,7 @@ class LeadActivity extends Model
         'user_id',
         'source',
         'type',
+        'description',
         'data',
         'created_at',
     ];
@@ -122,12 +123,18 @@ class LeadActivity extends Model
      */
     public static function messageSent(Lead $lead, TicketMessage $message, ActivitySourceEnum $source = ActivitySourceEnum::USER): self
     {
+        // Só define user_id se o sender for um usuário (não contato ou IA)
+        $userId = null;
+        if ($message->sender_type->value === 'user' && $message->sender_id) {
+            $userId = $message->sender_id;
+        }
+
         return static::create([
             'tenant_id' => $lead->tenant_id,
             'lead_id' => $lead->id,
-            'user_id' => $message->sender_id,
+            'user_id' => $userId,
             'source' => $source,
-            'type' => 'message_sent',
+            'type' => $message->direction->value === 'inbound' ? 'message_received' : 'message_sent',
             'data' => [
                 'message_id' => $message->id,
                 'direction' => $message->direction->value,
