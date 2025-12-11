@@ -61,7 +61,13 @@ foreach ($channels as $ch) {
     echo "\n";
 }
 
-echo "=== DEBUG LOG ===\n";
+echo "=== CONTATOS RECENTES ===\n";
+$contacts = DB::table('contacts')->select('name', 'phone', 'created_at')->orderByDesc('created_at')->limit(10)->get();
+foreach ($contacts as $c) {
+    echo "  - {$c->name} | {$c->phone} | {$c->created_at}\n";
+}
+
+echo "\n=== DEBUG LOG ===\n";
 $debugLog = storage_path('logs/debug.log');
 if (file_exists($debugLog)) {
     $content = file_get_contents($debugLog);
