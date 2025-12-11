@@ -1,0 +1,31 @@
+table_name,column_name,data_type
+campanhas,id,integer
+campanhas,nome,character varying
+campanhas,id_meta,text
+campanhas,status,character varying
+campanhas,id_criativo,integer
+campanhas,id_projeto,integer
+copy,id,integer
+copy,descricao_video,text
+copy,titulo,character varying
+copy,call_to_action,character varying
+copy,id_projeto,integer
+copy,roteiro,text
+copy,tipo,text
+copy,status,text
+criativos,id,integer
+criativos,nome,character varying
+criativos,url_download,text
+criativos,status,character varying
+criativos,id_copy,integer
+projetos,id,integer
+projetos,nome,character varying
+projetos,descricao,text
+projetos,api_meta,character varying
+projetos,id_pagina,numeric
+projetos,id_instagram,text
+projetos,url_destino,text
+projetos,Publico,text
+projetos,id_conta,text
+projetos,id_pixel,text
+projetos,utm_padrao,text

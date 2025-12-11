@@ -1,228 +1,656 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* OmniFy HUB - Futuristic Identity System v2.0 */
+/* Fontes futurísticas: Orbitron (headings) + Exo 2 (body) */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @import "tailwindcss";
 
-/* Branding CSS Variables (defaults) */
-:root {
-  --branding-primary: #3B82F6;
-  --branding-secondary: #8B5CF6;
-  --branding-accent: #10B981;
-  --branding-sidebar-bg: #111827;
-  --branding-sidebar-text: #F9FAFB;
-  --branding-header-bg: #1F2937;
-  --branding-header-text: #F9FAFB;
-  --branding-button-radius: 8px;
-  --branding-font-family: 'DM Sans', sans-serif;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   🎨 OMNIFY HUB - COLOR SYSTEM (Futuristic Monochrome)
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Branding CSS Variables (defaults) */
 :root {
-  --brand-primary: #3B82F6;
-  --brand-secondary: #8B5CF6;
-  --brand-accent: #10B981;
-  --brand-sidebar: #111827;
-  --brand-sidebar-text: #F9FAFB;
-  --brand-header: #1F2937;
+  /* === Core Brand Colors === */
+  --omni-white: #FFFFFF;
+  --omni-silver: #C0C8D4;
+  --omni-steel: #8892A0;
+  --omni-slate: #4A5568;
+  --omni-charcoal: #2D3748;
+  --omni-graphite: #1A202C;
+  --omni-obsidian: #0D1117;
+  
+  /* === Accent Colors === */
+  --omni-cyan: #00D4FF;
+  --omni-blue: #3B82F6;
+  --omni-green: #10B981;
+  --omni-orange: #F59E0B;
+  --omni-red: #EF4444;
+  
+  /* === Branding Defaults === */
+  --brand-primary: #FFFFFF;
+  --brand-secondary: #C0C8D4;
+  --brand-accent: #00D4FF;
+  --brand-sidebar: #0D1117;
+  --brand-sidebar-text: #C0C8D4;
+  --brand-header: #1A202C;
   --brand-radius: 8px;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   🎨 TAILWIND V4 THEME
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @theme {
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(221.2 83.2% 53.3%);
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(222.2 84% 4.9%);
+  /* Colors */
+  --color-background: #0A0C10;
+  --color-foreground: #E8ECF2;
+  --color-card: #12151C;
+  --color-card-foreground: #E8ECF2;
+  --color-popover: #12151C;
+  --color-popover-foreground: #E8ECF2;
+  --color-primary: #FFFFFF;
+  --color-primary-foreground: #0A0C10;
+  --color-secondary: #1E2330;
+  --color-secondary-foreground: #C0C8D4;
+  --color-muted: #1A1F2A;
+  --color-muted-foreground: #6B7280;
+  --color-accent: #2A3142;
+  --color-accent-foreground: #FFFFFF;
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-input: #1A1F2A;
+  --color-ring: rgba(255, 255, 255, 0.3);
+  --color-sidebar: #0D1117;
+  --color-sidebar-foreground: #C0C8D4;
+  --color-sidebar-accent: #FFFFFF;
   
-  --color-primary: hsl(221.2 83.2% 53.3%);
-  --color-primary-foreground: hsl(210 40% 98%);
+  /* Omni brand colors */
+  --color-omni-white: #FFFFFF;
+  --color-omni-silver: #C0C8D4;
+  --color-omni-steel: #8892A0;
+  --color-omni-slate: #4A5568;
+  --color-omni-charcoal: #2D3748;
+  --color-omni-graphite: #1A202C;
+  --color-omni-obsidian: #0D1117;
+  --color-omni-cyan: #00D4FF;
+  --color-omni-green: #10B981;
+  --color-omni-orange: #F59E0B;
+  --color-omni-red: #EF4444;
   
-  --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+  /* Border Radius */
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
   
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-  
-  --color-accent: hsl(210 40% 96.1%);
-  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
-  
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222.2 84% 4.9%);
-  
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222.2 84% 4.9%);
-  
-  --color-sidebar: hsl(222.2 84% 4.9%);
-  --color-sidebar-foreground: hsl(210 40% 98%);
-  --color-sidebar-accent: hsl(217.2 91.2% 59.8%);
-  
-  --radius-lg: 0.75rem;
-  --radius-md: calc(0.75rem - 2px);
-  --radius-sm: calc(0.75rem - 4px);
-  
-  --font-sans: 'DM Sans', system-ui, sans-serif;
+  /* Fonts */
+  --font-sans: 'Exo 2', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Orbitron', sans-serif;
 }
 
-/* Dark mode */
+/* ═══════════════════════════════════════════════════════════════════════════
+   🌙 DARK MODE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .dark {
-  --color-background: hsl(222.2 84% 4.9%);
-  --color-foreground: hsl(210 40% 98%);
-  --color-card: hsl(222.2 84% 4.9%);
-  --color-card-foreground: hsl(210 40% 98%);
-  --color-popover: hsl(222.2 84% 4.9%);
-  --color-popover-foreground: hsl(210 40% 98%);
-  --color-primary: hsl(217.2 91.2% 59.8%);
-  --color-primary-foreground: hsl(222.2 47.4% 11.2%);
-  --color-secondary: hsl(217.2 32.6% 17.5%);
-  --color-secondary-foreground: hsl(210 40% 98%);
-  --color-muted: hsl(217.2 32.6% 17.5%);
-  --color-muted-foreground: hsl(215 20.2% 65.1%);
-  --color-accent: hsl(217.2 32.6% 17.5%);
-  --color-accent-foreground: hsl(210 40% 98%);
-  --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(217.2 32.6% 17.5%);
-  --color-input: hsl(217.2 32.6% 17.5%);
-  --color-ring: hsl(224.3 76.3% 48%);
-  --color-sidebar: hsl(217.2 32.6% 12%);
-  --color-sidebar-foreground: hsl(210 40% 98%);
-  --color-sidebar-accent: hsl(217.2 91.2% 59.8%);
+  --color-background: #0A0C10;
+  --color-foreground: #E8ECF2;
+  --color-card: #12151C;
+  --color-card-foreground: #E8ECF2;
+  --color-popover: #12151C;
+  --color-popover-foreground: #E8ECF2;
+  --color-primary: #FFFFFF;
+  --color-primary-foreground: #0A0C10;
+  --color-secondary: #1E2330;
+  --color-secondary-foreground: #C0C8D4;
+  --color-muted: #1A1F2A;
+  --color-muted-foreground: #6B7280;
+  --color-accent: #2A3142;
+  --color-accent-foreground: #FFFFFF;
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-input: #1A1F2A;
+  --color-ring: rgba(255, 255, 255, 0.3);
+  --color-sidebar: #0D1117;
+  --color-sidebar-foreground: #C0C8D4;
+  --color-sidebar-accent: #FFFFFF;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-  }
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   ☀️ LIGHT MODE
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-@layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-muted) transparent;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: var(--color-muted);
-    border-radius: 3px;
-  }
-
-  .glass {
-    @apply bg-white/80 dark:bg-black/40 backdrop-blur-xl;
-  }
-
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent;
-  }
-}
-
-/* Shimmer animation for skeletons */
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-/* Compact mode */
-.compact {
-  --spacing-factor: 0.75;
-}
-
-.compact .p-4 {
-  padding: 0.75rem;
-}
-
-.compact .p-6 {
-  padding: 1rem;
-}
-
-.compact .gap-4 {
-  gap: 0.75rem;
-}
-
-.compact .gap-6 {
-  gap: 1rem;
-}
-
-.compact .mb-4 {
-  margin-bottom: 0.75rem;
-}
-
-.compact .mb-6 {
-  margin-bottom: 1rem;
-}
-
-/* Light mode overrides */
 .light {
   color-scheme: light;
+  --color-background: #F5F7FA;
+  --color-foreground: #0D1117;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #0D1117;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #0D1117;
+  --color-primary: #0D1117;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #F0F2F5;
+  --color-secondary-foreground: #0D1117;
+  --color-muted: #F0F2F5;
+  --color-muted-foreground: #6B7280;
+  --color-accent: #E8ECF2;
+  --color-accent-foreground: #0D1117;
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-input: #F5F7FA;
+  --color-ring: rgba(0, 0, 0, 0.2);
+  --color-sidebar: #FFFFFF;
+  --color-sidebar-foreground: #0D1117;
+  --color-sidebar-accent: #0D1117;
 }
 
+/* Light mode Tailwind gray class overrides */
 .light .bg-gray-800 {
-  background-color: hsl(210 40% 96.1%);
-}
-
-.light .bg-gray-800\/50 {
-  background-color: hsl(210 40% 96.1% / 0.5);
+  background-color: #F0F2F5;
 }
 
 .light .bg-gray-900 {
-  background-color: hsl(0 0% 100%);
+  background-color: #FFFFFF;
 }
 
 .light .bg-gray-700 {
-  background-color: hsl(214.3 31.8% 91.4%);
-}
-
-.light .bg-gray-700\/50 {
-  background-color: hsl(214.3 31.8% 91.4% / 0.5);
-}
-
-.light .bg-gray-700\/30 {
-  background-color: hsl(214.3 31.8% 91.4% / 0.3);
+  background-color: #E8ECF2;
 }
 
 .light .border-gray-700 {
-  border-color: hsl(214.3 31.8% 91.4%);
-}
-
-.light .border-gray-700\/50 {
-  border-color: hsl(214.3 31.8% 91.4% / 0.5);
-}
-
-.light .border-gray-600 {
-  border-color: hsl(214.3 31.8% 85%);
+  border-color: #E0E4E8;
 }
 
 .light .text-gray-400 {
-  color: hsl(215.4 16.3% 46.9%);
+  color: #6B7280;
 }
 
 .light .text-gray-300 {
-  color: hsl(215.4 16.3% 36.9%);
+  color: #4A5568;
 }
 
 .light .text-white {
-  color: hsl(222.2 84% 4.9%);
+  color: #0D1117;
 }
 
-.light .hover\:bg-gray-700:hover {
-  background-color: hsl(214.3 31.8% 85%);
+/* ═══════════════════════════════════════════════════════════════════════════
+   📐 BASE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+* {
+  border-color: var(--color-border);
 }
 
-.light .hover\:bg-gray-600:hover {
-  background-color: hsl(214.3 31.8% 80%);
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: 'Exo 2', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Futuristic headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Code/Mono text */
+code, pre, .mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🎯 UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Glass Effects */
+.glass {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(18, 21, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.light .glass {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #FFFFFF 0%, #8892A0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle Glow Effects */
+.glow-white {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.glow-soft {
+  box-shadow: 
+    0 0 1px rgba(255, 255, 255, 0.3),
+    0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+/* Futuristic Card */
+.futuristic-card {
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(18, 21, 28, 0.95), rgba(13, 17, 23, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.light .futuristic-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(245, 247, 250, 0.95));
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Grid Pattern Background */
+.grid-pattern {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.light .grid-pattern {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+}
+
+/* Shine Effect */
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.shine:hover::before {
+  left: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🎬 ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   📱 COMPACT MODE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.compact .p-4 { padding: 0.75rem; }
+.compact .p-6 { padding: 1rem; }
+.compact .gap-4 { gap: 0.75rem; }
+.compact .gap-6 { gap: 1rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🔷 OMNIFY HUB SPECIAL COMPONENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Logo */
+.omnify-logo-text {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.15em;
+}
+
+.omnify-logo-text .omni { color: #FFFFFF; }
+.omnify-logo-text .fy { color: #8892A0; }
+.omnify-logo-text .hub { color: #4A5568; font-weight: 400; font-size: 0.65em; margin-left: 6px; }
+
+/* Status Indicators */
+.status-online { background: #10B981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+.status-offline { background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+/* Sidebar Border */
+.sidebar-futuristic::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.1) 80%, transparent 100%);
+}
+
+/* Input Focus State */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+}
+
+.light input:focus, .light textarea:focus, .light select:focus {
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Selection Color */
+::selection { background: rgba(255, 255, 255, 0.2); color: #FFFFFF; }
+.light ::selection { background: rgba(0, 0, 0, 0.1); color: #0D1117; }
+
+/* Active Nav Item */
+.nav-active {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .nav-active {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🔔 FUTURISTIC NOTIFICATIONS (Sonner Toast)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Base Toast Style */
+.futuristic-toast {
+  font-family: 'Exo 2', system-ui, sans-serif !important;
+  background: linear-gradient(135deg, rgba(18, 21, 28, 0.95) 0%, rgba(10, 12, 16, 0.98) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 16px 20px !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 1px rgba(255, 255, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Animated gradient border effect */
+.futuristic-toast::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: toast-shine 2s ease-in-out infinite;
+}
+
+@keyframes toast-shine {
+  0%, 100% { opacity: 0.3; transform: translateX(-100%); }
+  50% { opacity: 1; transform: translateX(100%); }
+}
+
+/* Scan line effect */
+.futuristic-toast::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    transparent 100%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  animation: toast-scan 3s linear infinite;
+}
+
+@keyframes toast-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Toast Title */
+.futuristic-toast-title {
+  font-family: 'Orbitron', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.05em !important;
+  color: #FFFFFF !important;
+  margin-bottom: 4px !important;
+}
+
+/* Toast Description */
+.futuristic-toast-description {
+  font-family: 'Exo 2', system-ui, sans-serif !important;
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  line-height: 1.4 !important;
+}
+
+/* Success Toast */
+.futuristic-toast-success {
+  border-left: 3px solid #10B981 !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(16, 185, 129, 0.15),
+    inset 0 1px 0 rgba(16, 185, 129, 0.1) !important;
+}
+
+.futuristic-toast-success::before {
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent) !important;
+}
+
+.futuristic-toast-success .futuristic-toast-title {
+  color: #10B981 !important;
+}
+
+/* Error Toast */
+.futuristic-toast-error {
+  border-left: 3px solid #EF4444 !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(239, 68, 68, 0.15),
+    inset 0 1px 0 rgba(239, 68, 68, 0.1) !important;
+}
+
+.futuristic-toast-error::before {
+  background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.6), transparent) !important;
+}
+
+.futuristic-toast-error .futuristic-toast-title {
+  color: #EF4444 !important;
+}
+
+/* Warning Toast */
+.futuristic-toast-warning {
+  border-left: 3px solid #F59E0B !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(245, 158, 11, 0.15),
+    inset 0 1px 0 rgba(245, 158, 11, 0.1) !important;
+}
+
+.futuristic-toast-warning::before {
+  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.6), transparent) !important;
+}
+
+.futuristic-toast-warning .futuristic-toast-title {
+  color: #F59E0B !important;
+}
+
+/* Info Toast */
+.futuristic-toast-info {
+  border-left: 3px solid #00D4FF !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(0, 212, 255, 0.15),
+    inset 0 1px 0 rgba(0, 212, 255, 0.1) !important;
+}
+
+.futuristic-toast-info::before {
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.6), transparent) !important;
+}
+
+.futuristic-toast-info .futuristic-toast-title {
+  color: #00D4FF !important;
+}
+
+/* Close Button */
+.futuristic-toast-close {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  transition: all 0.2s ease !important;
+}
+
+.futuristic-toast-close:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  transform: scale(1.05);
+}
+
+/* Toast Icon Styling */
+[data-sonner-toast] [data-icon] {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+/* Toast Container Animation */
+[data-sonner-toaster] {
+  z-index: 99999 !important;
+}
+
+[data-sonner-toast][data-mounted="true"] {
+  animation: toast-enter 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+}
+
+[data-sonner-toast][data-removed="true"] {
+  animation: toast-exit 0.3s cubic-bezier(0.06, 0.71, 0.55, 1) forwards;
+}
+
+@keyframes toast-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toast-exit {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+}
+
+/* Light Mode Toast */
+.light .futuristic-toast {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 247, 250, 0.95) 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 0 1px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+.light .futuristic-toast::before {
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.2), transparent);
+}
+
+.light .futuristic-toast-title {
+  color: #0D1117 !important;
+}
+
+.light .futuristic-toast-description {
+  color: rgba(13, 17, 23, 0.7) !important;
+}
+
+.light .futuristic-toast-close {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.light .futuristic-toast-close:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  color: #0D1117 !important;
 }

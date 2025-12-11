@@ -291,6 +291,162 @@ class MetaAdsService
     }
 
     /**
+     * Cria uma campanha no Meta Ads.
+     */
+    public function createCampaign(AdAccount $account, array $data): array
+    {
+        $payload = [
+            'access_token' => $account->access_token,
+            'name' => $data['name'],
+            'objective' => $data['objective'],
+            'status' => $data['status'] ?? 'PAUSED',
+            'special_ad_categories' => json_encode($data['special_ad_categories'] ?? []),
+        ];
+
+        // CBO - Campaign Budget Optimization (orçamento na campanha)
+        if (isset($data['daily_budget'])) {
+            $payload['daily_budget'] = (int) ($data['daily_budget'] * 100); // Em centavos
+            // Quando usa CBO, a estratégia de lance é LOWEST_COST por padrão
+            $payload['bid_strategy'] = 'LOWEST_COST_WITHOUT_CAP';
+        } elseif (isset($data['lifetime_budget'])) {
+            $payload['lifetime_budget'] = (int) ($data['lifetime_budget'] * 100);
+            $payload['bid_strategy'] = 'LOWEST_COST_WITHOUT_CAP';
+        }
+
+        $response = Http::post("{$this->baseUrl}/act_{$account->platform_account_id}/campaigns", $payload);
+
+        if (!$response->successful()) {
+            Log::error('Meta Ads createCampaign failed', [
+                'account_id' => $account->id,
+                'data' => $data,
+                'response' => $response->json(),
+            ]);
+            throw new \Exception($response->json('error.message', 'Erro ao criar campanha no Meta'));
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Cria um adset (conjunto de anúncios) no Meta Ads.
+     */
+    public function createAdset(AdCampaign $campaign, array $data): array
+    {
+        $account = $campaign->account;
+
+        $payload = [
+            'access_token' => $account->access_token,
+            'campaign_id' => $campaign->platform_campaign_id,
+            'name' => $data['name'],
+            'optimization_goal' => $data['optimization_goal'] ?? 'LINK_CLICKS',
+            'billing_event' => $data['billing_event'] ?? 'IMPRESSIONS',
+            'status' => $data['status'] ?? 'PAUSED',
+        ];
+
+        // Budget no adset (apenas se NÃO estiver usando CBO na campanha)
+        if (isset($data['daily_budget'])) {
+            $payload['daily_budget'] = (int) $data['daily_budget'];
+            // Se tem budget no adset, precisa de bid_strategy
+            $payload['bid_strategy'] = $data['bid_strategy'] ?? 'LOWEST_COST_WITHOUT_CAP';
+        }
+        if (isset($data['lifetime_budget'])) {
+            $payload['lifetime_budget'] = (int) $data['lifetime_budget'];
+            $payload['bid_strategy'] = $data['bid_strategy'] ?? 'LOWEST_COST_WITHOUT_CAP';
+        }
+
+        // Bid amount (apenas para estratégias que exigem)
+        if (isset($data['bid_amount'])) {
+            $payload['bid_amount'] = (int) $data['bid_amount'];
+        }
+
+        // Targeting - precisa ser JSON encoded
+        if (isset($data['targeting'])) {
+            $payload['targeting'] = json_encode($data['targeting']);
+        }
+
+        $response = Http::post("{$this->baseUrl}/act_{$account->platform_account_id}/adsets", $payload);
+
+        if (!$response->successful()) {
+            Log::error('Meta Ads createAdset failed', [
+                'campaign_id' => $campaign->id,
+                'data' => $data,
+                'response' => $response->json(),
+            ]);
+            throw new \Exception($response->json('error.message', 'Erro ao criar adset no Meta'));
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Cria um anúncio no Meta Ads.
+     */
+    public function createAd(AdAdset $adset, array $data): array
+    {
+        $account = $adset->campaign->account;
+
+        // Primeiro cria o creative
+        $creativePayload = [
+            'access_token' => $account->access_token,
+            'name' => $data['creative']['headline'] ?? $data['name'],
+            'object_story_spec' => [
+                'page_id' => $data['page_id'] ?? $account->metadata['page_id'] ?? null,
+                'link_data' => [
+                    'message' => $data['creative']['primary_text'] ?? '',
+                    'link' => $data['creative']['link_url'] ?? '',
+                    'name' => $data['creative']['headline'] ?? '',
+                    'description' => $data['creative']['description'] ?? '',
+                    'call_to_action' => [
+                        'type' => $data['creative']['call_to_action'] ?? 'LEARN_MORE',
+                    ],
+                ],
+            ],
+        ];
+
+        // Adiciona imagem se fornecida
+        if (!empty($data['creative']['image_hash'])) {
+            $creativePayload['object_story_spec']['link_data']['image_hash'] = $data['creative']['image_hash'];
+        } elseif (!empty($data['creative']['image_url'])) {
+            $creativePayload['object_story_spec']['link_data']['picture'] = $data['creative']['image_url'];
+        }
+
+        $creativeResponse = Http::post("{$this->baseUrl}/act_{$account->platform_account_id}/adcreatives", $creativePayload);
+
+        if (!$creativeResponse->successful()) {
+            Log::error('Meta Ads createAdCreative failed', [
+                'adset_id' => $adset->id,
+                'data' => $creativePayload,
+                'response' => $creativeResponse->json(),
+            ]);
+            throw new \Exception($creativeResponse->json('error.message', 'Erro ao criar creative no Meta'));
+        }
+
+        $creativeId = $creativeResponse->json('id');
+
+        // Depois cria o ad
+        $adPayload = [
+            'access_token' => $account->access_token,
+            'adset_id' => $adset->platform_adset_id,
+            'name' => $data['name'],
+            'creative' => ['creative_id' => $creativeId],
+            'status' => $data['status'] ?? 'PAUSED',
+        ];
+
+        $response = Http::post("{$this->baseUrl}/act_{$account->platform_account_id}/ads", $adPayload);
+
+        if (!$response->successful()) {
+            Log::error('Meta Ads createAd failed', [
+                'adset_id' => $adset->id,
+                'data' => $adPayload,
+                'response' => $response->json(),
+            ]);
+            throw new \Exception($response->json('error.message', 'Erro ao criar anúncio no Meta'));
+        }
+
+        return array_merge($response->json(), ['creative_id' => $creativeId]);
+    }
+
+    /**
      * Pausa um anúncio.
      */
     public function pauseAd(AdAd $ad): bool

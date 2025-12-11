@@ -1,0 +1,723 @@
+{
+  "name": "[Template]Agente LP pressel + campanha",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5c709c4c-dd94-4f35-a32b-69e33586bd6b",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.together.xyz/v1/images/generations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer SUACHAVE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"black-forest-labs/FLUX.1-schnell-Free\",\n  \"steps\": 4,\n  \"n\": 1,\n  \"height\": 1440,\n  \"width\": 1440,\n  \"guidance\": 3.5,\n  \"output_format\": \"jpeg\",\n  \"prompt\": \"Black and white vector-style anatomical illustration of a woman performing an exercise (e.g., squatting or lifting weights), seen from the side. The entire body, hair, and clothing are in grayscale with minimal line shading. One specific muscle area (such as lower back, shoulders, or glutes) is highlighted with a vibrant color burst (blue or green glow) to indicate muscle activation. Clean white or gray background, minimalistic and educational medical style.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        0
+      ],
+      "id": "5c5ed5fa-a5cb-40d6-b697-bd193b729d74",
+      "name": "Gera_Imagem"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.data[0].url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        0
+      ],
+      "id": "9905cbca-e73d-4ddb-bba9-7cf03459f0b5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://SUAPAGINA/wp-json/wp/v2/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "publish"
+            },
+            {
+              "name": "content",
+              "value": "=<div style=\"max-width:600px;margin:0 auto;padding:30px 20px;font-family:Arial,sans-serif;text-align:center;color:#333;background:#fff;\">\n\n  <!-- HEADLINE -->\n  <div style=\"font-size:1.8rem;font-weight:bold;margin-bottom:10px;line-height:1.2;\">{{ $json.output.headline }}<br>\n\n  </div>\n\n  <!-- SUBHEADLINE -->\n  <div style=\"font-size:1.2rem;margin-bottom:30px;\">\n    {{ $json.output.subheadline }}\n  </div>\n\n  <!-- IMAGEM + PLAY BUTTON -->\n  <div style=\"position:relative;width:100%;margin-bottom:20px;\">\n    <img src=\"{{ $('UploadImagemLp').item.json.guid.rendered }}\" alt=\"{{ $json.output.headline }}\" style=\"width:100%;height:auto;border-radius:10px;\">\n    <div onclick=\"window.location.href='{affiliate_link}'\" style=\"position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;background:red;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;cursor:pointer;\">\n      &#9658;\n    </div>\n  </div>\n\n  <!-- BOTÃO CTA -->\n\n<!-- Botão que abre o popup com onclick -->\n    <button id=\"continueBtn\" onclick=\"openPopup()\" style=\"\n        background-color: #3b82f6;\n        color: white;\n        font-size: 1.1rem;\n        border-radius: 20px;\n        border: none;\n        padding: 20px 30px;\n        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);\n        cursor: pointer;\n        transition: background-color 0.3s ease;\n    \" onmouseover=\"this.style.backgroundColor='#0a8500'\" onmouseout=\"this.style.backgroundColor='#1da900'\">{{ $json.output.cta }}</button>\n\n\n\n\n  <!-- DESCRIÇÃO -->\n  <div style=\"font-size:1rem;line-height:1.6;\">\n   {{ $json.output.descricao }}\n  </div>\n\n</div>\n\n\n\n<!-- Popup -->\n<div id=\"popup\" class=\"popup\">\n    <div class=\"popup-content\">\n        <span class=\"close\" onclick=\"closePopup()\">&times;</span>\n        <form id=\"myForm\" action=\"https://n8n-n8n.qme09z.easypanel.host/webhook-test/eea9e88e-0a0f-4880-9ca8-70e1fd46ccf7\" method=\"POST\" onsubmit=\"handleFormSubmit(event)\" style=\"gap: 0px;\">\n<h3>Fill in the information below to Watch NOW 👇</h3>\n            <label for=\"email\">Email:</label>\n            <input type=\"email\" id=\"email\" name=\"email\" required>\n            <label for=\"phone\">Phone:</label>\n            <input type=\"number\" id=\"phone\" name=\"phone\" required>\n            <input type=\"hidden\" value=\"{{ $('Configurações').item.json.UrlVsl }}\" name=\"hidden_href\" id=\"hidden_href\">\n            <input style=\"background-color: rgb(29, 169, 0); color: white; font-size: 20px; border-radius: 20px; border: none; padding: 10px 20px; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px; cursor: pointer; transition: background-color 0.3s;\" type=\"submit\" value=\"View Content\">\n        </form>\n    </div>"
+            },
+            {
+              "name": "slug",
+              "value": "ck-test"
+            },
+            {
+              "name": "title",
+              "value": "Testando"
+            },
+            {
+              "name": "template",
+              "value": "blank-slate-template.php"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1960,
+        300
+      ],
+      "id": "f4d21d47-cc08-47f3-ad6d-9dde2da70835",
+      "name": "CriaLP",
+      "credentials": {
+        "wordpressApi": {
+          "id": "VvJQuHqAGhz6oOI3",
+          "name": "Wordpress account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v22.0/act_IDDASUACONTA/campaigns ",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=name",
+              "value": "=[Agente][ValidaLp]"
+            },
+            {
+              "name": "objective",
+              "value": "OUTCOME_SALES"
+            },
+            {
+              "name": "status",
+              "value": "PAUSED"
+            },
+            {
+              "name": "access_token",
+              "value": "="
+            },
+            {
+              "name": "special_ad_categories",
+              "value": "[]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f1d37fad-26f5-4925-93fc-bdb7c35e715c",
+      "name": "fb- Cria objetivo de campanha",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1140,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v22.0/act_IDDASUACONTA/adsets ",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "=tESTE ADSET"
+            },
+            {
+              "name": "optimization_goal",
+              "value": "LANDING_PAGE_VIEWS"
+            },
+            {
+              "name": "billing_event",
+              "value": "IMPRESSIONS"
+            },
+            {
+              "name": "daily_budget",
+              "value": "1254"
+            },
+            {
+              "name": "campaign_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "targeting",
+              "value": "{\"geo_locations\": {\"countries\":[\"BR\"]}, \"age_min\": 18, \"age_max\": 55, \"locales\": [16]}"
+            },
+            {
+              "name": "status",
+              "value": "ACTIVE"
+            },
+            {
+              "name": "access_token",
+              "value": "="
+            },
+            {
+              "name": "bid_strategy",
+              "value": "LOWEST_COST_WITHOUT_CAP"
+            },
+            {
+              "name": "advantage_plus",
+              "value": "ENABLED"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "df9d9ee3-c5f7-4859-9974-d0c2fe01628f",
+      "name": "Adset sem limites",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1420,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1600,
+        980
+      ],
+      "id": "9f16331a-884c-4dd3-9a25-5832ec154271",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "JO96jSLNRfkkZY7y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um agente especialista em criar títulos e descrições para anúncios no Meta Ads. Os anúncios são para o nicho de emagrecimento porém a descrição e o título devem seguir as regras\n\nConteúdo da pagina: {{ $('AI Agent').item.json.output.headline }}{{ $('AI Agent').item.json.output.subheadline }}{{ $('AI Agent').item.json.output.descricao }}\n\n\n\n-Não tocar no assunto emagrecimento diretamente \n- Falar de uma forma não agressiva \n- Apenas gerar curiosidade na imagem que está sendo usada no anúncio\n- Façe em ingles\n- Não pode ter aspas em nenhum texto\n\nOs textos devem ser persuasivos a ponto da pessoa querer clicaer no botão saiba mais\n\nO principal objetivo do título e descrição é gerar curiosidade sobre a imagem",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1720,
+        720
+      ],
+      "id": "9ba361a4-b032-42c9-91c8-bffd4fcfe84a",
+      "name": "CriaCopy"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"Titulo\": \"\",\n\t\"Descricao\": \"\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1900,
+        940
+      ],
+      "id": "df3f246f-eff6-4b71-b3c4-ecb85695b181",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.together.xyz/v1/images/generations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer SUACHAVE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"black-forest-labs/FLUX.1-schnell-Free\",\n  \"steps\": 4,\n  \"n\": 1,\n  \"height\": 1440,\n  \"width\": 1440,\n  \"guidance\": 3.5,\n  \"output_format\": \"jpeg\",\n  \"prompt\": \"A clear glass filled with a colorful iced drink, held by a hand. The drink contains crushed ice on top and visible fruit or herb pieces inside (like tamarind or chili). A green circle highlights one piece inside the drink. Natural outdoor background with green plants. Photo-style image.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "0ec45de9-e83b-4323-a0c7-27e1b85d062a",
+      "name": "Gera_Imagem1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.placid.app/u/SEUTEMPLATE?&img1[image]={{ $('Gera_Imagem').item.json.data[0].url }}&img2[image]={{ $('Gera_Imagem1').item.json.data[0].url }}",
+        "options": {}
+      },
+      "id": "886ee9ca-085e-488e-b811-f48e52fc946f",
+      "name": "cria_imagem_placid",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.placid.app/u/SEUTEMPLATE?&img1[image]={{ $('Gera_Imagem').item.json.data[0].url }}&img2[image]={{ $('Gera_Imagem1').item.json.data[0].url }}",
+        "options": {}
+      },
+      "id": "f8bb11e1-cba8-48b4-bc53-d09afbb8f966",
+      "name": "cria_imagem_lp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://SEUSITE/wp-json/wp/v2/media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-disposition",
+              "value": "=attachment; filename={{ $binary.data.fileName }}.{{ $binary.data.fileExtension }}"
+            },
+            {
+              "name": "content-type",
+              "value": "={{ $binary.data.mimeType }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "71d5a758-1fa2-439c-9a44-9b29917c4a2d",
+      "name": "UploadCriativo1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1780,
+        0
+      ],
+      "credentials": {
+        "wordpressApi": {
+          "id": "GmnZa1WN88xtQYng",
+          "name": "Wordpress account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://SUAPAGINA/wp-json/wp/v2/media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-disposition",
+              "value": "=attachment; filename={{ $binary.data.fileName }}.{{ $binary.data.fileExtension }}"
+            },
+            {
+              "name": "content-type",
+              "value": "={{ $binary.data.mimeType }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "c5626077-c480-49b8-87b1-a997cb2da73e",
+      "name": "UploadImagemLp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1120,
+        300
+      ],
+      "credentials": {
+        "wordpressApi": {
+          "id": "GmnZa1WN88xtQYng",
+          "name": "Wordpress account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Você é especialista em gerar headline, subheadline, CTA, e texto para páginas que remetem à emagrecimento. Texto em inglês, exemplo: Descubra o Simples “Ritual da Água”\nQue Reduziu Meu Peso de 94kg para 57kg…\n\nAssista este vídeo curto e veja como isso pode funcionar para você também!\n\nRitual da Água\n►\n\nClique Aqui Para Assistir Agora\n\nUm ex-funcionário da indústria revelou como apenas um pequeno ajuste na sua rotina pode começar a derreter gordura indesejada enquanto você dorme…\nMais de 298.000 pessoas estão seguindo esse “RITUAL DA ÁGUA” incomum e relatando redução no açúcar no sangue, mais energia e autoestima renovada após anos de luta.\n\nA descrição deve ser criada nesse formato: Um <strong style=\"color:red;\">ex-funcionário da indústria</strong> revelou como apenas <strong style=\"color:red;\">um pequeno ajuste</strong> na sua rotina pode começar a derreter gordura indesejada <em>enquanto você dorme</em>…<br><br>\n    Mais de <strong style=\"color:red;\">298.000 pessoas</strong> estão seguindo esse <span style=\"color:#3b82f6;font-weight:bold;\">“RITUAL DA ÁGUA”</span> incomum e relatando redução no açúcar no sangue, mais energia e autoestima renovada após anos de luta. usando as tags html para dar destaque\n\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1500,
+        300
+      ],
+      "id": "557a416c-399b-4656-9885-18f1bfcf1412",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1280,
+        460
+      ],
+      "id": "2169b8b8-15ef-4a4d-a753-ded2ff371795",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JO96jSLNRfkkZY7y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"headline\": \"\",\n  \"subheadline\": \"\",\n  \"cta\": \"\",\n  \"descricao\": \"\"\n\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1680,
+        520
+      ],
+      "id": "183dafcd-8590-4f49-b1e4-34411766a125",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be517228-8ac1-4944-871f-04c376b02960",
+              "name": "UrlVsl",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        0
+      ],
+      "id": "5d422951-2c76-49a9-825d-8230f5c783b7",
+      "name": "Configurações"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v22.0/act_IDDASUACONTA/ads ",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "creative",
+              "value": "={\n \"url_tags\": \"utm_source=facebook&utm_campaign=C1&adset=C2&ads=C3ADS001\", \n \"object_story_spec\": {\n    \"page_id\": \"109933662174756\",\n    \"link_data\": {\n      \"link\": \"{{ $('CriaLP').item.json.guid.raw }}\",\n      \"message\": \"{{ $json.output.Titulo }}\",\n      \"description\": \"{{ $json.output.Descricao }}\",\n      \"name\": \"{{ $json.output.Titulo }}\",\n      \"picture\": \"{{ $('UploadCriativo1').item.json.guid.rendered }}\",\n      \"call_to_action\": {\n        \"type\": \"LEARN_MORE\",\n        \"value\": {\n          \"link\": \"{{ $('CriaLP').item.json.guid.rendered }}\"\n        }\n      }\n    }\n  },\n\n  \"offline_conversion_data_set_id\": \"PIXEL\"\n}\n        "
+            },
+            {
+              "name": "adset_id",
+              "value": "={{ $('Adset sem limites').item.json.id }}"
+            },
+            {
+              "name": "name",
+              "value": "=ADS001"
+            },
+            {
+              "name": "status",
+              "value": "PAUSED"
+            },
+            {
+              "name": "access_token",
+              "value": "="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c5230ffd-9997-46f6-89ba-25b17d4bbd22",
+      "name": "Ads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2120,
+        720
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Configurações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gera_Imagem": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Gera_Imagem1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CriaLP": {
+      "main": [
+        [
+          {
+            "node": "fb- Cria objetivo de campanha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fb- Cria objetivo de campanha": {
+      "main": [
+        [
+          {
+            "node": "Adset sem limites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adset sem limites": {
+      "main": [
+        [
+          {
+            "node": "CriaCopy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CriaCopy",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CriaCopy": {
+      "main": [
+        [
+          {
+            "node": "Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "CriaCopy",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gera_Imagem1": {
+      "main": [
+        [
+          {
+            "node": "cria_imagem_placid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cria_imagem_placid": {
+      "main": [
+        [
+          {
+            "node": "UploadCriativo1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cria_imagem_lp": {
+      "main": [
+        [
+          {
+            "node": "UploadImagemLp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UploadCriativo1": {
+      "main": [
+        [
+          {
+            "node": "cria_imagem_lp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UploadImagemLp": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "CriaLP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configurações": {
+      "main": [
+        [
+          {
+            "node": "Gera_Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c51315a4-df19-4071-98ba-33be7ddb32a0",
+  "meta": {
+    "instanceId": "86d0b539cdbfaefdd305e9f4d9320d6449af6a05b20f421bc7ca5b2501068fb2"
+  },
+  "id": "yFRjS0wvyMEsvZij",
+  "tags": []
+}

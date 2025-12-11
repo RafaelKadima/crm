@@ -38,7 +38,6 @@ class Contact extends Model
     protected function casts(): array
     {
         return [
-            'address' => 'array',
             'extra_data' => 'array',
         ];
     }

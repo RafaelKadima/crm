@@ -164,3 +164,34 @@ export function DialogFooter({ children, className }: { children: React.ReactNod
   )
 }
 
+// DialogTrigger - wrapper que abre o dialog ao clicar
+export function DialogTrigger({ 
+  children, 
+  asChild = false,
+}: { 
+  children: React.ReactNode
+  asChild?: boolean
+}) {
+  const context = React.useContext(DialogContext)
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    context?.onOpenChange(true)
+  }
+  
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<any>, {
+      onClick: (e: React.MouseEvent) => {
+        handleClick(e)
+        ;(children as React.ReactElement<any>).props?.onClick?.(e)
+      }
+    })
+  }
+  
+  return (
+    <button type="button" onClick={handleClick}>
+      {children}
+    </button>
+  )
+}
+

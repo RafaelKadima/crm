@@ -185,6 +185,33 @@ class Pipeline extends Model
               });
         });
     }
+
+    /**
+     * Retorna os IDs dos vendedores com permissão de gerenciar leads neste pipeline.
+     * 
+     * Lógica:
+     * - Se pipeline é público: retorna todos os vendedores ativos do tenant
+     * - Se pipeline é privado: retorna apenas usuários com can_manage_leads = true
+     */
+    public function getUserIdsWithLeadPermission(): array
+    {
+        // Se pipeline é público, retorna todos os vendedores ativos
+        if ($this->is_public) {
+            return User::where('tenant_id', $this->tenant_id)
+                ->where('role', \App\Enums\RoleEnum::VENDEDOR)
+                ->where('is_active', true)
+                ->pluck('id')
+                ->toArray();
+        }
+
+        // Pipeline privado: retorna apenas usuários com permissão can_manage_leads
+        return $this->users()
+            ->where('pipeline_user.can_manage_leads', true)
+            ->where('users.is_active', true)
+            ->where('users.role', \App\Enums\RoleEnum::VENDEDOR)
+            ->pluck('users.id')
+            ->toArray();
+    }
 }
 
 

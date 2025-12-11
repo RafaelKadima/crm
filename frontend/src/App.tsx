@@ -28,7 +28,7 @@ import { WhatsAppTemplatesPage } from '@/pages/whatsapp-templates'
 import { GtmSettingsPage } from '@/pages/settings/GtmSettingsPage'
 import { GtmScript } from '@/components/GtmScript'
 import { BrandingProvider } from '@/components/BrandingProvider'
-import { AdsDashboard, AdsAccounts, AdsCampaigns, AdsInsights, AdsAutomation, AdsAgent } from '@/pages/ads'
+import { AdsDashboard, AdsAccounts, AdsCampaigns, AdsInsights, AdsAutomation, AdsAgent, CreativeUpload, AdsAgentChat, AdsKnowledgeBase, AdsGuardrails } from '@/pages/ads'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -147,6 +147,10 @@ function AppRoutes() {
         <Route path="ads/insights" element={<AdsInsights />} />
         <Route path="ads/automation" element={<AdsAutomation />} />
         <Route path="ads/agent" element={<AdsAgent />} />
+        <Route path="ads/creatives" element={<CreativeUpload />} />
+        <Route path="ads/chat" element={<AdsAgentChat />} />
+        <Route path="ads/knowledge" element={<AdsKnowledgeBase />} />
+        <Route path="ads/guardrails" element={<AdsGuardrails />} />
       </Route>
     </Routes>
   )
@@ -164,6 +168,22 @@ function App() {
             richColors 
             closeButton
             theme="dark"
+            toastOptions={{
+              unstyled: false,
+              classNames: {
+                toast: 'futuristic-toast',
+                title: 'futuristic-toast-title',
+                description: 'futuristic-toast-description',
+                success: 'futuristic-toast-success',
+                error: 'futuristic-toast-error',
+                warning: 'futuristic-toast-warning',
+                info: 'futuristic-toast-info',
+                closeButton: 'futuristic-toast-close',
+              },
+            }}
+            expand={true}
+            visibleToasts={5}
+            duration={4000}
           />
         </BrandingProvider>
       </BrowserRouter>

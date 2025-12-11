@@ -1,0 +1,641 @@
+{
+  "name": "[Template Otimização Impulsionar Instagram]",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v21.0/act_IDsuacontadeanuncios/insights",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "impressions, clicks, campaign_id, campaign_name, spend, actions"
+            },
+            {
+              "name": "access_token",
+              "value": "SUACHAVE"
+            },
+            {
+              "name": "level",
+              "value": "ad"
+            },
+            {
+              "name": "limit",
+              "value": "1000"
+            },
+            {
+              "name": "date_preset",
+              "value": "last_7d"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "637368fc-ccb4-410d-838a-6c648c6cae62",
+      "name": "Insights Instagram Turbinar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1520,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.campaign_name }}",
+              "operation": "contains",
+              "value2": "Instagram post"
+            }
+          ]
+        }
+      },
+      "id": "a3bd8163-bd07-4a14-b823-7ba9184af466",
+      "name": "Filtrar Posts Instagram",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [
+        -860,
+        20
+      ],
+      "notes": "Este nó filtra os resultados para manter apenas os anúncios cuja campanha (`campaign_name`) contém um texto específico.\n\n**IMPORTANTE:** Substitua `INSTAGRAM_POST_IDENTIFIER` pelo texto exato que identifica suas campanhas de posts do Instagram."
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1820,
+        20
+      ],
+      "id": "01faf67e-9391-4d9a-ba60-d070f9e031a1",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1160,
+        20
+      ],
+      "id": "c1cd1e08-dba1-419c-ae8c-98620ac43d07",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        240
+      ],
+      "id": "093aaa3a-d2dd-49a7-b847-5e6b93c4a4e3",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -500,
+        240
+      ],
+      "id": "4c573f82-7b6f-42ad-9ba5-de0be2823bb9",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JO96jSLNRfkkZY7y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você receberá um JSON contendo dados de campanhas do Instagram Ads. Cada campanha possui informações como: nome, gasto, impressões, cliques, ações (com tipo e valor) e datas.\n\nSua tarefa é gerar um relatório de performance formatado para envio no WhatsApp. Siga as diretrizes abaixo:\n\n📊 Relatório de Campanhas - Instagram (DATA_INICIAL - DATA_FINAL)\n\nPara cada campanha, calcule:\n\nCPC (Custo por Clique): gasto / cliques\n\nCPE (Custo por Engajamento): gasto / total de ações\n\nCTR (%): (cliques / impressões) × 100\n\nTotal de Engajamentos: soma de todos os actions.value\n\nMétricas de Conversa, separadas e explicadas:\n\nPrimeiras respostas de mensagem: onsite_conversion.messaging_first_reply\n\nUsuários que enviaram 2 mensagens: onsite_conversion.messaging_user_depth_2_message_send\n\nUsuários que enviaram 3 mensagens: onsite_conversion.messaging_user_depth_3_message_send\n\nConversas iniciadas (últimos 7 dias): onsite_conversion.messaging_conversation_started_7d\n\nRanquear as campanhas da melhor para a pior com base em:\n\nBaixo CPC\n\nBaixo CPE\n\nAlta CTR\n\nAlto número de interações de conversa (não usar “chat score” composto)\n\nGerar o relatório no seguinte formato WhatsApp (use apenas um asterisco para negrito):\n\nmarkdown\nCopiar\nEditar\n*1️⃣ Nome da campanha...*  \n*💸 Gasto:* R$XXX,XX  \n*🖱️ Cliques:* XX (CPC: R$X,XX)  \n*👁️ Impressões:* XXXX (CTR: X,XX%)  \n*⚡ Engajamentos:* XXXX (CPE: R$X,XX)  \n*💬 Conversas:*  \n - *Primeiras respostas:* X  \n - *2 mensagens:* X  \n - *3 mensagens:* X  \n - *Conversas iniciadas (7 dias):* X  \n*⭐ Destaques:* breve comentário positivo sobre a campanha.\nAo final, incluir um resumo:\n\nmarkdown\nCopiar\nEditar\n📌 *Resumo Final:*  \n✅ *Melhor desempenho geral com base em custo por resultado:* [nome]  \n✅ *Mais conversas iniciadas com base em custo por resultado:* [nome + quantidade]  \n✅ *Melhor custo por engajamento com base em custo por resultado:* [nome]  \n✅ *Melhor número de cliques com base em custo por resultado:* [nome]\nTodos os valores devem ter no máximo 2 casas decimais. Valores percentuais devem usar %.\n\nAqui o json: {{ $json.data.toJsonString() }}",
+        "options": {
+          "systemMessage": "Retorne apenas o relatório final que será enviado para o usuário\n\nFormate as datas sempre dd-mm--aa \n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -440,
+        20
+      ],
+      "id": "9752cef9-540d-4dc0-9659-6b551c3a2f04",
+      "name": "AgenteWPP"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://SUAURLEVOLUTION/message/SUAINSTANCIA/jeff",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=od9wz37dmvg4qyvtewp8u"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=+5531989587797"
+            },
+            {
+              "name": "textMessage.text",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "c4e986e0-e6c9-4c63-b14a-af60ce6245c1",
+      "name": "EnvioWPP",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 4.1,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você receberá um JSON com dados de campanhas do Instagram Ads. Cada campanha contém: nome, gasto, impressões, cliques, ações (com tipo e valor), e período da campanha.\n\nSua tarefa é gerar um relatório detalhado e profissional em HTML, para ser usado em um e-mail. Siga todas as instruções abaixo cuidadosamente.\n\n📌 Objetivo do Relatório:\nCriar um resumo executivo, visualmente organizado, que mostre o desempenho de campanhas de Instagram Ads, destacando:\n\nCusto-benefício\n\nPerformance de engajamento\n\nQualidade das interações por mensagens (conversas)\n\n✅ Para cada campanha, calcule e apresente separadamente:\n\nCPC (Custo por Clique): gasto / cliques\n\nCPE (Custo por Engajamento): gasto / soma de todas as actions.value\n\nCTR (%): (cliques / impressões) × 100\n\nEngajamentos totais: soma de todas as ações\n\nCada tipo de engajamento separado, como:\n\npost_engagement\n\npage_engagement\n\nlink_click\n\nvideo_view\n\npost_reaction\n\ncomment\n\npost_save\n\netc.\n\n✅ Métricas de Conversa: (listar como uma seção separada para cada campanha)\nExplique claramente:\n\nPrimeiras respostas de mensagem: onsite_conversion.messaging_first_reply\n\nUsuários que enviaram 2 mensagens: onsite_conversion.messaging_user_depth_2_message_send\n\nUsuários que enviaram 3 mensagens: onsite_conversion.messaging_user_depth_3_message_send\n\nConversas iniciadas (últimos 7 dias): onsite_conversion.messaging_conversation_started_7d\n\n✅ Classifique as campanhas da melhor para a pior, com base em:\n\nMenor CPC\n\nMenor CPE\n\nMaior CTR\n\nMaior volume de conversas iniciadas e engajadas\n\n🖼️ Formato HTML do relatório (output):\n\nTítulo com datas da análise no topo\n\nPara cada campanha, exiba:\n\nNome da campanha\n\nUm bloco organizado contendo:\n\nGasto total (com R$)\n\nCliques e CPC\n\nImpressões e CTR\n\nEngajamentos totais e CPE\n\nTabela com cada métrica de engajamento separada (ex: comentários, reações, cliques no link etc.)\n\nBloco separado para métricas de conversa (primeiras respostas, depth 2/3, conversas iniciadas)\n\nComentário curto sobre o desempenho\n\nUse cores para facilitar leitura:\n\nVerde para bom desempenho (baixo CPC, alto CTR, muitas conversas)\n\nVermelho para alto custo\n\nAzul neutro para métricas médias\n\nUse HTML pronto para e-mail, com estrutura responsiva simples, usando div, table, span e style embutido (não CSS externo)\n\n📌 Resumo final no rodapé do relatório HTML:\n\nMelhor campanha geral (com nome)\n\nCampanha com mais conversas iniciadas (com número)\n\nMelhor custo por engajamento\n\nCampanha com mais cliques\n\n📝 Regras de Formatação:\n\nUse no máximo 2 casas decimais em valores\n\nPrefixe valores monetários com R$\n\nUse % em valores percentuais\n\nSaída deve ser em HTML limpo, sem blocos de código, pronto para envio por e-mail\n\nUse títulos, espaçamentos, separadores, tabelas ou \"cards\" para deixar o relatório claro, escaneável e visualmente atraente\n\n🎯 JSON para análise:\n{{ $json.data.toJsonString() }}",
+        "options": {
+          "systemMessage": "Retorne apenas o relatório final que será enviado para o usuário\n\nFormate as datas sempre dd-mm--aa \n\nNão retorne ```html no inicio\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -460,
+        420
+      ],
+      "id": "724be348-3b5d-4b45-a96a-e86ba016e125",
+      "name": "AgenteEmail"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você receberá um JSON com dados de campanhas do Instagram Ads. Cada item contém: identificador da campanha (nome ou ID), número de cliques, número de ações (engajamentos), impressões e valor gasto.\n\nSua tarefa é:\n\nCalcular para cada campanha:\n\nCPC (Custo por Clique) = gasto / cliques\n\nCPE (Custo por Engajamento) = gasto / total de ações\n\nEscolher a campanha com melhor custo-benefício, ou seja:\n\nMenor CPC e CPE combinados\n\nCaso haja empate, escolha a que tenha mais cliques\n\nRetornar apenas o identificador da melhor campanha (exatamente como aparece no JSON).\n\nNão retorne explicações, análises nem outros dados. Apenas o campo \"campaign_id\" da melhor campanha.\n\n🎯 JSON para análise:\n{{ $json.data.toJsonString() }}",
+        "options": {
+          "systemMessage": ""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -640,
+        880
+      ],
+      "id": "5348daec-b293-44ea-9dad-4ff65bb0d7d4",
+      "name": "AgenteOtimização"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -500,
+        660
+      ],
+      "id": "499c939e-90c5-40aa-81bf-45707ebafe09",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "JO96jSLNRfkkZY7y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "iaacademycurso@gmail.com",
+        "subject": "Relatorio Instagram Turbinar",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        20,
+        420
+      ],
+      "id": "7842546c-410b-4d61-9ec1-d0b45fca4787",
+      "name": "Gmail",
+      "webhookId": "95614133-a4c0-484d-95df-3f916bf3370e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "10EGIRyWTSWt5Q27",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -740,
+        1120
+      ],
+      "id": "c2771260-9698-4929-8e74-cad0618934a5",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "JO96jSLNRfkkZY7y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.output }}/ ",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "name, lifetime_budget"
+            },
+            {
+              "name": "access_token",
+              "value": "SUACHAVE"
+            },
+            {
+              "name": "level",
+              "value": "campaign"
+            },
+            {
+              "name": "limit",
+              "value": "1000"
+            },
+            {
+              "name": "date_preset",
+              "value": "last_7d"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e180edc6-4ce2-420e-a7ad-afce388a4c0e",
+      "name": "Get Campaign Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "lifetime_budget",
+              "value": "={{ Math.round($json.lifetime_budget * 1.1) }}"
+            },
+            {
+              "name": "access_token",
+              "value": "SUACHAVE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        140,
+        880
+      ],
+      "id": "d806007f-3e86-4727-93e0-376603f44efd",
+      "name": "AumentaOrçamento"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        380,
+        1100
+      ],
+      "id": "94d42039-a0e2-4628-988e-3457fea9165c",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "JO96jSLNRfkkZY7y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://SUAURLEVOLUTION/message/SUAINSTANCIA/jeff",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=SUACHAVE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=+5531989587797"
+            },
+            {
+              "name": "textMessage.text",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "27fbcb3c-2f51-49c9-9b5c-ee54332db9bf",
+      "name": "EnvioWPP1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        920,
+        860
+      ],
+      "typeVersion": 4.1,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Faça uma mensagem avisando o cliente que a campanha: {{ $('Get Campaign Insights').item.json.name }} teve o orçamento atual de {{ $('Get Campaign Insights').item.json.lifetime_budget }} aumentado 10% e foi  para {{ Math.round( $('Get Campaign Insights').item.json.lifetime_budget * 1.1) }}\n\nFormato:\n\nAção de otimização:\n\n- Aumentamos o orçamento da campanha: \n\nDe: Para:\n\nUse emojis para organizar\n\nMensagem curta apenas com as infos acima\n\nFormato dos numeros: 15000 significa R$150,00\n\n- No markdown utilize apenas * inicio e * final para marcar como negrito, não use dois ** juntos",
+        "options": {
+          "systemMessage": ""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        440,
+        880
+      ],
+      "id": "72a8afa4-2a19-452c-9d98-cb5706630796",
+      "name": "AgenteAlteracao"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Insights Instagram Turbinar": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Posts Instagram": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Insights Instagram Turbinar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Posts Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AgenteWPP",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AgenteEmail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AgenteOtimização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AgenteWPP",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AgenteWPP": {
+      "main": [
+        [
+          {
+            "node": "EnvioWPP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AgenteEmail": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AgenteOtimização": {
+      "main": [
+        [
+          {
+            "node": "Get Campaign Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AgenteEmail",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AgenteOtimização",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Campaign Insights": {
+      "main": [
+        [
+          {
+            "node": "AumentaOrçamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AumentaOrçamento": {
+      "main": [
+        [
+          {
+            "node": "AgenteAlteracao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AgenteAlteracao",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AgenteAlteracao": {
+      "main": [
+        [
+          {
+            "node": "EnvioWPP1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6244d9ad-6142-43ff-ab8c-7e3cad3bd173",
+  "meta": {
+    "instanceId": "86d0b539cdbfaefdd305e9f4d9320d6449af6a05b20f421bc7ca5b2501068fb2"
+  },
+  "id": "2GA7YAzvfVHQTiGj",
+  "tags": []
+}

@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAdAccounts } from '@/hooks/useAds';
+import { useAuthStore } from '@/store/authStore';
 import api from '@/api/axios';
 import { toast } from 'sonner';
 
@@ -46,6 +47,7 @@ interface CampaignResult {
 }
 
 export default function AdsAgent() {
+  const { user } = useAuthStore();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedCopies, setGeneratedCopies] = useState<CopyVariation[]>([]);
@@ -103,7 +105,7 @@ export default function AdsAgent() {
     setIsLoading(true);
     
     try {
-      const response = await api.post('/ai/ads/agent/generate-copy', {
+      const response = await api.post('/ads/agent/generate-copy', {
         product_name: formData.product_name,
         product_description: formData.product_description,
         target_audience: formData.target_audience,
@@ -132,24 +134,35 @@ export default function AdsAgent() {
     setIsLoading(true);
     
     try {
-      const response = await api.post('/ai/ads/agent/create-campaign', {
-        tenant_id: '', // Será pego do contexto
+      const response = await api.post('/ads/agent/create-campaign', {
+        tenant_id: user?.tenant_id,
         ad_account_id: formData.ad_account_id,
-        briefing: {
-          product_name: formData.product_name,
-          product_description: formData.product_description,
-          target_audience: formData.target_audience,
+        platform: formData.platform,
+        campaign: {
+          name: `${formData.product_name} - ${new Date().toLocaleDateString('pt-BR')}`,
           objective: formData.objective,
           daily_budget: formData.daily_budget,
-          duration_days: formData.duration_days,
-          landing_page_url: formData.landing_page_url,
-          creative_urls: formData.creative_urls.filter(u => u.trim()),
-          tone_of_voice: formData.tone_of_voice,
-          key_benefits: formData.key_benefits.filter(b => b.trim()),
-          call_to_action: formData.call_to_action,
+          status: 'PAUSED',
         },
-        platform: formData.platform,
-        auto_publish: false, // Sempre cria pausada
+        adsets: [{
+          name: `${formData.target_audience} - Público Principal`,
+          optimization_goal: 'LINK_CLICKS',
+          targeting: {
+            age_min: 18,
+            age_max: 65,
+            geo_locations: [{ type: 'country', value: 'BR' }],
+          },
+        }],
+        ads: [{
+          name: `${formData.product_name} - Anúncio 1`,
+          creative: {
+            headline: formData.product_name,
+            primary_text: formData.product_description,
+            description: formData.key_benefits.filter(b => b.trim()).join(' | '),
+            call_to_action: formData.call_to_action.toUpperCase().replace(/ /g, '_'),
+            link_url: formData.landing_page_url,
+          },
+        }],
       });
       
       setCampaignResult(response.data);
@@ -485,14 +498,21 @@ export default function AdsAgent() {
               </div>
             ))}
             
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-between items-center pt-4">
               <Button variant="outline" onClick={() => setStep(2)}>
                 Voltar
               </Button>
-              <Button onClick={createCampaign} disabled={isLoading || !formData.ad_account_id}>
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                Criar Campanha com estes Copies
-              </Button>
+              <div className="flex items-center gap-3">
+                {!formData.ad_account_id && (
+                  <span className="text-sm text-amber-500">
+                    ⚠️ Selecione uma conta de anúncio no passo anterior
+                  </span>
+                )}
+                <Button onClick={createCampaign} disabled={isLoading || !formData.ad_account_id}>
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
+                  Criar Campanha com estes Copies
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

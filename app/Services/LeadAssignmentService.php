@@ -7,6 +7,7 @@ use App\Models\Channel;
 use App\Models\Lead;
 use App\Models\LeadAssignmentLog;
 use App\Models\LeadQueueOwner;
+use App\Models\Pipeline;
 use App\Models\Queue;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
@@ -19,13 +20,15 @@ class LeadAssignmentService
      * Prioridade:
      * 1. Se o lead está em uma fila → distribui entre usuários da fila
      * 2. Se passou eligibleUserIds → usa esses usuários
-     * 3. Fallback → todos os vendedores ativos do tenant
+     * 3. Se o lead tem pipeline → usa vendedores com permissão no pipeline
+     * 4. Fallback → todos os vendedores ativos do tenant
      */
     public function assignLeadOwner(Lead $lead, ?array $eligibleUserIds = null): User
     {
         $tenantId = $lead->tenant_id;
         $channelId = $lead->channel_id;
         $queueId = $lead->queue_id;
+        $pipelineId = $lead->pipeline_id;
 
         // Se o lead está em uma fila, usa os usuários da fila
         if ($queueId && $eligibleUserIds === null) {
@@ -40,9 +43,28 @@ class LeadAssignmentService
             }
         }
 
-        // Se não foram passados IDs de usuários e não tem fila, busca todos os vendedores ativos
+        // Se não tem fila mas tem pipeline, usa os vendedores com permissão no pipeline
+        if (($eligibleUserIds === null || empty($eligibleUserIds)) && $pipelineId) {
+            $pipeline = Pipeline::find($pipelineId);
+            if ($pipeline) {
+                $eligibleUserIds = $pipeline->getUserIdsWithLeadPermission();
+                Log::info('Using pipeline users for assignment', [
+                    'lead_id' => $lead->id,
+                    'pipeline_id' => $pipelineId,
+                    'pipeline_name' => $pipeline->name,
+                    'eligible_users' => count($eligibleUserIds),
+                ]);
+            }
+        }
+
+        // Fallback: Se não foram passados IDs de usuários, busca todos os vendedores ativos
         if ($eligibleUserIds === null || empty($eligibleUserIds)) {
             $eligibleUserIds = $this->getEligibleUsers($tenantId);
+            Log::info('Using all tenant sellers for assignment (fallback)', [
+                'lead_id' => $lead->id,
+                'tenant_id' => $tenantId,
+                'eligible_users' => count($eligibleUserIds),
+            ]);
         }
 
         if (empty($eligibleUserIds)) {

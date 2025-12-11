@@ -266,13 +266,13 @@ export default function AdsDashboard() {
                   </div>
                   <div className="text-right">
                     <p className={`text-sm font-semibold ${
-                      campaign.roas >= 2 ? 'text-green-600' :
-                      campaign.roas >= 1 ? 'text-yellow-600' : 'text-red-600'
+                      Number(campaign.roas || 0) >= 2 ? 'text-green-600' :
+                      Number(campaign.roas || 0) >= 1 ? 'text-yellow-600' : 'text-red-600'
                     }`}>
-                      {campaign.roas.toFixed(2)}x
+                      {Number(campaign.roas || 0).toFixed(2)}x
                     </p>
                     <p className="text-xs text-gray-500">
-                      {campaign.conversions} conv.
+                      {Number(campaign.conversions || 0)} conv.
                     </p>
                   </div>
                 </div>
@@ -346,7 +346,7 @@ export default function AdsDashboard() {
                         {ad.name}
                       </p>
                       <p className="text-xs text-gray-500">
-                        CTR: {ad.ctr.toFixed(2)}% | CPC: {formatCurrency(ad.cpc)}
+                        CTR: {Number(ad.ctr || 0).toFixed(2)}% | CPC: {formatCurrency(Number(ad.cpc || 0))}
                       </p>
                     </div>
                   </div>

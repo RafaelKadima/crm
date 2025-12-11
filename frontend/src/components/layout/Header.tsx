@@ -9,6 +9,7 @@ import {
   LogOut,
   User,
   ChevronDown,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
@@ -25,6 +26,7 @@ export function Header() {
   const { theme, setTheme } = useTheme()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -38,44 +40,83 @@ export function Header() {
   return (
     <header
       className={cn(
-        "fixed top-0 right-0 z-30 h-16 bg-background/80 backdrop-blur-xl border-b transition-all duration-200",
-        sidebarCollapsed ? "left-[72px]" : "left-[260px]"
+        "fixed top-0 right-0 z-30 h-16 transition-all duration-200",
+        "bg-background/80 backdrop-blur-xl",
+        sidebarCollapsed ? "left-[72px]" : "left-[280px]"
       )}
+      style={{
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+      }}
     >
+      {/* Gradient line at top */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{
+          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05), transparent)',
+        }}
+      />
+
       <div className="h-full flex items-center justify-between px-6">
         {/* Search */}
         <div className="flex-1 max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative group">
+            <Search className={cn(
+              "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors duration-300",
+              searchFocused ? "text-white" : "text-muted-foreground"
+            )} />
             <Input
               placeholder="Buscar leads, contatos..."
-              className="pl-10 bg-secondary/50 border-0"
+              className={cn(
+                "pl-10 bg-card/50 transition-all duration-300",
+                "border-white/5 focus:border-white/20",
+                "placeholder:text-muted-foreground/60",
+                searchFocused && "shadow-[0_0_20px_rgba(255,255,255,0.05)]"
+              )}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
             />
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* AI Status Indicator */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+            <Sparkles className="h-4 w-4 text-white/60 animate-pulse" />
+            <span className="text-xs font-medium text-white/60">IA Ativa</span>
+          </div>
+
           {/* Theme Toggle */}
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleTheme}
+            className={cn(
+              "relative overflow-hidden transition-all duration-300",
+              "hover:bg-white/5 hover:text-white",
+              "border border-transparent hover:border-white/10"
+            )}
+          >
             <AnimatePresence mode="wait">
               {theme === 'dark' ? (
                 <motion.div
                   key="sun"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
+                  initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <Sun className="h-5 w-5" />
+                  <Sun className="h-5 w-5 text-white/80" />
                 </motion.div>
               ) : (
                 <motion.div
                   key="moon"
-                  initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -90, opacity: 0 }}
+                  initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <Moon className="h-5 w-5" />
+                  <Moon className="h-5 w-5 text-slate-600" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -87,10 +128,18 @@ export function Header() {
               variant="ghost"
               size="icon"
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative"
+              className={cn(
+                "relative transition-all duration-300",
+                "hover:bg-white/5 hover:text-white",
+                "border border-transparent hover:border-white/10",
+                showNotifications && "bg-white/5 border-white/10"
+              )}
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
+              {/* Notification badge */}
+              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-white/80" 
+                style={{ boxShadow: '0 0 8px rgba(255, 255, 255, 0.4)' }}
+              />
             </Button>
 
             <AnimatePresence>
@@ -99,12 +148,15 @@ export function Header() {
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-2 w-80 rounded-xl bg-card border shadow-xl overflow-hidden"
+                  className="absolute right-0 mt-2 w-80 rounded-xl overflow-hidden futuristic-card"
                 >
-                  <div className="p-4 border-b">
-                    <h3 className="font-semibold">Notificações</h3>
+                  <div className="p-4 border-b border-white/5">
+                    <h3 className="font-display font-semibold text-white">Notificações</h3>
                   </div>
                   <div className="p-4 text-center text-sm text-muted-foreground">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/5 flex items-center justify-center">
+                      <Bell className="h-6 w-6 text-white/30" />
+                    </div>
                     Nenhuma notificação
                   </div>
                 </motion.div>
@@ -116,18 +168,31 @@ export function Header() {
           <div className="relative ml-2">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+              className={cn(
+                "flex items-center gap-3 p-2 rounded-xl transition-all duration-300",
+                "hover:bg-white/5 border border-transparent hover:border-white/10",
+                showUserMenu && "bg-white/5 border-white/10"
+              )}
             >
-              <Avatar
-                src={user?.avatar}
-                fallback={user?.name || 'U'}
-                size="sm"
-              />
+              <div className="relative">
+                <Avatar
+                  src={user?.avatar}
+                  fallback={user?.name || 'U'}
+                  size="sm"
+                />
+                {/* Online indicator */}
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background"
+                  style={{ boxShadow: '0 0 6px rgba(16, 185, 129, 0.5)' }}
+                />
+              </div>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium">{user?.name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
               </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-300",
+                showUserMenu && "rotate-180"
+              )} />
             </button>
 
             <AnimatePresence>
@@ -136,7 +201,7 @@ export function Header() {
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-2 w-56 rounded-xl bg-card border shadow-xl overflow-hidden"
+                  className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden futuristic-card"
                 >
                   <div className="p-2">
                     <button
@@ -144,14 +209,21 @@ export function Header() {
                         setShowUserMenu(false)
                         navigate('/settings/profile')
                       }}
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-secondary transition-colors"
+                      className={cn(
+                        "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-300",
+                        "hover:bg-white/5 hover:text-white"
+                      )}
                     >
                       <User className="h-4 w-4" />
                       <span className="text-sm">Meu Perfil</span>
                     </button>
+                    <div className="my-1 border-t border-white/5" />
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors"
+                      className={cn(
+                        "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-300",
+                        "hover:bg-destructive/10 text-destructive"
+                      )}
                     >
                       <LogOut className="h-4 w-4" />
                       <span className="text-sm">Sair</span>
@@ -166,4 +238,3 @@ export function Header() {
     </header>
   )
 }
-

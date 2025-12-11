@@ -28,10 +28,12 @@ import {
   TrendingUp,
   FileText,
   Cog,
+  BookOpen,
   Home,
   Target,
   Zap,
   Lightbulb,
+  ImageIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -39,6 +41,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useMyFeatures } from '@/hooks/useFeatures'
 import { useBranding } from '@/hooks/useBranding'
 import { usePermissions } from '@/hooks/usePermissions'
+import { OmnifyLogo } from '@/components/OmnifyLogo'
 
 interface NavItem {
   icon: LucideIcon
@@ -102,9 +105,13 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Target, label: 'Dashboard Ads', path: '/ads', feature: 'ads_intelligence' },
       { icon: Zap, label: '🤖 Criar Campanha (IA)', path: '/ads/agent', feature: 'ads_intelligence' },
+      { icon: Bot, label: '💬 Chat com Agente', path: '/ads/chat', feature: 'ads_intelligence' },
+      { icon: ImageIcon, label: '📁 Criativos', path: '/ads/creatives', feature: 'ads_intelligence' },
       { icon: BarChart3, label: 'Campanhas', path: '/ads/campaigns', feature: 'ads_intelligence' },
       { icon: Lightbulb, label: 'Insights IA', path: '/ads/insights', feature: 'ads_intelligence' },
       { icon: Zap, label: 'Automações', path: '/ads/automation', feature: 'ads_intelligence' },
+      { icon: BookOpen, label: '📚 Base de Conhecimento', path: '/ads/knowledge', feature: 'ads_intelligence' },
+      { icon: Shield, label: '🛡️ Guardrails', path: '/ads/guardrails', feature: 'ads_intelligence' },
       { icon: Settings, label: 'Contas de Anúncio', path: '/ads/accounts', feature: 'ads_intelligence' },
     ],
   },
@@ -180,30 +187,25 @@ function NavGroupComponent({
       <NavLink
         to={item.path}
         className={cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-          'hover:bg-white/10',
-          isActive && 'text-white shadow-lg'
+          'group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300',
+          'hover:bg-white/5',
+          isActive && 'text-white nav-active'
         )}
-        style={
-          isActive
-            ? {
-                backgroundColor: branding?.primary_color || 'var(--brand-primary)',
-                boxShadow: `0 10px 15px -3px ${branding?.primary_color || 'var(--brand-primary)'}33`,
-                borderRadius: 'var(--brand-radius)',
-              }
-            : {
-                borderRadius: 'var(--brand-radius)',
-              }
-        }
       >
-        <item.icon className={cn('h-5 w-5 shrink-0', isActive && 'text-white')} />
+        <item.icon className={cn(
+          'h-5 w-5 shrink-0 transition-colors',
+          isActive ? 'text-white' : 'text-muted-foreground group-hover:text-white/80'
+        )} />
         <AnimatePresence mode="wait">
           {!isCollapsed && (
             <motion.span
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
-              className="text-sm font-medium whitespace-nowrap"
+              className={cn(
+                'text-sm font-medium whitespace-nowrap',
+                isActive && 'text-white'
+              )}
             >
               {item.label}
             </motion.span>
@@ -219,14 +221,16 @@ function NavGroupComponent({
       <button
         onClick={onToggle}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
-          'hover:bg-white/10 text-left',
+          'w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300',
+          'hover:bg-white/5 text-left',
           hasActiveItem && !isCollapsed && 'bg-white/5'
         )}
-        style={{ borderRadius: 'var(--brand-radius)' }}
       >
         <group.icon
-          className={cn('h-5 w-5 shrink-0', hasActiveItem && 'text-sidebar-accent')}
+          className={cn(
+            'h-5 w-5 shrink-0 transition-colors',
+            hasActiveItem ? 'text-white' : 'text-muted-foreground'
+          )}
         />
         <AnimatePresence mode="wait">
           {!isCollapsed && (
@@ -236,8 +240,8 @@ function NavGroupComponent({
                 animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
                 className={cn(
-                  'text-sm font-semibold whitespace-nowrap flex-1',
-                  hasActiveItem && 'text-sidebar-accent'
+                  'text-sm font-semibold whitespace-nowrap flex-1 font-display tracking-wide',
+                  hasActiveItem ? 'text-white' : 'text-foreground/80'
                 )}
               >
                 {group.label}
@@ -265,7 +269,10 @@ function NavGroupComponent({
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <ul className={cn('mt-1 space-y-0.5', !isCollapsed && 'ml-4 pl-3 border-l border-white/10')}>
+            <ul className={cn(
+              'mt-1 space-y-0.5', 
+              !isCollapsed && 'ml-4 pl-3 border-l border-white/10'
+            )}>
               {filteredItems.map((item) => {
                 const isActive =
                   currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path))
@@ -275,30 +282,25 @@ function NavGroupComponent({
                     <NavLink
                       to={item.path}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
-                        'hover:bg-white/10',
-                        isActive && 'text-white shadow-lg'
+                        'group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300',
+                        'hover:bg-white/5',
+                        isActive && 'text-white nav-active'
                       )}
-                      style={
-                        isActive
-                          ? {
-                              backgroundColor: branding?.primary_color || 'var(--brand-primary)',
-                              boxShadow: `0 4px 12px -2px ${branding?.primary_color || 'var(--brand-primary)'}40`,
-                              borderRadius: 'var(--brand-radius)',
-                            }
-                          : {
-                              borderRadius: 'var(--brand-radius)',
-                            }
-                      }
                     >
-                      <item.icon className={cn('h-4 w-4 shrink-0', isActive && 'text-white')} />
+                      <item.icon className={cn(
+                        'h-4 w-4 shrink-0 transition-colors',
+                        isActive ? 'text-white' : 'text-muted-foreground group-hover:text-white/80'
+                      )} />
                       <AnimatePresence mode="wait">
                         {!isCollapsed && (
                           <motion.span
                             initial={{ opacity: 0, width: 0 }}
                             animate={{ opacity: 1, width: 'auto' }}
                             exit={{ opacity: 0, width: 0 }}
-                            className="text-sm whitespace-nowrap"
+                            className={cn(
+                              'text-sm whitespace-nowrap',
+                              isActive && 'text-white font-medium'
+                            )}
                           >
                             {item.label}
                           </motion.span>
@@ -399,11 +401,7 @@ export function Sidebar() {
     })
   }
 
-  // Extrair cores do branding
-  const sidebarBgColor = branding?.branding?.sidebar_color || 'var(--branding-sidebar-bg)'
-  const sidebarTextColor = branding?.branding?.sidebar_text_color || 'var(--branding-sidebar-text)'
-  const primaryColor = branding?.branding?.primary_color || 'var(--branding-primary)'
-  const companyName = branding?.name || tenant?.name || 'CRM'
+  const companyName = branding?.name || tenant?.name || 'OmniFy HUB'
   const logoUrl = branding?.logo_dark_url || branding?.logo_url
 
   return (
@@ -411,59 +409,59 @@ export function Sidebar() {
       initial={false}
       animate={{ width: sidebarCollapsed ? 72 : 280 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
-      className="fixed left-0 top-0 z-40 h-screen border-r border-border/10 flex flex-col"
+      className={cn(
+        'fixed left-0 top-0 z-40 h-screen flex flex-col',
+        'bg-sidebar sidebar-futuristic'
+      )}
       style={{
-        backgroundColor: sidebarBgColor,
-        color: sidebarTextColor,
+        borderRight: '1px solid rgba(255, 255, 255, 0.06)',
       }}
     >
+      {/* Ambient Light Effect */}
+      <div 
+        className="absolute inset-0 pointer-events-none overflow-hidden"
+        style={{
+          background: 'radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.02) 0%, transparent 50%)',
+        }}
+      />
+      
       {/* Logo */}
       <div
-        className="h-16 flex items-center justify-between px-4 border-b border-white/10"
-        style={{ backgroundColor: sidebarBgColor }}
+        className="relative h-16 flex items-center justify-between px-4 border-b border-white/5"
       >
         <AnimatePresence mode="wait">
-          {!sidebarCollapsed && (
+          {logoUrl ? (
+            // Custom branding logo
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="flex items-center gap-3"
             >
-              {logoUrl ? (
-                <img src={logoUrl} alt={companyName} className="h-8 object-contain" />
-              ) : (
-                <>
-                  <div
-                    className="h-8 w-8 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: primaryColor }}
-                  >
-                    <span className="text-white font-bold text-lg">
-                      {companyName.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <span className="font-semibold text-lg" style={{ color: sidebarTextColor }}>
-                    {companyName}
-                  </span>
-                </>
+              <img src={logoUrl} alt={companyName} className="h-8 object-contain" />
+              {!sidebarCollapsed && (
+                <span className="font-display font-semibold text-lg tracking-wide">
+                  {companyName}
+                </span>
               )}
             </motion.div>
-          )}
-          {sidebarCollapsed && logoUrl && (
-            <motion.img
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              src={logoUrl}
-              alt={companyName}
-              className="h-8 w-8 object-contain mx-auto"
+          ) : (
+            // OmniFy HUB default logo
+            <OmnifyLogo 
+              collapsed={sidebarCollapsed} 
+              size="md"
+              animated={true}
             />
           )}
         </AnimatePresence>
 
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          className={cn(
+            'p-2 rounded-lg transition-all duration-300',
+            'hover:bg-white/5 hover:text-white',
+            'border border-transparent hover:border-white/10'
+          )}
         >
           {sidebarCollapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -475,11 +473,14 @@ export function Sidebar() {
 
       {/* Tenant Info */}
       {tenant && !sidebarCollapsed && (
-        <div className="px-4 py-3 border-b border-white/10">
-          <p className="text-xs text-sidebar-foreground/60">Empresa</p>
+        <div className="relative px-4 py-3 border-b border-white/5">
+          <p className="text-xs text-muted-foreground">Empresa</p>
           <p className="text-sm font-medium truncate">{tenant.name}</p>
           {featuresData?.plan_label && (
-            <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-sidebar-accent/20 text-sidebar-accent">
+            <span className={cn(
+              'inline-flex items-center mt-1 px-2 py-0.5 rounded-md text-xs font-medium',
+              'bg-white/10 text-white/80 border border-white/10'
+            )}>
               {featuresData.plan_label}
             </span>
           )}
@@ -487,7 +488,7 @@ export function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 overflow-y-auto scrollbar-thin">
+      <nav className="relative flex-1 py-4 overflow-y-auto scrollbar-thin">
         <div className="px-3 space-y-1">
           {navGroups.map((group) => {
             const filteredItems = filterItems(group.items)
@@ -509,11 +510,30 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-white/10">
-        <div className={cn('text-xs opacity-50', sidebarCollapsed ? 'text-center' : '')}>
-          {sidebarCollapsed ? 'v1' : `${branding?.company_name || 'CRM'} v1.0.0`}
+      <div className="relative p-4 border-t border-white/5">
+        <div className={cn(
+          'text-xs font-mono',
+          sidebarCollapsed ? 'text-center' : ''
+        )}>
+          <span className="text-muted-foreground">
+            {sidebarCollapsed ? 'v1' : (
+              <>
+                <span className="text-white">OmniFy</span>
+                <span className="text-white/50">HUB</span>
+                <span className="text-muted-foreground ml-2">v1.0.0</span>
+              </>
+            )}
+          </span>
         </div>
       </div>
+      
+      {/* Bottom Gradient Line */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-px"
+        style={{
+          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1), transparent)',
+        }}
+      />
     </motion.aside>
   )
 }

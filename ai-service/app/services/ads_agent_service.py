@@ -25,8 +25,11 @@ class AdsCampaignAgent:
     - Escalar campanhas vencedoras
     """
     
-    def __init__(self, openai_api_key: str, laravel_api_url: str):
-        self.client = OpenAI(api_key=openai_api_key)
+    def __init__(self, openai_api_key: str, laravel_api_url: str, openai_project_id: str = None):
+        self.client = OpenAI(
+            api_key=openai_api_key,
+            project=openai_project_id,
+        )
         self.laravel_api_url = laravel_api_url
         self.model = "gpt-4o"
         
@@ -757,10 +760,16 @@ def get_ads_agent() -> AdsCampaignAgent:
     global ads_agent
     
     if ads_agent is None:
-        import os
+        from app.config import get_settings
+        settings = get_settings()
+        
+        if not settings.openai_api_key:
+            raise ValueError("OPENAI_API_KEY não configurada no .env do AI Service")
+        
         ads_agent = AdsCampaignAgent(
-            openai_api_key=os.getenv("OPENAI_API_KEY"),
-            laravel_api_url=os.getenv("LARAVEL_API_URL", "http://localhost:8000")
+            openai_api_key=settings.openai_api_key,
+            laravel_api_url=settings.LARAVEL_API_URL,
+            openai_project_id=settings.openai_project_id
         )
     
     return ads_agent

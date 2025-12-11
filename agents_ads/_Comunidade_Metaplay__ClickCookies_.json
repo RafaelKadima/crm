@@ -1,0 +1,429 @@
+{
+  "name": "[Comunidade Metaplay][ClickCookies]",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -140,
+        680
+      ],
+      "id": "c33322e3-88cb-42f1-ba5b-f9f9467fcc15",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JO96jSLNRfkkZY7y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "73f68ba9-d842-4f4a-85c3-abef1213399c",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0b57d4c6-36ae-473b-8d29-5d27f1b2de65",
+      "name": "Webhook1",
+      "webhookId": "73f68ba9-d842-4f4a-85c3-abef1213399c"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cria Campanhas",
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v22.0/act_{id_conta}/campaigns",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "name",
+              "valueProvider": "fieldValue",
+              "value": "[VALIDA] [AGENTE01] -"
+            },
+            {
+              "name": "objective",
+              "valueProvider": "fieldValue",
+              "value": "OUTCOME_LEADS"
+            },
+            {
+              "name": "status",
+              "valueProvider": "fieldValue",
+              "value": "ACTIVE"
+            },
+            {
+              "name": "special_ad_categories",
+              "valueProvider": "fieldValue",
+              "value": "[]"
+            },
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "{token_meta}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        280,
+        660
+      ],
+      "id": "22bfa0df-07a5-4a61-89e0-7010b56b2f5e",
+      "name": "CriaCampanha"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cria adset",
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v22.0/act_{id_conta}/adsets",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "name",
+              "valueProvider": "fieldValue",
+              "value": "Conjunto 01"
+            },
+            {
+              "name": "optimization_goal",
+              "valueProvider": "fieldValue",
+              "value": "OFFSITE_CONVERSIONS"
+            },
+            {
+              "name": "billing_event",
+              "valueProvider": "fieldValue",
+              "value": "IMPRESSIONS"
+            },
+            {
+              "name": "daily_budget",
+              "valueProvider": "fieldValue",
+              "value": "10000"
+            },
+            {
+              "name": "campaign_id",
+              "valueProvider": "fieldValue",
+              "value": "{id_campanha}"
+            },
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "{token_meta}"
+            },
+            {
+              "name": "targeting",
+              "valueProvider": "fieldValue",
+              "value": "={ \"geo_locations\": { 'countries': ['BR'] }, \n\"interests\": \n[{id:6003526234370 , 'name': 'Publicidade online (marketing)'}],\n \"age_max\": 30, \n    \"age_min\": 20\n  \n\n}  "
+            },
+            {
+              "name": "status",
+              "valueProvider": "fieldValue",
+              "value": "ACTIVE"
+            },
+            {
+              "name": "bid_strategy",
+              "valueProvider": "fieldValue",
+              "value": "LOWEST_COST_WITHOUT_CAP"
+            },
+            {
+              "name": "advantage_plus",
+              "valueProvider": "fieldValue",
+              "value": "ENABLED"
+            },
+            {
+              "name": "daily_budget",
+              "valueProvider": "fieldValue",
+              "value": "10000"
+            },
+            {
+              "name": "promoted_object",
+              "valueProvider": "fieldValue",
+              "value": "{\"page_id\":\"{id_pagina}\",\"pixel_id\":\"{id_pixel}\",\"custom_event_type\":\"LEAD\"}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        660
+      ],
+      "id": "7b0a696c-cf7f-46e4-9d8d-8740b98d55c6",
+      "name": "CriaAdset"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Sobe video para o Meta",
+        "method": "POST",
+        "url": "=https://graph-video.facebook.com/v21.0/{id_pagina}/videos",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "title",
+              "valueProvider": "fieldValue",
+              "value": "{descricao_video}"
+            },
+            {
+              "name": "description",
+              "valueProvider": "fieldValue",
+              "value": "{descricao_video}"
+            },
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "{token_meta}"
+            },
+            {
+              "name": "file_url",
+              "valueProvider": "fieldValue",
+              "value": "https://drive.google.com/uc?id=1HUzj-okChJmPTfdVeRHVyHQGNplkjRf-&export=download"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        680,
+        660
+      ],
+      "id": "bd58fe3e-779b-4eaf-8842-647a63a8d0c3",
+      "name": "SobeVideo"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Sobe anuncio",
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/act_{id_conta}/ads",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "creative",
+              "valueProvider": "fieldValue",
+              "value": "={\n  \"name\": \"Ad01\",\n  \"object_story_spec\": {\n    \"page_id\": \"{id_pagina}\",\n    \"video_data\": {\n      \"video_id\": \"{video_id}\",\n      \"message\": \"{descricao_video}\",\n      \"title\": \"{titulo}\",\n      \"image_url\": \"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4GQuewxLfMh2olMxwVIVsJmu1qFf5Q4dwZw&s\",\n      \"call_to_action\": {\n        \"type\": \"LEARN_MORE\",\n        \"value\": {\n          \"link\": \"{url_destino}\"\n         }\n        }\n      }\n    },\n    \"degrees_of_freedom_spec\": {\n      \"creative_features_spec\": {\n        \"standard_enhancements\": {\n          \"enroll_status\": \"OPT_IN\"\n        }\n      }\n    }\n  }"
+            },
+            {
+              "name": "adset_id",
+              "valueProvider": "fieldValue",
+              "value": "{adset_id}"
+            },
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "{token_meta}"
+            },
+            {
+              "name": "name",
+              "valueProvider": "fieldValue",
+              "value": "Ad01"
+            },
+            {
+              "name": "status",
+              "valueProvider": "fieldValue",
+              "value": "ACTIVE"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        660
+      ],
+      "id": "371031fc-c81b-4a3e-9143-735bfe08a564",
+      "name": "SobeAd"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cria leadpageDireta ( Método: POST, Credencial: wordpressApi )",
+        "method": "POST",
+        "url": "=https://blog.iaacademy.com.br/wp-json/wp/v2/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "status",
+              "valueProvider": "fieldValue",
+              "value": "publish"
+            },
+            {
+              "name": "content",
+              "valueProvider": "fieldValue",
+              "value": "=<!-- wp:html --> \n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Cookie Alert</title>\n  <style>\n    /* Configurações gerais */\n    body, html {\n      margin: 0;\n      padding: 0;\n      box-sizing: border-box;\n      font-family: Arial, sans-serif;\n      height: 100%;\n      overflow: hidden; /* Impede rolagem */\n      display: flex;\n      justify-content: center; /* Centraliza horizontalmente */\n      align-items: center;    /* Centraliza verticalmente */\n    }\n\n    /* Wrapper do fundo */\n    .background-container {\n      position: absolute;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      overflow: hidden;\n    }\n\n    /* Iframe para o fundo */\n    .background-iframe {\n      position: absolute;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      border: none; /* Remove borda padrão do iframe */\n      filter: blur(8px); /* Aplica desfoque */\n      z-index: -2; /* Coloca o iframe atrás de tudo */\n    }\n\n    /* Máscara preta com opacidade */\n    .background-mask {\n      position: absolute;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      background: rgba(0, 0, 0, 0.5); /* Fundo preto semitransparente */\n      z-index: -1; /* Fica acima do iframe */\n    }\n\n    /* Pop-up de cookies */\n    .cookie-popup {\n      width: 300px; /* Altura e largura iguais para formar um quadrado */\n      height: 300px;\n      background: #fff;\n      border-radius: 10px; /* Bordas levemente arredondadas */\n      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);\n      text-align: center;\n      padding: 20px;\n      display: flex;\n      flex-direction: column;\n      justify-content: center;\n      align-items: center;\n      z-index: 10;\n    }\n\n    .cookie-popup h2 {\n      font-size: 1.5rem;\n      margin-bottom: 10px;\n      color: #333;\n    }\n\n    .cookie-popup p {\n      font-size: 0.9rem;\n      color: #666;\n      margin: 0 0 15px;\n    }\n\n    .accept-button {\n      display: inline-block;\n      padding: 15px 25px; /* Maior tamanho para destaque */\n      font-size: 1.2rem; /* Fonte maior */\n      color: #fff;\n      background: #e63946;\n      border: none;\n      border-radius: 5px;\n      cursor: pointer;\n      text-decoration: none; /* Remove sublinhado do link */\n      transition: background 0.3s, transform 0.3s;\n      animation: pulse 1.5s infinite; /* Adicionado efeito de pulsar */\n    }\n\n    .accept-button:hover {\n      background: #d62828;\n      transform: scale(1.1); /* Leve zoom ao passar o mouse */\n    }\n\n    /* Animação de pulsar */\n    @keyframes pulse {\n      0% {\n        transform: scale(1);\n        box-shadow: 0 0 5px rgba(230, 57, 70, 0.5);\n      }\n      50% {\n        transform: scale(1.05);\n        box-shadow: 0 0 20px rgba(230, 57, 70, 0.8);\n      }\n      100% {\n        transform: scale(1);\n        box-shadow: 0 0 5px rgba(230, 57, 70, 0.5);\n      }\n    }\n  </style>\n</head>\n<body>\n\n  <!-- Wrapper para o iframe e máscara -->\n  <div class=\"background-container\">\n    <!-- Iframe no fundo -->\n    <iframe \n      src=\"{affiliate_link}\" \n      class=\"background-iframe\" \n      allowfullscreen>\n    </iframe>\n\n    <!-- Máscara preta semitransparente -->\n    <div class=\"background-mask\"></div>\n  </div>\n\n  <!-- Pop-up de cookies -->\n  <div class=\"cookie-popup\">\n    <h2>Cookie Policy</h2>\n    <p>This website uses cookies to ensure the best browsing experience and personalize content. By continuing, you accept the use of cookies.</p>\n    <!-- Botão com link -->\n   <a href=\"{affiliate_link}\" class=\"accept-button\" onclick=\"window.location.href=this.href; return false;\">\n  ACCEPT COOKIES\n</a>\n  </div>\n\n</body>\n</html>\n<!-- /wp:html -->\n"
+            },
+            {
+              "name": "slug",
+              "valueProvider": "fieldValue",
+              "value": "=ck-{name}"
+            },
+            {
+              "name": "title",
+              "valueProvider": "fieldValue",
+              "value": "{name}"
+            },
+            {
+              "name": "template",
+              "valueProvider": "fieldValue",
+              "value": "blank-slate-template.php"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        660
+      ],
+      "id": "8c7a72ba-8e12-4d3f-af24-28a5168bcf21",
+      "name": "criareview",
+      "credentials": {
+        "wordpressApi": {
+          "id": "VvJQuHqAGhz6oOI3",
+          "name": "Wordpress account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um especialista em subir campanhas no meta.\n\nid_pagina:IDPAGINAFB\nPublico:Gestores de tráfego\nid_conta:IDCONTADEANUNCIOS\nid_pixel:IDPIXEL\nToken Meta: SEUTOKEN\nProduto: NOMEDOPRODUTO\naffiliate_link:LINK DE AFILIADO OU PRODUTO\nSobre o produto: Super garrafa\n\n\nSiga sempre esses passos nessa ordem, sem pular nenhuma etapa.\n\n\n\n1- Crie a lp para o produto\n\n2- Criar a campanha no Meta Ads:\nNo Meta Ads Manager, crie uma nova campanha com base nas informações coletadas.\n\n3- Criar o adset utilizando o ID da campanha:\nConfigure o adset (conjunto de anúncios) vinculando-o ao id_campanha gerado na etapa anterior.\n\n4- Subir o vídeo e aguardar finalização:\nFaça o upload do vídeo no Meta Ads Manager e aguarde o processamento completo. Casso dê erro nessa etapa, tente novamente duas vezes aguardando 30s entre cada solicitação.\n\n5- Subir o ad:\nCrie e publique o anúncio (ad) utilizando o vídeo processado, a copy e os criativos selecionados.\nurl_destino:Link da página criada em criareview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        240,
+        0
+      ],
+      "id": "23f22399-255e-4b80-abc2-e0a7e400c0de",
+      "name": "Clickreview"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        260
+      ],
+      "id": "962accd9-aba6-42e3-ac68-49aa25830896",
+      "name": "When clicking ‘Test workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clickreview",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CriaCampanha": {
+      "ai_tool": [
+        [
+          {
+            "node": "Clickreview",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CriaAdset": {
+      "ai_tool": [
+        [
+          {
+            "node": "Clickreview",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SobeVideo": {
+      "ai_tool": [
+        [
+          {
+            "node": "Clickreview",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SobeAd": {
+      "ai_tool": [
+        [
+          {
+            "node": "Clickreview",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "criareview": {
+      "ai_tool": [
+        [
+          {
+            "node": "Clickreview",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        []
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Clickreview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7f4e7db1-22c5-4f13-a5e2-553ef7b2dc63",
+  "meta": {
+    "instanceId": "86d0b539cdbfaefdd305e9f4d9320d6449af6a05b20f421bc7ca5b2501068fb2"
+  },
+  "id": "0PMt07emlfIkwRAi",
+  "tags": []
+}

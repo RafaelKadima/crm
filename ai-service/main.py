@@ -12,6 +12,8 @@ from app.routers import agent
 from app.routers import queue as queue_router
 from app.routers import learning as learning_router
 from app.routers import ads as ads_router
+from app.routers import orchestrator as orchestrator_router
+from app.routers import ads_learning as ads_learning_router
 from app.queue.worker import queue_worker
 from app.queue.message_queue import message_queue
 
@@ -73,6 +75,8 @@ app.include_router(agent.router)
 app.include_router(queue_router.router)
 app.include_router(learning_router.router)
 app.include_router(ads_router.router)
+app.include_router(orchestrator_router.router)
+app.include_router(ads_learning_router.router)
 
 
 @app.on_event("startup")

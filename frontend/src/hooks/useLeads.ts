@@ -91,6 +91,49 @@ export function useUpdateLeadStage() {
         queryClient.setQueryData(['leads'], context.previousLeads)
       }
     },
+    onSuccess: (response) => {
+      // Debug: ver a resposta completa
+      console.log('[GTM Debug] Response:', response)
+      console.log('[GTM Debug] Response data:', response?.data)
+      
+      // Dispara evento GTM se o estágio tiver gtm_event_key
+      const lead = response?.data?.lead
+      const stage = lead?.stage
+      
+      console.log('[GTM Debug] Lead:', lead)
+      console.log('[GTM Debug] Stage:', stage)
+      console.log('[GTM Debug] gtm_event_key:', stage?.gtm_event_key)
+      console.log('[GTM Debug] dataLayer exists:', typeof window !== 'undefined' && !!(window as any).dataLayer)
+      
+      if (stage?.gtm_event_key) {
+        const eventData = {
+          event: stage.gtm_event_key,
+          event_category: 'crm',
+          event_label: stage.name,
+          lead_id: lead.id,
+          lead_source: lead.source || 'direct',
+          contact_name: lead.contact?.name,
+          contact_email: lead.contact?.email,
+          contact_phone: lead.contact?.phone,
+          value: lead.value || 0,
+          currency: 'BRL',
+          stage_to: stage.name,
+          pipeline_name: lead.pipeline?.name,
+          content_type: 'product',
+          content_name: lead.pipeline?.name || 'Lead',
+          timestamp: new Date().toISOString(),
+        }
+        
+        if (typeof window !== 'undefined' && (window as any).dataLayer) {
+          ;(window as any).dataLayer.push(eventData)
+          console.log('[GTM] ✅ Event pushed:', stage.gtm_event_key, eventData)
+        } else {
+          console.log('[GTM] ❌ dataLayer not found!')
+        }
+      } else {
+        console.log('[GTM] ⚠️ No gtm_event_key for this stage')
+      }
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
     },

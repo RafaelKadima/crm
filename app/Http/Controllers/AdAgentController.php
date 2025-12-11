@@ -9,6 +9,7 @@ use App\Models\AdCampaign;
 use App\Services\Ads\MetaAdsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class AdAgentController extends Controller
@@ -18,6 +19,53 @@ class AdAgentController extends Controller
     public function __construct(MetaAdsService $metaAdsService)
     {
         $this->metaAdsService = $metaAdsService;
+    }
+
+    /**
+     * Gera copies de anúncio via IA.
+     * Faz proxy para o AI Service.
+     */
+    public function generateCopy(Request $request)
+    {
+        $validated = $request->validate([
+            'product_name' => 'required|string|max:255',
+            'product_description' => 'required|string',
+            'target_audience' => 'required|string',
+            'tone_of_voice' => 'string',
+            'key_benefits' => 'array',
+            'num_variations' => 'integer|min:1|max:10',
+        ]);
+
+        try {
+            $aiServiceUrl = config('services.ai_service.url', 'http://localhost:8001');
+            
+            $response = Http::timeout(60)
+                ->post("{$aiServiceUrl}/ads/agent/generate-copy", $validated);
+
+            if ($response->failed()) {
+                Log::error('AI Service generate-copy failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                
+                return response()->json([
+                    'error' => 'Falha ao gerar copies',
+                    'detail' => $response->json()['detail'] ?? 'Erro interno',
+                ], $response->status());
+            }
+
+            return response()->json($response->json());
+
+        } catch (\Exception $e) {
+            Log::error('Failed to connect to AI Service', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Serviço de IA indisponível',
+                'detail' => $e->getMessage(),
+            ], 503);
+        }
     }
 
     /**
@@ -97,12 +145,13 @@ class AdAgentController extends Controller
     {
         $campaignData = $data['campaign'];
         
-        // 1. Cria a campanha no Meta
+        // 1. Cria a campanha no Meta (com CBO - Campaign Budget Optimization)
         $metaCampaign = $this->metaAdsService->createCampaign($account, [
             'name' => $campaignData['name'],
             'objective' => $this->mapObjectiveToMeta($campaignData['objective']),
             'status' => $campaignData['status'] ?? 'PAUSED',
             'special_ad_categories' => [],
+            'daily_budget' => $campaignData['daily_budget'], // Orçamento diário em reais
         ]);
 
         // Salva no banco local
@@ -125,16 +174,15 @@ class AdAgentController extends Controller
         $createdAdsets = [];
         $createdAds = [];
 
-        // 2. Cria os adsets
+        // 2. Cria os adsets (sem orçamento - CBO na campanha)
         foreach ($data['adsets'] ?? [] as $adsetData) {
             $metaAdset = $this->metaAdsService->createAdset($campaign, [
                 'name' => $adsetData['name'],
                 'optimization_goal' => $adsetData['optimization_goal'] ?? 'LINK_CLICKS',
                 'billing_event' => $adsetData['billing_event'] ?? 'IMPRESSIONS',
-                'bid_amount' => ($campaignData['daily_budget'] * 100) / 10, // Estimativa
-                'daily_budget' => $campaignData['daily_budget'] * 100, // Em centavos
                 'targeting' => $this->formatMetaTargeting($adsetData['targeting'] ?? []),
                 'status' => 'PAUSED',
+                // CBO ativo - sem bid_strategy nem budget no adset
             ]);
 
             $adset = AdAdset::create([
@@ -154,41 +202,57 @@ class AdAgentController extends Controller
 
             $createdAdsets[] = $adset;
 
-            // 3. Cria os ads para cada adset
-            foreach ($data['ads'] ?? [] as $adData) {
-                $creative = $adData['creative'] ?? [];
-                
-                $metaAd = $this->metaAdsService->createAd($adset, [
-                    'name' => $adData['name'],
-                    'creative' => [
-                        'title' => $creative['headline'] ?? '',
-                        'body' => $creative['primary_text'] ?? '',
-                        'description' => $creative['description'] ?? '',
-                        'call_to_action_type' => $this->mapCtaToMeta($creative['call_to_action'] ?? 'LEARN_MORE'),
-                        'link_url' => $creative['link_url'] ?? '',
-                        'image_url' => $creative['image_url'] ?? null,
-                    ],
-                    'status' => 'PAUSED',
-                ]);
+            // 3. Cria os ads para cada adset (apenas se tiver page_id)
+            $pageId = $account->metadata['page_id'] ?? null;
+            
+            if ($pageId) {
+                foreach ($data['ads'] ?? [] as $adData) {
+                    $creative = $adData['creative'] ?? [];
+                    
+                    try {
+                        $metaAd = $this->metaAdsService->createAd($adset, [
+                            'name' => $adData['name'],
+                            'page_id' => $pageId,
+                            'creative' => [
+                                'headline' => $creative['headline'] ?? '',
+                                'primary_text' => $creative['primary_text'] ?? '',
+                                'description' => $creative['description'] ?? '',
+                                'call_to_action' => $this->mapCtaToMeta($creative['call_to_action'] ?? 'LEARN_MORE'),
+                                'link_url' => $creative['link_url'] ?? '',
+                                'image_url' => $creative['image_url'] ?? null,
+                            ],
+                            'status' => 'PAUSED',
+                        ]);
 
-                $ad = AdAd::create([
-                    'tenant_id' => $data['tenant_id'],
-                    'ad_adset_id' => $adset->id,
-                    'platform_ad_id' => $metaAd['id'] ?? null,
-                    'name' => $adData['name'],
-                    'status' => 'PAUSED',
-                    'headline' => $creative['headline'] ?? null,
-                    'description' => $creative['primary_text'] ?? null,
-                    'call_to_action' => $creative['call_to_action'] ?? null,
-                    'destination_url' => $creative['link_url'] ?? null,
-                    'metadata' => [
-                        'created_by' => 'agent',
-                        'creative' => $creative,
-                        'platform_response' => $metaAd,
-                    ],
-                ]);
+                        $ad = AdAd::create([
+                            'tenant_id' => $data['tenant_id'],
+                            'ad_adset_id' => $adset->id,
+                            'platform_ad_id' => $metaAd['id'] ?? null,
+                            'name' => $adData['name'],
+                            'status' => 'PAUSED',
+                            'headline' => $creative['headline'] ?? null,
+                            'description' => $creative['primary_text'] ?? null,
+                            'call_to_action' => $creative['call_to_action'] ?? null,
+                            'destination_url' => $creative['link_url'] ?? null,
+                            'metadata' => [
+                                'created_by' => 'agent',
+                                'creative' => $creative,
+                                'platform_response' => $metaAd,
+                            ],
+                        ]);
 
-                $createdAds[] = $ad;
+                        $createdAds[] = $ad;
+                    } catch (\Exception $e) {
+                        Log::warning('Failed to create ad, skipping', [
+                            'error' => $e->getMessage(),
+                            'adset_id' => $adset->id,
+                        ]);
+                    }
+                }
+            } else {
+                Log::info('Skipping ad creation - no page_id configured', [
+                    'account_id' => $account->id,
+                ]);
             }
         }
 

@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { useGtmSettings } from '@/hooks/useGtm'
+import { useAuthStore } from '@/store/authStore'
+import echo from '@/lib/echo'
 
 /**
  * Componente que injeta o script do Google Tag Manager na página.
@@ -7,7 +9,10 @@ import { useGtmSettings } from '@/hooks/useGtm'
  */
 export function GtmScript() {
   const { data: settings } = useGtmSettings()
+  const { user } = useAuthStore()
+  const tenantId = user?.tenant_id
 
+  // Injeta o script do GTM
   useEffect(() => {
     if (!settings?.gtm_enabled || !settings?.gtm_container_id) {
       return
@@ -54,6 +59,36 @@ export function GtmScript() {
       // Cleanup ao desmontar (opcional)
     }
   }, [settings?.gtm_enabled, settings?.gtm_container_id])
+
+  // Escuta eventos GTM via WebSocket
+  useEffect(() => {
+    if (!settings?.gtm_enabled || !tenantId) {
+      return
+    }
+
+    console.log(`[GTM] Conectando ao canal WebSocket para eventos GTM...`)
+    
+    const channel = echo.private(`tenant.${tenantId}.gtm`)
+    
+    channel
+      .subscribed(() => {
+        console.log(`[GTM] ✅ Inscrito no canal de eventos GTM`)
+      })
+      .listen('.gtm.event', (eventData: Record<string, any>) => {
+        console.log(`[GTM] 📊 Evento recebido via WebSocket:`, eventData)
+        
+        // Faz push no dataLayer
+        if (typeof window !== 'undefined' && (window as any).dataLayer) {
+          (window as any).dataLayer.push(eventData)
+          console.log(`[GTM] ✅ Evento pushed para dataLayer:`, eventData.event)
+        }
+      })
+
+    return () => {
+      console.log(`[GTM] Desconectando do canal de eventos GTM`)
+      echo.leave(`tenant.${tenantId}.gtm`)
+    }
+  }, [settings?.gtm_enabled, tenantId])
 
   return null
 }

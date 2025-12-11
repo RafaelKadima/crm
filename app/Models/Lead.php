@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\IaModeEnum;
 use App\Enums\InteractionSourceEnum;
 use App\Enums\LeadStatusEnum;
+use App\Events\LeadStageChanged;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -235,9 +236,20 @@ class Lead extends Model
     /**
      * Move o lead para outro estágio.
      */
-    public function moveToStage(PipelineStage $stage): void
+    public function moveToStage(PipelineStage $newStage, ?User $changedBy = null, string $source = 'user'): void
     {
-        $this->update(['stage_id' => $stage->id]);
+        $oldStage = $this->stage;
+        
+        // Só dispara evento se realmente mudou de estágio
+        if ($oldStage && $oldStage->id !== $newStage->id) {
+            $this->update(['stage_id' => $newStage->id]);
+            
+            // Dispara evento para GTM e outras integrações
+            LeadStageChanged::dispatch($this, $oldStage, $newStage, $changedBy, $source);
+        } elseif (!$oldStage) {
+            // Lead novo, só atualiza sem disparar evento
+            $this->update(['stage_id' => $newStage->id]);
+        }
     }
 
     /**

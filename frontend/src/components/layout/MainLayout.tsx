@@ -15,7 +15,7 @@ export function MainLayout() {
       
       <motion.main
         initial={false}
-        animate={{ marginLeft: sidebarCollapsed ? 72 : 260 }}
+        animate={{ marginLeft: sidebarCollapsed ? 72 : 280 }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
         className={cn("pt-16 min-h-screen")}
       >

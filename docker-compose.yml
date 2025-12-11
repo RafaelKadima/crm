@@ -1,15 +1,7 @@
-version: '3.8'
-
-# ==================================================
-# CRM OMNIFY - DOCKER COMPOSE (SUPABASE + REVERB)
-# ==================================================
-# Banco de dados: Supabase (externo)
-# WebSocket: Laravel Reverb (self-hosted)
-
 services:
-  # ===========================================
-  # NGINX - Proxy reverso e servidor web
-  # ===========================================
+  # ===========================
+  # NGINX
+  # ===========================
   nginx:
     image: nginx:alpine
     container_name: crm-nginx
@@ -25,14 +17,14 @@ services:
       - ./frontend/dist:/var/www/frontend:ro
     depends_on:
       - php
-      - ai-service
       - reverb
+      - ai-service
     networks:
       - crm-network
 
-  # ===========================================
-  # PHP-FPM - Backend Laravel
-  # ===========================================
+  # ===========================
+  # PHP-FPM (backend Laravel)
+  # ===========================
   php:
     build:
       context: .
@@ -44,60 +36,62 @@ services:
       - ./:/var/www/crm
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
     environment:
-      - APP_ENV=${APP_ENV:-production}
-      - DB_CONNECTION=pgsql
-      - DB_HOST=${DB_HOST:-aws-0-sa-east-1.pooler.supabase.com}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_DATABASE=${DB_DATABASE:-postgres}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - AI_AGENT_URL=http://ai-service:8001
-      - REVERB_HOST=reverb
-      - REVERB_PORT=8080
+      APP_ENV: ${APP_ENV:-production}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REVERB_HOST: reverb
+      REVERB_PORT: 8080
     depends_on:
       redis:
         condition: service_healthy
     networks:
       - crm-network
 
-  # ===========================================
-  # Reverb - WebSocket Server (Laravel oficial)
-  # ===========================================
+  # ===========================
+  # Reverb (WebSocket Server)
+  # ===========================
   reverb:
     build:
       context: .
-      dockerfile: docker/php/Dockerfile
+      dockerfile: docker/php/Dockerfile.reverb
     container_name: crm-reverb
     restart: unless-stopped
     working_dir: /var/www/crm
-    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    command: sh -c "sleep 5 && php artisan reverb:start --host=0.0.0.0 --port=8080"
     volumes:
       - ./:/var/www/crm
     environment:
-      - APP_ENV=${APP_ENV:-production}
-      - DB_CONNECTION=pgsql
-      - DB_HOST=${DB_HOST:-aws-0-sa-east-1.pooler.supabase.com}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_DATABASE=${DB_DATABASE:-postgres}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REVERB_APP_ID=${REVERB_APP_ID:-crm-omnify}
-      - REVERB_APP_KEY=${REVERB_APP_KEY}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET}
-      - REVERB_HOST=0.0.0.0
-      - REVERB_PORT=8080
+      APP_ENV: ${APP_ENV:-production}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REVERB_APP_ID: ${REVERB_APP_ID}
+      REVERB_APP_KEY: ${REVERB_APP_KEY}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET}
+      REVERB_HOST: 0.0.0.0
+      REVERB_PORT: 8080
     depends_on:
-      - redis
+      php:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - crm-network
 
-  # ===========================================
-  # Queue Worker - Processa jobs em background
-  # ===========================================
+  # ===========================
+  # Queue Worker
+  # ===========================
   queue:
     build:
       context: .
@@ -109,26 +103,26 @@ services:
     volumes:
       - ./:/var/www/crm
     environment:
-      - APP_ENV=${APP_ENV:-production}
-      - DB_CONNECTION=pgsql
-      - DB_HOST=${DB_HOST:-aws-0-sa-east-1.pooler.supabase.com}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_DATABASE=${DB_DATABASE:-postgres}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REVERB_HOST=reverb
-      - REVERB_PORT=8080
+      APP_ENV: ${APP_ENV:-production}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
-      - php
-      - redis
+      php:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - crm-network
 
-  # ===========================================
-  # Scheduler - Tarefas agendadas do Laravel
-  # ===========================================
+  # ===========================
+  # Scheduler
+  # ===========================
   scheduler:
     build:
       context: .
@@ -140,49 +134,26 @@ services:
     volumes:
       - ./:/var/www/crm
     environment:
-      - APP_ENV=${APP_ENV:-production}
-      - DB_CONNECTION=pgsql
-      - DB_HOST=${DB_HOST:-aws-0-sa-east-1.pooler.supabase.com}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_DATABASE=${DB_DATABASE:-postgres}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      APP_ENV: ${APP_ENV:-production}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
-      - php
-      - redis
-    networks:
-      - crm-network
-
-  # ===========================================
-  # AI Service - Agente IA (Python/FastAPI)
-  # ===========================================
-  ai-service:
-    build:
-      context: ./ai-service
-      dockerfile: Dockerfile
-    container_name: crm-ai-service
-    restart: unless-stopped
-    environment:
-      - DEBUG=${AI_DEBUG:-false}
-      - API_KEY=${AI_AGENT_API_KEY:-}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
-      - DATABASE_URL=postgresql+asyncpg://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST:-aws-0-sa-east-1.pooler.supabase.com}:5432/${DB_DATABASE:-postgres}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - LARAVEL_API_URL=http://nginx
-      - LARAVEL_INTERNAL_KEY=${INTERNAL_API_KEY:-}
-    depends_on:
+      php:
+        condition: service_started
       redis:
         condition: service_healthy
     networks:
       - crm-network
 
-  # ===========================================
-  # Redis - Cache, sessões e filas
-  # ===========================================
+  # ===========================
+  # Redis
+  # ===========================
   redis:
     image: redis:7-alpine
     container_name: crm-redis
@@ -198,16 +169,33 @@ services:
     networks:
       - crm-network
 
-# ===========================================
-# Volumes persistentes
-# ===========================================
+  # ===========================
+  # Serviço IA
+  # ===========================
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: crm-ai-service
+    restart: unless-stopped
+    environment:
+      DEBUG: ${AI_DEBUG:-false}
+      API_KEY: ${AI_AGENT_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      DATABASE_URL: postgresql+asyncpg://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_DATABASE}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LARAVEL_API_URL: http://nginx
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - crm-network
+
 volumes:
   redis_data:
-    driver: local
 
-# ===========================================
-# Rede interna
-# ===========================================
 networks:
   crm-network:
     driver: bridge

@@ -976,12 +976,20 @@ class WhatsAppService
                     
                     // Envia mensagem de boas-vindas da fila se configurada
                     if (!empty($queue->welcome_message)) {
-                        $this->sendTextMessage($phone, $queue->welcome_message);
+                        $welcomeMsg = $queue->welcome_message;
                     } else {
                         // Mensagem padrão de confirmação
                         $welcomeMsg = "Perfeito! Você selecionou *{$queue->menu_label}*. Em que posso ajudá-lo?";
-                        $this->sendTextMessage($phone, $welcomeMsg);
                     }
+                    
+                    $this->sendTextMessage($phone, $welcomeMsg);
+                    
+                    // Salva a mensagem no ticket para aparecer na conversa
+                    $this->saveOutboundMessage($ticket, $welcomeMsg, [
+                        'type' => 'queue_welcome',
+                        'queue_id' => $queue->id,
+                        'queue_name' => $queue->name,
+                    ]);
                     
                     // IMPORTANTE: Após escolher a fila, para aqui.
                     // A próxima mensagem do lead será processada normalmente pela IA.
@@ -993,6 +1001,12 @@ class WhatsAppService
                     $this->loadFromChannel($channel);
                     $phone = $lead->contact->phone;
                     $this->sendTextMessage($phone, $menuText);
+                    
+                    // Salva a mensagem no ticket para aparecer na conversa
+                    $this->saveOutboundMessage($ticket, $menuText, [
+                        'type' => 'queue_menu_retry',
+                        'reason' => 'invalid_response',
+                    ]);
                     return;
                 }
             } else {
@@ -1001,6 +1015,12 @@ class WhatsAppService
                 $this->loadFromChannel($channel);
                 $phone = $lead->contact->phone;
                 $this->sendTextMessage($phone, $menuText);
+                
+                // Salva a mensagem no ticket para aparecer na conversa
+                $this->saveOutboundMessage($ticket, $menuText, [
+                    'type' => 'queue_menu',
+                    'channel_id' => $channel->id,
+                ]);
                 
                 Log::info('Queue menu sent to lead', [
                     'lead_id' => $lead->id,
@@ -1206,6 +1226,39 @@ class WhatsAppService
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Salva uma mensagem de saída (automação) no ticket.
+     * 
+     * Usado para registrar mensagens enviadas automaticamente pelo sistema
+     * (menu de filas, boas-vindas, etc.) para que apareçam na conversa.
+     */
+    protected function saveOutboundMessage(Ticket $ticket, string $content, array $metadata = []): TicketMessage
+    {
+        $message = TicketMessage::create([
+            'tenant_id' => $ticket->tenant_id,
+            'ticket_id' => $ticket->id,
+            'sender_type' => \App\Enums\SenderTypeEnum::IA,
+            'direction' => \App\Enums\MessageDirectionEnum::OUTBOUND,
+            'message' => $content,
+            'sent_at' => now(),
+            'metadata' => array_merge([
+                'automated' => true,
+                'source' => 'queue_routing',
+            ], $metadata),
+        ]);
+
+        // Dispara evento para atualização em tempo real no frontend
+        event(new \App\Events\TicketMessageCreated($message, $ticket));
+
+        Log::info('Outbound message saved', [
+            'ticket_id' => $ticket->id,
+            'message_id' => $message->id,
+            'type' => $metadata['type'] ?? 'automated',
+        ]);
+
+        return $message;
     }
 }
 

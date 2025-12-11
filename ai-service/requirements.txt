@@ -8,6 +8,11 @@ pydantic-settings>=2.6.0
 # OpenAI
 openai>=1.50.0
 
+# LangChain (para agentes)
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-community>=0.3.0
+
 # Database
 asyncpg>=0.30.0
 sqlalchemy[asyncio]>=2.0.30

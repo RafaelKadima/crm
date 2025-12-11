@@ -12,6 +12,7 @@
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.30",
         "pusher/pusher-php-server": "*",
+        "sentry/sentry-laravel": "^4.20",
         "smalot/pdfparser": "^2.12"
     },
     "require-dev": {

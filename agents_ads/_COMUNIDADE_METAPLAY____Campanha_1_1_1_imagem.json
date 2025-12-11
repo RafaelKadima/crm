@@ -1,0 +1,1047 @@
+{
+  "name": "[COMUNIDADE METAPLAY] - Campanha 1:1:1 imagem",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/act_{{ $json['ID Conta'] }}/campaigns ",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphAppApi",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=name",
+              "value": "={{ $json.Campaign }}"
+            },
+            {
+              "name": "objective",
+              "value": "OUTCOME_SALES"
+            },
+            {
+              "name": "status",
+              "value": "PAUSED"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $('variaveis').item.json['token de usuario'] }}"
+            },
+            {
+              "name": "special_ad_categories",
+              "value": "[]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "64e1c229-c2ca-4074-9e14-eb8bdcdd6301",
+      "name": "fb- Cria objetivo de campanha",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1360,
+        100
+      ],
+      "credentials": {
+        "facebookGraphAppApi": {
+          "id": "cMaHToCdxFugBm4K",
+          "name": "Facebook Graph (App) account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=  https://graph.facebook.com/v21.0/act_{{ $('variaveis').item.json['ID Conta'] }}/adcreatives ",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $('variaveis').item.json['nome ads'] }}"
+            },
+            {
+              "name": "object_story_spec",
+              "value": "={\n  \"page_id\": \"{{ $('variaveis').item.json['ID fanpage'] }}\",\n  \"link_data\": {\n    \"link\": \"{{ $('variaveis').item.json['Url da campanha'] }}\",\n    \"message\": \"Descubra a revolucionária Nova Tecnologia de Inteligência Artificial\",\n    \"name\": \"Clique em Saiba Mais\",\n    \"description\": \"Teste teste teste\",\n    \"image_hash\": \"3f680f504b68757624cb4714a2558e7f\",\n    \"call_to_action\": {\n      \"type\": \"LEARN_MORE\",\n      \"value\": {\n        \"link\": \"{{ $('variaveis').item.json['Url da campanha'] }}\"\n      }\n    }\n  }\n}\n  "
+            },
+            {
+              "name": "degrees_of_freedom_spec",
+              "value": "{ \"creative_features_spec\": { \"standard_enhancements\": { \"enroll_status\": \"OPT_IN\" } } }"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $('variaveis').item.json['token de usuario'] }}"
+            },
+            {
+              "name": "title",
+              "value": "={{ $('variaveis').item.json['nome ads'] }}"
+            },
+            {
+              "name": "url_tags",
+              "value": "utm_source=facebook teste"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "23d9b54b-3aec-41d1-b232-f0554104ae53",
+      "name": "Adcriative",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -840,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## CAMPANHA + CONJUNTO",
+        "height": 302,
+        "width": 746,
+        "color": 6
+      },
+      "id": "03f30bae-fe74-48a1-ac28-8c4dec83b3cd",
+      "name": "Sticky Note9",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "=Haja como especialista em campanhas do facebook ads, voce cria headlines virais para meus anúncios. na resposta você nunca coloca aspas (\")."
+            },
+            {
+              "content": "=Crie uma headline para meu anuncio com o assunto {{ $('variaveis').item.json['URL Campaign'] }}, me retone somente a headline, Não me retorne aspas na headline, com apenas 5 palavras. Minha headline nao pode ter (\")."
+            }
+          ]
+        },
+        "simplifyOutput": false,
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "813d5be1-04ea-45cb-9cf0-1f26ede512a4",
+      "name": "Cria headline1",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "8LRhej9xEz9RuG3T",
+          "name": "conta2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "=Haja como especialista em campanhas do facebook ads, voce cria textos para meus anuncios com no maximo 100 palavras virais para meus anúncios. Não me retorne aspas (\")"
+            },
+            {
+              "content": "=Crie um texto para meu anuncio com o assunto {{ $json.message }}, me retone somente o texto, sem aspas (\"), com no maximo 50 palavras, meu texto não pode conter (\") "
+            }
+          ]
+        },
+        "simplifyOutput": false,
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "9b74b61a-8e74-4aef-8394-6fda6e0d2478",
+      "name": "descricao",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "8LRhej9xEz9RuG3T",
+          "name": "conta2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/act_{{ $('variaveis').item.json['ID Conta'] }}/adsets ",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $('variaveis').item.json['nome adset'] }}"
+            },
+            {
+              "name": "optimization_goal",
+              "value": "LANDING_PAGE_VIEWS"
+            },
+            {
+              "name": "billing_event",
+              "value": "IMPRESSIONS"
+            },
+            {
+              "name": "daily_budget",
+              "value": "1254"
+            },
+            {
+              "name": "campaign_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "targeting",
+              "value": "{\"geo_locations\": {\"countries\":[\"BR\"]}, \"age_min\": 18, \"age_max\": 55, \"locales\": [16]}"
+            },
+            {
+              "name": "status",
+              "value": "ACTIVE"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $('variaveis').item.json['token de usuario'] }}"
+            },
+            {
+              "name": "bid_strategy",
+              "value": "LOWEST_COST_WITHOUT_CAP"
+            },
+            {
+              "name": "advantage_plus",
+              "value": "ENABLED"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "31e06d14-3f74-4bd0-b630-652795ef33b2",
+      "name": "Adset sem limites",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1T8EzbSksVBCX2jxNDJhPZmC6OC-F_0AtPulIthrJ9BE",
+          "mode": "list",
+          "cachedResultName": "Base FB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1T8EzbSksVBCX2jxNDJhPZmC6OC-F_0AtPulIthrJ9BE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Página1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qY1S578gVDw4ztFle_htjW9oSVz32EEqvGvAfQlXQIk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status campanha": "sim",
+            "Status": "sim",
+            "headline": "={{ $('Cria headline1').item.json.choices[0].message.content }}",
+            "message": "={{ $('descricao').item.json.choices[0].message.content }}",
+            "ID Campaign": "={{ $('fb- Cria objetivo de campanha').item.json.id }}",
+            "ID AdSet": "={{ $('Adset sem limites').item.json.id }}",
+            "ID ADS 01": "={{ $('Adcriative').item.json.id }}",
+            "row_number": "={{ $('Google Sheets - Anuncios').item.json.row_number }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "DATA",
+              "displayName": "DATA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "HORARIO",
+              "displayName": "HORARIO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID BM",
+              "displayName": "ID BM",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID Conta",
+              "displayName": "ID Conta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID FanPage",
+              "displayName": "ID FanPage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Token do usuario",
+              "displayName": "Token do usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "slug",
+              "displayName": "slug",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status slug",
+              "displayName": "status slug",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Campaign",
+              "displayName": "Campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "AdSet",
+              "displayName": "AdSet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Ad",
+              "displayName": "Ad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID Campaign",
+              "displayName": "ID Campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ID AdSet",
+              "displayName": "ID AdSet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ID ADS 01",
+              "displayName": "ID ADS 01",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ID ADS 02",
+              "displayName": "ID ADS 02",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ADS 03",
+              "displayName": "ID ADS 03",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "URL Campaign",
+              "displayName": "URL Campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Url da Imagem",
+              "displayName": "Url da Imagem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Nomenclatura ",
+              "displayName": "Nomenclatura ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "link dasboard",
+              "displayName": "link dasboard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "facebook ",
+              "displayName": "facebook ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Instagram",
+              "displayName": "Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "leadingpage",
+              "displayName": "leadingpage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status campanha",
+              "displayName": "status campanha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "token de usuario",
+              "displayName": "token de usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "856253ff-47df-4f08-8129-4f54ea64caf0",
+      "name": "Google Sheets1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.3,
+      "position": [
+        880,
+        100
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YVeJTiqFxFse9AoB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://blog.iaacademy.com.br/wp-json/wp/v2/media   ",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-disposition",
+              "value": "=attachment; filename={{ $binary.data.fileName }}.{{ $binary.data.fileExtension }}"
+            },
+            {
+              "name": "content-type",
+              "value": "={{ $binary.data.mimeType }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "c4fbc13b-688e-4c68-bf31-0053f056dc72",
+      "name": "upload de imagem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        280,
+        100
+      ],
+      "credentials": {
+        "wordpressApi": {
+          "id": "GmnZa1WN88xtQYng",
+          "name": "Wordpress account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=crie um prompt para gerar uma imagem que gere curisidade sobre o tema {{ $('variaveis').item.json.leadingpage }} para meu anuncio do facebook "
+            }
+          ]
+        },
+        "simplifyOutput": false,
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "4f61bb3a-2e71-443a-a774-c92be479d32d",
+      "name": "Cria Prompt",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        100
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "JO96jSLNRfkkZY7y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "=crie uma imagem no estilo realista, vista de um ângulo lateral ou traseiro, que gere curisidade sobre o tema {{ $json.choices[0].message.content }}. A cena precisa o personagem em um ambiente caseiro moderno e acolhedor, nao adicione nehum texto na imagem",
+        "model": "dall-e-3",
+        "options": {
+          "n": 1,
+          "size": "1792x1024"
+        },
+        "requestOptions": {}
+      },
+      "id": "d2203ad9-185a-4572-8305-d1a035626885",
+      "name": "Gera Imagem",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        80,
+        100
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "openAiApi": {
+          "id": "JO96jSLNRfkkZY7y",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/act_{{ $('variaveis').item.json['ID Conta'] }}/ads ",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "creative",
+              "value": "={\n \"url_tags\": \"utm_source=facebook&utm_campaign={{ $('Google Sheets - Anuncios').item.json.Campaign }}&adset={{ $('Google Sheets - Anuncios').item.json.AdSet }}&ads={{ $('Google Sheets - Anuncios').item.json.Ad }}ADS001\", \n \"object_story_spec\": {\n    \"page_id\": \"{{ $('Google Sheets - Anuncios').item.json['ID FanPage'] }}\",\n    \"link_data\": {\n      \"link\": \"{{ $('variaveis').item.json['URL Campaign'] }}\",\n      \"message\": \"{{ $('descricao').item.json.choices[0].message.content }}\",\n      \"description\": \"Para saber Mais clique no link ao lado!\",\n      \"name\": \"{{ $('Cria headline1').item.json.choices[0].message.content }}\",\n      \"picture\": \"{{ $json.guid.rendered }}\",\n      \"call_to_action\": {\n        \"type\": \"LEARN_MORE\",\n        \"value\": {\n          \"link\": \"{{ $('variaveis').item.json['URL Campaign'] }}\"\n        }\n      }\n    }\n  },\n  \"degrees_of_freedom_spec\": {\n    \"creative_features_spec\": {\n      \"standard_enhancements\": {\n        \"enroll_status\": \"OPT_IN\"\n      }\n    }\n  },\n  \"offline_conversion_data_set_id\": \"1424112391528177\"\n}\n        "
+            },
+            {
+              "name": "adset_id",
+              "value": "={{ $('Adset sem limites').item.json.id }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ $('Google Sheets - Anuncios').item.json.Ad }} I ADS001"
+            },
+            {
+              "name": "status",
+              "value": "PAUSED"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $('variaveis').item.json['token de usuario'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ec364997-a273-427f-9448-4d343e1974eb",
+      "name": "Ads1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://blog.iaacademy.com.br/wp-json/wp/v2/media/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "options": {}
+      },
+      "id": "5c2c9213-9752-4b97-9a1e-5e3dce8b6aed",
+      "name": "link da midia ",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        440,
+        100
+      ],
+      "credentials": {
+        "wordpressApi": {
+          "id": "VvJQuHqAGhz6oOI3",
+          "name": "Wordpress account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2080,
+        100
+      ],
+      "id": "83e4caf8-8505-42bc-8cb5-46301ffc9751",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "=1T8EzbSksVBCX2jxNDJhPZmC6OC-F_0AtPulIthrJ9BE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "0",
+          "mode": "id"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "503554b9-3494-4214-8a0e-61679252481a",
+      "name": "Google Sheets - Anuncios",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -1840,
+        100
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YVeJTiqFxFse9AoB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "nome campanha",
+              "stringValue": "={{ $json.Campaign }}"
+            },
+            {
+              "name": "nome adset",
+              "stringValue": "={{ $json.AdSet }}"
+            },
+            {
+              "name": "nome ads",
+              "stringValue": "={{ $json.Ad }}"
+            },
+            {
+              "name": "Url da campanha",
+              "stringValue": "={{ $json['URL Campaign'] }}"
+            },
+            {
+              "name": "ID fanpage",
+              "stringValue": "={{ $json['ID FanPage'] }}"
+            },
+            {
+              "name": "ID da conta",
+              "stringValue": "={{ $json['ID Conta'] }}"
+            },
+            {
+              "name": "laedpages",
+              "stringValue": "={{ $json.leadingpage }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5df52569-fb08-4a00-a516-bfd64ca2fd1e",
+      "name": "variaveis",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        -1620,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## COPY BASE",
+        "height": 302,
+        "width": 646,
+        "color": 5
+      },
+      "id": "e1e1d344-9ac0-4732-b46a-5c886e1b8a9f",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## CRIATIVO",
+        "height": 302,
+        "width": 646,
+        "color": 7
+      },
+      "id": "e0a8d550-c504-4c9d-b759-670058fb5bc2",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ANÚNCIO",
+        "height": 302,
+        "width": 506,
+        "color": 4
+      },
+      "id": "0f182088-bb6a-4df0-9b0e-713236f0f936",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        620,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "fb- Cria objetivo de campanha": {
+      "main": [
+        [
+          {
+            "node": "Adset sem limites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adcriative": {
+      "main": [
+        [
+          {
+            "node": "Cria headline1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria headline1": {
+      "main": [
+        [
+          {
+            "node": "descricao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "descricao": {
+      "main": [
+        [
+          {
+            "node": "Cria Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adset sem limites": {
+      "main": [
+        [
+          {
+            "node": "Adcriative",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload de imagem": {
+      "main": [
+        [
+          {
+            "node": "link da midia ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria Prompt": {
+      "main": [
+        [
+          {
+            "node": "Gera Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gera Imagem": {
+      "main": [
+        [
+          {
+            "node": "upload de imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ads1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "link da midia ": {
+      "main": [
+        [
+          {
+            "node": "Ads1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Anuncios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Anuncios": {
+      "main": [
+        [
+          {
+            "node": "variaveis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "variaveis": {
+      "main": [
+        [
+          {
+            "node": "fb- Cria objetivo de campanha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4f18bb7b-0ea0-4827-be4e-11e5e944bf4e",
+  "meta": {
+    "instanceId": "86d0b539cdbfaefdd305e9f4d9320d6449af6a05b20f421bc7ca5b2501068fb2"
+  },
+  "id": "NN6IpnDQollgFTGA",
+  "tags": []
+}

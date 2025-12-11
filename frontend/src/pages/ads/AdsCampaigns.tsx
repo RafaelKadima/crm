@@ -181,29 +181,29 @@ export default function AdsCampaigns() {
                     </td>
                     <td className="px-4 py-4 text-right">
                       <span className={`${
-                        campaign.ctr >= 2 ? 'text-green-600' :
-                        campaign.ctr >= 1 ? 'text-yellow-600' : 'text-red-600'
+                        Number(campaign.ctr || 0) >= 2 ? 'text-green-600' :
+                        Number(campaign.ctr || 0) >= 1 ? 'text-yellow-600' : 'text-red-600'
                       }`}>
-                        {campaign.ctr.toFixed(2)}%
+                        {Number(campaign.ctr || 0).toFixed(2)}%
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right text-gray-600 dark:text-gray-300">
-                      {formatCurrency(campaign.cpc)}
+                      {formatCurrency(Number(campaign.cpc || 0))}
                     </td>
                     <td className="px-4 py-4 text-right text-gray-600 dark:text-gray-300">
-                      {formatNumber(campaign.conversions)}
+                      {formatNumber(Number(campaign.conversions || 0))}
                     </td>
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <span className={`font-semibold ${
-                          campaign.roas >= 2 ? 'text-green-600' :
-                          campaign.roas >= 1 ? 'text-yellow-600' : 'text-red-600'
+                          Number(campaign.roas || 0) >= 2 ? 'text-green-600' :
+                          Number(campaign.roas || 0) >= 1 ? 'text-yellow-600' : 'text-red-600'
                         }`}>
-                          {campaign.roas.toFixed(2)}x
+                          {Number(campaign.roas || 0).toFixed(2)}x
                         </span>
-                        {campaign.roas >= 2 ? (
+                        {Number(campaign.roas || 0) >= 2 ? (
                           <TrendingUp className="w-4 h-4 text-green-500" />
-                        ) : campaign.roas < 1 ? (
+                        ) : Number(campaign.roas || 0) < 1 ? (
                           <TrendingDown className="w-4 h-4 text-red-500" />
                         ) : null}
                       </div>

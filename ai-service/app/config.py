@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     
     # OpenAI
     openai_api_key: str = ""
+    openai_project_id: str = ""  # Project ID obrigatório para novas APIs
     openai_model: str = "gpt-4o-mini"
     openai_embedding_model: str = "text-embedding-3-small"
     

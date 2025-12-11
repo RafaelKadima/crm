@@ -1,0 +1,613 @@
+{
+  "name": "[Elevate]Clickninja",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        540
+      ],
+      "id": "684462a4-c7d7-4762-9a89-c85b7b2b0f04",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SWoUjxTcoP71e0sL",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "products_scrap",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "statusCookies",
+              "keyValue": "pendente"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        540
+      ],
+      "id": "fa94d392-03e5-40e9-874c-7abbf902e2e6",
+      "name": "Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "7mna5ichLIIkWtEa",
+          "name": "SUPABASE_PRO_CLICK"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca anuncios do produto",
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {
+              "name": "q",
+              "valueProvider": "fieldValue",
+              "value": "{nomeproduto}"
+            },
+            {
+              "name": "location",
+              "valueProvider": "fieldValue",
+              "value": "United States"
+            },
+            {
+              "name": "hl",
+              "valueProvider": "fieldValue",
+              "value": "en"
+            },
+            {
+              "name": "gl",
+              "valueProvider": "fieldValue",
+              "value": "us"
+            },
+            {
+              "name": "api_key",
+              "valueProvider": "fieldValue",
+              "value": "edb3bccbd5d4cae6f3023cebfe11c1c9b83bb52e885cdefc28bcbb5bc425377c"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -640,
+        540
+      ],
+      "id": "f7705719-f5d5-4eb6-b839-1b1a331196c0",
+      "name": "ScrapAnuncios"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um especialista em subir campanhas no Google Ads.\n\nSiga sempre esses passos nessa ordem, sem pular nenhuma etapa.\n\nid_conta: 5083473193\ndeveloper_token: NQUrtYYZbI82Cttg3i8keA\nmcc: 2891284574\n\n1- Busque as informações sobre o produto usando a tool Supabase \n2- Faça o scrap dos anuncios dos produtos usando a tool\n3- Crie a landing page utilizando a tool\n4- Crie o budget da campanha execute apenas uma vez.\n5 - Crie a campanha usando cRIA_campanha, campaignbudgeturl usando o resorcename do Cria_Budget\n6 - defina a segmentação usando define_segmentacao CampaignId deve ter o resourcename da campanha\n7 - Cria adgroup cria_adgroup nomedoadgroup: crie um chamado teste[nomedoproduto]01\nCampaignId: O resourcename retornado ao criar o budget\n8- Buca as keywords sobre o produto \n9- Adiciona as as melhores keywords na campanha, caso não encontre as keywords no node anteior, você deve criar de acordo com o scrap. Você pode chamar essa tool até 5x para adicionar varias keywords\n10 - Crie o ad, você deve utilizar as headlines e descrições do scrap como referencia para criar SEMPRE EM INGLES. Headlines com no máximo 25 caracteres e descrições com no máximo 75. Caso falhar, tente mais uma vez\n\n--\nEm caso de sucesso não execute novamente uma mesma tool\nNão pule nenhum passo",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -100,
+        -160
+      ],
+      "id": "84a4cb86-4648-443e-8d9b-9d712a1106b6",
+      "name": "ClickNinja"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cria leadpageDireta ( Método: POST, Credencial: wordpressApi )",
+        "method": "POST",
+        "url": "=https://powpixel.shop/wp-json/wp/v2/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "status",
+              "valueProvider": "fieldValue",
+              "value": "publish"
+            },
+            {
+              "name": "content",
+              "valueProvider": "fieldValue",
+              "value": "=<!-- wp:html --> \n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Cookie Alert</title>\n  <style>\n    /* Configurações gerais */\n    body, html {\n      margin: 0;\n      padding: 0;\n      box-sizing: border-box;\n      font-family: Arial, sans-serif;\n      height: 100%;\n      overflow: hidden; /* Impede rolagem */\n      display: flex;\n      justify-content: center; /* Centraliza horizontalmente */\n      align-items: center;    /* Centraliza verticalmente */\n    }\n\n    /* Wrapper do fundo */\n    .background-container {\n      position: absolute;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      overflow: hidden;\n    }\n\n    /* Iframe para o fundo */\n    .background-iframe {\n      position: absolute;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      border: none; /* Remove borda padrão do iframe */\n      filter: blur(8px); /* Aplica desfoque */\n      z-index: -2; /* Coloca o iframe atrás de tudo */\n    }\n\n    /* Máscara preta com opacidade */\n    .background-mask {\n      position: absolute;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      background: rgba(0, 0, 0, 0.5); /* Fundo preto semitransparente */\n      z-index: -1; /* Fica acima do iframe */\n    }\n\n    /* Pop-up de cookies */\n    .cookie-popup {\n      width: 300px; /* Altura e largura iguais para formar um quadrado */\n      height: 300px;\n      background: #fff;\n      border-radius: 10px; /* Bordas levemente arredondadas */\n      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);\n      text-align: center;\n      padding: 20px;\n      display: flex;\n      flex-direction: column;\n      justify-content: center;\n      align-items: center;\n      z-index: 10;\n    }\n\n    .cookie-popup h2 {\n      font-size: 1.5rem;\n      margin-bottom: 10px;\n      color: #333;\n    }\n\n    .cookie-popup p {\n      font-size: 0.9rem;\n      color: #666;\n      margin: 0 0 15px;\n    }\n\n    .accept-button {\n      display: inline-block;\n      padding: 15px 25px; /* Maior tamanho para destaque */\n      font-size: 1.2rem; /* Fonte maior */\n      color: #fff;\n      background: #e63946;\n      border: none;\n      border-radius: 5px;\n      cursor: pointer;\n      text-decoration: none; /* Remove sublinhado do link */\n      transition: background 0.3s, transform 0.3s;\n      animation: pulse 1.5s infinite; /* Adicionado efeito de pulsar */\n    }\n\n    .accept-button:hover {\n      background: #d62828;\n      transform: scale(1.1); /* Leve zoom ao passar o mouse */\n    }\n\n    /* Animação de pulsar */\n    @keyframes pulse {\n      0% {\n        transform: scale(1);\n        box-shadow: 0 0 5px rgba(230, 57, 70, 0.5);\n      }\n      50% {\n        transform: scale(1.05);\n        box-shadow: 0 0 20px rgba(230, 57, 70, 0.8);\n      }\n      100% {\n        transform: scale(1);\n        box-shadow: 0 0 5px rgba(230, 57, 70, 0.5);\n      }\n    }\n  </style>\n</head>\n<body>\n\n  <!-- Wrapper para o iframe e máscara -->\n  <div class=\"background-container\">\n    <!-- Iframe no fundo -->\n    <iframe \n      src=\"{affiliate_link}\" \n      class=\"background-iframe\" \n      allowfullscreen>\n    </iframe>\n\n    <!-- Máscara preta semitransparente -->\n    <div class=\"background-mask\"></div>\n  </div>\n\n  <!-- Pop-up de cookies -->\n  <div class=\"cookie-popup\">\n    <h2>Cookie Policy</h2>\n    <p>This website uses cookies to ensure the best browsing experience and personalize content. By continuing, you accept the use of cookies.</p>\n    <!-- Botão com link -->\n   <a href=\"{affiliate_link}\" class=\"accept-button\" onclick=\"window.location.href=this.href; return false;\">\n  ACCEPT COOKIES\n</a>\n  </div>\n\n</body>\n</html>\n<!-- /wp:html -->\n"
+            },
+            {
+              "name": "slug",
+              "valueProvider": "fieldValue",
+              "value": "=ck-{name}"
+            },
+            {
+              "name": "title",
+              "valueProvider": "fieldValue",
+              "value": "{name}"
+            },
+            {
+              "name": "template",
+              "valueProvider": "fieldValue",
+              "value": "blank-slate-template.php"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -420,
+        520
+      ],
+      "id": "e11f6f7b-87dd-442b-b7eb-68c7d45cb4be",
+      "name": "CriaLp",
+      "credentials": {
+        "wordpressApi": {
+          "id": "5ttSrELkiv8LWNX1",
+          "name": "Wordpress account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "cRIA_bUDGETS",
+        "method": "POST",
+        "url": "https://googleads.googleapis.com/v18/customers/{idconta}/campaignBudgets:mutate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "developer-token",
+              "valueProvider": "fieldValue",
+              "value": "{developertoken} "
+            },
+            {
+              "name": "login-customer-id",
+              "valueProvider": "fieldValue",
+              "value": "{mcc}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"operations\": [\n    {\n      \"create\": {\n        \"name\": \"{nomedobudget}x\",\n        \"amountMicros\":{orcamentomicros},\n        \"explicitlyShared\": false\n\n    }\n    }\n  ]\n}\n   "
+      },
+      "id": "91984fc2-2cda-4ad1-bcbe-074f6030e194",
+      "name": "Cria_Budget",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        -140,
+        520
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "XSINQkMYXqW9x1oD",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "cRIA_campanha",
+        "method": "POST",
+        "url": "https://googleads.googleapis.com/v18/customers/{idconta}/campaigns:mutate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "developer-token",
+              "valueProvider": "fieldValue",
+              "value": "{developertoken} "
+            },
+            {
+              "name": "login-customer-id",
+              "valueProvider": "fieldValue",
+              "value": "{mcc}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"operations\": [\n    {\n      \"create\": {\n        \"status\": \"ENABLED\",\n        \"advertisingChannelType\": \"SEARCH\",\n        \"name\": \"{nomedacampanha}TESTEVIDEO\",\n        \"campaignBudget\": \"{campaignbudgeturl}\",\n        \"targetSpend\": {}\n      }\n    }\n  ]\n}\n   "
+      },
+      "id": "39391af1-041c-4bef-a882-b0aab0a453bd",
+      "name": "Cria_Campanha",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        20,
+        520
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "XSINQkMYXqW9x1oD",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "define_segmentacao",
+        "method": "POST",
+        "url": "https://googleads.googleapis.com/v18/customers/{idconta}/campaignCriteria:mutate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "developer-token",
+              "valueProvider": "fieldValue",
+              "value": "{developertoken} "
+            },
+            {
+              "name": "login-customer-id",
+              "valueProvider": "fieldValue",
+              "value": "{mcc}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"operations\": [\n    {\n      \"create\": {\n        \"campaign\": \"{CampaignId}\",\n        \"location\": {\n         \"geoTargetConstant\": \"geoTargetConstants/2840\"   \n\n        }\n      }\n    }\n  ]\n}\n\n"
+      },
+      "id": "30dc7598-6d0d-4b72-a3d8-a2dc61051f76",
+      "name": "Define_Segmentacao",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        520
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "XSINQkMYXqW9x1oD",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "cria_adgroup",
+        "method": "POST",
+        "url": "https://googleads.googleapis.com/v18/customers/{idconta}/adGroups:mutate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "developer-token",
+              "valueProvider": "fieldValue",
+              "value": "{developertoken} "
+            },
+            {
+              "name": "login-customer-id",
+              "valueProvider": "fieldValue",
+              "value": "{mcc}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"operations\": \n    {\n  \"create\": {\n    \"resourceName\": \"customers/{idconta}/adGroups/-3\",\n    \"campaign\": \"{idcampanha}\",\n    \"name\": \"{nomeadgroup}\",\n    \"status\": \"ENABLED\",\n    \"type\": \"SEARCH_STANDARD\"\n  }\n}\n}  "
+      },
+      "id": "b67e0fa9-f18d-4f42-ad1e-a053cc2c82a8",
+      "name": "Cria_Adgroup",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        540,
+        520
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "XSINQkMYXqW9x1oD",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cria keywords",
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v18/customers/{idconta}/adGroupCriteria:mutate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "developer-token",
+              "valueProvider": "fieldValue",
+              "value": "{developertoken}"
+            },
+            {
+              "name": "login-customer-id",
+              "valueProvider": "fieldValue",
+              "value": "{mcc}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"operations\": [\n    {\n      \"create\": {\n        \"adGroup\": \"{adgroup_resource_name}\",\n        \"keyword\": {\n          \"text\": \"{palavrachave}\",\n          \"matchType\": \"BROAD\"\n        }\n      }\n    }\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        920,
+        520
+      ],
+      "id": "9be34746-2464-4807-89e9-4b31a5d2f965",
+      "name": "AdicionaKeywords",
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "XSINQkMYXqW9x1oD",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca Keywords",
+        "method": "POST",
+        "url": "https://googleads.googleapis.com/v18/customers/{idconta}:generateKeywordIdeas",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "developer-token",
+              "valueProvider": "fieldValue",
+              "value": "{developertoken} "
+            },
+            {
+              "name": "login-customer-id",
+              "valueProvider": "fieldValue",
+              "value": "{mcc} "
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"geoTargetConstants\": [\n    \"geoTargetConstants/2840\"\n  ],\n  \"includeAdultKeywords\": false,\n  \"pageToken\": \"\",\n  \"pageSize\": 32,\n  \"keywordPlanNetwork\": \"GOOGLE_SEARCH\",\n  \"keywordAnnotation\": [\"UNSPECIFIED\"],\n  \"aggregateMetrics\": {\n    \"aggregateMetricTypes\": [\n      \"UNSPECIFIED\"\n    ]\n  },\n  \"historicalMetricsOptions\": {\n    \"includeAverageCpc\": true,\n    \"yearMonthRange\": {\n      \"start\": {\n        \"year\": {{ new Date().getFullYear()-1 }},\n        \"month\": \"{{ new Date(new Date().setMonth(new Date().getMonth() - 3)).toLocaleString('default', { month: 'long' }).toUpperCase() }}\" \n      },\n      \"end\": {\n        \"year\": {{ new Date().getFullYear() }},\n        \"month\": \"{{ new Date().toLocaleString('default', { month: 'long' }).toUpperCase() }}\"\n      }\n    }\n  },\n  \"language\": \"languageConstants/1000\",\n  \"keywordSeed\": {\n    \"keywords\": [\n      \"{nome_produto}\"\n    ]\n  }\n}      "
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        520
+      ],
+      "id": "83d8dd5d-3049-43a1-8a8a-1375dc3ff2be",
+      "name": "KeywordPlanner",
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "XSINQkMYXqW9x1oD",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cria ad",
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v18/customers/{idconta}/adGroupAds:mutate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "developer-token",
+              "valueProvider": "fieldValue",
+              "value": "{developertoken}"
+            },
+            {
+              "name": "login-customer-id",
+              "valueProvider": "fieldValue",
+              "value": "{mcc}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"operations\": [\n    {\n      \"create\": {\n        \"adGroup\": \"{ad_group_resourcename}\",\n        \"status\": \"ENABLED\",\n        \"ad\": {\n          \"responsiveSearchAd\": {\n            \"headlines\": [\n           {\n                \"pinned_field\": \"HEADLINE_1\",\n                \"text\": \"{headline1}\"\n              },\n              {\n                \"text\": \"Product Review\"\n              },\n              {\n                \"text\": \"{headline2}\"\n              },\n              {\n                \"text\": \"Official Website\"\n              },\n              {\n                \"text\": \"{headline3}\"\n              },\n              {\n                \"text\": \"{headline4}\"\n              },\n              {\n                \"text\": \"{headline5}\"\n              },\n              {\n                \"text\": \"{headline6}\"\n              },\n              {\n                \"text\": \"{headline7}\"\n              },\n              {\n                \"text\": \"{headline8}\"\n              },\n              {\n                \"text\": \"{headline9}\"\n              },\n              {\n                \"text\": \"{headline10}\"\n              },\n              {\n                \"text\": \"Best Price\"\n              },\n              {\n                \"text\": \"Order Now\"\n              },\n              {\n                \"text\": \"{nome_produto}\"\n              }\n            ],\n            \"descriptions\": [\n              {\n                \"text\": \"{descricao} Watch Now\"\n              },\n              {\n                \"text\": \"{descricao1}\"\n              },\n              {\n                \"text\": \"{descricao2}\"\n              },\n              {\n                \"text\": \"{descricao3}\"\n              }\n            ],\n            \"path1\": \"slim\",\n            \"path2\": \"cris\"},\n          \"finalUrls\": [\"{link_afiliado}\"]\n        }\n      }\n    }\n  ]\n} "
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        520
+      ],
+      "id": "8c01f35f-67fa-4db8-90fc-515142eadc0b",
+      "name": "CriaAd",
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "XSINQkMYXqW9x1oD",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2080,
+        -140
+      ],
+      "id": "aa53e058-1f66-4460-9ace-8ca7224c4e08",
+      "name": "When clicking ‘Test workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ScrapAnuncios": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CriaLp": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria_Budget": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria_Campanha": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Define_Segmentacao": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria_Adgroup": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AdicionaKeywords": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KeywordPlanner": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CriaAd": {
+      "ai_tool": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "ClickNinja",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0064a7ce-06d6-4fda-92a5-028425405152",
+  "meta": {
+    "instanceId": "a2815cb791dfcf9594ee8a0674fc12d40dbb365a1ad3920169aa402f0b912768"
+  },
+  "id": "PLHcGCc3URI0xM3v",
+  "tags": []
+}

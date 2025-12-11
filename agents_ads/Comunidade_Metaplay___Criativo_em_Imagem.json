@@ -1,0 +1,354 @@
+{
+  "name": "Comunidade Metaplay - Criativo em Imagem",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f105263d-c053-40eb-851f-900ccd3807da",
+              "name": "headline",
+              "value": "={{ $('cria_headline').item.json.message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "fc75628e-17ea-48d0-a5e7-15d0555b0b87",
+              "name": "imagem",
+              "value": "={{ $('Google Drive').item.json.webContentLink }}",
+              "type": "string"
+            },
+            {
+              "id": "f9b23a52-bbc9-4dce-aeab-62590fca9ec7",
+              "name": "cta",
+              "value": "={{ $('cria_cta').item.json.message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "4fd0f851-23a8-44cf-99f2-cd5f92c3c6ea",
+              "name": "url",
+              "value": "iaacademy.com.br",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5289d298-4788-4b7f-b78c-8eb18ef078e5",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Crie uma healine com no maximo 100 caracteres sobre curiosidades sobre cães. Retorne apenas a headline sem aspas \". Retorne apenas a headline"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b8c2f5c8-8903-4f0b-9d10-5452ab016110",
+      "name": "cria_headline",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "8LRhej9xEz9RuG3T",
+          "name": "conta2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Crie um call to action para ver mais, ler mais, algo desse tipo com no máximo 30 caracteres. Retorne apenas o cta, seja criativo. Não utilize emojis"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1222fdf2-f39f-4ffe-885d-d7f9ae2d09cb",
+      "name": "cria_cta",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.5,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "8LRhej9xEz9RuG3T",
+          "name": "conta2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "Crie uma imagem de um cachorro \n\nRealista, 4k",
+        "options": {}
+      },
+      "id": "cca369d7-b9ad-4cf8-9d3b-7c99ecb7300b",
+      "name": "cria_imagem",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.5,
+      "position": [
+        840,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "8LRhej9xEz9RuG3T",
+          "name": "conta2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "imagem",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1Yue9oWPFWvWR6KhZzeNu5EQ26iKGXNZW",
+          "mode": "list",
+          "cachedResultName": "IMAGENS_GERADAS",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1Yue9oWPFWvWR6KhZzeNu5EQ26iKGXNZW"
+        },
+        "options": {}
+      },
+      "id": "fbdc108e-5949-4646-8cc4-4d48402d06aa",
+      "name": "Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1060,
+        0
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OGrhIUliwbv2emL7",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "id": "36a4e838-5a0b-4d6f-8697-e7718a04bbc4",
+      "name": "compartilha_Imagem",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1320,
+        0
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OGrhIUliwbv2emL7",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.placid.app/u/IDDOSEUTEMPLATE?title[text]={{ $json.headline }}&url[text]=iaacademy.com.br&img[image]={{ $json.imagem }}&cta[text]={{ $json.cta }}\n",
+        "options": {}
+      },
+      "id": "3b5d755e-95a0-49d3-858f-26db8bd8a9d1",
+      "name": "cria_imagem_placid",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "name": "criativo",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1b2nrXQ-OdTozI_hXB7DK30aeo0Qa7nvS",
+          "mode": "list",
+          "cachedResultName": "Editados",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1b2nrXQ-OdTozI_hXB7DK30aeo0Qa7nvS"
+        },
+        "options": {}
+      },
+      "id": "41774adf-e090-4ef2-9c06-0eae3adb2735",
+      "name": "Google Drive1",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2200,
+        0
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OGrhIUliwbv2emL7",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        0
+      ],
+      "id": "ffcebef9-1677-4d51-abfe-932046bf23c1",
+      "name": "When clicking ‘Test workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "cria_imagem_placid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cria_headline": {
+      "main": [
+        [
+          {
+            "node": "cria_cta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cria_cta": {
+      "main": [
+        [
+          {
+            "node": "cria_imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cria_imagem": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "compartilha_Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "compartilha_Imagem": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cria_imagem_placid": {
+      "main": [
+        [
+          {
+            "node": "Google Drive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "cria_headline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0c4f54a6-8b03-4fbe-ada9-10b472cd31fd",
+  "meta": {
+    "instanceId": "86d0b539cdbfaefdd305e9f4d9320d6449af6a05b20f421bc7ca5b2501068fb2"
+  },
+  "id": "ljJJInFm785tWSFg",
+  "tags": []
+}

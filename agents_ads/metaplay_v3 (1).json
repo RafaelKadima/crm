@@ -1,0 +1,856 @@
+{
+  "name": "metaplay v3",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um especialista em criação de campanhas no Meta Ads. Siga os passos abaixo de forma precisa e ordenada:\n\n1- Coletar informações sobre o projeto:\nReúna todos os detalhes necessários sobre o projeto, como objetivos, público-alvo, orçamento e métricas.\n\n2- Buscar criativos no banco de dados:\nAcesse o banco de dados e localize os criativos  prontos para uso.\n\n3- Buscar a copy do post (id_copy):\nConsulte o banco de dados para obter a copy do post, referenciando o id_copy correspondente.\n\n4- Criar a campanha no Meta Ads:\nNo Meta Ads Manager, crie uma nova campanha com base nas informações coletadas.\n\n5- Criar o adset utilizando o ID da campanha:\nConfigure o adset (conjunto de anúncios) vinculando-o ao id_campanha gerado na etapa anterior.\n\n6- Subir o vídeo e aguardar finalização:\nFaça o upload do vídeo no Meta Ads Manager e aguarde o processamento completo. Casso dê erro nessa etapa, tente novamente duas vezes.\n\n7- Subir o ad:\nCrie e publique o anúncio (ad) utilizando o vídeo processado, a copy e os criativos selecionados.\n\n8- Atualizar a base de dados com SalvaBase:\nUtilize a função SalvaBase para atualizar a base de dados, passando o id_criativo_supabase.\n\n9- Atualizar a base de dados com AtualizaCriativo:\nUtilize a função AtualizaCriativo para atualizar a base de dados, passando os IDs:\n\nid_criativo_supabase\n\ncriativo_id",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        340,
+        840
+      ],
+      "id": "b02e2c45-9f46-47dd-8089-71031c2e572e",
+      "name": "GestorValidacaoCriativo1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        1140
+      ],
+      "id": "9cc0c2ae-5d3f-4f00-beed-48c02b85e606",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "8LRhej9xEz9RuG3T",
+          "name": "conta2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "projetos",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        20,
+        1140
+      ],
+      "id": "4b27680b-2cd1-4558-ad44-c44f58b9192b",
+      "name": "DadosProjeto1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ywsAiwQjXEWCf6sq",
+          "name": "Gestor Elevate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "criativos",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "criado"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        160,
+        1140
+      ],
+      "id": "892d31d0-6cea-4357-ba4a-8e0ab37bead0",
+      "name": "BuscaCriativos1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ywsAiwQjXEWCf6sq",
+          "name": "Gestor Elevate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Sobe video para o Meta",
+        "method": "POST",
+        "url": "=https://graph-video.facebook.com/v21.0/{id_pagina}/videos",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "title",
+              "valueProvider": "fieldValue",
+              "value": "Video de testes"
+            },
+            {
+              "name": "description",
+              "valueProvider": "fieldValue",
+              "value": "{descricao_video}"
+            },
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "{api_meta}"
+            },
+            {
+              "name": "file_url",
+              "valueProvider": "fieldValue",
+              "value": "{url_download}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        1140
+      ],
+      "id": "269a03e0-3714-43e9-8813-4f838ebbaddf",
+      "name": "SobeVideo1"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Sobe anuncio",
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/act_{id_conta}/ads",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "creative",
+              "valueProvider": "fieldValue",
+              "value": "={   \"name\": \"Ad01\",   \"object_story_spec\": {     \"page_id\": \"{id_pagina}\", \"instagram_actor_id\": \"{id_instagram}\",     \"video_data\": {       \"video_id\": \"{video_id}\",       \"message\": \"{titulo}\",       \"title\": \"{descricao}\",       \"image_url\": \"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4GQuewxLfMh2olMxwVIVsJmu1qFf5Q4dwZw&s\",       \"call_to_action\": {         \"type\": \"LEARN_MORE\",         \"value\": {           \"link\": \"https://iaacademy.com.br\"         }       }     }   },   \"degrees_of_freedom_spec\": {     \"creative_features_spec\": {       \"standard_enhancements\": {         \"enroll_status\": \"OPT_IN\"       }     }   } }"
+            },
+            {
+              "name": "adset_id",
+              "valueProvider": "fieldValue",
+              "value": "{adset_id}"
+            },
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "{api_meta}"
+            },
+            {
+              "name": "name",
+              "valueProvider": "fieldValue",
+              "value": "Test Ad"
+            },
+            {
+              "name": "status",
+              "valueProvider": "fieldValue",
+              "value": "ACTIVE"
+            },
+            {
+              "name": "promoted_object",
+              "valueProvider": "fieldValue",
+              "value": "={\"page_id\":\"346730651862683\",\"pixel_id\":\"1832293897175732\",\"custom_event_type\":\"LEAD\"}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1080,
+        1140
+      ],
+      "id": "891762f4-0c77-41e0-973d-9987d50e00b5",
+      "name": "SobeAd1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "copy",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $fromAI('id_copy') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        340,
+        1140
+      ],
+      "id": "d24d32aa-6edd-40fa-b511-a871819f9433",
+      "name": "BuscaCopy1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ywsAiwQjXEWCf6sq",
+          "name": "Gestor Elevate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "campanhas",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "nome",
+              "fieldValue": "={{ $fromAI('nome_campanha') }}"
+            },
+            {
+              "fieldId": "id_meta",
+              "fieldValue": "={{ $fromAI('id_campanha') }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "criado"
+            },
+            {
+              "fieldId": "id_projeto",
+              "fieldValue": "={{ $fromAI('id_projeto') }}"
+            },
+            {
+              "fieldId": "id_criativo",
+              "fieldValue": "={{ $fromAI('id_criativo_supabase') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1260,
+        1140
+      ],
+      "id": "2680ad10-5744-4d39-858c-c6c0a382b6d8",
+      "name": "SalvaBase1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ywsAiwQjXEWCf6sq",
+          "name": "Gestor Elevate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "criativos",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $fromAI('criativo_id') }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "subido"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1460,
+        1140
+      ],
+      "id": "ab8979f0-ca49-4d26-ae41-4c37909798db",
+      "name": "AtualizaCriativo1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ywsAiwQjXEWCf6sq",
+          "name": "Gestor Elevate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        220,
+        0
+      ],
+      "id": "8a2ea9ad-9056-42e1-b03c-e715a23f2580",
+      "name": "MudaPermissao",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OGrhIUliwbv2emL7",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Google Drive Trigger').item.json.webContentLink }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        0
+      ],
+      "id": "4a7c1770-e61b-48c9-801b-5c9605be8257",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        680,
+        0
+      ],
+      "id": "26a0d95c-97f1-4377-8f77-de0194d043d6",
+      "name": "TranscreveVideo",
+      "credentials": {
+        "openAiApi": {
+          "id": "8LRhej9xEz9RuG3T",
+          "name": "conta2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        540
+      ],
+      "id": "f39fbff6-b8c2-4aca-8642-d2eeb3c01e01",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8LRhej9xEz9RuG3T",
+          "name": "conta2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um especialista em criar descrições e headlines para anúncios do meta ads. Utilize a transcrição do anuncio para criar os textos que devem ser persuasivos.\n\nTranscrição do anúncio: {{ $json.text }}\n\n\n- Crie a descrição para o vídeo usando emojis com o contexto do video criado -  O tamanho deste campo precisa ser de, no máximo, 200 caracteres\n- Crie a headline para o anúncio - O tamanho deste campo precisa ser de, no máximo, 90 caracteres\n- Salve os dados no supabase utilizando a tool SalvaCopy\n- Salve os dados no supabase utilizando a tool salvaCriativo definindo o id_copy como o id retornado na tool SalvaCopy id do drive: {{ $('Google Drive Trigger').item.json.webContentLink }}\n\nSempre salve no banco de dados nessa ordem\n\n1- SalvaCopy\n2- SalvaCriativo",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        320,
+        240
+      ],
+      "id": "9f006a8e-dd9b-45e1-b5f5-64f6ae238b22",
+      "name": "Especialista_Roteiro_Videos"
+    },
+    {
+      "parameters": {
+        "tableId": "copy",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "roteiro",
+              "fieldValue": "= {{ $fromAI('roteiro') }}"
+            },
+            {
+              "fieldId": "id_projeto",
+              "fieldValue": "=1"
+            },
+            {
+              "fieldId": "descricao_video",
+              "fieldValue": "= {{ $fromAI('descricao') }}"
+            },
+            {
+              "fieldId": "titulo",
+              "fieldValue": "= {{ $fromAI('titulo') }}"
+            },
+            {
+              "fieldId": "roteiro",
+              "fieldValue": "= {{ $fromAI('transcricao') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        440,
+        540
+      ],
+      "id": "a179f74f-6621-4dfa-a4e3-5923b0a6b2c6",
+      "name": "SalvaCopy",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ywsAiwQjXEWCf6sq",
+          "name": "Gestor Elevate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "criativos",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "nome",
+              "fieldValue": "={{ $fromAI('titulo') }}"
+            },
+            {
+              "fieldId": "=url_download",
+              "fieldValue": "= {{ $fromAI('url_drive') }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "criado"
+            },
+            {
+              "fieldId": "id_copy",
+              "fieldValue": "= {{ $fromAI('id_copy') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        620,
+        540
+      ],
+      "id": "d1fd69d4-0137-45c0-87c2-ba488cfc86a2",
+      "name": "SalvaCriativo",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ywsAiwQjXEWCf6sq",
+          "name": "Gestor Elevate"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1x4byyLg6ou_AGjb1OXuYk9FN1i4ttbmu",
+          "mode": "list",
+          "cachedResultName": "Criativos Video",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1x4byyLg6ou_AGjb1OXuYk9FN1i4ttbmu"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6f269611-4a2b-4492-9ff4-d2aac329bed0",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "OGrhIUliwbv2emL7",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cria Campanhas",
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v22.0/act_{id_conta}/campaigns",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "=name",
+              "valueProvider": "fieldValue",
+              "value": "=Validacao Criativo {nome} "
+            },
+            {
+              "name": "objective",
+              "valueProvider": "fieldValue",
+              "value": "OUTCOME_LEADS"
+            },
+            {
+              "name": "status",
+              "valueProvider": "fieldValue",
+              "value": "PAUSED"
+            },
+            {
+              "name": "special_ad_categories",
+              "valueProvider": "fieldValue",
+              "value": "[]"
+            },
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "{api_meta}"
+            },
+            {
+              "name": "daily_budget",
+              "valueProvider": "fieldValue",
+              "value": "5000"
+            },
+            {
+              "name": "bid_strategy",
+              "valueProvider": "fieldValue",
+              "value": "LOWEST_COST_WITHOUT_CAP"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        1140
+      ],
+      "id": "f284d7ca-2b5d-4ba6-b881-c40e6460dfcf",
+      "name": "CriaCampanha2"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cria adset",
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v22.0/act_{id_conta}/adsets",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "name",
+              "valueProvider": "fieldValue",
+              "value": "=Conjunto 01"
+            },
+            {
+              "name": "optimization_goal",
+              "valueProvider": "fieldValue",
+              "value": "LANDING_PAGE_VIEWS"
+            },
+            {
+              "name": "billing_event",
+              "valueProvider": "fieldValue",
+              "value": "IMPRESSIONS"
+            },
+            {
+              "name": "campaign_id",
+              "valueProvider": "fieldValue",
+              "value": "{id_campanha}"
+            },
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "{api_meta}"
+            },
+            {
+              "name": "targeting",
+              "valueProvider": "fieldValue",
+              "value": "={\"geo_locations\": {\"countries\":[\"BR\"]}}"
+            },
+            {
+              "name": "status",
+              "valueProvider": "fieldValue",
+              "value": "ACTIVE"
+            },
+            {
+              "name": "advantage_plus",
+              "valueProvider": "fieldValue",
+              "value": "ENABLED"
+            },
+            {
+              "name": "promoted_object",
+              "valueProvider": "fieldValue",
+              "value": "{\"page_id\":\"{id_pagina}\",\"pixel_id\":\"{id_pixel}\",\"custom_event_type\":\"PURCHASE\"}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        680,
+        1140
+      ],
+      "id": "cd17718b-fb04-4b11-9907-08b9ef109889",
+      "name": "CriaAdset2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DadosProjeto1": {
+      "ai_tool": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuscaCriativos1": {
+      "ai_tool": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SobeVideo1": {
+      "ai_tool": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SobeAd1": {
+      "ai_tool": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuscaCopy1": {
+      "ai_tool": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SalvaBase1": {
+      "ai_tool": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AtualizaCriativo1": {
+      "ai_tool": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MudaPermissao": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "TranscreveVideo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TranscreveVideo": {
+      "main": [
+        [
+          {
+            "node": "Especialista_Roteiro_Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Especialista_Roteiro_Videos",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Especialista_Roteiro_Videos": {
+      "main": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SalvaCopy": {
+      "ai_tool": [
+        [
+          {
+            "node": "Especialista_Roteiro_Videos",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SalvaCriativo": {
+      "ai_tool": [
+        [
+          {
+            "node": "Especialista_Roteiro_Videos",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "MudaPermissao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CriaCampanha2": {
+      "ai_tool": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CriaAdset2": {
+      "ai_tool": [
+        [
+          {
+            "node": "GestorValidacaoCriativo1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4ad1a9ee-276d-441c-8407-0bb8867e1be2",
+  "meta": {
+    "instanceId": "86d0b539cdbfaefdd305e9f4d9320d6449af6a05b20f421bc7ca5b2501068fb2"
+  },
+  "id": "MsW1BymK0nwOHZrb",
+  "tags": []
+}

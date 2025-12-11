@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Events\LeadOwnerAssigned;
 use App\Events\LeadStageChanged;
 use App\Events\TicketMessageCreated;
+use App\Listeners\RecordAdsConversionListener;
 use App\Listeners\RegisterLeadActivity;
 use App\Listeners\SyncLeadWithExternalSystems;
 use App\Listeners\TriggerGtmEvent;
@@ -21,6 +22,7 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         LeadStageChanged::class => [
             TriggerGtmEvent::class,
+            RecordAdsConversionListener::class,
         ],
         TicketMessageCreated::class => [
             UpdateLeadLastInteraction::class,

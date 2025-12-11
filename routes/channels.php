@@ -55,3 +55,11 @@ Broadcast::channel('tenant.{tenantId}', function ($user, $tenantId) {
     // Usuário deve pertencer ao tenant
     return $user->tenant_id === $tenantId;
 });
+
+/**
+ * Canal privado para eventos GTM do tenant
+ */
+Broadcast::channel('tenant.{tenantId}.gtm', function ($user, $tenantId) {
+    // Usuário deve pertencer ao tenant
+    return $user->tenant_id === $tenantId;
+});

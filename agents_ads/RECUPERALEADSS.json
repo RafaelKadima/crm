@@ -1,0 +1,286 @@
+{
+  "name": "[Aula 21.05][RecuperaLeadsPagina]",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "eea9e88e-0a0f-4880-9ca8-70e1fd46ccf7",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        0
+      ],
+      "id": "d08d2e1c-b099-4ee2-bed7-8da13a3e9484",
+      "name": "Webhook",
+      "webhookId": "eea9e88e-0a0f-4880-9ca8-70e1fd46ccf7"
+    },
+    {
+      "parameters": {
+        "from": "=+18786887208",
+        "to": "=+{{ $('Webhook').item.json.body.phone }}",
+        "message": "Sua Copy + Link Telegra",
+        "options": {}
+      },
+      "id": "6d9b49ce-5169-4cb2-9ca1-70b03e23dcef",
+      "name": "Dispara SMS Twilio",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        280,
+        0
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "iIW0wRQPw4E3jcXq",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 50
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        0
+      ],
+      "id": "6e3a05f6-ffae-4b78-91ff-6165bc7587f4",
+      "name": "Wait",
+      "webhookId": "aea267c2-498a-45f9-98e6-e5d95270b9fa"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.body.email }}",
+        "firstName": "=",
+        "company": "Teste n8n",
+        "additionalFields": {
+          "phone": "={{ $json.body.phone }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mautic",
+      "typeVersion": 1,
+      "position": [
+        40,
+        0
+      ],
+      "id": "64644798-bc3c-4bbf-bb26-bd4c436bd829",
+      "name": "Mautic",
+      "credentials": {
+        "mauticOAuth2Api": {
+          "id": "yVfI2TUKmJXuffwY",
+          "name": "Mautic IA ACADEMY"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendEmail",
+        "campaignEmailId": 4,
+        "contactId": "={{ $('Mautic').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.mautic",
+      "typeVersion": 1,
+      "position": [
+        760,
+        0
+      ],
+      "id": "46067e7b-3b70-422a-b1a2-21984d1beea7",
+      "name": "Mautic1",
+      "credentials": {
+        "mauticOAuth2Api": {
+          "id": "yVfI2TUKmJXuffwY",
+          "name": "Mautic IA ACADEMY"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 7e17519e-cbb9-4283-bb6f-199c72afa8fe"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"assistantId\": \"3b6a3d83-57e5-4e89-adaf-738f1409f621\",\n  \"customer\": {\n    \"number\": \"+5531....NUMEROQUEVAIRECEBER A LIGACAO AQUI\"\n  },\n  \"phoneNumber\": {\n    \"twilioPhoneNumber\": \"+18786887208\",\n    \"twilioAccountSid\": \"AC77200077f760d726d28da12417646c3f\",\n    \"twilioAuthToken\": \"\"\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1160,
+        0
+      ],
+      "id": "d99c928e-0404-410f-99b1-39fc016750a1",
+      "name": "AgenteCall"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1QMusiphstRUIxplcJ2F9ufpkSliMGaL3x2VNWIK3Ouc",
+          "mode": "list",
+          "cachedResultName": "Historico_Calls",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QMusiphstRUIxplcJ2F9ufpkSliMGaL3x2VNWIK3Ouc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1QMusiphstRUIxplcJ2F9ufpkSliMGaL3x2VNWIK3Ouc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Id": "=callId={{ $json.id }}",
+            "Numero": "={{ $json.customer.number }}",
+            "Etapa": "L1"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Id",
+              "displayName": "Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Numero",
+              "displayName": "Numero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Etapa",
+              "displayName": "Etapa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1480,
+        0
+      ],
+      "id": "05af8807-65a2-4134-a5d9-32bedfebe1b7",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zrRBaQGbbCMhkp2D",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Mautic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dispara SMS Twilio": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Mautic1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mautic": {
+      "main": [
+        [
+          {
+            "node": "Dispara SMS Twilio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mautic1": {
+      "main": [
+        [
+          {
+            "node": "AgenteCall",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AgenteCall": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cb133486-4f98-4dc6-8490-68d1a110bb59",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "86d0b539cdbfaefdd305e9f4d9320d6449af6a05b20f421bc7ca5b2501068fb2"
+  },
+  "id": "Ap2n8ajyXWZrW9GG",
+  "tags": []
+}

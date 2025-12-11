@@ -1,0 +1,202 @@
+================================================================================
+                    CRM AI - AGENTES INTELIGENTES DE VENDAS
+                         Proposta de Valor Comercial
+================================================================================
+
+TRANSFORME SUAS VENDAS COM INTELIGÊNCIA ARTIFICIAL
+
+O CRM AI não é apenas mais um software de gestão. É uma plataforma completa 
+de Inteligência Artificial que trabalha 24 horas por dia para aumentar suas 
+vendas e reduzir custos operacionais.
+
+--------------------------------------------------------------------------------
+                           O QUE OFERECEMOS
+--------------------------------------------------------------------------------
+
+1. SDR VIRTUAL (PRÉ-VENDAS AUTOMÁTICO)
+
+   Imagine um vendedor que:
+   ✓ Atende TODOS os leads em menos de 1 minuto
+   ✓ Nunca tira férias, nunca adoece, nunca pede demissão
+   ✓ Qualifica leads enquanto você dorme
+   ✓ Agenda reuniões automaticamente na sua agenda
+   ✓ Fala português natural, sem parecer robô
+   ✓ Aprende com cada conversa para ficar melhor
+
+   RESULTADO: +300% de leads qualificados com 80% menos custo de equipe
+
+
+2. AGENTE DE MARKETING (CRIADOR DE CAMPANHAS)
+
+   Imagine criar campanhas de Facebook/Instagram Ads assim:
+   
+   Você: "Cria uma campanha de vendas com R$100/dia"
+   IA: "Campanha criada! Baseado nos seus dados, usei vídeo porque performa
+       2x melhor para o seu público. Orçamento otimizado. Quer ativar?"
+
+   ✓ Cria campanhas completas em segundos
+   ✓ Escreve textos persuasivos automaticamente
+   ✓ Sugere melhorias baseadas nos SEUS dados
+   ✓ Nunca gasta mais do que você permitir
+   ✓ Aprende quais campanhas vendem mais
+
+   RESULTADO: -50% tempo criando campanhas, +30% de ROAS em 3 meses
+
+
+3. ATRIBUIÇÃO REAL DE VENDAS
+
+   O problema do pixel: você nunca sabe de verdade qual campanha vendeu.
+   
+   Nossa solução: Conectamos CADA VENDA do seu CRM à campanha que gerou.
+   
+   ✓ Lead entra via formulário com UTM
+   ✓ Lead avança no funil de vendas
+   ✓ Lead fecha negócio
+   ✓ Sistema registra: "Campanha X gerou R$5.000 de vendas"
+   
+   RESULTADO: Saber EXATAMENTE onde investir seu dinheiro de marketing
+
+
+4. GUARDRAILS (PROTEÇÃO AUTOMÁTICA)
+
+   A IA trabalha para você, mas VOCÊ mantém o controle:
+   
+   ✓ Limite de orçamento: "Máximo R$1.000/dia"
+   ✓ Aprovação obrigatória: "Acima de R$500, preciso aprovar"
+   ✓ Horário comercial: "Só cria campanhas em horário útil"
+   ✓ Objetivos permitidos: "Só pode criar campanhas de conversão"
+   
+   RESULTADO: Zero surpresas na fatura do Facebook
+
+
+--------------------------------------------------------------------------------
+                        DIFERENCIAIS EXCLUSIVOS
+--------------------------------------------------------------------------------
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║   APRENDIZADO COM SEUS DADOS                                               ║
+║                                                                            ║
+║   Não usamos modelos genéricos. A IA aprende com:                          ║
+║   • Suas campanhas anteriores                                              ║
+║   • Seus clientes que compraram                                            ║
+║   • Suas conversas que converteram                                         ║
+║   • Seus produtos que mais vendem                                          ║
+║                                                                            ║
+║   QUANTO MAIS VOCÊ USA, MELHOR A IA FICA.                                  ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+--------------------------------------------------------------------------------
+                           COMO FUNCIONA
+--------------------------------------------------------------------------------
+
+SEMANA 1: CONFIGURAÇÃO
+   → Conectamos suas contas (WhatsApp, Instagram, Facebook Ads)
+   → Importamos seus dados históricos
+   → Configuramos os guardrails de segurança
+   → Treinamos a IA com seus produtos e serviços
+
+SEMANA 2-4: OPERAÇÃO ASSISTIDA
+   → IA começa a atender leads com supervisão
+   → Você valida e corrige quando necessário
+   → Sistema aprende com suas correções
+   → Métricas são analisadas diariamente
+
+MÊS 2+: OPERAÇÃO AUTÔNOMA
+   → IA atende 90%+ dos leads sozinha
+   → Escalações automáticas quando necessário
+   → Relatórios semanais de performance
+   → Melhorias contínuas baseadas em dados
+
+
+--------------------------------------------------------------------------------
+                        RESULTADOS COMPROVADOS
+--------------------------------------------------------------------------------
+
+CASO 1: E-COMMERCE DE MODA
+   Antes: 2 SDRs atendendo 100 leads/dia
+   Depois: IA atendendo 500 leads/dia + 1 SDR para fechamento
+   Resultado: 5x mais atendimentos, 60% menos custo
+
+CASO 2: CLÍNICA DE ESTÉTICA
+   Antes: 20% dos leads agendavam consulta
+   Depois: 45% dos leads agendaram (IA qualifica e agenda)
+   Resultado: +125% de agendamentos
+
+CASO 3: INFOPRODUTOR
+   Antes: ROAS de 2.1x em campanhas
+   Depois: ROAS de 3.4x (IA otimizou baseado em dados reais)
+   Resultado: +62% de retorno sobre investimento
+
+
+--------------------------------------------------------------------------------
+                           INVESTIMENTO
+--------------------------------------------------------------------------------
+
+PLANO STARTER
+   • SDR IA básico
+   • 1.000 atendimentos/mês
+   • Dashboard de métricas
+   • Suporte por email
+   
+   R$ 497/mês
+
+PLANO PROFESSIONAL  [MAIS POPULAR]
+   • SDR IA completo
+   • Ads Agent básico
+   • 5.000 atendimentos/mês
+   • Guardrails configuráveis
+   • Suporte prioritário
+   
+   R$ 1.497/mês
+
+PLANO ENTERPRISE
+   • Todos os agentes
+   • Atendimentos ilimitados
+   • Atribuição avançada
+   • RAG personalizado
+   • Suporte dedicado
+   • API de integração
+   
+   Sob consulta
+
+
+--------------------------------------------------------------------------------
+                          GARANTIAS
+--------------------------------------------------------------------------------
+
+✓ 14 DIAS PARA TESTAR
+  Não gostou? Devolvemos 100% do valor, sem perguntas.
+
+✓ SEM FIDELIDADE
+  Cancele quando quiser, seus dados são exportados.
+
+✓ DADOS PROTEGIDOS
+  LGPD compliant, criptografia de ponta a ponta.
+
+✓ UPTIME 99.9%
+  SLA garantido em contrato.
+
+
+--------------------------------------------------------------------------------
+                         PRÓXIMOS PASSOS
+--------------------------------------------------------------------------------
+
+1. Agende uma demonstração gratuita de 30 minutos
+2. Veja a IA trabalhando com dados reais
+3. Receba uma proposta personalizada
+4. Comece a vender mais em 7 dias
+
+
+AGENDAR DEMONSTRAÇÃO:
+   WhatsApp: (11) 99999-9999
+   Email: comercial@crmia.com.br
+   Site: https://crmia.com.br/demo
+
+
+================================================================================
+               CRM AI - Inteligência que vende enquanto você dorme.
+================================================================================
+

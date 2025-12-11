@@ -332,8 +332,8 @@ Route::middleware('auth:api')->group(function () {
             Route::put('stage/{stage}/event', [\App\Http\Controllers\GtmController::class, 'updateStageEvent']);
         });
 
-        // Categorias de Produtos - Requer feature: products
-        Route::middleware('feature:products')->prefix('product-categories')->group(function () {
+        // Categorias de Produtos
+        Route::prefix('product-categories')->group(function () {
             Route::get('/', [ProductCategoryController::class, 'index']);
             Route::post('/', [ProductCategoryController::class, 'store']);
             Route::get('{category}', [ProductCategoryController::class, 'show']);
@@ -342,8 +342,8 @@ Route::middleware('auth:api')->group(function () {
             Route::post('reorder', [ProductCategoryController::class, 'reorder']);
         });
 
-        // Produtos - Requer feature: products
-        Route::middleware('feature:products')->prefix('products')->group(function () {
+        // Produtos
+        Route::prefix('products')->group(function () {
             Route::get('/', [ProductController::class, 'index']);
             Route::post('/', [ProductController::class, 'store']);
             Route::get('{product}', [ProductController::class, 'show']);
@@ -622,9 +622,59 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
     
     // Agente de IA para criação de campanhas
     Route::prefix('agent')->group(function () {
+        Route::post('generate-copy', [\App\Http\Controllers\AdAgentController::class, 'generateCopy']);
         Route::post('create-campaign', [\App\Http\Controllers\AdAgentController::class, 'createCampaign']);
         Route::get('campaigns/{campaign}/full-report', [\App\Http\Controllers\AdAgentController::class, 'getCampaignFullReport']);
         Route::get('campaigns/{campaign}/ads', [\App\Http\Controllers\AdAgentController::class, 'getCampaignAds']);
+    });
+    
+    // Criativos (upload e gestão de mídias)
+    Route::prefix('creatives')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AdCreativeController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\AdCreativeController::class, 'store']);
+        Route::post('from-url', [\App\Http\Controllers\AdCreativeController::class, 'storeFromUrl']);
+        Route::get('{creative}', [\App\Http\Controllers\AdCreativeController::class, 'show']);
+        Route::put('{creative}', [\App\Http\Controllers\AdCreativeController::class, 'update']);
+        Route::delete('{creative}', [\App\Http\Controllers\AdCreativeController::class, 'destroy']);
+        Route::get('{creative}/copies', [\App\Http\Controllers\AdCreativeController::class, 'copies']);
+        Route::post('{creative}/copies', [\App\Http\Controllers\AdCreativeController::class, 'addCopy']);
+    });
+    
+    // Copies (textos dos anúncios)
+    Route::prefix('copies')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AdCopyController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\AdCopyController::class, 'store']);
+        Route::get('ctas', [\App\Http\Controllers\AdCopyController::class, 'ctas']);
+        Route::get('hook-types', [\App\Http\Controllers\AdCopyController::class, 'hookTypes']);
+        Route::get('{copy}', [\App\Http\Controllers\AdCopyController::class, 'show']);
+        Route::put('{copy}', [\App\Http\Controllers\AdCopyController::class, 'update']);
+        Route::delete('{copy}', [\App\Http\Controllers\AdCopyController::class, 'destroy']);
+        Route::post('{copy}/approve', [\App\Http\Controllers\AdCopyController::class, 'approve']);
+    });
+    
+    // Knowledge Base (RAG para Ads)
+    Route::prefix('knowledge')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AdsKnowledgeController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\AdsKnowledgeController::class, 'store']);
+        Route::get('search', [\App\Http\Controllers\AdsKnowledgeController::class, 'search']);
+        Route::get('insights', [\App\Http\Controllers\AdsKnowledgeController::class, 'insights']);
+        Route::post('learn', [\App\Http\Controllers\AdsKnowledgeController::class, 'triggerLearning']);
+        Route::get('{knowledge}', [\App\Http\Controllers\AdsKnowledgeController::class, 'show']);
+        Route::put('{knowledge}', [\App\Http\Controllers\AdsKnowledgeController::class, 'update']);
+        Route::delete('{knowledge}', [\App\Http\Controllers\AdsKnowledgeController::class, 'destroy']);
+    });
+    
+    // Guardrails (regras de controle)
+    Route::prefix('guardrails')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AdsGuardrailController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\AdsGuardrailController::class, 'store']);
+        Route::get('stats', [\App\Http\Controllers\AdsGuardrailController::class, 'stats']);
+        Route::post('defaults', [\App\Http\Controllers\AdsGuardrailController::class, 'createDefaults']);
+        Route::get('{guardrail}', [\App\Http\Controllers\AdsGuardrailController::class, 'show']);
+        Route::put('{guardrail}', [\App\Http\Controllers\AdsGuardrailController::class, 'update']);
+        Route::delete('{guardrail}', [\App\Http\Controllers\AdsGuardrailController::class, 'destroy']);
+        Route::post('{guardrail}/toggle', [\App\Http\Controllers\AdsGuardrailController::class, 'toggle']);
+        Route::post('{guardrail}/test', [\App\Http\Controllers\AdsGuardrailController::class, 'test']);
     });
 });
 
