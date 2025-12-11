@@ -30,11 +30,19 @@ class LeadAssignmentService
         $queueId = $lead->queue_id;
         $pipelineId = $lead->pipeline_id;
 
+        // #region agent log H5 - Entry
+        file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H5','location'=>'LeadAssignmentService:assignLeadOwner:ENTRY','message'=>'assignLeadOwner called','data'=>['lead_id'=>$lead->id,'queue_id'=>$queueId,'pipeline_id'=>$pipelineId,'passed_eligible'=>$eligibleUserIds],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+        // #endregion
+
         // Se o lead está em uma fila, usa os usuários da fila
         if ($queueId && $eligibleUserIds === null) {
             $queue = Queue::find($queueId);
             if ($queue) {
                 $eligibleUserIds = $queue->getActiveUserIds();
+                // #region agent log H2 - Queue users
+                $queueUserNames = User::whereIn('id', $eligibleUserIds)->pluck('name')->toArray();
+                file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H2','location'=>'LeadAssignmentService:assignLeadOwner:QUEUE_USERS','message'=>'Users from queue','data'=>['queue_id'=>$queueId,'queue_name'=>$queue->name,'eligible_count'=>count($eligibleUserIds),'user_ids'=>$eligibleUserIds,'user_names'=>$queueUserNames],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+                // #endregion
                 Log::info('Using queue users for assignment', [
                     'lead_id' => $lead->id,
                     'queue_id' => $queueId,
@@ -48,6 +56,10 @@ class LeadAssignmentService
             $pipeline = Pipeline::find($pipelineId);
             if ($pipeline) {
                 $eligibleUserIds = $pipeline->getUserIdsWithLeadPermission();
+                // #region agent log H1 - Pipeline users
+                $userNames = User::whereIn('id', $eligibleUserIds)->pluck('name')->toArray();
+                file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H1','location'=>'LeadAssignmentService:assignLeadOwner:PIPELINE_USERS','message'=>'Users from pipeline','data'=>['pipeline_id'=>$pipelineId,'pipeline_name'=>$pipeline->name,'eligible_count'=>count($eligibleUserIds),'user_ids'=>$eligibleUserIds,'user_names'=>$userNames],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+                // #endregion
                 Log::info('Using pipeline users for assignment', [
                     'lead_id' => $lead->id,
                     'pipeline_id' => $pipelineId,
@@ -125,6 +137,10 @@ class LeadAssignmentService
         ?string $queueId, 
         array $eligibleUserIds
     ): User {
+        // #region agent log H3 - Round Robin Entry
+        file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H3','location'=>'LeadAssignmentService:getNextUserInRotation:ENTRY','message'=>'Round Robin started','data'=>['tenant_id'=>$tenantId,'channel_id'=>$channelId,'queue_id'=>$queueId,'eligible_user_ids'=>$eligibleUserIds,'eligible_count'=>count($eligibleUserIds)],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+        // #endregion
+
         // Busca o último usuário que recebeu lead (prioriza por fila, depois canal)
         $query = LeadAssignmentLog::where('tenant_id', $tenantId)
             ->whereIn('user_id', $eligibleUserIds)
@@ -141,22 +157,36 @@ class LeadAssignmentService
         }
 
         if (!$lastAssigned) {
+            // #region agent log H3 - First assignment
+            $firstUser = User::find($eligibleUserIds[0]);
+            file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H3','location'=>'LeadAssignmentService:getNextUserInRotation:FIRST','message'=>'First assignment (no previous log)','data'=>['selected_user_id'=>$eligibleUserIds[0],'selected_user_name'=>$firstUser?->name],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+            // #endregion
             // Primeira atribuição - retorna o primeiro usuário elegível
-            return User::find($eligibleUserIds[0]);
+            return $firstUser;
         }
 
         // Encontra o índice do último usuário
         $lastIndex = array_search($lastAssigned->user_id, $eligibleUserIds);
         
         if ($lastIndex === false) {
+            // #region agent log H3 - User not eligible
+            $fallbackUser = User::find($eligibleUserIds[0]);
+            file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H3','location'=>'LeadAssignmentService:getNextUserInRotation:NOT_ELIGIBLE','message'=>'Last user not eligible anymore','data'=>['last_user_id'=>$lastAssigned->user_id,'selected_user_id'=>$eligibleUserIds[0],'selected_user_name'=>$fallbackUser?->name],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+            // #endregion
             // Usuário anterior não está mais elegível
-            return User::find($eligibleUserIds[0]);
+            return $fallbackUser;
         }
 
         // Próximo índice (circular)
         $nextIndex = ($lastIndex + 1) % count($eligibleUserIds);
         
-        return User::find($eligibleUserIds[$nextIndex]);
+        // #region agent log H3 - Round Robin result
+        $nextUser = User::find($eligibleUserIds[$nextIndex]);
+        $lastUserName = User::find($lastAssigned->user_id)?->name;
+        file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H3','location'=>'LeadAssignmentService:getNextUserInRotation:ROTATION','message'=>'Round Robin rotation','data'=>['last_user_id'=>$lastAssigned->user_id,'last_user_name'=>$lastUserName,'last_index'=>$lastIndex,'next_index'=>$nextIndex,'selected_user_id'=>$eligibleUserIds[$nextIndex],'selected_user_name'=>$nextUser?->name],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+        // #endregion
+        
+        return $nextUser;
     }
 
     /**

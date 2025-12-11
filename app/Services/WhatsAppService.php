@@ -506,10 +506,20 @@ class WhatsAppService
             // Se tem menu de filas, a distribuição acontece DEPOIS que o lead
             // escolher a fila no método triggerSdrResponse() → routeLeadToQueue()
             // =====================================================
-            if (!$channel->hasQueueMenu()) {
+            // #region agent log H4,H5 - Distribution check
+            $hasQueueMenu = $channel->hasQueueMenu();
+            file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H4,H5','location'=>'WhatsAppService:findOrCreateLead:DISTRIBUTION_CHECK','message'=>'Checking distribution path','data'=>['lead_id'=>$lead->id,'channel_id'=>$channel->id,'channel_name'=>$channel->name,'has_queue_menu'=>$hasQueueMenu,'will_auto_distribute'=>!$hasQueueMenu],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+            // #endregion
+            if (!$hasQueueMenu) {
                 try {
+                    // #region agent log H5 - Calling assignment
+                    file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H5','location'=>'WhatsAppService:findOrCreateLead:CALLING_ASSIGNMENT','message'=>'About to call assignLeadOwner','data'=>['lead_id'=>$lead->id],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+                    // #endregion
                     $assignmentService = app(\App\Services\LeadAssignmentService::class);
                     $owner = $assignmentService->assignLeadOwner($lead);
+                    // #region agent log H5 - Assignment success
+                    file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H5','location'=>'WhatsAppService:findOrCreateLead:ASSIGNMENT_SUCCESS','message'=>'Lead assigned successfully','data'=>['lead_id'=>$lead->id,'owner_id'=>$owner->id,'owner_name'=>$owner->name],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+                    // #endregion
                     Log::info('Lead auto-assigned to owner (no queue menu)', [
                         'lead_id' => $lead->id, 
                         'owner_id' => $owner->id, 
@@ -517,6 +527,9 @@ class WhatsAppService
                         'channel_id' => $channel->id,
                     ]);
                 } catch (\Exception $e) {
+                    // #region agent log H5 - Assignment error
+                    file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H5','location'=>'WhatsAppService:findOrCreateLead:ASSIGNMENT_ERROR','message'=>'Assignment failed','data'=>['lead_id'=>$lead->id,'error'=>$e->getMessage()],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+                    // #endregion
                     Log::warning('Could not auto-assign lead', ['lead_id' => $lead->id, 'error' => $e->getMessage()]);
                 }
             } else {
