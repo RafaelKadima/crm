@@ -38,7 +38,8 @@ foreach ($tickets as $ticket) {
     
     foreach ($ticket->messages->take(3) as $msg) {
         $content = substr($msg->content ?? $msg->body ?? '', 0, 50);
-        echo "    - [{$msg->direction}] {$content}...\n";
+        $direction = $msg->direction instanceof \BackedEnum ? $msg->direction->value : $msg->direction;
+        echo "    - [{$direction}] {$content}...\n";
     }
     echo "\n";
 }
@@ -62,5 +63,35 @@ echo "=== PROJETOS EXISTENTES ===\n";
 $projects = DB::table('projects')->select('id', 'name', 'tenant_id')->get();
 foreach ($projects as $p) {
     echo "  - {$p->name} (ID: {$p->id})\n";
+}
+
+echo "\n=== 4. LOGS DE ATRIBUIÇÃO ===\n\n";
+$logs = DB::table('lead_assignment_logs')
+    ->join('users', 'lead_assignment_logs.user_id', '=', 'users.id')
+    ->select('users.name', 'lead_assignment_logs.last_assigned_at', 'lead_assignment_logs.channel_id')
+    ->orderBy('lead_assignment_logs.last_assigned_at', 'desc')
+    ->get();
+
+foreach ($logs as $log) {
+    echo "  - {$log->name}: {$log->last_assigned_at}\n";
+}
+
+echo "\n=== 5. VERIFICAR CONTATOS ===\n\n";
+$contacts = DB::table('contacts')->select('id', 'name', 'phone', 'email')->get();
+foreach ($contacts as $c) {
+    echo "  - {$c->name} | Phone: {$c->phone} | Email: {$c->email}\n";
+}
+
+echo "\n=== 6. VERIFICAR LEAD -> CONTACT ===\n\n";
+$leadsRaw = DB::table('leads')
+    ->leftJoin('contacts', 'leads.contact_id', '=', 'contacts.id')
+    ->select('leads.id as lead_id', 'leads.contact_id', 'contacts.name as contact_name', 'contacts.phone')
+    ->get();
+
+foreach ($leadsRaw as $l) {
+    echo "  Lead: {$l->lead_id}\n";
+    echo "    contact_id: " . ($l->contact_id ?? 'NULL') . "\n";
+    echo "    contact_name: " . ($l->contact_name ?? 'NULL') . "\n";
+    echo "    phone: " . ($l->phone ?? 'NULL') . "\n\n";
 }
 
