@@ -30,9 +30,9 @@ class DashboardController extends Controller
 
         // Tasks
         $totalTasks = Task::count();
-        $recentTasks = Task::select('id', 'title', 'type', 'status', 'due_date')
-            ->where('status', 'pending')
-            ->orderBy('due_date')
+        $recentTasks = Task::select('id', 'title', 'type', 'status', 'due_at')
+            ->where('status', 'pendente')
+            ->orderBy('due_at')
             ->take(5)
             ->get();
 
