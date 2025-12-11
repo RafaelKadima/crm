@@ -81,7 +81,7 @@ class LeadAssignmentService
         if ($queueId) {
             $queue = Queue::find($queueId);
             if ($queue) {
-                LeadQueueOwner::findOrCreateForLead($lead, $queue, $nextUser);
+                LeadQueueOwner::setOwnerForQueue($lead, $queue, $nextUser);
                 Log::info('Lead queue ownership saved', [
                     'lead_id' => $lead->id,
                     'queue_id' => $queueId,
