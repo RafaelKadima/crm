@@ -10,8 +10,7 @@ import json
 import structlog
 from typing import Optional, Dict, Any, List
 
-from langchain.agents import create_openai_functions_agent
-from langchain.agents.agent import AgentExecutor
+from langchain_classic.agents import AgentExecutor, create_openai_functions_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
