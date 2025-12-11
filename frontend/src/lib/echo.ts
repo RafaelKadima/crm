@@ -38,7 +38,9 @@ const echo = new Echo({
         return
       }
 
-      fetch(`${API_BASE}/api/broadcasting/auth`, {
+      // Remove /api do final se existir para evitar duplicação
+      const baseUrl = API_BASE.replace(/\/api\/?$/, '')
+      fetch(`${baseUrl}/api/broadcasting/auth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
