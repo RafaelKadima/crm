@@ -1,11 +1,14 @@
-/* OmniFy HUB - Futuristic Identity System v2.0 */
-/* Fontes futurísticas: Orbitron (headings) + Exo 2 (body) */
+/* ═══════════════════════════════════════════════════════════════════════════
+   🌌 OMNIFY HUB - FUTURISTIC DARK IDENTITY SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fontes futurísticas */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   🎨 OMNIFY HUB - COLOR SYSTEM (Futuristic Monochrome)
+   🎨 COLOR SYSTEM
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -25,28 +28,29 @@
   --omni-orange: #F59E0B;
   --omni-red: #EF4444;
   
-  /* === Branding Defaults === */
+  /* === Branding === */
   --brand-primary: #FFFFFF;
   --brand-secondary: #C0C8D4;
   --brand-accent: #00D4FF;
   --brand-sidebar: #0D1117;
   --brand-sidebar-text: #C0C8D4;
-  --brand-header: #1A202C;
   --brand-radius: 8px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   🎨 TAILWIND V4 THEME
+   🎨 TAILWIND V4 THEME (Dark Only)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* Colors */
+  /* Surface Colors */
   --color-background: #0A0C10;
   --color-foreground: #E8ECF2;
   --color-card: #12151C;
   --color-card-foreground: #E8ECF2;
   --color-popover: #12151C;
   --color-popover-foreground: #E8ECF2;
+  
+  /* Interactive Colors */
   --color-primary: #FFFFFF;
   --color-primary-foreground: #0A0C10;
   --color-secondary: #1E2330;
@@ -57,20 +61,22 @@
   --color-accent-foreground: #FFFFFF;
   --color-destructive: #DC2626;
   --color-destructive-foreground: #FFFFFF;
+  
+  /* Border & Input */
   --color-border: rgba(255, 255, 255, 0.08);
   --color-input: #1A1F2A;
   --color-ring: rgba(255, 255, 255, 0.3);
+  
+  /* Sidebar */
   --color-sidebar: #0D1117;
   --color-sidebar-foreground: #C0C8D4;
   --color-sidebar-accent: #FFFFFF;
   
-  /* Omni brand colors */
+  /* Omni Brand Colors */
   --color-omni-white: #FFFFFF;
   --color-omni-silver: #C0C8D4;
   --color-omni-steel: #8892A0;
   --color-omni-slate: #4A5568;
-  --color-omni-charcoal: #2D3748;
-  --color-omni-graphite: #1A202C;
   --color-omni-obsidian: #0D1117;
   --color-omni-cyan: #00D4FF;
   --color-omni-green: #10B981;
@@ -89,94 +95,6 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   🌙 DARK MODE
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.dark {
-  --color-background: #0A0C10;
-  --color-foreground: #E8ECF2;
-  --color-card: #12151C;
-  --color-card-foreground: #E8ECF2;
-  --color-popover: #12151C;
-  --color-popover-foreground: #E8ECF2;
-  --color-primary: #FFFFFF;
-  --color-primary-foreground: #0A0C10;
-  --color-secondary: #1E2330;
-  --color-secondary-foreground: #C0C8D4;
-  --color-muted: #1A1F2A;
-  --color-muted-foreground: #6B7280;
-  --color-accent: #2A3142;
-  --color-accent-foreground: #FFFFFF;
-  --color-destructive: #DC2626;
-  --color-destructive-foreground: #FFFFFF;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-input: #1A1F2A;
-  --color-ring: rgba(255, 255, 255, 0.3);
-  --color-sidebar: #0D1117;
-  --color-sidebar-foreground: #C0C8D4;
-  --color-sidebar-accent: #FFFFFF;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   ☀️ LIGHT MODE
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.light {
-  color-scheme: light;
-  --color-background: #F5F7FA;
-  --color-foreground: #0D1117;
-  --color-card: #FFFFFF;
-  --color-card-foreground: #0D1117;
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: #0D1117;
-  --color-primary: #0D1117;
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary: #F0F2F5;
-  --color-secondary-foreground: #0D1117;
-  --color-muted: #F0F2F5;
-  --color-muted-foreground: #6B7280;
-  --color-accent: #E8ECF2;
-  --color-accent-foreground: #0D1117;
-  --color-destructive: #DC2626;
-  --color-destructive-foreground: #FFFFFF;
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-input: #F5F7FA;
-  --color-ring: rgba(0, 0, 0, 0.2);
-  --color-sidebar: #FFFFFF;
-  --color-sidebar-foreground: #0D1117;
-  --color-sidebar-accent: #0D1117;
-}
-
-/* Light mode Tailwind gray class overrides */
-.light .bg-gray-800 {
-  background-color: #F0F2F5;
-}
-
-.light .bg-gray-900 {
-  background-color: #FFFFFF;
-}
-
-.light .bg-gray-700 {
-  background-color: #E8ECF2;
-}
-
-.light .border-gray-700 {
-  border-color: #E0E4E8;
-}
-
-.light .text-gray-400 {
-  color: #6B7280;
-}
-
-.light .text-gray-300 {
-  color: #4A5568;
-}
-
-.light .text-white {
-  color: #0D1117;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
    📐 BASE STYLES
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -186,11 +104,12 @@
 
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 body {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+  background-color: #0A0C10;
+  color: #E8ECF2;
   font-family: 'Exo 2', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -236,17 +155,12 @@ code, pre, .mono {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Glass Effects */
+/* Glass Effect */
 .glass {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   background: rgba(18, 21, 28, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.light .glass {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 /* Gradient Text */
@@ -257,15 +171,13 @@ code, pre, .mono {
   background-clip: text;
 }
 
-/* Subtle Glow Effects */
+/* Glow Effects */
 .glow-white {
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
 .glow-soft {
-  box-shadow: 
-    0 0 1px rgba(255, 255, 255, 0.3),
-    0 0 10px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 1px rgba(255, 255, 255, 0.3), 0 0 10px rgba(255, 255, 255, 0.05);
 }
 
 /* Futuristic Card */
@@ -273,31 +185,15 @@ code, pre, .mono {
   border-radius: 12px;
   background: linear-gradient(145deg, rgba(18, 21, 28, 0.95), rgba(13, 17, 23, 0.98));
   border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 
-    0 4px 24px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-.light .futuristic-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(245, 247, 250, 0.95));
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 
-    0 4px 24px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-/* Grid Pattern Background */
+/* Grid Pattern */
 .grid-pattern {
   background-image: 
     linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 60px 60px;
-}
-
-.light .grid-pattern {
-  background-image: 
-    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
 }
 
 /* Shine Effect */
@@ -319,6 +215,12 @@ code, pre, .mono {
 
 .shine:hover::before {
   left: 100%;
+}
+
+/* Active Nav Item */
+.nav-active {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -360,7 +262,7 @@ code, pre, .mono {
 .compact .gap-6 { gap: 1rem; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   🔷 OMNIFY HUB SPECIAL COMPONENTS
+   🔷 OMNIFY HUB COMPONENTS
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Logo */
@@ -375,7 +277,7 @@ code, pre, .mono {
 .omnify-logo-text .fy { color: #8892A0; }
 .omnify-logo-text .hub { color: #4A5568; font-weight: 400; font-size: 0.65em; margin-left: 6px; }
 
-/* Status Indicators */
+/* Status */
 .status-online { background: #10B981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
 .status-offline { background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
 
@@ -390,55 +292,35 @@ code, pre, .mono {
   background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.1) 80%, transparent 100%);
 }
 
-/* Input Focus State */
+/* Input Focus */
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
 }
 
-.light input:focus, .light textarea:focus, .light select:focus {
-  border-color: rgba(0, 0, 0, 0.2);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
-}
-
-/* Selection Color */
-::selection { background: rgba(255, 255, 255, 0.2); color: #FFFFFF; }
-.light ::selection { background: rgba(0, 0, 0, 0.1); color: #0D1117; }
-
-/* Active Nav Item */
-.nav-active {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.light .nav-active {
-  background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+/* Selection */
+::selection {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    🔔 FUTURISTIC NOTIFICATIONS (Sonner Toast)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Base Toast Style */
 .futuristic-toast {
   font-family: 'Exo 2', system-ui, sans-serif !important;
   background: linear-gradient(135deg, rgba(18, 21, 28, 0.95) 0%, rgba(10, 12, 16, 0.98) 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 12px !important;
   padding: 16px 20px !important;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 1px rgba(255, 255, 255, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
   backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
   position: relative !important;
   overflow: hidden !important;
 }
 
-/* Animated gradient border effect */
 .futuristic-toast::before {
   content: '';
   position: absolute;
@@ -455,7 +337,6 @@ input:focus, textarea:focus, select:focus {
   50% { opacity: 1; transform: translateX(100%); }
 }
 
-/* Scan line effect */
 .futuristic-toast::after {
   content: '';
   position: absolute;
@@ -463,12 +344,7 @@ input:focus, textarea:focus, select:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.02) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.02) 50%, transparent 100%);
   background-size: 100% 4px;
   pointer-events: none;
   animation: toast-scan 3s linear infinite;
@@ -479,7 +355,6 @@ input:focus, textarea:focus, select:focus {
   100% { transform: translateY(100%); }
 }
 
-/* Toast Title */
 .futuristic-toast-title {
   font-family: 'Orbitron', sans-serif !important;
   font-weight: 600 !important;
@@ -489,7 +364,6 @@ input:focus, textarea:focus, select:focus {
   margin-bottom: 4px !important;
 }
 
-/* Toast Description */
 .futuristic-toast-description {
   font-family: 'Exo 2', system-ui, sans-serif !important;
   font-size: 13px !important;
@@ -497,73 +371,37 @@ input:focus, textarea:focus, select:focus {
   line-height: 1.4 !important;
 }
 
-/* Success Toast */
+/* Success */
 .futuristic-toast-success {
   border-left: 3px solid #10B981 !important;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(16, 185, 129, 0.15),
-    inset 0 1px 0 rgba(16, 185, 129, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(16, 185, 129, 0.1) !important;
 }
+.futuristic-toast-success::before { background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent) !important; }
+.futuristic-toast-success .futuristic-toast-title { color: #10B981 !important; }
 
-.futuristic-toast-success::before {
-  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent) !important;
-}
-
-.futuristic-toast-success .futuristic-toast-title {
-  color: #10B981 !important;
-}
-
-/* Error Toast */
+/* Error */
 .futuristic-toast-error {
   border-left: 3px solid #EF4444 !important;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(239, 68, 68, 0.15),
-    inset 0 1px 0 rgba(239, 68, 68, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(239, 68, 68, 0.1) !important;
 }
+.futuristic-toast-error::before { background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.6), transparent) !important; }
+.futuristic-toast-error .futuristic-toast-title { color: #EF4444 !important; }
 
-.futuristic-toast-error::before {
-  background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.6), transparent) !important;
-}
-
-.futuristic-toast-error .futuristic-toast-title {
-  color: #EF4444 !important;
-}
-
-/* Warning Toast */
+/* Warning */
 .futuristic-toast-warning {
   border-left: 3px solid #F59E0B !important;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(245, 158, 11, 0.15),
-    inset 0 1px 0 rgba(245, 158, 11, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(245, 158, 11, 0.1) !important;
 }
+.futuristic-toast-warning::before { background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.6), transparent) !important; }
+.futuristic-toast-warning .futuristic-toast-title { color: #F59E0B !important; }
 
-.futuristic-toast-warning::before {
-  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.6), transparent) !important;
-}
-
-.futuristic-toast-warning .futuristic-toast-title {
-  color: #F59E0B !important;
-}
-
-/* Info Toast */
+/* Info */
 .futuristic-toast-info {
   border-left: 3px solid #00D4FF !important;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(0, 212, 255, 0.15),
-    inset 0 1px 0 rgba(0, 212, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 212, 255, 0.15), inset 0 1px 0 rgba(0, 212, 255, 0.1) !important;
 }
-
-.futuristic-toast-info::before {
-  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.6), transparent) !important;
-}
-
-.futuristic-toast-info .futuristic-toast-title {
-  color: #00D4FF !important;
-}
+.futuristic-toast-info::before { background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.6), transparent) !important; }
+.futuristic-toast-info .futuristic-toast-title { color: #00D4FF !important; }
 
 /* Close Button */
 .futuristic-toast-close {
@@ -581,12 +419,12 @@ input:focus, textarea:focus, select:focus {
   transform: scale(1.05);
 }
 
-/* Toast Icon Styling */
+/* Toast Icon */
 [data-sonner-toast] [data-icon] {
   filter: drop-shadow(0 0 4px currentColor);
 }
 
-/* Toast Container Animation */
+/* Toast Container */
 [data-sonner-toaster] {
   z-index: 99999 !important;
 }
@@ -600,57 +438,11 @@ input:focus, textarea:focus, select:focus {
 }
 
 @keyframes toast-enter {
-  0% {
-    opacity: 0;
-    transform: translateX(100%) scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
+  0% { opacity: 0; transform: translateX(100%) scale(0.9); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
 }
 
 @keyframes toast-exit {
-  0% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(100%) scale(0.9);
-  }
-}
-
-/* Light Mode Toast */
-.light .futuristic-toast {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 247, 250, 0.95) 100%) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    0 0 1px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-}
-
-.light .futuristic-toast::before {
-  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.2), transparent);
-}
-
-.light .futuristic-toast-title {
-  color: #0D1117 !important;
-}
-
-.light .futuristic-toast-description {
-  color: rgba(13, 17, 23, 0.7) !important;
-}
-
-.light .futuristic-toast-close {
-  background: rgba(0, 0, 0, 0.03) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  color: rgba(0, 0, 0, 0.5) !important;
-}
-
-.light .futuristic-toast-close:hover {
-  background: rgba(0, 0, 0, 0.06) !important;
-  border-color: rgba(0, 0, 0, 0.12) !important;
-  color: #0D1117 !important;
+  0% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateX(100%) scale(0.9); }
 }
