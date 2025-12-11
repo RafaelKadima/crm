@@ -173,6 +173,10 @@ class QueueRoutingService
      */
     public function routeLeadToQueue(Lead $lead, Queue $queue): Queue
     {
+        // #region agent log H6 - Route to queue entry
+        file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H6','location'=>'QueueRoutingService:routeLeadToQueue:ENTRY','message'=>'Lead being routed to queue','data'=>['lead_id'=>$lead->id,'queue_id'=>$queue->id,'queue_name'=>$queue->name,'auto_distribute'=>$queue->auto_distribute],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+        // #endregion
+        
         // Verifica se o lead já tem dono nesta fila (carteirização)
         $existingOwner = LeadQueueOwner::getOwnerForQueue($lead, $queue);
         

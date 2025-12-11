@@ -39,10 +39,37 @@ if ($logs->isEmpty()) {
     }
 }
 
-echo "\n=== DEBUG LOG ===\n";
+echo "\n=== CANAIS E FILAS ASSOCIADAS ===\n";
+$channels = DB::table('channels')->get();
+foreach ($channels as $ch) {
+    $queues = DB::table('queues')->where('channel_id', $ch->id)->get();
+    $settings = json_decode($ch->settings ?? '{}', true);
+    $hasQueueMenu = isset($settings['queue_menu_enabled']) && $settings['queue_menu_enabled'];
+    
+    echo "Canal: {$ch->name}\n";
+    echo "  - has_queue_menu: " . ($hasQueueMenu ? 'YES' : 'NO') . "\n";
+    echo "  - Filas associadas: " . $queues->count() . "\n";
+    foreach ($queues as $q) {
+        $queueUsers = DB::table('queue_user')
+            ->join('users', 'queue_user.user_id', '=', 'users.id')
+            ->where('queue_user.queue_id', $q->id)
+            ->where('queue_user.is_active', true)
+            ->pluck('users.name')
+            ->toArray();
+        echo "    * {$q->name} (auto_dist: " . ($q->auto_distribute ? 'YES' : 'NO') . ") -> Users: " . implode(', ', $queueUsers) . "\n";
+    }
+    echo "\n";
+}
+
+echo "=== DEBUG LOG ===\n";
 $debugLog = storage_path('logs/debug.log');
 if (file_exists($debugLog)) {
-    echo file_get_contents($debugLog);
+    $content = file_get_contents($debugLog);
+    if (empty(trim($content))) {
+        echo "  (Arquivo vazio)\n";
+    } else {
+        echo $content;
+    }
 } else {
     echo "  (Arquivo não existe)\n";
 }
