@@ -198,17 +198,31 @@ class LeadAssignmentService
         string $channelId, 
         ?string $queueId = null
     ): void {
-        LeadAssignmentLog::updateOrCreate(
-            [
-                'tenant_id' => $tenantId,
-                'user_id' => $userId,
-                'channel_id' => $channelId,
-                'queue_id' => $queueId,
-            ],
-            [
-                'last_assigned_at' => now(),
-            ]
-        );
+        // #region agent log H3 - Assignment log
+        file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H3','location'=>'LeadAssignmentService:updateAssignmentLog:ENTRY','message'=>'Saving assignment log','data'=>['tenant_id'=>$tenantId,'user_id'=>$userId,'channel_id'=>$channelId,'queue_id'=>$queueId],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+        // #endregion
+        
+        try {
+            LeadAssignmentLog::updateOrCreate(
+                [
+                    'tenant_id' => $tenantId,
+                    'user_id' => $userId,
+                    'channel_id' => $channelId,
+                    'queue_id' => $queueId,
+                ],
+                [
+                    'last_assigned_at' => now(),
+                ]
+            );
+            // #region agent log H3 - Assignment log success
+            file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H3','location'=>'LeadAssignmentService:updateAssignmentLog:SUCCESS','message'=>'Assignment log saved','data'=>['user_id'=>$userId],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+            // #endregion
+        } catch (\Exception $e) {
+            // #region agent log H3 - Assignment log error
+            file_put_contents(storage_path('logs/debug.log'), json_encode(['hypothesisId'=>'H3','location'=>'LeadAssignmentService:updateAssignmentLog:ERROR','message'=>'Failed to save assignment log','data'=>['error'=>$e->getMessage()],'timestamp'=>now()->toIso8601String()])."\n", FILE_APPEND);
+            // #endregion
+            throw $e;
+        }
     }
 
     /**
