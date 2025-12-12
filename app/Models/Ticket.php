@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
@@ -158,11 +159,11 @@ class Ticket extends Model
     }
 
     /**
-     * Última mensagem do ticket.
+     * Última mensagem do ticket (para eager loading).
      */
-    public function lastMessage()
+    public function lastMessage(): HasOne
     {
-        return $this->messages()->latest('sent_at')->first();
+        return $this->hasOne(TicketMessage::class)->latestOfMany('sent_at');
     }
 
     /**
