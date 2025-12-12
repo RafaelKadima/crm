@@ -210,5 +210,78 @@ class AdAccountController extends Controller
 
         return response()->json(['data' => $accounts]);
     }
+
+    /**
+     * Busca insights/métricas de uma conta diretamente da API do Meta.
+     */
+    public function getInsights(Request $request, AdAccount $account): JsonResponse
+    {
+        $this->authorize('view', $account);
+
+        if (!$account->hasValidToken()) {
+            return response()->json([
+                'error' => 'Token de acesso inválido ou expirado. Por favor, reconecte a conta.',
+                'needs_reconnect' => true,
+            ], 401);
+        }
+
+        $datePreset = $request->input('date_preset', 'last_7d');
+
+        try {
+            $insights = $this->metaAdsService->fetchAccountInsights($account, $datePreset);
+            
+            return response()->json([
+                'data' => $insights,
+                'account_name' => $account->name,
+                'period' => $datePreset,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching account insights', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Busca insights de todas as campanhas de uma conta.
+     */
+    public function getCampaignsInsights(Request $request, AdAccount $account): JsonResponse
+    {
+        $this->authorize('view', $account);
+
+        if (!$account->hasValidToken()) {
+            return response()->json([
+                'error' => 'Token de acesso inválido ou expirado. Por favor, reconecte a conta.',
+                'needs_reconnect' => true,
+            ], 401);
+        }
+
+        $datePreset = $request->input('date_preset', 'last_7d');
+
+        try {
+            $campaigns = $this->metaAdsService->fetchCampaignsWithInsights($account, $datePreset);
+            
+            return response()->json([
+                'data' => $campaigns,
+                'account_name' => $account->name,
+                'period' => $datePreset,
+                'total' => count($campaigns),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching campaigns insights', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+    }
 }
 

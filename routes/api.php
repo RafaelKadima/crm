@@ -686,6 +686,9 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::delete('{account}', [\App\Http\Controllers\AdAccountController::class, 'destroy']);
         Route::post('{account}/sync', [\App\Http\Controllers\AdAccountController::class, 'sync']);
         Route::post('{account}/test', [\App\Http\Controllers\AdAccountController::class, 'test']);
+        // Insights diretamente da API do Meta
+        Route::get('{account}/insights', [\App\Http\Controllers\AdAccountController::class, 'getInsights']);
+        Route::get('{account}/campaigns/insights', [\App\Http\Controllers\AdAccountController::class, 'getCampaignsInsights']);
     });
     
     // Dashboard e métricas gerais

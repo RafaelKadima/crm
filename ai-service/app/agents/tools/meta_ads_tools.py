@@ -5,7 +5,6 @@ Estas tools são chamadas pelo agente para criar campanhas,
 adsets, ads e fazer upload de criativos.
 """
 
-import asyncio
 import httpx
 import structlog
 from typing import Optional, Dict, Any
@@ -17,24 +16,6 @@ logger = structlog.get_logger()
 
 # URL base da API do Laravel
 LARAVEL_API_URL = None
-
-
-def _run_async(coro):
-    """
-    Executa uma coroutine de forma segura em qualquer contexto.
-    Funciona tanto em threads com event loop quanto sem.
-    """
-    try:
-        # Tenta obter o loop atual
-        loop = asyncio.get_running_loop()
-        # Se estamos em um loop, cria uma task
-        import concurrent.futures
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(asyncio.run, coro)
-            return future.result(timeout=60)
-    except RuntimeError:
-        # Não há loop rodando, podemos usar asyncio.run()
-        return asyncio.run(coro)
 
 
 def _get_laravel_url() -> str:
@@ -109,6 +90,8 @@ def create_meta_campaign(
     Returns:
         Dict com campaign_id e status da criação
     """
+    import asyncio
+    
     logger.info(
         "Creating Meta campaign",
         tenant_id=tenant_id,
@@ -119,7 +102,7 @@ def create_meta_campaign(
     
     try:
         # Chama endpoint do Laravel que faz a criação no Meta
-        result = _run_async(
+        result = asyncio.get_event_loop().run_until_complete(
             _call_laravel_api(
                 "POST",
                 "ads/agent/create-campaign",
@@ -181,6 +164,8 @@ def create_meta_adset(
     Returns:
         Dict com adset_id e status
     """
+    import asyncio
+    
     logger.info(
         "Creating Meta adset",
         campaign_id=campaign_id,
@@ -197,7 +182,7 @@ def create_meta_adset(
     
     try:
         # Endpoint interno para criar adset
-        result = _run_async(
+        result = asyncio.get_event_loop().run_until_complete(
             _call_laravel_api(
                 "POST",
                 "internal/ads/create-adset",
@@ -263,6 +248,8 @@ def create_meta_ad(
     Returns:
         Dict com ad_id e status
     """
+    import asyncio
+    
     logger.info(
         "Creating Meta ad",
         adset_id=adset_id,
@@ -271,7 +258,7 @@ def create_meta_ad(
     )
     
     try:
-        result = _run_async(
+        result = asyncio.get_event_loop().run_until_complete(
             _call_laravel_api(
                 "POST",
                 "internal/ads/create-ad",
@@ -328,6 +315,8 @@ def upload_creative_to_meta(
     Returns:
         Dict com platform_media_id e status
     """
+    import asyncio
+    
     logger.info(
         "Uploading creative to Meta",
         creative_id=creative_id,
@@ -335,7 +324,7 @@ def upload_creative_to_meta(
     )
     
     try:
-        result = _run_async(
+        result = asyncio.get_event_loop().run_until_complete(
             _call_laravel_api(
                 "POST",
                 "internal/ads/upload-creative",
@@ -379,8 +368,10 @@ def get_meta_campaign_status(
     Returns:
         Dict com status da campanha
     """
+    import asyncio
+    
     try:
-        result = _run_async(
+        result = asyncio.get_event_loop().run_until_complete(
             _call_laravel_api(
                 "GET",
                 f"ads/campaigns/{campaign_id}",
@@ -404,6 +395,192 @@ def get_meta_campaign_status(
         
     except Exception as e:
         logger.error("Failed to get campaign status", error=str(e))
+        return {
+            "success": False,
+            "error": str(e),
+        }
+
+
+@tool
+def get_ad_account_insights(
+    tenant_id: str,
+    ad_account_id: str,
+    date_preset: str = "last_7d"
+) -> Dict[str, Any]:
+    """
+    Busca insights/métricas de uma conta de anúncios diretamente da API do Meta Ads.
+    
+    Args:
+        tenant_id: ID do tenant
+        ad_account_id: ID da conta de anúncios no CRM
+        date_preset: Período de análise (today, yesterday, last_7d, last_14d, last_30d, this_month, last_month)
+        
+    Returns:
+        Dict com métricas da conta (spend, impressions, clicks, conversions, ROAS, etc.)
+    """
+    import asyncio
+    
+    try:
+        result = asyncio.get_event_loop().run_until_complete(
+            _call_laravel_api(
+                "GET",
+                f"ads/accounts/{ad_account_id}/insights",
+                tenant_id,
+                {"date_preset": date_preset}
+            )
+        )
+        
+        data = result.get("data", result)
+        
+        return {
+            "success": True,
+            "ad_account_id": ad_account_id,
+            "period": date_preset,
+            "spend": data.get("spend", 0),
+            "impressions": data.get("impressions", 0),
+            "clicks": data.get("clicks", 0),
+            "reach": data.get("reach", 0),
+            "ctr": data.get("ctr", 0),
+            "cpc": data.get("cpc", 0),
+            "cpm": data.get("cpm", 0),
+            "conversions": data.get("conversions", 0),
+            "conversion_value": data.get("conversion_value", 0),
+            "roas": data.get("roas", 0),
+            "cost_per_conversion": data.get("cost_per_conversion", 0),
+            "campaigns_active": data.get("campaigns_active", 0),
+        }
+        
+    except Exception as e:
+        logger.error("Failed to get account insights", error=str(e))
+        return {
+            "success": False,
+            "error": str(e),
+        }
+
+
+@tool
+def get_campaigns_insights(
+    tenant_id: str,
+    ad_account_id: str,
+    date_preset: str = "last_7d"
+) -> Dict[str, Any]:
+    """
+    Busca insights de todas as campanhas de uma conta de anúncios.
+    
+    Args:
+        tenant_id: ID do tenant
+        ad_account_id: ID da conta de anúncios no CRM
+        date_preset: Período de análise (today, yesterday, last_7d, last_14d, last_30d)
+        
+    Returns:
+        Dict com lista de campanhas e suas métricas
+    """
+    import asyncio
+    
+    try:
+        result = asyncio.get_event_loop().run_until_complete(
+            _call_laravel_api(
+                "GET",
+                f"ads/accounts/{ad_account_id}/campaigns/insights",
+                tenant_id,
+                {"date_preset": date_preset}
+            )
+        )
+        
+        campaigns = result.get("data", result.get("campaigns", []))
+        
+        # Formata resposta
+        formatted_campaigns = []
+        for campaign in campaigns:
+            formatted_campaigns.append({
+                "id": campaign.get("id"),
+                "name": campaign.get("name"),
+                "status": campaign.get("status"),
+                "objective": campaign.get("objective"),
+                "spend": campaign.get("spend", 0),
+                "impressions": campaign.get("impressions", 0),
+                "clicks": campaign.get("clicks", 0),
+                "ctr": campaign.get("ctr", 0),
+                "cpc": campaign.get("cpc", 0),
+                "conversions": campaign.get("conversions", 0),
+                "roas": campaign.get("roas", 0),
+            })
+        
+        # Ordena por spend (maior primeiro)
+        formatted_campaigns.sort(key=lambda x: x.get("spend", 0), reverse=True)
+        
+        return {
+            "success": True,
+            "ad_account_id": ad_account_id,
+            "period": date_preset,
+            "total_campaigns": len(formatted_campaigns),
+            "campaigns": formatted_campaigns[:10],  # Top 10
+        }
+        
+    except Exception as e:
+        logger.error("Failed to get campaigns insights", error=str(e))
+        return {
+            "success": False,
+            "error": str(e),
+        }
+
+
+@tool
+def get_campaign_detailed_insights(
+    tenant_id: str,
+    campaign_id: str,
+    date_preset: str = "last_7d"
+) -> Dict[str, Any]:
+    """
+    Busca insights detalhados de uma campanha específica, incluindo breakdown por dia.
+    
+    Args:
+        tenant_id: ID do tenant
+        campaign_id: ID da campanha
+        date_preset: Período de análise
+        
+    Returns:
+        Dict com métricas detalhadas e evolução por dia
+    """
+    import asyncio
+    
+    try:
+        result = asyncio.get_event_loop().run_until_complete(
+            _call_laravel_api(
+                "GET",
+                f"ads/campaigns/{campaign_id}/detailed-insights",
+                tenant_id,
+                {"date_preset": date_preset}
+            )
+        )
+        
+        data = result.get("data", result)
+        
+        return {
+            "success": True,
+            "campaign_id": campaign_id,
+            "name": data.get("name"),
+            "status": data.get("status"),
+            "objective": data.get("objective"),
+            "period": date_preset,
+            "summary": {
+                "spend": data.get("spend", 0),
+                "impressions": data.get("impressions", 0),
+                "clicks": data.get("clicks", 0),
+                "ctr": data.get("ctr", 0),
+                "cpc": data.get("cpc", 0),
+                "cpm": data.get("cpm", 0),
+                "conversions": data.get("conversions", 0),
+                "roas": data.get("roas", 0),
+                "frequency": data.get("frequency", 0),
+            },
+            "daily_breakdown": data.get("daily_breakdown", []),
+            "adsets": data.get("adsets", []),
+            "insights": data.get("insights", []),
+        }
+        
+    except Exception as e:
+        logger.error("Failed to get campaign detailed insights", error=str(e))
         return {
             "success": False,
             "error": str(e),

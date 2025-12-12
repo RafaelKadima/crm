@@ -696,5 +696,155 @@ class MetaAdsService
 
         return 0;
     }
+
+    /**
+     * Busca insights da conta de anúncios diretamente da API do Meta.
+     */
+    public function fetchAccountInsights(AdAccount $account, string $datePreset = 'last_7d'): array
+    {
+        $response = Http::get("{$this->baseUrl}/act_{$account->platform_account_id}/insights", [
+            'access_token' => $account->access_token,
+            'date_preset' => $datePreset,
+            'fields' => 'spend,impressions,clicks,reach,frequency,actions,action_values,ctr,cpc,cpm',
+        ]);
+
+        if (!$response->successful()) {
+            throw new \Exception($response->json('error.message', 'Erro ao buscar insights da conta'));
+        }
+
+        $data = $response->json('data.0', []);
+
+        // Extrai conversões e valor
+        $conversions = 0;
+        $conversionValue = 0;
+
+        if (isset($data['actions'])) {
+            foreach ($data['actions'] as $action) {
+                if (in_array($action['action_type'], ['purchase', 'lead', 'complete_registration', 'omni_purchase'])) {
+                    $conversions += (int) $action['value'];
+                }
+            }
+        }
+
+        if (isset($data['action_values'])) {
+            foreach ($data['action_values'] as $actionValue) {
+                if (in_array($actionValue['action_type'], ['purchase', 'omni_purchase'])) {
+                    $conversionValue += (float) $actionValue['value'];
+                }
+            }
+        }
+
+        $spend = (float) ($data['spend'] ?? 0);
+
+        // Conta campanhas ativas
+        $campaignsResponse = Http::get("{$this->baseUrl}/act_{$account->platform_account_id}/campaigns", [
+            'access_token' => $account->access_token,
+            'fields' => 'id',
+            'filtering' => json_encode([['field' => 'effective_status', 'operator' => 'IN', 'value' => ['ACTIVE']]]),
+            'limit' => 500,
+        ]);
+        
+        $campaignsActive = count($campaignsResponse->json('data', []));
+
+        return [
+            'spend' => $spend,
+            'impressions' => (int) ($data['impressions'] ?? 0),
+            'clicks' => (int) ($data['clicks'] ?? 0),
+            'reach' => (int) ($data['reach'] ?? 0),
+            'frequency' => (float) ($data['frequency'] ?? 0),
+            'ctr' => (float) ($data['ctr'] ?? 0),
+            'cpc' => (float) ($data['cpc'] ?? 0),
+            'cpm' => (float) ($data['cpm'] ?? 0),
+            'conversions' => $conversions,
+            'conversion_value' => $conversionValue,
+            'roas' => $spend > 0 ? round($conversionValue / $spend, 2) : 0,
+            'cost_per_conversion' => $conversions > 0 ? round($spend / $conversions, 2) : 0,
+            'campaigns_active' => $campaignsActive,
+        ];
+    }
+
+    /**
+     * Busca campanhas com insights diretamente da API do Meta.
+     */
+    public function fetchCampaignsWithInsights(AdAccount $account, string $datePreset = 'last_7d'): array
+    {
+        // Busca campanhas
+        $campaignsResponse = Http::get("{$this->baseUrl}/act_{$account->platform_account_id}/campaigns", [
+            'access_token' => $account->access_token,
+            'fields' => 'id,name,status,objective,effective_status,daily_budget,lifetime_budget',
+            'limit' => 100,
+        ]);
+
+        if (!$campaignsResponse->successful()) {
+            throw new \Exception($campaignsResponse->json('error.message', 'Erro ao buscar campanhas'));
+        }
+
+        $campaigns = $campaignsResponse->json('data', []);
+        $result = [];
+
+        foreach ($campaigns as $campaign) {
+            // Busca insights de cada campanha
+            try {
+                $insightsResponse = Http::get("{$this->baseUrl}/{$campaign['id']}/insights", [
+                    'access_token' => $account->access_token,
+                    'date_preset' => $datePreset,
+                    'fields' => 'spend,impressions,clicks,reach,actions,action_values,ctr,cpc,cpm',
+                ]);
+
+                $insights = $insightsResponse->json('data.0', []);
+
+                // Extrai conversões
+                $conversions = 0;
+                $conversionValue = 0;
+
+                if (isset($insights['actions'])) {
+                    foreach ($insights['actions'] as $action) {
+                        if (in_array($action['action_type'], ['purchase', 'lead', 'complete_registration', 'omni_purchase'])) {
+                            $conversions += (int) $action['value'];
+                        }
+                    }
+                }
+
+                if (isset($insights['action_values'])) {
+                    foreach ($insights['action_values'] as $actionValue) {
+                        if (in_array($actionValue['action_type'], ['purchase', 'omni_purchase'])) {
+                            $conversionValue += (float) $actionValue['value'];
+                        }
+                    }
+                }
+
+                $spend = (float) ($insights['spend'] ?? 0);
+
+                $result[] = [
+                    'id' => $campaign['id'],
+                    'name' => $campaign['name'],
+                    'status' => $campaign['effective_status'] ?? $campaign['status'],
+                    'objective' => $campaign['objective'] ?? null,
+                    'daily_budget' => isset($campaign['daily_budget']) ? (float) $campaign['daily_budget'] / 100 : null,
+                    'spend' => $spend,
+                    'impressions' => (int) ($insights['impressions'] ?? 0),
+                    'clicks' => (int) ($insights['clicks'] ?? 0),
+                    'reach' => (int) ($insights['reach'] ?? 0),
+                    'ctr' => (float) ($insights['ctr'] ?? 0),
+                    'cpc' => (float) ($insights['cpc'] ?? 0),
+                    'cpm' => (float) ($insights['cpm'] ?? 0),
+                    'conversions' => $conversions,
+                    'conversion_value' => $conversionValue,
+                    'roas' => $spend > 0 ? round($conversionValue / $spend, 2) : 0,
+                ];
+            } catch (\Exception $e) {
+                // Se falhar em uma campanha, continua para as outras
+                $result[] = [
+                    'id' => $campaign['id'],
+                    'name' => $campaign['name'],
+                    'status' => $campaign['effective_status'] ?? $campaign['status'],
+                    'objective' => $campaign['objective'] ?? null,
+                    'error' => 'Não foi possível buscar insights',
+                ];
+            }
+        }
+
+        return $result;
+    }
 }
 
