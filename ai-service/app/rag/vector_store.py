@@ -17,7 +17,10 @@ class VectorStore:
     """Gerencia embeddings e busca vetorial"""
     
     def __init__(self):
-        self.openai = AsyncOpenAI(api_key=settings.openai_api_key)
+        self.openai = AsyncOpenAI(
+            api_key=settings.openai_api_key,
+            project=settings.openai_project_id if settings.openai_project_id else None
+        )
         self._supabase = None
     
     @property

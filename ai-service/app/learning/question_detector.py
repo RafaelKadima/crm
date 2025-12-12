@@ -27,7 +27,10 @@ class QuestionDetector:
     """
     
     def __init__(self):
-        self.openai = AsyncOpenAI(api_key=settings.openai_api_key)
+        self.openai = AsyncOpenAI(
+            api_key=settings.openai_api_key,
+            project=settings.openai_project_id if settings.openai_project_id else None
+        )
         # Cache local de perguntas (em produção, usar Redis)
         self._question_cache: Dict[str, Dict] = {}
     
