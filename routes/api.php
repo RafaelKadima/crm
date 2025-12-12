@@ -702,6 +702,16 @@ Route::middleware('internal.api')->prefix('internal')->group(function () {
     
     // Resumo de uso
     Route::post('usage/summary', [\App\Http\Controllers\InternalAiUsageController::class, 'getUsageSummary']);
+    
+    // Ads Intelligence para AI Service
+    Route::prefix('ads')->group(function () {
+        Route::get('creatives', [\App\Http\Controllers\AdCreativeController::class, 'internalIndex']);
+        Route::get('creatives/{creative}', [\App\Http\Controllers\AdCreativeController::class, 'internalShow']);
+        Route::get('copies', [\App\Http\Controllers\AdCopyController::class, 'internalIndex']);
+        Route::get('copies/{copy}', [\App\Http\Controllers\AdCopyController::class, 'internalShow']);
+        Route::get('accounts', [\App\Http\Controllers\AdAccountController::class, 'internalIndex']);
+        Route::post('save-campaign', [\App\Http\Controllers\AdCampaignController::class, 'internalSave']);
+    });
 });
 
 // Rotas públicas (sem autenticação)

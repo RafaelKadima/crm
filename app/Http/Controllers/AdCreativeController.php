@@ -252,5 +252,55 @@ class AdCreativeController extends Controller
             'copy' => $copy,
         ], 201);
     }
+
+    /**
+     * Lista criativos para AI Service (rota interna).
+     */
+    public function internalIndex(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'Tenant ID required'], 400);
+        }
+
+        $query = AdCreative::where('tenant_id', $tenantId);
+
+        if ($request->has('status')) {
+            $query->status($request->status);
+        }
+
+        if ($request->has('type')) {
+            $query->ofType($request->type);
+        }
+
+        $creatives = $query->orderBy('created_at', 'desc')
+            ->limit($request->get('per_page', 10))
+            ->get();
+
+        return response()->json(['data' => $creatives]);
+    }
+
+    /**
+     * Retorna um criativo específico para AI Service (rota interna).
+     */
+    public function internalShow(Request $request, string $creativeId): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'Tenant ID required'], 400);
+        }
+
+        $creative = AdCreative::where('tenant_id', $tenantId)
+            ->where('id', $creativeId)
+            ->first();
+
+        if (!$creative) {
+            return response()->json(['error' => 'Creative not found'], 404);
+        }
+
+        return response()->json(['data' => $creative]);
+    }
 }
 

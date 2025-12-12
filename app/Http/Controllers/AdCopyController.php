@@ -147,5 +147,51 @@ class AdCopyController extends Controller
     {
         return response()->json(AdCopy::getAvailableHookTypes());
     }
+
+    /**
+     * Lista copies para AI Service (rota interna).
+     */
+    public function internalIndex(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'Tenant ID required'], 400);
+        }
+
+        $query = AdCopy::where('tenant_id', $tenantId);
+
+        if ($request->has('status')) {
+            $query->status($request->status);
+        }
+
+        $copies = $query->orderBy('created_at', 'desc')
+            ->limit($request->get('per_page', 10))
+            ->get();
+
+        return response()->json(['data' => $copies]);
+    }
+
+    /**
+     * Retorna uma copy específica para AI Service (rota interna).
+     */
+    public function internalShow(Request $request, string $copyId): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'Tenant ID required'], 400);
+        }
+
+        $copy = AdCopy::where('tenant_id', $tenantId)
+            ->where('id', $copyId)
+            ->first();
+
+        if (!$copy) {
+            return response()->json(['error' => 'Copy not found'], 404);
+        }
+
+        return response()->json(['data' => $copy]);
+    }
 }
 

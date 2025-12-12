@@ -192,5 +192,23 @@ class AdAccountController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Lista contas de anúncio para AI Service (rota interna).
+     */
+    public function internalIndex(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'Tenant ID required'], 400);
+        }
+
+        $accounts = \App\Models\AdAccount::where('tenant_id', $tenantId)
+            ->active()
+            ->get();
+
+        return response()->json(['data' => $accounts]);
+    }
 }
 

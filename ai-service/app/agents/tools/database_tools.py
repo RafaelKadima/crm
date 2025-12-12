@@ -47,14 +47,25 @@ async def _call_laravel_api(
     endpoint: str,
     tenant_id: str,
     data: Optional[Dict] = None,
+    use_internal: bool = True,
 ) -> Dict[str, Any]:
     """Helper para chamar API do Laravel."""
-    url = f"{_get_laravel_url()}/api/{endpoint}"
+    settings = get_settings()
     
-    headers = {
-        "Content-Type": "application/json",
-        "X-Tenant-ID": tenant_id,
-    }
+    # Usa rota interna para evitar autenticação
+    if use_internal:
+        url = f"{_get_laravel_url()}/api/internal/{endpoint}"
+        headers = {
+            "Content-Type": "application/json",
+            "X-Tenant-ID": tenant_id,
+            "X-Internal-Key": settings.LARAVEL_INTERNAL_KEY,
+        }
+    else:
+        url = f"{_get_laravel_url()}/api/{endpoint}"
+        headers = {
+            "Content-Type": "application/json",
+            "X-Tenant-ID": tenant_id,
+        }
     
     async with httpx.AsyncClient(timeout=30.0) as client:
         if method.upper() == "GET":
