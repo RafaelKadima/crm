@@ -99,20 +99,32 @@ export function TicketsPage() {
 
   // Abre o chat do ticket
   const handleTicketClick = (ticket: any) => {
-    // Monta um objeto lead a partir do ticket para usar no LeadChatModal
+    // Se o ticket tem um lead associado, usa ele diretamente
+    if (ticket.lead) {
+      // Garante que o lead tem o ticket associado
+      const leadWithTicket = {
+        ...ticket.lead,
+        tickets: [ticket],
+      }
+      setSelectedLead(leadWithTicket)
+      setIsModalOpen(true)
+      return
+    }
+
+    // Caso contrário, monta um objeto lead a partir do ticket
     const lead: Lead = {
       id: ticket.lead_id || ticket.id,
+      tenant_id: ticket.tenant_id,
       contact_id: ticket.contact_id,
       contact: ticket.contact,
       channel_id: ticket.channel_id,
       channel: ticket.channel,
-      pipeline_id: ticket.lead?.pipeline_id,
-      stage_id: ticket.lead?.stage_id,
+      pipeline_id: ticket.lead?.pipeline_id || '',
+      stage_id: ticket.lead?.stage_id || '',
       stage: ticket.lead?.stage,
       owner_id: ticket.assigned_user_id,
       owner: ticket.assigned_user,
-      title: ticket.contact?.name || 'Conversa',
-      status: ticket.lead?.status || 'active',
+      status: ticket.lead?.status || 'em_atendimento',
       tickets: [ticket],
       created_at: ticket.created_at,
       updated_at: ticket.updated_at,
