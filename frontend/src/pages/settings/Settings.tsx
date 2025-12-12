@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Building2, Users, Plug, Bell, Palette, Paintbrush } from 'lucide-react'
+import { User, Building2, Users, Plug, Bell, Palette, Paintbrush, Zap } from 'lucide-react'
 import { CompanySettingsPage } from './CompanySettingsPage'
 import { TeamSettingsPage } from './TeamSettingsPage'
 import { IntegrationsSettingsPage } from './IntegrationsSettingsPage'
@@ -8,13 +8,15 @@ import { NotificationsSettingsPage } from './NotificationsSettingsPage'
 import { AppearanceSettingsPage } from './AppearanceSettingsPage'
 import { BrandingSettingsPage } from './BrandingSettingsPage'
 import { ProfileSettingsPage } from './ProfileSettingsPage'
+import { AiUsageDashboard } from './AiUsageDashboard'
 
-type SettingsTab = 'profile' | 'company' | 'team' | 'integrations' | 'notifications' | 'appearance' | 'branding'
+type SettingsTab = 'profile' | 'company' | 'team' | 'integrations' | 'notifications' | 'appearance' | 'branding' | 'ai-usage'
 
 const settingsSections = [
   { icon: User, title: 'Perfil', description: 'Suas informações pessoais', tab: 'profile' as SettingsTab },
   { icon: Building2, title: 'Empresa', description: 'Dados da empresa', tab: 'company' as SettingsTab },
   { icon: Paintbrush, title: 'Identidade Visual', description: 'Logo, cores e marca', tab: 'branding' as SettingsTab },
+  { icon: Zap, title: 'Uso de IA', description: 'Unidades e pacotes', tab: 'ai-usage' as SettingsTab },
   { icon: Users, title: 'Equipe', description: 'Gerenciar usuários', tab: 'team' as SettingsTab },
   { icon: Plug, title: 'Integrações', description: 'Conectar serviços', tab: 'integrations' as SettingsTab },
   { icon: Bell, title: 'Notificações', description: 'Preferências de alertas', tab: 'notifications' as SettingsTab },
@@ -75,6 +77,7 @@ export function SettingsPage() {
 
           {activeTab === 'company' && <CompanySettingsPage />}
           {activeTab === 'branding' && <BrandingSettingsPage />}
+          {activeTab === 'ai-usage' && <AiUsageDashboard />}
           {activeTab === 'team' && <TeamSettingsPage />}
           {activeTab === 'integrations' && <IntegrationsSettingsPage />}
           {activeTab === 'notifications' && <NotificationsSettingsPage />}
@@ -84,4 +87,3 @@ export function SettingsPage() {
     </div>
   )
 }
-

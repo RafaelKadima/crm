@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\LeadAssignmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class LeadController extends Controller
 {
@@ -315,6 +316,92 @@ class LeadController extends Controller
             'lead' => $lead,
         ]);
     }
+
+    /**
+     * Retorna o score de conversão do lead via MCP.
+     * 
+     * Usa o modelo de ML (LeadScoreNet) para predizer
+     * a probabilidade de conversão do lead.
+     */
+    public function getScore(string $id): JsonResponse
+    {
+        $lead = Lead::where('tenant_id', auth()->user()->tenant_id)
+            ->findOrFail($id);
+        
+        try {
+            $response = Http::timeout(10)->post(config('services.ai.url') . '/mcp/tool', [
+                'tool_name' => 'predict_lead_score',
+                'arguments' => [
+                    'lead_id' => $id,
+                    'tenant_id' => auth()->user()->tenant_id,
+                ],
+                'agent_type' => 'sdr',
+                'tenant_id' => auth()->user()->tenant_id,
+            ]);
+            
+            if ($response->successful()) {
+                return response()->json($response->json()['result'] ?? [
+                    'score' => 50,
+                    'confidence' => 0.5,
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erro ao buscar lead score via MCP', [
+                'lead_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        // Fallback se MCP não estiver disponível
+        return response()->json([
+            'score' => 50,
+            'confidence' => 0.3,
+            'model_version' => 'fallback',
+        ]);
+    }
+
+    /**
+     * Sugere próxima ação para o lead via MCP.
+     * 
+     * Usa Reinforcement Learning (PolicyEngine) para
+     * decidir a melhor ação baseada no estado atual.
+     */
+    public function suggestAction(string $id): JsonResponse
+    {
+        $lead = Lead::with(['contact', 'stage'])
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->findOrFail($id);
+        
+        try {
+            $response = Http::timeout(15)->post(config('services.ai.url') . '/mcp/tool', [
+                'tool_name' => 'select_sdr_action',
+                'arguments' => [
+                    'lead_id' => $id,
+                    'tenant_id' => auth()->user()->tenant_id,
+                ],
+                'agent_type' => 'sdr',
+                'tenant_id' => auth()->user()->tenant_id,
+            ]);
+            
+            if ($response->successful()) {
+                return response()->json($response->json()['result'] ?? [
+                    'action' => 'RESPOND_NORMAL',
+                    'explanation' => 'Responder normalmente ao lead.',
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erro ao buscar sugestão de ação via MCP', [
+                'lead_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        // Fallback se MCP não estiver disponível
+        return response()->json([
+            'action' => 'RESPOND_NORMAL',
+            'explanation' => 'Continue a conversa normalmente e identifique as necessidades do lead.',
+            'confidence' => 0.5,
+            'policy_mode' => 'fallback',
+        ]);
+    }
 }
-
-

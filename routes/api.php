@@ -87,6 +87,47 @@ Route::middleware('auth:api')->group(function () {
     Route::post('tenant/branding/upload', [\App\Http\Controllers\BrandingController::class, 'upload']);
     Route::delete('tenant/branding/image', [\App\Http\Controllers\BrandingController::class, 'deleteImage']);
 
+    // =============================================================================
+    // USO DE IA E PACOTES (Unidades de IA)
+    // =============================================================================
+    Route::prefix('usage')->group(function () {
+        // Resumo de uso do tenant
+        Route::get('summary', [\App\Http\Controllers\AiUsageController::class, 'summary']);
+        
+        // Histórico de uso diário
+        Route::get('daily', [\App\Http\Controllers\AiUsageController::class, 'dailyUsage']);
+        
+        // Uso por modelo
+        Route::get('by-model', [\App\Http\Controllers\AiUsageController::class, 'usageByModel']);
+        
+        // Verificar limites
+        Route::get('limits', [\App\Http\Controllers\AiUsageController::class, 'checkLimits']);
+        
+        // Calcular excedente
+        Route::get('overage', [\App\Http\Controllers\AiUsageController::class, 'overageCost']);
+        
+        // Estimativa de uso
+        Route::post('estimate', [\App\Http\Controllers\AiUsageController::class, 'estimate']);
+    });
+
+    // Pacotes de IA
+    Route::prefix('packages')->group(function () {
+        // Pacotes disponíveis
+        Route::get('available', [\App\Http\Controllers\AiUsageController::class, 'availablePackages']);
+        
+        // Compras do tenant
+        Route::get('purchases', [\App\Http\Controllers\AiUsageController::class, 'purchases']);
+        
+        // Comprar pacote
+        Route::post('purchase', [\App\Http\Controllers\AiUsageController::class, 'purchasePackage']);
+        
+        // Confirmar pagamento
+        Route::post('purchases/{purchaseId}/confirm', [\App\Http\Controllers\AiUsageController::class, 'confirmPayment']);
+    });
+
+    // Planos disponíveis
+    Route::get('plans', [\App\Http\Controllers\AiUsageController::class, 'plans']);
+
     // Rotas que requerem tenant
     Route::middleware('tenant')->group(function () {
 
@@ -99,6 +140,10 @@ Route::middleware('auth:api')->group(function () {
             Route::delete('{lead}', [LeadController::class, 'destroy']);
             Route::put('{lead}/stage', [LeadController::class, 'updateStage']);
             Route::put('{lead}/assign', [LeadController::class, 'assign']);
+            
+            // MCP - Lead Score e Sugestão de Ação
+            Route::get('{lead}/score', [LeadController::class, 'getScore']);
+            Route::post('{lead}/suggest-action', [LeadController::class, 'suggestAction']);
             
             // Dados do cliente (fechamento)
             Route::get('{lead}/customer-data', [CustomerDataController::class, 'show']);
@@ -561,6 +606,70 @@ Route::middleware(['auth:api', 'tenant'])->prefix('agent-learning')->group(funct
 });
 
 // =============================================================================
+// BUSINESS INTELLIGENCE - BI Agent
+// =============================================================================
+Route::middleware(['auth:api', 'tenant'])->prefix('bi')->group(function () {
+    // Dashboard principal
+    Route::get('dashboard', [\App\Http\Controllers\BI\BIDashboardController::class, 'index']);
+    Route::get('executive-summary', [\App\Http\Controllers\BI\BIDashboardController::class, 'executiveSummary']);
+    Route::get('sales-funnel', [\App\Http\Controllers\BI\BIDashboardController::class, 'salesFunnel']);
+    Route::get('support-metrics', [\App\Http\Controllers\BI\BIDashboardController::class, 'supportMetrics']);
+    Route::get('marketing-analysis', [\App\Http\Controllers\BI\BIDashboardController::class, 'marketingAnalysis']);
+    Route::get('ai-performance', [\App\Http\Controllers\BI\BIDashboardController::class, 'aiPerformance']);
+    
+    // Histórico e análises
+    Route::get('analyses', [\App\Http\Controllers\BI\BIDashboardController::class, 'analysisHistory']);
+    Route::get('analyses/{id}', [\App\Http\Controllers\BI\BIDashboardController::class, 'analysisDetails']);
+    Route::post('run-analysis', [\App\Http\Controllers\BI\BIDashboardController::class, 'runAnalysis']);
+    
+    // Configurações
+    Route::get('config', [\App\Http\Controllers\BI\BIDashboardController::class, 'getConfig']);
+    Route::put('config', [\App\Http\Controllers\BI\BIDashboardController::class, 'updateConfig']);
+    
+    // Fila de aprovação de ações
+    Route::prefix('actions')->group(function () {
+        Route::get('/', [\App\Http\Controllers\BI\ActionApprovalController::class, 'index']);
+        Route::get('stats', [\App\Http\Controllers\BI\ActionApprovalController::class, 'stats']);
+        Route::get('{id}', [\App\Http\Controllers\BI\ActionApprovalController::class, 'show']);
+        Route::put('{id}', [\App\Http\Controllers\BI\ActionApprovalController::class, 'update']);
+        Route::post('{id}/approve', [\App\Http\Controllers\BI\ActionApprovalController::class, 'approve']);
+        Route::post('{id}/reject', [\App\Http\Controllers\BI\ActionApprovalController::class, 'reject']);
+        Route::post('{id}/execute', [\App\Http\Controllers\BI\ActionApprovalController::class, 'execute']);
+    });
+    
+    // Relatórios
+    Route::prefix('reports')->group(function () {
+        Route::get('/', [\App\Http\Controllers\BI\ReportsController::class, 'index']);
+        Route::get('executive', [\App\Http\Controllers\BI\ReportsController::class, 'executive']);
+        Route::get('sales', [\App\Http\Controllers\BI\ReportsController::class, 'sales']);
+        Route::get('marketing', [\App\Http\Controllers\BI\ReportsController::class, 'marketing']);
+        Route::get('support', [\App\Http\Controllers\BI\ReportsController::class, 'support']);
+        Route::get('ai-performance', [\App\Http\Controllers\BI\ReportsController::class, 'aiPerformance']);
+        Route::post('export/pdf', [\App\Http\Controllers\BI\ReportsController::class, 'exportPdf']);
+        Route::post('export/excel', [\App\Http\Controllers\BI\ReportsController::class, 'exportExcel']);
+    });
+    
+    // Chat com analista BI
+    Route::prefix('analyst')->group(function () {
+        Route::post('ask', [\App\Http\Controllers\BI\AnalystChatController::class, 'ask']);
+        Route::get('insights', [\App\Http\Controllers\BI\AnalystChatController::class, 'proactiveInsights']);
+        Route::get('suggestions', [\App\Http\Controllers\BI\AnalystChatController::class, 'suggestedQuestions']);
+        Route::post('create-action', [\App\Http\Controllers\BI\AnalystChatController::class, 'createAction']);
+        Route::get('history', [\App\Http\Controllers\BI\AnalystChatController::class, 'history']);
+    });
+    
+    // API de Integração Externa
+    Route::prefix('integration')->group(function () {
+        Route::get('docs', [\App\Http\Controllers\BI\IntegrationApiController::class, 'docs']);
+        Route::get('kpis', [\App\Http\Controllers\BI\IntegrationApiController::class, 'kpis']);
+        Route::get('funnel', [\App\Http\Controllers\BI\IntegrationApiController::class, 'funnel']);
+        Route::get('insights', [\App\Http\Controllers\BI\IntegrationApiController::class, 'insights']);
+        Route::get('analysis', [\App\Http\Controllers\BI\IntegrationApiController::class, 'latestAnalysis']);
+        Route::post('webhook', [\App\Http\Controllers\BI\IntegrationApiController::class, 'webhook']);
+    });
+});
+
+// =============================================================================
 // ADS INTELLIGENCE - Gestão de Campanhas (Meta/Google Ads)
 // Requer feature: ads_intelligence
 // =============================================================================
@@ -659,6 +768,8 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::get('search', [\App\Http\Controllers\AdsKnowledgeController::class, 'search']);
         Route::get('insights', [\App\Http\Controllers\AdsKnowledgeController::class, 'insights']);
         Route::post('learn', [\App\Http\Controllers\AdsKnowledgeController::class, 'triggerLearning']);
+        Route::post('upload', [\App\Http\Controllers\KnowledgeUploadController::class, 'upload']);
+        Route::get('upload/supported-types', [\App\Http\Controllers\KnowledgeUploadController::class, 'supportedTypes']);
         Route::get('{knowledge}', [\App\Http\Controllers\AdsKnowledgeController::class, 'show']);
         Route::put('{knowledge}', [\App\Http\Controllers\AdsKnowledgeController::class, 'update']);
         Route::delete('{knowledge}', [\App\Http\Controllers\AdsKnowledgeController::class, 'destroy']);

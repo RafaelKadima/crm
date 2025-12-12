@@ -121,6 +121,27 @@ O CRM é um sistema **multitenant** desenvolvido em **Laravel 11** com as seguin
 | Testar Round-Robin | `mcp_crm_crm_testar_distribuicao` | `leads`, `vendedores` |
 | Simular WhatsApp | `mcp_crm_crm_simular_mensagem_whatsapp` | `nome`, `origem`, `produto` |
 
+### ⚡ Quando preciso trabalhar com USO DE IA (Unidades)
+
+| Tarefa | Ferramenta | Parâmetros |
+|--------|------------|------------|
+| Resumo de uso | `mcp_crm_crm_usage_summary` | `token` |
+| Uso diário | `mcp_crm_crm_usage_daily` | `token`, `days` |
+| Uso por modelo | `mcp_crm_crm_usage_by_model` | `token`, `start_date`, `end_date` |
+| Verificar limites | `mcp_crm_crm_usage_limits` | `token` |
+| Calcular excedente | `mcp_crm_crm_usage_overage` | `token` |
+| Estimar uso | `mcp_crm_crm_usage_estimate` | `token`, `leads_per_month`, `messages_per_lead` |
+
+### 📦 Quando preciso trabalhar com PACOTES DE IA
+
+| Tarefa | Ferramenta | Parâmetros |
+|--------|------------|------------|
+| Ver pacotes disponíveis | `mcp_crm_crm_packages_available` | `token` |
+| Listar compras | `mcp_crm_crm_packages_purchases` | `token`, `status` |
+| Comprar pacote | `mcp_crm_crm_packages_purchase` | `token`, `package_type`, `package_id` |
+| Confirmar pagamento | `mcp_crm_crm_packages_confirm` | `token`, `purchase_id`, `payment_reference` |
+| Ver planos | `mcp_crm_crm_plans_list` | `token` |
+
 ### 🗄️ Quando preciso trabalhar com BANCO DE DADOS
 
 | Tarefa | Ferramenta | Exemplo |
@@ -230,9 +251,9 @@ COMPOSER:
 
 ### 2. `crm` (CRM Full)
 **Arquivo**: `tools/crm-full-mcp.cjs`
-**Propósito**: API REST do CRM + Helpers
+**Propósito**: API REST do CRM + Helpers + Uso de IA
 
-**Ferramentas disponíveis (35)**:
+**Ferramentas disponíveis (46)**:
 ```
 AUTENTICAÇÃO:
 - crm.login
@@ -271,6 +292,21 @@ RELATÓRIOS:
 - crm.report_productivity
 - crm.report_ia
 - crm.report_distribution
+
+USO DE IA (Unidades):
+- crm.usage_summary
+- crm.usage_daily
+- crm.usage_by_model
+- crm.usage_limits
+- crm.usage_overage
+- crm.usage_estimate
+
+PACOTES DE IA:
+- crm.packages_available
+- crm.packages_purchases
+- crm.packages_purchase
+- crm.packages_confirm
+- crm.plans_list
 
 WEBHOOK:
 - crm.webhook_external
@@ -377,6 +413,48 @@ mcp_crm_crm_tickets_close({
 })
 ```
 
+### Fluxo 3: Gerenciar Uso de IA (Unidades)
+
+```javascript
+// 1. Login
+mcp_crm_crm_login({ email: "admin@empresa.com", password: "123" })
+
+// 2. Ver resumo de uso de Unidades de IA
+mcp_crm_crm_usage_summary({ token: "xxx" })
+// Retorna: Unidades usadas, limite, breakdown por modelo (4o-mini vs 4o)
+
+// 3. Verificar se precisa comprar pacote
+mcp_crm_crm_usage_limits({ token: "xxx" })
+// Retorna: warnings se estiver acima de 80%
+
+// 4. Ver pacotes disponíveis
+mcp_crm_crm_packages_available({ token: "xxx" })
+// Retorna: pack_10k (R$229), pack_30k (R$599), pack_80k (R$1399)
+
+// 5. Comprar pacote de 10.000 Unidades
+mcp_crm_crm_packages_purchase({
+  token: "xxx",
+  package_type: "ai_units",
+  package_id: "pack_10k"
+})
+
+// 6. Confirmar pagamento
+mcp_crm_crm_packages_confirm({
+  token: "xxx",
+  purchase_id: "uuid-da-compra",
+  payment_reference: "PIX-12345"
+})
+
+// 7. Estimar uso para próximo mês
+mcp_crm_crm_usage_estimate({
+  token: "xxx",
+  leads_per_month: 500,
+  messages_per_lead: 12,
+  premium_percentage: 0.1  // 10% em GPT-4o
+})
+// Retorna: estimativa de Unidades e plano recomendado
+```
+
 ---
 
 ## 📋 Resumo Rápido
@@ -384,7 +462,7 @@ mcp_crm_crm_tickets_close({
 | MCP Server | Arquivo | Tools | Uso Principal |
 |------------|---------|-------|---------------|
 | `laravel` | `laravel-full-mcp.cjs` | 30 | Artisan, Queue, Scheduler, Tinker, Composer |
-| `crm` | `crm-full-mcp.cjs` | 35 | API REST, IA, Relatórios, Helpers |
+| `crm` | `crm-full-mcp.cjs` | 46 | API REST, IA, Relatórios, Uso de IA, Pacotes |
 | `postgres` | `postgres-mcp.cjs` | 1 | Queries SQL |
 | `redis` | `redis-mcp.cjs` | 5 | Cache |
 | `supabase` | `supabase-mcp.cjs` | 1 | Storage |
@@ -393,7 +471,7 @@ mcp_crm_crm_tickets_close({
 | `docker` | `docker-mcp.cjs` | 4 | Containers |
 | `fs` | `fs-mcp.cjs` | 3 | Arquivos |
 
-**Total: ~85 ferramentas** (dentro do limite de 80 recomendado)
+**Total: ~96 ferramentas**
 
 ---
 

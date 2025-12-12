@@ -183,6 +183,68 @@ server.tool("crm.webhook_external", "Recebe dados de sistema externo (ERP, etc)"
   async ({ token, action, data }) => await apiRequest("POST", "/external/webhook", { action, data }, token));
 
 // ==========================================
+// USO DE IA (Unidades)
+// ==========================================
+
+server.tool("crm.usage_summary", "Retorna resumo de uso de Unidades de IA do tenant",
+  { token: { type: "string" } },
+  async ({ token }) => await apiRequest("GET", "/usage/summary", null, token));
+
+server.tool("crm.usage_daily", "Retorna uso diário de Unidades de IA",
+  { token: { type: "string" }, days: { type: "number", description: "Dias (default: 30)" } },
+  async ({ token, days }) => await apiRequest("GET", `/usage/daily?days=${days || 30}`, null, token));
+
+server.tool("crm.usage_by_model", "Retorna uso de IA por modelo (4o-mini vs 4o)",
+  { token: { type: "string" }, start_date: { type: "string" }, end_date: { type: "string" } },
+  async ({ token, start_date, end_date }) => {
+    const params = new URLSearchParams();
+    if (start_date) params.append("start_date", start_date);
+    if (end_date) params.append("end_date", end_date);
+    return await apiRequest("GET", `/usage/by-model?${params}`, null, token);
+  });
+
+server.tool("crm.usage_limits", "Verifica limites atuais do tenant (Unidades, RAG, Audio, Imagem)",
+  { token: { type: "string" } },
+  async ({ token }) => await apiRequest("GET", "/usage/limits", null, token));
+
+server.tool("crm.usage_overage", "Calcula custo de excedente de Unidades de IA",
+  { token: { type: "string" } },
+  async ({ token }) => await apiRequest("GET", "/usage/overage", null, token));
+
+server.tool("crm.usage_estimate", "Estima uso mensal de Unidades baseado em leads e mensagens",
+  { token: { type: "string" }, leads_per_month: { type: "number", description: "Leads esperados/mês" }, messages_per_lead: { type: "number", description: "Msgs por lead (default: 10)" }, premium_percentage: { type: "number", description: "% de msgs em GPT-4o (default: 0.1)" } },
+  async ({ token, leads_per_month, messages_per_lead, premium_percentage }) => 
+    await apiRequest("POST", "/usage/estimate", { leads_per_month, messages_per_lead, premium_percentage }, token));
+
+// ==========================================
+// PACOTES DE IA
+// ==========================================
+
+server.tool("crm.packages_available", "Lista pacotes de Unidades de IA disponíveis para compra",
+  { token: { type: "string" } },
+  async ({ token }) => await apiRequest("GET", "/packages/available", null, token));
+
+server.tool("crm.packages_purchases", "Lista compras de pacotes do tenant",
+  { token: { type: "string" }, status: { type: "string", description: "paid, pending, cancelled (opcional)" } },
+  async ({ token, status }) => await apiRequest("GET", `/packages/purchases${status ? `?status=${status}` : ""}`, null, token));
+
+server.tool("crm.packages_purchase", "Compra um pacote de Unidades de IA",
+  { token: { type: "string" }, package_type: { type: "string", description: "ai_units, rag, audio, image" }, package_id: { type: "string", description: "pack_10k, pack_30k, pack_80k, etc" } },
+  async ({ token, package_type, package_id }) => await apiRequest("POST", "/packages/purchase", { package_type, package_id }, token));
+
+server.tool("crm.packages_confirm", "Confirma pagamento de um pacote comprado",
+  { token: { type: "string" }, purchase_id: { type: "string", description: "ID da compra" }, payment_reference: { type: "string", description: "Referência do pagamento (opcional)" } },
+  async ({ token, purchase_id, payment_reference }) => await apiRequest("POST", `/packages/purchases/${purchase_id}/confirm`, { payment_reference }, token));
+
+// ==========================================
+// PLANOS
+// ==========================================
+
+server.tool("crm.plans_list", "Lista planos disponíveis (Essencial R$800, Performance R$1.399, Growth R$1.899)",
+  { token: { type: "string" } },
+  async ({ token }) => await apiRequest("GET", "/plans", null, token));
+
+// ==========================================
 // HELPERS DE SIMULAÇÃO/TESTE
 // ==========================================
 

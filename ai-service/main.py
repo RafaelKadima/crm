@@ -14,6 +14,10 @@ from app.routers import learning as learning_router
 from app.routers import ads as ads_router
 from app.routers import orchestrator as orchestrator_router
 from app.routers import ads_learning as ads_learning_router
+from app.routers import knowledge_upload as knowledge_upload_router
+from app.routers import rl as rl_router
+from app.routers import ml as ml_router
+from mcp.llm_integration import create_mcp_router
 from app.queue.worker import queue_worker
 from app.queue.message_queue import message_queue
 
@@ -48,13 +52,18 @@ app = FastAPI(
     Microserviço responsável por:
     - **RAG**: Busca em base de conhecimento vetorial
     - **Memory**: Memória de curto e longo prazo
-    - **ML**: Classificação e predição de leads
-    - **Agent**: Orquestração de agentes SDR autônomos
+    - **ML**: Classificação e predição de leads (LeadScoreNet, CampaignPredictorNet)
+    - **RL**: Reinforcement Learning para decisões autônomas
+    - **MCP**: Model Context Protocol - ferramentas para agentes LLM
+    - **Agent**: Orquestração de agentes SDR e Ads autônomos
     
     ### Endpoints principais:
     - `POST /agent/run` - Executa o agente para uma mensagem
     - `POST /agent/classify-intent` - Classifica intenção
     - `POST /agent/qualify` - Qualifica lead
+    - `POST /mcp/run` - Executa agente MCP com LLM
+    - `POST /mcp/tool` - Chama ferramenta MCP diretamente
+    - `GET /mcp/tools` - Lista ferramentas disponíveis
     """,
     version="1.0.0",
     docs_url="/docs" if settings.debug else None,
@@ -77,6 +86,10 @@ app.include_router(learning_router.router)
 app.include_router(ads_router.router)
 app.include_router(orchestrator_router.router)
 app.include_router(ads_learning_router.router)
+app.include_router(knowledge_upload_router.router)
+app.include_router(rl_router.router)
+app.include_router(ml_router.router)
+app.include_router(create_mcp_router())
 
 
 @app.on_event("startup")

@@ -331,6 +331,138 @@ export const whatsAppTemplatesApi = {
 }
 
 // =====================
+// AI USAGE ENDPOINTS
+// =====================
+export interface AiUsageSummary {
+  tenant_id: string
+  tenant_name: string
+  plan: string
+  plan_label: string
+  period: string
+  leads: {
+    used: number
+    limit: number
+    percentage: number
+  }
+  ai_units: {
+    used: number
+    limit: number
+    bonus: number
+    total_available: number
+    remaining: number
+    percentage: number
+    breakdown: {
+      '4o_mini': number
+      '4o': number
+    }
+    gpt4o_enabled: boolean
+  }
+  ai_cost: {
+    cost_brl: number
+    cost_usd: number
+    messages_sent: number
+    tokens_used: number
+  }
+  rag: { used: number; limit: number }
+  audio: { used: number; limit: number }
+  image: { used: number; limit: number }
+  users: { used: number; limit: number }
+  channels: { used: number; limit: number }
+  tickets: { created: number; closed: number }
+  messages: { inbound: number; outbound: number }
+}
+
+export interface AiPackage {
+  units?: number
+  documents?: number
+  minutes?: number
+  analyses?: number
+  price: number
+  label: string
+  description?: string
+}
+
+export interface AiPackagePurchase {
+  id: string
+  package_type: string
+  package_id: string
+  quantity: number
+  consumed: number
+  remaining: number
+  price_brl: number
+  status: string
+  is_active: boolean
+  expires_at: string | null
+  created_at: string
+}
+
+export interface PlanDetails {
+  value: string
+  label: string
+  description: string
+  price: number
+  max_users: number
+  ai_units_quota: number
+  has_ia_sdr: boolean
+  has_gpt4o: boolean
+  has_ads_intelligence: boolean
+  rag_documents: number
+  audio_minutes: number
+  image_analyses: number
+  is_new_plan: boolean
+}
+
+export const aiUsageApi = {
+  // Resumo de uso
+  getSummary: () =>
+    api.get<AiUsageSummary>('/usage/summary'),
+
+  // Uso diário
+  getDailyUsage: (days = 30) =>
+    api.get<{ tenant_id: string; days: number; usage: Array<{ date: string; units: number; cost: number; calls: number }> }>('/usage/daily', { params: { days } }),
+
+  // Uso por modelo
+  getUsageByModel: (startDate?: string, endDate?: string) =>
+    api.get<{ tenant_id: string; usage_by_model: Array<{ model: string; tokens: number; units: number; cost: number; calls: number }> }>('/usage/by-model', { params: { start_date: startDate, end_date: endDate } }),
+
+  // Verificar limites
+  checkLimits: () =>
+    api.get<{ limits: { all_ok: boolean; warnings: string[]; exceeded: string[] }; ai_access: { allowed: boolean; message?: string } }>('/usage/limits'),
+
+  // Custo de excedente
+  getOverageCost: () =>
+    api.get<{ overage_units: number; overage_cost: number }>('/usage/overage'),
+
+  // Estimativa de uso
+  estimate: (data: { leads_per_month: number; messages_per_lead?: number; premium_percentage?: number }) =>
+    api.post<{ leads: number; messages: number; total_tokens: number; total_units: number; recommended_plan: string }>('/usage/estimate', data),
+}
+
+export const packagesApi = {
+  // Pacotes disponíveis
+  getAvailable: () =>
+    api.get<{ packages: { ai_units: Record<string, AiPackage>; rag: Record<string, AiPackage>; audio: Record<string, AiPackage>; image: Record<string, AiPackage> }; overage_price_per_1k: number }>('/packages/available'),
+
+  // Compras do tenant
+  getPurchases: (status?: string) =>
+    api.get<{ purchases: AiPackagePurchase[] }>('/packages/purchases', { params: { status } }),
+
+  // Comprar pacote
+  purchase: (packageType: string, packageId: string) =>
+    api.post<{ success: boolean; purchase: AiPackagePurchase; package_info: AiPackage; message: string }>('/packages/purchase', { package_type: packageType, package_id: packageId }),
+
+  // Confirmar pagamento
+  confirmPayment: (purchaseId: string, paymentReference?: string) =>
+    api.post<{ success: boolean; purchase: AiPackagePurchase; message: string }>(`/packages/purchases/${purchaseId}/confirm`, { payment_reference: paymentReference }),
+}
+
+export const plansApi = {
+  // Lista de planos
+  getPlans: () =>
+    api.get<{ plans: PlanDetails[]; current_plan: PlanDetails }>('/plans'),
+}
+
+// =====================
 // FILE UPLOAD ENDPOINTS
 // =====================
 export interface PresignedUrlResponse {

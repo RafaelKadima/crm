@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AiUnitsService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,7 @@ class AiUsageLog extends Model
         'total_tokens',
         'cost_usd',
         'cost_brl',
+        'ai_units',
         'action_type',
         'response_time_ms',
         'from_cache',
@@ -35,6 +37,7 @@ class AiUsageLog extends Model
         return [
             'cost_usd' => 'decimal:6',
             'cost_brl' => 'decimal:4',
+            'ai_units' => 'decimal:2',
             'from_cache' => 'boolean',
             'metadata' => 'array',
             'created_at' => 'datetime',
@@ -73,27 +76,42 @@ class AiUsageLog extends Model
     }
 
     /**
+     * Calcula Unidades de IA consumidas
+     */
+    public static function calculateUnits(string $model, int $totalTokens): float
+    {
+        $unitsService = app(AiUnitsService::class);
+        return $unitsService->tokensToUnits($totalTokens, $model);
+    }
+
+    /**
      * Registra uso de IA
      */
     public static function logUsage(array $data): self
     {
-        $costs = self::calculateCost(
-            $data['model'] ?? 'gpt-4o-mini',
-            $data['input_tokens'] ?? 0,
-            $data['output_tokens'] ?? 0
-        );
+        $model = $data['model'] ?? 'gpt-4o-mini';
+        $inputTokens = $data['input_tokens'] ?? 0;
+        $outputTokens = $data['output_tokens'] ?? 0;
+        $totalTokens = $inputTokens + $outputTokens;
+
+        // Calcula custos
+        $costs = self::calculateCost($model, $inputTokens, $outputTokens);
+        
+        // Calcula Unidades de IA
+        $aiUnits = self::calculateUnits($model, $totalTokens);
 
         $log = self::create([
             'tenant_id' => $data['tenant_id'],
             'lead_id' => $data['lead_id'] ?? null,
             'ticket_id' => $data['ticket_id'] ?? null,
             'agent_id' => $data['agent_id'] ?? null,
-            'model' => $data['model'] ?? 'gpt-4o-mini',
-            'input_tokens' => $data['input_tokens'] ?? 0,
-            'output_tokens' => $data['output_tokens'] ?? 0,
-            'total_tokens' => ($data['input_tokens'] ?? 0) + ($data['output_tokens'] ?? 0),
+            'model' => $model,
+            'input_tokens' => $inputTokens,
+            'output_tokens' => $outputTokens,
+            'total_tokens' => $totalTokens,
             'cost_usd' => $costs['cost_usd'],
             'cost_brl' => $costs['cost_brl'],
+            'ai_units' => $aiUnits,
             'action_type' => $data['action_type'] ?? null,
             'response_time_ms' => $data['response_time_ms'] ?? null,
             'from_cache' => $data['from_cache'] ?? false,
@@ -101,11 +119,13 @@ class AiUsageLog extends Model
             'created_at' => now(),
         ]);
 
-        // Atualiza estatísticas agregadas
-        TenantUsageStats::incrementAiUsage(
+        // Atualiza estatísticas agregadas COM Unidades
+        TenantUsageStats::incrementAiUsageWithUnits(
             $data['tenant_id'],
             $log->total_tokens,
-            $log->cost_brl
+            $log->cost_brl,
+            $log->ai_units,
+            $model
         );
 
         return $log;
@@ -142,5 +162,36 @@ class AiUsageLog extends Model
     {
         return $this->belongsTo(SdrAgent::class, 'agent_id');
     }
-}
 
+    /**
+     * Retorna uso agregado por modelo em um período
+     */
+    public static function getUsageByModel(string $tenantId, ?string $startDate = null, ?string $endDate = null): array
+    {
+        $query = self::where('tenant_id', $tenantId)
+            ->selectRaw('model, SUM(total_tokens) as tokens, SUM(ai_units) as units, SUM(cost_brl) as cost, COUNT(*) as calls');
+
+        if ($startDate) {
+            $query->where('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->where('created_at', '<=', $endDate);
+        }
+
+        return $query->groupBy('model')->get()->toArray();
+    }
+
+    /**
+     * Retorna uso agregado por dia
+     */
+    public static function getDailyUsage(string $tenantId, int $days = 30): array
+    {
+        return self::where('tenant_id', $tenantId)
+            ->where('created_at', '>=', now()->subDays($days))
+            ->selectRaw('DATE(created_at) as date, SUM(ai_units) as units, SUM(cost_brl) as cost, COUNT(*) as calls')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->toArray();
+    }
+}

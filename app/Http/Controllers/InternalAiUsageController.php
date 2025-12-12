@@ -33,7 +33,10 @@ class InternalAiUsageController extends Controller
         ]);
 
         // Verifica se o tenant pode usar IA
-        $canUse = $this->usageService->canUseAi($validated['tenant_id']);
+        $canUse = $this->usageService->canUseAi(
+            $validated['tenant_id'],
+            $validated['model'] ?? 'gpt-4o-mini'
+        );
         
         if (!$canUse['allowed']) {
             return response()->json([
@@ -62,9 +65,13 @@ class InternalAiUsageController extends Controller
     {
         $validated = $request->validate([
             'tenant_id' => 'required|uuid|exists:tenants,id',
+            'model' => 'nullable|string',
         ]);
 
-        $canUse = $this->usageService->canUseAi($validated['tenant_id']);
+        $canUse = $this->usageService->canUseAi(
+            $validated['tenant_id'],
+            $validated['model'] ?? 'gpt-4o-mini'
+        );
 
         return response()->json($canUse);
     }

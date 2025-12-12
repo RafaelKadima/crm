@@ -245,7 +245,8 @@ class AdsKnowledgeService:
         priority: int = 0,
         tags: List[str] = None,
         metadata: Dict[str, Any] = None,
-        source: str = 'manual'
+        source: str = 'manual',
+        source_reference: str = None
     ) -> Optional[str]:
         """
         Adiciona novo conhecimento à base de Ads
@@ -268,10 +269,10 @@ class AdsKnowledgeService:
                 await conn.execute(text("""
                     INSERT INTO knowledge_base 
                     (id, tenant_id, context, category, title, content, embedding, 
-                     metadata, priority, tags, source, is_active, created_at, updated_at)
+                     metadata, priority, tags, source, source_reference, is_active, created_at, updated_at)
                     VALUES 
                     (:id, :tenant_id, 'ads', :category, :title, :content, :embedding,
-                     :metadata, :priority, :tags, :source, true, NOW(), NOW())
+                     :metadata, :priority, :tags, :source, :source_reference, true, NOW(), NOW())
                 """), {
                     'id': knowledge_id,
                     'tenant_id': tenant_id,
@@ -282,7 +283,8 @@ class AdsKnowledgeService:
                     'metadata': json.dumps(metadata or {}),
                     'priority': priority,
                     'tags': json.dumps(tags or []),
-                    'source': source
+                    'source': source,
+                    'source_reference': source_reference
                 })
             
             logger.info("ads_knowledge_added", 
@@ -543,6 +545,88 @@ Recomendações: {', '.join(recommendations)}
         except Exception as e:
             logger.error("delete_knowledge_error", error=str(e))
             return False
+    
+    async def get_stats(self, tenant_id: str) -> Dict[str, Any]:
+        """Retorna estatísticas do conhecimento do tenant"""
+        try:
+            engine = await self.get_db_engine()
+            
+            async with engine.connect() as conn:
+                from sqlalchemy import text
+                
+                # Total por categoria
+                cat_result = await conn.execute(text("""
+                    SELECT category, COUNT(*) as count
+                    FROM knowledge_base
+                    WHERE tenant_id = :tenant_id
+                    AND context = 'ads'
+                    AND is_active = true
+                    GROUP BY category
+                """), {'tenant_id': tenant_id})
+                
+                by_category = {row.category: row.count for row in cat_result.fetchall()}
+                
+                # Total por fonte
+                source_result = await conn.execute(text("""
+                    SELECT source, COUNT(*) as count
+                    FROM knowledge_base
+                    WHERE tenant_id = :tenant_id
+                    AND context = 'ads'
+                    AND is_active = true
+                    GROUP BY source
+                """), {'tenant_id': tenant_id})
+                
+                by_source = {row.source: row.count for row in source_result.fetchall()}
+                
+                # Total geral
+                total_result = await conn.execute(text("""
+                    SELECT 
+                        COUNT(*) as total,
+                        SUM(usage_count) as total_usage,
+                        AVG(usage_count) as avg_usage
+                    FROM knowledge_base
+                    WHERE tenant_id = :tenant_id
+                    AND context = 'ads'
+                    AND is_active = true
+                """), {'tenant_id': tenant_id})
+                
+                totals = total_result.fetchone()
+                
+                # Conhecimento mais usado
+                top_used_result = await conn.execute(text("""
+                    SELECT id, title, category, usage_count
+                    FROM knowledge_base
+                    WHERE tenant_id = :tenant_id
+                    AND context = 'ads'
+                    AND is_active = true
+                    ORDER BY usage_count DESC
+                    LIMIT 5
+                """), {'tenant_id': tenant_id})
+                
+                top_used = [
+                    {'id': str(row.id), 'title': row.title, 'category': row.category, 'usage_count': row.usage_count}
+                    for row in top_used_result.fetchall()
+                ]
+                
+                return {
+                    'total': totals.total or 0,
+                    'total_usage': totals.total_usage or 0,
+                    'avg_usage': round(float(totals.avg_usage or 0), 2),
+                    'by_category': by_category,
+                    'by_source': by_source,
+                    'top_used': top_used,
+                }
+                
+        except Exception as e:
+            logger.error("get_stats_error", error=str(e))
+            return {
+                'total': 0,
+                'total_usage': 0,
+                'avg_usage': 0,
+                'by_category': {},
+                'by_source': {},
+                'top_used': [],
+            }
 
 
 # Singleton

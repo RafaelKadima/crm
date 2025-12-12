@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     openai_embedding_model: str = "text-embedding-3-small"
     
+    # Anthropic (Claude)
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-sonnet-4-20250514"
+    
     # PostgreSQL (mesmo banco do Laravel)
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/crm"
     

@@ -21,6 +21,12 @@ class TenantUsageStats extends Model
         'ai_total_tokens',
         'ai_cost_usd',
         'ai_cost_brl',
+        'ai_units_used',
+        'ai_units_4o_mini',
+        'ai_units_4o',
+        'rag_documents_processed',
+        'audio_minutes_used',
+        'image_analyses_used',
         'tickets_created',
         'tickets_closed',
         'messages_inbound',
@@ -33,6 +39,9 @@ class TenantUsageStats extends Model
         return [
             'ai_cost_usd' => 'decimal:4',
             'ai_cost_brl' => 'decimal:2',
+            'ai_units_used' => 'decimal:2',
+            'ai_units_4o_mini' => 'decimal:2',
+            'ai_units_4o' => 'decimal:2',
         ];
     }
 
@@ -84,7 +93,7 @@ class TenantUsageStats extends Model
     }
 
     /**
-     * Incrementa uso de IA
+     * Incrementa uso de IA (versão antiga - mantida para compatibilidade)
      */
     public static function incrementAiUsage(string $tenantId, int $tokens, float $costBrl): void
     {
@@ -97,6 +106,65 @@ class TenantUsageStats extends Model
             'ai_cost_brl' => $stats->ai_cost_brl + $costBrl,
             'ai_cost_usd' => $stats->ai_cost_usd + ($costBrl / 6.0),
         ]);
+    }
+
+    /**
+     * Incrementa uso de IA com Unidades (NOVO)
+     * 
+     * @param string $tenantId ID do tenant
+     * @param int $tokens Total de tokens usados
+     * @param float $costBrl Custo em BRL
+     * @param float $units Unidades de IA consumidas
+     * @param string $model Modelo usado (gpt-4o-mini, gpt-4o, etc.)
+     */
+    public static function incrementAiUsageWithUnits(
+        string $tenantId,
+        int $tokens,
+        float $costBrl,
+        float $units,
+        string $model = 'gpt-4o-mini'
+    ): void {
+        $stats = self::getCurrentMonth($tenantId);
+        $stats->increment('ai_messages_sent');
+        $stats->increment('ai_total_tokens', $tokens);
+        
+        // Determina qual campo de breakdown atualizar
+        $unitsField = match (true) {
+            str_contains($model, '4o-mini') => 'ai_units_4o_mini',
+            str_contains($model, '4o') => 'ai_units_4o',
+            default => 'ai_units_4o_mini',
+        };
+        
+        $stats->update([
+            'ai_cost_brl' => $stats->ai_cost_brl + $costBrl,
+            'ai_cost_usd' => $stats->ai_cost_usd + ($costBrl / 6.0),
+            'ai_units_used' => $stats->ai_units_used + $units,
+            $unitsField => $stats->$unitsField + $units,
+        ]);
+    }
+
+    /**
+     * Incrementa documentos RAG processados
+     */
+    public static function incrementRagDocuments(string $tenantId, int $count = 1): void
+    {
+        self::getCurrentMonth($tenantId)->increment('rag_documents_processed', $count);
+    }
+
+    /**
+     * Incrementa minutos de áudio usados
+     */
+    public static function incrementAudioMinutes(string $tenantId, int $minutes): void
+    {
+        self::getCurrentMonth($tenantId)->increment('audio_minutes_used', $minutes);
+    }
+
+    /**
+     * Incrementa análises de imagem
+     */
+    public static function incrementImageAnalyses(string $tenantId, int $count = 1): void
+    {
+        self::getCurrentMonth($tenantId)->increment('image_analyses_used', $count);
     }
 
     /**
@@ -166,5 +234,41 @@ class TenantUsageStats extends Model
             ->take($months)
             ->get();
     }
-}
 
+    /**
+     * Retorna uso de Unidades vs quota
+     */
+    public function getAiUnitsUsageVsQuota(): array
+    {
+        $quota = TenantQuota::getForTenant($this->tenant_id);
+        
+        if (!$quota) {
+            return [
+                'used' => $this->ai_units_used,
+                'limit' => 0,
+                'bonus' => 0,
+                'total_available' => 0,
+                'percentage' => 0,
+                'remaining' => 0,
+            ];
+        }
+
+        $totalAvailable = $quota->getTotalAiUnitsAvailable();
+        $percentage = $totalAvailable > 0 
+            ? round(($this->ai_units_used / $totalAvailable) * 100, 1) 
+            : 0;
+
+        return [
+            'used' => round($this->ai_units_used, 2),
+            'limit' => $quota->max_ai_units_month,
+            'bonus' => $quota->bonus_ai_units,
+            'total_available' => $totalAvailable,
+            'percentage' => min($percentage, 100),
+            'remaining' => max(0, $totalAvailable - $this->ai_units_used),
+            'breakdown' => [
+                '4o_mini' => round($this->ai_units_4o_mini, 2),
+                '4o' => round($this->ai_units_4o, 2),
+            ],
+        ];
+    }
+}
