@@ -193,6 +193,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       setHasMoreMessages(true)
       setMessages([])
       setMessage('') // Limpa o input ao abrir nova conversa
+      setTicketId(null) // ⚠️ IMPORTANTE: Reseta ticketId para forçar busca do ticket correto
       loadMessages(1, false)
     }
   }, [open, lead])
@@ -239,8 +240,9 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
     try {
       let currentTicketId = ticketId
 
-      // Só busca o lead se ainda não temos o ticketId
-      if (!currentTicketId) {
+      // SEMPRE busca o ticket na página 1 para garantir que é o ticket correto do lead atual
+      // Isso evita usar o ticketId de um lead anterior quando trocamos de conversa
+      if (!currentTicketId || page === 1) {
         const leadResponse = await api.get(`/leads/${lead.id}`)
         const leadData = leadResponse.data
         
