@@ -314,152 +314,220 @@ class DataAnalyzer:
         pipeline_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Analisa funil de vendas completo.
-        
-        Identifica:
-        - Gargalos
-        - Taxa de conversão por estágio
-        - Tempo médio por estágio
-        - Performance por canal
+        Analisa funil de vendas completo com dados reais.
         """
         days = self._parse_period(period)
+        pool = await self._get_pool()
         
-        # TODO: Implementar análise real
-        stages = [
-            {"name": "Novo", "count": 120, "conversion_to_next": 0.83, "avg_time_hours": 2},
-            {"name": "Contato", "count": 100, "conversion_to_next": 0.80, "avg_time_hours": 24},
-            {"name": "Qualificado", "count": 80, "conversion_to_next": 0.625, "avg_time_hours": 48},
-            {"name": "Proposta", "count": 50, "conversion_to_next": 0.80, "avg_time_hours": 72},
-            {"name": "Fechado", "count": 40, "conversion_to_next": 1.0, "avg_time_hours": 0},
-        ]
+        if not pool:
+            return self._empty_funnel_analysis()
         
-        # Identifica gargalo (menor conversão)
-        bottleneck = min(stages[:-1], key=lambda x: x["conversion_to_next"])
-        
+        try:
+            async with pool.acquire() as conn:
+                # Busca estágios com contagem de leads
+                stages_query = """
+                    SELECT s.name, s.order_position, COUNT(l.id) as count, s.is_won
+                    FROM stages s
+                    LEFT JOIN leads l ON l.stage_id = s.id AND l.tenant_id = $1
+                    WHERE s.tenant_id = $1 OR s.tenant_id IS NULL
+                    GROUP BY s.id, s.name, s.order_position, s.is_won
+                    ORDER BY s.order_position
+                """
+                stages_rows = await conn.fetch(stages_query, self.tenant_id)
+                
+                if not stages_rows:
+                    return self._empty_funnel_analysis()
+                
+                stages = []
+                total_leads = 0
+                won_leads = 0
+                
+                for i, row in enumerate(stages_rows):
+                    count = row['count'] or 0
+                    total_leads += count
+                    if row['is_won']:
+                        won_leads = count
+                    
+                    # Calcula conversão para próximo estágio
+                    next_count = stages_rows[i + 1]['count'] if i + 1 < len(stages_rows) else count
+                    conversion = next_count / count if count > 0 else 0
+                    
+                    stages.append({
+                        "name": row['name'],
+                        "count": count,
+                        "conversion_to_next": min(conversion, 1.0),
+                    })
+                
+                # Leads por canal
+                channel_query = """
+                    SELECT channel, COUNT(*) as count FROM leads
+                    WHERE tenant_id = $1 AND channel IS NOT NULL
+                    GROUP BY channel
+                """
+                channel_rows = await conn.fetch(channel_query, self.tenant_id)
+                conversion_by_channel = {row['channel']: row['count'] for row in channel_rows}
+                
+                # Identifica gargalo (menor conversão)
+                bottleneck = None
+                if stages and len(stages) > 1:
+                    non_final_stages = [s for s in stages[:-1] if s['count'] > 0]
+                    if non_final_stages:
+                        bottleneck = min(non_final_stages, key=lambda x: x["conversion_to_next"])
+                
+                conversion_rate = won_leads / total_leads if total_leads > 0 else 0
+                
+                recommendations = []
+                if bottleneck and bottleneck['conversion_to_next'] < 0.5:
+                    recommendations.append(f"Gargalo em '{bottleneck['name']}' com {bottleneck['conversion_to_next']*100:.0f}% de conversão")
+                if total_leads == 0:
+                    recommendations.append("Nenhum lead cadastrado ainda. Comece a captar leads!")
+                
+                return {
+                    "total_leads": total_leads,
+                    "stages": stages,
+                    "bottleneck": {
+                        "stage": bottleneck["name"] if bottleneck else None,
+                        "conversion_rate": bottleneck["conversion_to_next"] if bottleneck else 0,
+                        "recommendation": f"Focar em melhorar conversão do estágio {bottleneck['name']}" if bottleneck else None,
+                    } if bottleneck else None,
+                    "conversion_rate": conversion_rate,
+                    "conversion_by_channel": conversion_by_channel,
+                    "recommendations": recommendations,
+                }
+        except Exception as e:
+            logger.error(f"Erro ao analisar funil: {e}")
+            return self._empty_funnel_analysis()
+    
+    def _empty_funnel_analysis(self) -> Dict[str, Any]:
         return {
-            "total_leads": 120,
-            "stages": stages,
-            "bottleneck": {
-                "stage": bottleneck["name"],
-                "conversion_rate": bottleneck["conversion_to_next"],
-                "recommendation": f"Focar em melhorar conversão do estágio {bottleneck['name']}",
-            },
-            "conversion_rate": 0.33,  # 40/120
-            "avg_time_per_stage": {s["name"]: s["avg_time_hours"] for s in stages},
-            "conversion_by_channel": {
-                "whatsapp": 0.38,
-                "instagram": 0.25,
-                "site": 0.30,
-            },
-            "trends": {
-                "leads_trend": "growing",
-                "conversion_trend": "stable",
-            },
-            "recommendations": [
-                f"Gargalo identificado em '{bottleneck['name']}' com {bottleneck['conversion_to_next']*100:.0f}% de conversão",
-                "Leads de WhatsApp convertem 52% mais que Instagram",
-                "Tempo médio em 'Proposta' está 20% acima do benchmark",
-            ],
+            "total_leads": 0,
+            "stages": [],
+            "bottleneck": None,
+            "conversion_rate": 0,
+            "conversion_by_channel": {},
+            "recommendations": ["Sem dados suficientes para análise de funil."],
         }
     
     async def analyze_support_metrics(self, period: str = "30d") -> Dict[str, Any]:
-        """Analisa métricas de suporte/atendimento."""
+        """Analisa métricas de suporte/atendimento com dados reais."""
         days = self._parse_period(period)
+        pool = await self._get_pool()
         
+        if not pool:
+            return self._empty_support_analysis()
+        
+        try:
+            async with pool.acquire() as conn:
+                # Total de tickets
+                total_tickets = await conn.fetchval(
+                    "SELECT COUNT(*) FROM tickets WHERE tenant_id = $1",
+                    self.tenant_id
+                ) or 0
+                
+                # Tickets por status
+                status_query = """
+                    SELECT status, COUNT(*) as count FROM tickets
+                    WHERE tenant_id = $1
+                    GROUP BY status
+                """
+                status_rows = await conn.fetch(status_query, self.tenant_id)
+                by_status = {row['status']: row['count'] for row in status_rows}
+                
+                # Tickets por canal
+                channel_query = """
+                    SELECT c.type as channel, COUNT(t.id) as count FROM tickets t
+                    JOIN channels c ON t.channel_id = c.id
+                    WHERE t.tenant_id = $1
+                    GROUP BY c.type
+                """
+                channel_rows = await conn.fetch(channel_query, self.tenant_id)
+                by_channel = {row['channel']: {"count": row['count']} for row in channel_rows}
+                
+                recommendations = []
+                if total_tickets == 0:
+                    recommendations.append("Nenhum ticket registrado ainda.")
+                
+                return {
+                    "total_tickets": total_tickets,
+                    "by_status": by_status,
+                    "by_channel": by_channel,
+                    "recommendations": recommendations,
+                }
+        except Exception as e:
+            logger.error(f"Erro ao analisar suporte: {e}")
+            return self._empty_support_analysis()
+    
+    def _empty_support_analysis(self) -> Dict[str, Any]:
         return {
-            "total_tickets": 230,
-            "avg_response_time": 25,
-            "avg_resolution_time": 4.5,
-            "fcr_rate": 0.72,
-            "satisfaction_score": 4.2,
-            "by_channel": {
-                "whatsapp": {"count": 150, "avg_response": 15},
-                "instagram": {"count": 60, "avg_response": 35},
-                "email": {"count": 20, "avg_response": 120},
-            },
-            "busiest_hours": [9, 10, 11, 14, 15],
-            "agent_performance": [
-                {"agent": "SDR Agent", "tickets": 180, "avg_response": 2, "satisfaction": 4.5},
-                {"agent": "Manual", "tickets": 50, "avg_response": 45, "satisfaction": 3.8},
-            ],
-            "sla_compliance": 0.85,
-            "recommendations": [
-                "Tempo de resposta em Instagram 133% maior que WhatsApp",
-                "Horários de pico: 9h-11h e 14h-15h",
-                "SDR Agent resolve 78% dos tickets com satisfação alta",
-            ],
+            "total_tickets": 0,
+            "by_status": {},
+            "by_channel": {},
+            "recommendations": ["Sem dados de suporte para análise."],
         }
     
     async def analyze_marketing_performance(self, period: str = "30d") -> Dict[str, Any]:
-        """Analisa performance de marketing e ads."""
+        """Analisa performance de marketing com dados reais."""
         days = self._parse_period(period)
+        pool = await self._get_pool()
         
-        campaigns = [
-            {"id": "1", "name": "Retargeting Quente", "spend": 5000, "leads": 120, "roas": 4.5, "status": "active"},
-            {"id": "2", "name": "Lookalike", "spend": 4000, "leads": 80, "roas": 3.2, "status": "active"},
-            {"id": "3", "name": "Tráfego Frio", "spend": 3000, "leads": 50, "roas": 0.8, "status": "active"},
-            {"id": "4", "name": "Stories", "spend": 3000, "leads": 30, "roas": 2.1, "status": "paused"},
-        ]
+        if not pool:
+            return self._empty_marketing_analysis()
         
-        total_spend = sum(c["spend"] for c in campaigns)
-        total_leads = sum(c["leads"] for c in campaigns)
-        
-        return {
-            "total_spend": total_spend,
-            "total_leads": total_leads,
-            "cpl": total_spend / total_leads if total_leads > 0 else 0,
-            "cac": 350,
-            "roas": 3.2,
-            "ltv": 4500,
-            "campaigns": campaigns,
-            "best_performing": campaigns[0],
-            "worst_performing": campaigns[2],
-            "channel_performance": {
-                "facebook": {"spend": 8000, "leads": 150, "roas": 3.8},
-                "instagram": {"spend": 5000, "leads": 100, "roas": 2.8},
-                "google": {"spend": 2000, "leads": 30, "roas": 2.0},
-            },
-            "attribution": {
-                "first_touch": {"whatsapp": 0.4, "instagram": 0.3, "site": 0.2, "outros": 0.1},
-                "last_touch": {"whatsapp": 0.5, "instagram": 0.25, "site": 0.15, "outros": 0.1},
-            },
-            "recommendations": [
-                "Campanha 'Tráfego Frio' com ROAS 0.8x - considerar pausar",
-                "'Retargeting Quente' é 462% mais eficiente que 'Tráfego Frio'",
-                "Facebook tem melhor ROAS (3.8x) - considerar realocar budget",
-            ],
-        }
+        try:
+            async with pool.acquire() as conn:
+                # Campanhas ativas
+                campaigns_query = """
+                    SELECT id, name, status, 
+                           COALESCE((performance->>'spend')::numeric, 0) as spend,
+                           COALESCE((performance->>'leads')::numeric, 0) as leads
+                    FROM ad_campaigns
+                    WHERE tenant_id = $1
+                    ORDER BY created_at DESC
+                    LIMIT 10
+                """
+                campaigns_rows = await conn.fetch(campaigns_query, self.tenant_id)
+                
+                campaigns = [
+                    {
+                        "id": str(row['id']),
+                        "name": row['name'],
+                        "status": row['status'],
+                        "spend": float(row['spend']),
+                        "leads": int(row['leads']),
+                    }
+                    for row in campaigns_rows
+                ]
+                
+                total_spend = sum(c['spend'] for c in campaigns)
+                total_leads = sum(c['leads'] for c in campaigns)
+                cpl = total_spend / total_leads if total_leads > 0 else 0
+                
+                recommendations = []
+                if not campaigns:
+                    recommendations.append("Nenhuma campanha cadastrada. Configure o Ads Intelligence.")
+                elif total_spend == 0:
+                    recommendations.append("Nenhum gasto registrado nas campanhas.")
+                
+                return {
+                    "total_spend": total_spend,
+                    "total_leads": total_leads,
+                    "cpl": cpl,
+                    "campaigns_count": len(campaigns),
+                    "campaigns": campaigns[:5],  # Top 5
+                    "recommendations": recommendations,
+                }
+        except Exception as e:
+            logger.error(f"Erro ao analisar marketing: {e}")
+            return self._empty_marketing_analysis()
     
-    async def analyze_financial_metrics(self, period: str = "30d") -> Dict[str, Any]:
-        """Analisa métricas financeiras."""
-        days = self._parse_period(period)
-        
+    def _empty_marketing_analysis(self) -> Dict[str, Any]:
         return {
-            "revenue": 150000,
-            "revenue_growth": 0.15,
-            "deals_closed": 40,
-            "avg_deal_size": 3750,
-            "ai_cost": 850,
-            "roi_on_ai": 15.2,
-            "by_channel": {
-                "whatsapp": 75000,
-                "instagram": 45000,
-                "site": 30000,
-            },
-            "by_product": {
-                "Produto A": 80000,
-                "Produto B": 50000,
-                "Serviço C": 20000,
-            },
-            "forecast": {
-                "next_month": 172500,
-                "confidence": 0.82,
-            },
-            "recommendations": [
-                "ROI de 15.2x no investimento em IA",
-                "WhatsApp representa 50% da receita",
-                "Ticket médio cresceu 12% vs mês anterior",
-            ],
+            "total_spend": 0,
+            "total_leads": 0,
+            "cpl": 0,
+            "campaigns_count": 0,
+            "campaigns": [],
+            "recommendations": ["Sem dados de marketing para análise."],
         }
     
     async def get_executive_summary(self, period: str = "30d") -> Dict[str, Any]:

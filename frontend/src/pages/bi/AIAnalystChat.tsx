@@ -32,6 +32,51 @@ interface Message {
   timestamp: Date
 }
 
+// Formata chave para exibição
+const formatKey = (key: string): string => {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, str => str.toUpperCase())
+    .trim()
+}
+
+// Formata valor para exibição
+const formatValue = (value: any): string => {
+  if (value === null || value === undefined) return '-'
+  if (typeof value === 'number') {
+    // Verifica se é porcentagem (entre 0 e 1 ou nome sugere)
+    if (value >= 0 && value <= 1) {
+      return `${(value * 100).toFixed(1)}%`
+    }
+    return value.toLocaleString('pt-BR')
+  }
+  if (typeof value === 'boolean') return value ? 'Sim' : 'Não'
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '-'
+    // Se é array de objetos, mostra quantidade
+    if (typeof value[0] === 'object') {
+      return `${value.length} itens`
+    }
+    return value.slice(0, 3).join(', ') + (value.length > 3 ? '...' : '')
+  }
+  if (typeof value === 'object') {
+    // Tenta extrair valores úteis de objetos comuns
+    if ('name' in value) return String(value.name)
+    if ('title' in value) return String(value.title)
+    if ('count' in value) return String(value.count)
+    if ('total' in value) return String(value.total)
+    if ('value' in value) return formatValue(value.value)
+    // Se tem poucas propriedades, mostra resumo
+    const keys = Object.keys(value)
+    if (keys.length <= 2) {
+      return keys.map(k => `${k}: ${formatValue(value[k])}`).join(', ')
+    }
+    return `${keys.length} campos`
+  }
+  return String(value)
+}
+
 export function AIAnalystChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -262,14 +307,11 @@ export function AIAnalystChat() {
                           Dados de Suporte
                         </p>
                         <div className="grid grid-cols-2 gap-2">
-                          {Object.entries(message.data).slice(0, 4).map(([key, value]) => (
+                          {Object.entries(message.data).slice(0, 6).map(([key, value]) => (
                             <div key={key} className="text-xs">
-                              <span className="text-muted-foreground">{key}: </span>
+                              <span className="text-muted-foreground">{formatKey(key)}: </span>
                               <span className="font-medium">
-                                {typeof value === 'number' 
-                                  ? value.toLocaleString('pt-BR')
-                                  : String(value)
-                                }
+                                {formatValue(value)}
                               </span>
                             </div>
                           ))}
