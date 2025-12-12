@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
+import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer'
 import { cn } from '@/lib/utils'
 import api from '@/api/axios'
 import { toast } from 'sonner'
@@ -472,7 +473,11 @@ export function AIAnalystChat() {
                       ? "bg-muted"
                       : "bg-primary text-primary-foreground"
                   )}>
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    {message.role === 'assistant' ? (
+                      <MarkdownRenderer content={message.content} className="text-sm" />
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    )}
 
                     {/* Dados de Suporte */}
                     {message.data && Object.keys(message.data).length > 0 && (
