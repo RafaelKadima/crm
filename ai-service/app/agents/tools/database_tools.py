@@ -18,6 +18,21 @@ logger = structlog.get_logger()
 LARAVEL_API_URL = None
 
 
+def _run_async(coro):
+    """Helper para executar coroutines em threads sem event loop."""
+    import asyncio
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # Não há event loop rodando - criar um novo
+        return asyncio.run(coro)
+    else:
+        # Já há um event loop - usar nest_asyncio ou criar task
+        import nest_asyncio
+        nest_asyncio.apply()
+        return loop.run_until_complete(coro)
+
+
 def _get_laravel_url() -> str:
     """Retorna URL da API Laravel."""
     global LARAVEL_API_URL
@@ -77,13 +92,11 @@ def get_tenant_config(tenant_id: str) -> Dict[str, Any]:
         - default_account: Conta padrão com page_id, pixel_id
         - settings: Configurações gerais
     """
-    import asyncio
-    
     logger.info("Getting tenant config", tenant_id=tenant_id)
     
     try:
         # Busca contas de anúncio
-        accounts = asyncio.get_event_loop().run_until_complete(
+        accounts = _run_async(
             _call_laravel_api("GET", "ads/accounts", tenant_id)
         )
         
@@ -136,8 +149,6 @@ def list_available_creatives(
     Returns:
         Lista de criativos com id, name, type, file_url
     """
-    import asyncio
-    
     logger.info(
         "Listing creatives",
         tenant_id=tenant_id,
@@ -153,7 +164,7 @@ def list_available_creatives(
         if creative_type:
             params["type"] = creative_type
         
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api("GET", "ads/creatives", tenant_id, params)
         )
         
@@ -205,8 +216,6 @@ def list_available_copies(
     Returns:
         Lista de copies com id, name, headline, primary_text, call_to_action
     """
-    import asyncio
-    
     logger.info(
         "Listing copies",
         tenant_id=tenant_id,
@@ -219,7 +228,7 @@ def list_available_copies(
             "per_page": limit,
         }
         
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api("GET", "ads/copies", tenant_id, params)
         )
         
@@ -267,10 +276,8 @@ def get_creative_by_id(tenant_id: str, creative_id: str) -> Dict[str, Any]:
     Returns:
         Dados completos do criativo
     """
-    import asyncio
-    
     try:
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api("GET", f"ads/creatives/{creative_id}", tenant_id)
         )
         
@@ -313,10 +320,8 @@ def get_copy_by_id(tenant_id: str, copy_id: str) -> Dict[str, Any]:
     Returns:
         Dados completos da copy
     """
-    import asyncio
-    
     try:
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api("GET", f"ads/copies/{copy_id}", tenant_id)
         )
         
@@ -364,8 +369,6 @@ def save_campaign_to_database(
     Returns:
         ID da campanha salva
     """
-    import asyncio
-    
     logger.info(
         "Saving campaign to database",
         tenant_id=tenant_id,
@@ -373,7 +376,7 @@ def save_campaign_to_database(
     )
     
     try:
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api(
                 "POST",
                 "internal/ads/save-campaign",
@@ -417,10 +420,8 @@ def update_creative_status(
     Returns:
         Status da atualização
     """
-    import asyncio
-    
     try:
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api(
                 "PUT",
                 f"ads/creatives/{creative_id}",
@@ -460,8 +461,6 @@ def update_copy_status(
     Returns:
         Status da atualização
     """
-    import asyncio
-    
     try:
         if status == "approved":
             endpoint = f"ads/copies/{copy_id}/approve"
@@ -472,7 +471,7 @@ def update_copy_status(
             method = "PUT"
             data = {"status": status}
         
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api(method, endpoint, tenant_id, data)
         )
         
