@@ -151,9 +151,13 @@ export function useCreateSuperAdminUser() {
       const response = await api.post('/super-admin/users', data)
       return response.data
     },
-    onSuccess: () => {
+    onSuccess: (_, data) => {
       queryClient.invalidateQueries({ queryKey: ['super-admin', 'users'] })
       queryClient.invalidateQueries({ queryKey: ['super-admin', 'dashboard'] })
+      // Invalidar o tenant específico para atualizar a lista de usuários
+      if (data.tenant_id) {
+        queryClient.invalidateQueries({ queryKey: ['super-admin', 'tenant', data.tenant_id] })
+      }
     },
   })
 }

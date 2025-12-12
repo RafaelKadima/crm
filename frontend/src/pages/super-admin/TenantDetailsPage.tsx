@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Building2,
   ChevronLeft,
@@ -19,8 +19,12 @@ import {
   Phone,
   Calendar,
   TrendingUp,
+  Plus,
+  X,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
-import { useTenant, useUpdateTenant, useUpdateTenantFeatures, usePlans, useFeatures } from '@/hooks/useSuperAdmin'
+import { useTenant, useUpdateTenant, useUpdateTenantFeatures, usePlans, useFeatures, useCreateSuperAdminUser } from '@/hooks/useSuperAdmin'
 
 export function TenantDetailsPage() {
   const { tenantId } = useParams<{ tenantId: string }>()
@@ -31,9 +35,13 @@ export function TenantDetailsPage() {
   const { data: plans } = usePlans()
   const { data: availableFeatures } = useFeatures()
 
+  const createUser = useCreateSuperAdminUser()
+
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [activeTab, setActiveTab] = useState<'info' | 'features' | 'users'>('info')
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -42,6 +50,14 @@ export function TenantDetailsPage() {
     whatsapp_number: '',
     ia_enabled: false,
     is_active: true,
+  })
+
+  const [newUserData, setNewUserData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'vendedor',
+    phone: '',
   })
 
   const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean>>({})
@@ -117,6 +133,30 @@ export function TenantDetailsPage() {
       ...prev,
       [key]: !prev[key],
     }))
+  }
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    try {
+      await createUser.mutateAsync({
+        tenant_id: tenantId!,
+        name: newUserData.name,
+        email: newUserData.email,
+        password: newUserData.password,
+        role: newUserData.role,
+        phone: newUserData.phone || undefined,
+      })
+      setShowCreateUserModal(false)
+      setNewUserData({ name: '', email: '', password: '', role: 'vendedor', phone: '' })
+      setSuccess(true)
+      refetch()
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Erro ao criar usuário'
+      setError(message)
+    }
   }
 
   if (isLoading) {
@@ -472,10 +512,19 @@ export function TenantDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
           >
             <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5 text-purple-400" />
-                Usuários da Empresa
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Users className="w-5 h-5 text-purple-400" />
+                  Usuários da Empresa
+                </h2>
+                <button
+                  onClick={() => setShowCreateUserModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar Usuário
+                </button>
+              </div>
               
               {tenant.users && tenant.users.length > 0 ? (
                 <div className="space-y-3">
@@ -518,14 +567,157 @@ export function TenantDetailsPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400 text-center py-8">
-                  Nenhum usuário cadastrado nesta empresa.
-                </p>
+                <div className="text-center py-8">
+                  <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400 mb-4">
+                    Nenhum usuário cadastrado nesta empresa.
+                  </p>
+                  <button
+                    onClick={() => setShowCreateUserModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors text-sm font-medium mx-auto"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Criar primeiro usuário
+                  </button>
+                </div>
               )}
             </div>
           </motion.div>
         )}
       </div>
+
+      {/* Modal Criar Usuário */}
+      <AnimatePresence>
+        {showCreateUserModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowCreateUserModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-md overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-blue-400" />
+                  Novo Usuário
+                </h3>
+                <button
+                  onClick={() => setShowCreateUserModal(false)}
+                  className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateUser} className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Nome *</label>
+                  <input
+                    type="text"
+                    value={newUserData.name}
+                    onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="Nome completo"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">E-mail *</label>
+                  <input
+                    type="email"
+                    value={newUserData.email}
+                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="usuario@empresa.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Senha *</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={newUserData.password}
+                      onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                      required
+                      minLength={6}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none pr-10"
+                      placeholder="Mínimo 6 caracteres"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-600 rounded"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Função *</label>
+                  <select
+                    value={newUserData.role}
+                    onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="admin">Administrador</option>
+                    <option value="gestor">Gestor</option>
+                    <option value="vendedor">Vendedor</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Telefone</label>
+                  <input
+                    type="text"
+                    value={newUserData.phone}
+                    onChange={(e) => setNewUserData({ ...newUserData, phone: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="5511999999999"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateUserModal(false)}
+                    className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createUser.isPending}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {createUser.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Criando...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4" />
+                        Criar Usuário
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
