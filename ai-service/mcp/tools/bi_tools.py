@@ -912,6 +912,8 @@ async def get_report_api_data(
 async def ask_analyst(
     tenant_id: str,
     question: str,
+    period: str = "30d",
+    ad_account_id: Optional[str] = None,
     context: Optional[dict] = None
 ) -> dict:
     """
@@ -920,15 +922,22 @@ async def ask_analyst(
     Args:
         tenant_id: ID do tenant
         question: Pergunta em linguagem natural
-        context: Contexto adicional (período, foco, etc.)
+        period: Período de análise (7d, 30d, 90d, this_month, last_month, ou datas customizadas)
+        ad_account_id: ID da conta de anúncios específica (opcional, None = todas)
+        context: Contexto adicional
         
     Returns:
         Resposta do analista com dados de suporte
     """
     from bi_agent.agent import BIAgent
     
-    agent = BIAgent(tenant_id)
-    result = await agent.answer_question(question, context)
+    # Monta contexto completo com filtros
+    full_context = context or {}
+    full_context["period"] = period
+    full_context["ad_account_id"] = ad_account_id
+    
+    agent = BIAgent(tenant_id, ad_account_id=ad_account_id)
+    result = await agent.answer_question(question, full_context)
     
     return {
         "question": question,
@@ -937,6 +946,10 @@ async def ask_analyst(
         "visualizations": result.get("visualizations", []),
         "suggested_actions": result.get("actions", []),
         "related_questions": result.get("related", []),
+        "filters_applied": {
+            "period": period,
+            "ad_account_id": ad_account_id,
+        }
     }
 
 
@@ -1232,6 +1245,8 @@ def register_tools(server) -> None:
         parameters=[
             ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
             ToolParameter(name="question", type="string", description="Pergunta do usuário"),
+            ToolParameter(name="period", type="string", description="Período: 7d, 30d, 90d, this_month, last_month", required=False, default="30d"),
+            ToolParameter(name="ad_account_id", type="string", description="ID da conta de anúncios (null = todas)", required=False),
             ToolParameter(name="context", type="object", description="Contexto adicional", required=False),
         ],
         handler=ask_analyst,

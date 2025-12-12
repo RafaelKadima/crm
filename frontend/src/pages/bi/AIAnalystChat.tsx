@@ -14,6 +14,9 @@ import {
   ChevronRight,
   CheckCircle,
   User,
+  Calendar,
+  Filter,
+  ChevronDown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -22,6 +25,19 @@ import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
 import api from '@/api/axios'
 import { toast } from 'sonner'
+
+interface AdAccount {
+  id: string
+  name: string
+  platform: string
+  platform_account_name: string
+  status: string
+}
+
+interface PeriodOption {
+  value: string
+  label: string
+}
 
 interface Message {
   id: string
@@ -77,10 +93,44 @@ const formatValue = (value: any): string => {
   return String(value)
 }
 
+const PERIOD_OPTIONS: PeriodOption[] = [
+  { value: '7d', label: '7 dias' },
+  { value: '30d', label: '30 dias' },
+  { value: '90d', label: '90 dias' },
+  { value: 'this_month', label: 'Este mês' },
+  { value: 'last_month', label: 'Mês passado' },
+]
+
 export function AIAnalystChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
+  const [selectedPeriod, setSelectedPeriod] = useState('30d')
+  const [customPeriod, setCustomPeriod] = useState('')
+  const [showCustomPeriod, setShowCustomPeriod] = useState(false)
+  const [selectedAdAccount, setSelectedAdAccount] = useState<string | null>(null)
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Fecha dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowAccountDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Busca contas de anúncios
+  const { data: adAccounts = [] } = useQuery<AdAccount[]>({
+    queryKey: ['ad-accounts'],
+    queryFn: async () => {
+      const response = await api.get('/ad-accounts')
+      return response.data.data || []
+    },
+  })
 
   // Busca perguntas sugeridas
   const { data: suggestions } = useQuery({
@@ -102,8 +152,8 @@ export function AIAnalystChat() {
 
   // Mutation para enviar pergunta
   const askMutation = useMutation({
-    mutationFn: async (question: string) => {
-      const response = await api.post('/bi/analyst/ask', { question })
+    mutationFn: async (payload: { question: string; period: string; ad_account_id: string | null }) => {
+      const response = await api.post('/bi/analyst/ask', payload)
       return response.data
     },
     onSuccess: (data) => {
@@ -130,14 +180,29 @@ export function AIAnalystChat() {
   const handleSend = () => {
     if (!input.trim() || askMutation.isPending) return
 
+    const period = customPeriod || selectedPeriod
+    const selectedAccount = adAccounts.find(a => a.id === selectedAdAccount)
+    
+    // Mostra contexto na mensagem do usuário
+    const contextInfo = []
+    const periodLabel = PERIOD_OPTIONS.find(p => p.value === period)?.label || period
+    contextInfo.push(`Período: ${periodLabel}`)
+    if (selectedAccount) {
+      contextInfo.push(`Conta: ${selectedAccount.name}`)
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: input + (contextInfo.length > 0 ? `\n\n📊 ${contextInfo.join(' | ')}` : ''),
       timestamp: new Date(),
     }
     setMessages((prev) => [...prev, userMessage])
-    askMutation.mutate(input)
+    askMutation.mutate({
+      question: input,
+      period,
+      ad_account_id: selectedAdAccount,
+    })
     setInput('')
   }
 
@@ -230,6 +295,116 @@ export function AIAnalystChat() {
           <Badge variant="secondary" className="bg-green-500/10 text-green-500">
             Online
           </Badge>
+        </div>
+
+        {/* Barra de Filtros */}
+        <div className="px-4 py-3 border-b bg-muted/30">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Seletor de Período */}
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Período:</span>
+              <div className="flex gap-1">
+                {PERIOD_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={selectedPeriod === option.value && !showCustomPeriod ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setSelectedPeriod(option.value)
+                      setShowCustomPeriod(false)
+                      setCustomPeriod('')
+                    }}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+                <Button
+                  variant={showCustomPeriod ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setShowCustomPeriod(!showCustomPeriod)}
+                >
+                  Personalizado
+                </Button>
+              </div>
+            </div>
+
+            {/* Input Período Personalizado */}
+            {showCustomPeriod && (
+              <Input
+                value={customPeriod}
+                onChange={(e) => setCustomPeriod(e.target.value)}
+                placeholder="Ex: 2024-01-01 a 2024-01-31"
+                className="h-7 text-xs w-48"
+              />
+            )}
+
+            {/* Separador */}
+            <div className="h-6 w-px bg-border" />
+
+            {/* Seletor de Conta de Anúncios */}
+            <div className="flex items-center gap-2 relative" ref={dropdownRef}>
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Conta:</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs min-w-[160px] justify-between"
+                onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+              >
+                <span className="truncate">
+                  {selectedAdAccount
+                    ? adAccounts.find(a => a.id === selectedAdAccount)?.name || 'Selecionar'
+                    : 'Todas as contas'}
+                </span>
+                <ChevronDown className="h-3 w-3 ml-2 shrink-0" />
+              </Button>
+
+              {/* Dropdown */}
+              {showAccountDropdown && (
+                <div className="absolute top-full left-0 mt-1 z-50 bg-popover border rounded-md shadow-lg min-w-[200px]">
+                  <button
+                    className={cn(
+                      "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors",
+                      !selectedAdAccount && "bg-muted font-medium"
+                    )}
+                    onClick={() => {
+                      setSelectedAdAccount(null)
+                      setShowAccountDropdown(false)
+                    }}
+                  >
+                    Todas as contas
+                  </button>
+                  {adAccounts.length > 0 ? (
+                    adAccounts.map((account) => (
+                      <button
+                        key={account.id}
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center justify-between",
+                          selectedAdAccount === account.id && "bg-muted font-medium"
+                        )}
+                        onClick={() => {
+                          setSelectedAdAccount(account.id)
+                          setShowAccountDropdown(false)
+                        }}
+                      >
+                        <span className="truncate">{account.name}</span>
+                        <Badge variant="secondary" className="text-[10px] ml-2">
+                          {account.platform}
+                        </Badge>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                      Nenhuma conta conectada
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Mensagens */}

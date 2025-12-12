@@ -32,9 +32,10 @@ class BIAgent:
     6. Preparar dados para ML training
     """
     
-    def __init__(self, tenant_id: str):
+    def __init__(self, tenant_id: str, ad_account_id: Optional[str] = None):
         self.tenant_id = tenant_id
-        self.analyzer = DataAnalyzer(tenant_id)
+        self.ad_account_id = ad_account_id  # Filtro opcional para conta de anúncios
+        self.analyzer = DataAnalyzer(tenant_id, ad_account_id=ad_account_id)
         self.predictor = PredictiveEngine(tenant_id)
         self.orchestrator = AgentOrchestrator(tenant_id)
         self.knowledge_writer = KnowledgeWriter(tenant_id)

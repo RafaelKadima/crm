@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\BI;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdAccount;
 use App\Models\BiGeneratedKnowledge;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,10 +18,24 @@ class AnalystChatController extends Controller
     {
         $validated = $request->validate([
             'question' => 'required|string|max:1000',
+            'period' => 'nullable|string|max:50',
+            'ad_account_id' => 'nullable|uuid',
             'context' => 'nullable|array',
         ]);
 
         $tenantId = auth()->user()->tenant_id;
+
+        // Valida que a conta de anúncios pertence ao tenant
+        $adAccountId = null;
+        if (!empty($validated['ad_account_id'])) {
+            $account = AdAccount::where('id', $validated['ad_account_id'])
+                ->where('tenant_id', $tenantId)
+                ->first();
+            
+            if ($account) {
+                $adAccountId = $account->id;
+            }
+        }
 
         try {
             $response = Http::timeout(60)->post(config('services.ai.url') . '/mcp/tool', [
@@ -28,6 +43,8 @@ class AnalystChatController extends Controller
                 'arguments' => [
                     'tenant_id' => $tenantId,
                     'question' => $validated['question'],
+                    'period' => $validated['period'] ?? '30d',
+                    'ad_account_id' => $adAccountId,
                     'context' => $validated['context'] ?? [],
                 ],
                 'agent_type' => 'bi',
@@ -40,6 +57,8 @@ class AnalystChatController extends Controller
         } catch (\Exception $e) {
             \Log::error('Erro ao consultar analista BI', [
                 'question' => $validated['question'],
+                'period' => $validated['period'] ?? '30d',
+                'ad_account_id' => $adAccountId,
                 'error' => $e->getMessage(),
             ]);
         }

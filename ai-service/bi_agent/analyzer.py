@@ -30,8 +30,9 @@ class DataAnalyzer:
     - IA (performance dos agentes)
     """
     
-    def __init__(self, tenant_id: str):
+    def __init__(self, tenant_id: str, ad_account_id: Optional[str] = None):
         self.tenant_id = tenant_id
+        self.ad_account_id = ad_account_id  # Filtro opcional para conta de anúncios
         self._pool = None
     
     async def _get_pool(self):
@@ -166,20 +167,35 @@ class DataAnalyzer:
         
         try:
             async with pool.acquire() as conn:
-                # Total gasto em campanhas
-                total_spend = await conn.fetchval("""
-                    SELECT COALESCE(SUM(
-                        COALESCE((performance->>'spend')::numeric, 0)
-                    ), 0) FROM ad_campaigns WHERE tenant_id = $1
-                """, self.tenant_id) or 0
+                # Monta query com filtro opcional de ad_account_id
+                if self.ad_account_id:
+                    # Total gasto em campanhas (filtrado por conta)
+                    total_spend = await conn.fetchval("""
+                        SELECT COALESCE(SUM(
+                            COALESCE((performance->>'spend')::numeric, 0)
+                        ), 0) FROM ad_campaigns WHERE tenant_id = $1 AND ad_account_id = $2
+                    """, self.tenant_id, self.ad_account_id) or 0
+                    
+                    # Campanhas ativas (filtrado por conta)
+                    campaigns_active = await conn.fetchval("""
+                        SELECT COUNT(*) FROM ad_campaigns 
+                        WHERE tenant_id = $1 AND status = 'active' AND ad_account_id = $2
+                    """, self.tenant_id, self.ad_account_id)
+                else:
+                    # Total gasto em campanhas (todas as contas)
+                    total_spend = await conn.fetchval("""
+                        SELECT COALESCE(SUM(
+                            COALESCE((performance->>'spend')::numeric, 0)
+                        ), 0) FROM ad_campaigns WHERE tenant_id = $1
+                    """, self.tenant_id) or 0
+                    
+                    # Campanhas ativas (todas as contas)
+                    campaigns_active = await conn.fetchval("""
+                        SELECT COUNT(*) FROM ad_campaigns 
+                        WHERE tenant_id = $1 AND status = 'active'
+                    """, self.tenant_id)
                 
-                # Campanhas ativas
-                campaigns_active = await conn.fetchval("""
-                    SELECT COUNT(*) FROM ad_campaigns 
-                    WHERE tenant_id = $1 AND status = 'active'
-                """, self.tenant_id)
-                
-                # Leads gerados por canal
+                # Leads gerados por canal (não filtrado por conta de anúncios)
                 channel_leads = await conn.fetch("""
                     SELECT channel, COUNT(*) as count FROM leads
                     WHERE tenant_id = $1 AND channel IS NOT NULL
@@ -199,6 +215,7 @@ class DataAnalyzer:
                     "roas": 0,
                     "best_channel": best_channel,
                     "campaigns_active": campaigns_active or 0,
+                    "filtered_by_account": self.ad_account_id is not None,
                 }
         except Exception as e:
             logger.error(f"Erro ao coletar métricas de marketing: {e}")
@@ -475,17 +492,40 @@ class DataAnalyzer:
         
         try:
             async with pool.acquire() as conn:
-                # Campanhas ativas
-                campaigns_query = """
-                    SELECT id, name, status, 
-                           COALESCE((performance->>'spend')::numeric, 0) as spend,
-                           COALESCE((performance->>'leads')::numeric, 0) as leads
-                    FROM ad_campaigns
-                    WHERE tenant_id = $1
-                    ORDER BY created_at DESC
-                    LIMIT 10
-                """
-                campaigns_rows = await conn.fetch(campaigns_query, self.tenant_id)
+                # Monta query com filtro opcional de ad_account_id
+                if self.ad_account_id:
+                    campaigns_query = """
+                        SELECT c.id, c.name, c.status, 
+                               COALESCE((c.performance->>'spend')::numeric, 0) as spend,
+                               COALESCE((c.performance->>'leads')::numeric, 0) as leads,
+                               a.name as account_name
+                        FROM ad_campaigns c
+                        JOIN ad_accounts a ON c.ad_account_id = a.id
+                        WHERE c.tenant_id = $1 AND c.ad_account_id = $2
+                        ORDER BY c.created_at DESC
+                        LIMIT 10
+                    """
+                    campaigns_rows = await conn.fetch(campaigns_query, self.tenant_id, self.ad_account_id)
+                    
+                    # Busca nome da conta selecionada
+                    account_name = await conn.fetchval(
+                        "SELECT name FROM ad_accounts WHERE id = $1",
+                        self.ad_account_id
+                    )
+                else:
+                    campaigns_query = """
+                        SELECT c.id, c.name, c.status, 
+                               COALESCE((c.performance->>'spend')::numeric, 0) as spend,
+                               COALESCE((c.performance->>'leads')::numeric, 0) as leads,
+                               a.name as account_name
+                        FROM ad_campaigns c
+                        LEFT JOIN ad_accounts a ON c.ad_account_id = a.id
+                        WHERE c.tenant_id = $1
+                        ORDER BY c.created_at DESC
+                        LIMIT 10
+                    """
+                    campaigns_rows = await conn.fetch(campaigns_query, self.tenant_id)
+                    account_name = None
                 
                 campaigns = [
                     {
@@ -494,6 +534,7 @@ class DataAnalyzer:
                         "status": row['status'],
                         "spend": float(row['spend']),
                         "leads": int(row['leads']),
+                        "account_name": row.get('account_name'),
                     }
                     for row in campaigns_rows
                 ]
@@ -504,11 +545,14 @@ class DataAnalyzer:
                 
                 recommendations = []
                 if not campaigns:
-                    recommendations.append("Nenhuma campanha cadastrada. Configure o Ads Intelligence.")
+                    if self.ad_account_id:
+                        recommendations.append(f"Nenhuma campanha encontrada para a conta selecionada.")
+                    else:
+                        recommendations.append("Nenhuma campanha cadastrada. Configure o Ads Intelligence.")
                 elif total_spend == 0:
                     recommendations.append("Nenhum gasto registrado nas campanhas.")
                 
-                return {
+                result = {
                     "total_spend": total_spend,
                     "total_leads": total_leads,
                     "cpl": cpl,
@@ -516,6 +560,15 @@ class DataAnalyzer:
                     "campaigns": campaigns[:5],  # Top 5
                     "recommendations": recommendations,
                 }
+                
+                # Adiciona info da conta filtrada se aplicável
+                if self.ad_account_id:
+                    result["filtered_account"] = {
+                        "id": self.ad_account_id,
+                        "name": account_name,
+                    }
+                
+                return result
         except Exception as e:
             logger.error(f"Erro ao analisar marketing: {e}")
             return self._empty_marketing_analysis()
