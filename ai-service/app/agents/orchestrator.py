@@ -58,11 +58,16 @@ class AdsOrchestratorAgent:
         if not settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY não configurada")
         
+        # Configura headers se tiver project_id
+        extra_headers = {}
+        if settings.openai_project_id:
+            extra_headers["OpenAI-Project"] = settings.openai_project_id
+        
         self.llm = ChatOpenAI(
             model="gpt-4o",
             temperature=0,
             api_key=settings.openai_api_key,
-            project=settings.openai_project_id if settings.openai_project_id else None,
+            default_headers=extra_headers if extra_headers else None,
         )
         
         self.tools = self._load_tools()
