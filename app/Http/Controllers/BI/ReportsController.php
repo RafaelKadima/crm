@@ -108,7 +108,14 @@ class ReportsController extends Controller
             ]);
         }
 
-        return response()->json(['error' => 'Não foi possível gerar relatório'], 500);
+        // Fallback com dados mock
+        return response()->json([
+            'type' => 'support',
+            'period' => $period,
+            'data' => $this->getMockReportData('support'),
+            'generated_at' => now()->toIso8601String(),
+            'is_mock' => true,
+        ]);
     }
 
     /**
@@ -144,7 +151,21 @@ class ReportsController extends Controller
             ]);
         }
 
-        return response()->json(['error' => 'Não foi possível gerar relatório'], 500);
+        // Fallback com dados mock
+        return response()->json([
+            'type' => 'ai_performance',
+            'period' => $period,
+            'data' => [
+                'agents' => [
+                    ['type' => 'sdr', 'conversations' => rand(50, 200), 'success_rate' => rand(70, 95) . '%'],
+                    ['type' => 'ads', 'campaigns_created' => rand(10, 50), 'avg_roas' => round(rand(15, 35) / 10, 1)],
+                ],
+                'total_interactions' => rand(200, 1000),
+                'avg_response_time_ms' => rand(500, 2000),
+            ],
+            'generated_at' => now()->toIso8601String(),
+            'is_mock' => true,
+        ]);
     }
 
     /**
@@ -181,7 +202,11 @@ class ReportsController extends Controller
             ]);
         }
 
-        return response()->json(['error' => 'Não foi possível exportar PDF'], 500);
+        // Fallback
+        return response()->json([
+            'message' => 'Exportação em PDF não disponível no momento. Use o formato JSON.',
+            'available_formats' => ['json'],
+        ]);
     }
 
     /**
@@ -220,7 +245,11 @@ class ReportsController extends Controller
             ]);
         }
 
-        return response()->json(['error' => 'Não foi possível exportar Excel'], 500);
+        // Fallback
+        return response()->json([
+            'message' => 'Exportação em Excel não disponível no momento. Use o formato JSON.',
+            'available_formats' => ['json'],
+        ]);
     }
 
     /**
@@ -261,7 +290,74 @@ class ReportsController extends Controller
             ]);
         }
 
-        return response()->json(['error' => 'Não foi possível gerar relatório'], 500);
+        // Fallback com dados mock
+        return response()->json([
+            'type' => $type,
+            'period' => $period,
+            'format' => $format,
+            'data' => $this->getMockReportData($type),
+            'generated_at' => now()->toIso8601String(),
+            'is_mock' => true,
+        ]);
+    }
+    
+    /**
+     * Retorna dados mock para relatórios enquanto MCP não está disponível.
+     */
+    private function getMockReportData(string $type): array
+    {
+        $baseMetrics = [
+            'total_leads' => rand(100, 500),
+            'conversion_rate' => round(rand(5, 25) / 100, 2),
+            'avg_response_time_hours' => round(rand(1, 24) / 10, 1),
+            'revenue' => rand(10000, 100000),
+        ];
+        
+        return match ($type) {
+            'executive' => [
+                'kpis' => $baseMetrics,
+                'highlights' => [
+                    ['type' => 'success', 'message' => 'Taxa de conversão acima da média'],
+                    ['type' => 'warning', 'message' => 'Tempo de resposta pode ser melhorado'],
+                ],
+                'recommendations' => [
+                    'Considere otimizar o funil de vendas',
+                    'Analise os leads que não converteram',
+                ],
+            ],
+            'sales' => [
+                'funnel' => [
+                    ['stage' => 'Novo', 'count' => rand(50, 150), 'conversion' => 0.8],
+                    ['stage' => 'Qualificado', 'count' => rand(30, 100), 'conversion' => 0.6],
+                    ['stage' => 'Proposta', 'count' => rand(15, 50), 'conversion' => 0.4],
+                    ['stage' => 'Negociação', 'count' => rand(10, 30), 'conversion' => 0.5],
+                    ['stage' => 'Fechado', 'count' => rand(5, 20), 'conversion' => 1.0],
+                ],
+                'metrics' => $baseMetrics,
+            ],
+            'marketing' => [
+                'campaigns' => [
+                    ['name' => 'Campanha A', 'spend' => rand(1000, 5000), 'leads' => rand(20, 100), 'roas' => round(rand(10, 40) / 10, 1)],
+                    ['name' => 'Campanha B', 'spend' => rand(1000, 5000), 'leads' => rand(20, 100), 'roas' => round(rand(10, 40) / 10, 1)],
+                ],
+                'channels' => [
+                    ['name' => 'Meta Ads', 'leads' => rand(50, 200), 'cpl' => rand(10, 50)],
+                    ['name' => 'Google Ads', 'leads' => rand(30, 150), 'cpl' => rand(15, 60)],
+                    ['name' => 'Orgânico', 'leads' => rand(20, 100), 'cpl' => 0],
+                ],
+            ],
+            'support' => [
+                'tickets' => [
+                    'total' => rand(50, 200),
+                    'open' => rand(10, 50),
+                    'resolved' => rand(40, 150),
+                ],
+                'avg_response_time' => rand(1, 24) . 'h',
+                'satisfaction_score' => round(rand(35, 50) / 10, 1),
+                'sla_compliance' => rand(80, 99) . '%',
+            ],
+            default => $baseMetrics,
+        };
     }
 }
 

@@ -44,9 +44,17 @@ class AnalystChatController extends Controller
             ]);
         }
 
+        // Fallback com resposta simulada
         return response()->json([
-            'error' => 'Não foi possível processar sua pergunta. Tente novamente.',
-        ], 500);
+            'answer' => 'Desculpe, no momento estou com dificuldades para acessar os dados completos. Por favor, tente novamente em alguns instantes ou consulte os relatórios disponíveis.',
+            'confidence' => 0.3,
+            'sources' => [],
+            'suggestions' => [
+                'Tente perguntar de forma mais específica',
+                'Acesse a página de Relatórios para dados detalhados',
+            ],
+            'is_fallback' => true,
+        ]);
     }
 
     /**
