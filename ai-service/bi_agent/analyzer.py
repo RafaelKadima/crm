@@ -14,8 +14,9 @@ import asyncpg
 
 logger = logging.getLogger(__name__)
 
-# URL do banco de dados
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://crm:crm@postgres:5432/crm")
+# URL do banco de dados (asyncpg usa 'postgresql://' sem '+asyncpg')
+_raw_db_url = os.getenv("DATABASE_URL", "postgresql://crm:crm@postgres:5432/crm")
+DATABASE_URL = _raw_db_url.replace("postgresql+asyncpg://", "postgresql://")
 
 
 class DataAnalyzer:

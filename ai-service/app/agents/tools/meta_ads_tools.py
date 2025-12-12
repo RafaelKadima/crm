@@ -5,6 +5,7 @@ Estas tools são chamadas pelo agente para criar campanhas,
 adsets, ads e fazer upload de criativos.
 """
 
+import asyncio
 import httpx
 import structlog
 from typing import Optional, Dict, Any
@@ -16,6 +17,24 @@ logger = structlog.get_logger()
 
 # URL base da API do Laravel
 LARAVEL_API_URL = None
+
+
+def _run_async(coro):
+    """
+    Executa uma coroutine de forma segura em qualquer contexto.
+    Funciona tanto em threads com event loop quanto sem.
+    """
+    try:
+        # Tenta obter o loop atual
+        loop = asyncio.get_running_loop()
+        # Se estamos em um loop, cria uma task
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(asyncio.run, coro)
+            return future.result(timeout=60)
+    except RuntimeError:
+        # Não há loop rodando, podemos usar asyncio.run()
+        return asyncio.run(coro)
 
 
 def _get_laravel_url() -> str:
@@ -90,8 +109,6 @@ def create_meta_campaign(
     Returns:
         Dict com campaign_id e status da criação
     """
-    import asyncio
-    
     logger.info(
         "Creating Meta campaign",
         tenant_id=tenant_id,
@@ -102,7 +119,7 @@ def create_meta_campaign(
     
     try:
         # Chama endpoint do Laravel que faz a criação no Meta
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api(
                 "POST",
                 "ads/agent/create-campaign",
@@ -164,8 +181,6 @@ def create_meta_adset(
     Returns:
         Dict com adset_id e status
     """
-    import asyncio
-    
     logger.info(
         "Creating Meta adset",
         campaign_id=campaign_id,
@@ -182,7 +197,7 @@ def create_meta_adset(
     
     try:
         # Endpoint interno para criar adset
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api(
                 "POST",
                 "internal/ads/create-adset",
@@ -248,8 +263,6 @@ def create_meta_ad(
     Returns:
         Dict com ad_id e status
     """
-    import asyncio
-    
     logger.info(
         "Creating Meta ad",
         adset_id=adset_id,
@@ -258,7 +271,7 @@ def create_meta_ad(
     )
     
     try:
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api(
                 "POST",
                 "internal/ads/create-ad",
@@ -315,8 +328,6 @@ def upload_creative_to_meta(
     Returns:
         Dict com platform_media_id e status
     """
-    import asyncio
-    
     logger.info(
         "Uploading creative to Meta",
         creative_id=creative_id,
@@ -324,7 +335,7 @@ def upload_creative_to_meta(
     )
     
     try:
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api(
                 "POST",
                 "internal/ads/upload-creative",
@@ -368,10 +379,8 @@ def get_meta_campaign_status(
     Returns:
         Dict com status da campanha
     """
-    import asyncio
-    
     try:
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             _call_laravel_api(
                 "GET",
                 f"ads/campaigns/{campaign_id}",
