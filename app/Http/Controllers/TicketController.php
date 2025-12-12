@@ -32,9 +32,27 @@ class TicketController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $user = auth()->user();
-        $query = Ticket::with(['lead', 'contact', 'channel', 'assignedUser'])
-            ->withCount('messages');
+        // #region agent log
+        $debugLog = function($msg, $data = []) {
+            $payload = json_encode(['location' => 'TicketController:index', 'message' => $msg, 'data' => $data, 'timestamp' => round(microtime(true) * 1000), 'sessionId' => 'debug-session', 'hypothesisId' => 'H1-H4']);
+            file_put_contents(base_path('.cursor/debug.log'), $payload . "\n", FILE_APPEND);
+        };
+        $debugLog('Starting index', ['request_params' => $request->all()]);
+        // #endregion
+
+        try {
+            $user = auth()->user();
+            
+            // #region agent log
+            $debugLog('User authenticated', ['user_id' => $user->id, 'role' => $user->role]);
+            // #endregion
+
+            $query = Ticket::with(['lead', 'contact', 'channel', 'assignedUser', 'lastMessage'])
+                ->withCount('messages');
+
+            // #region agent log
+            $debugLog('Query built with eager loading', ['with' => ['lead', 'contact', 'channel', 'assignedUser', 'lastMessage']]);
+            // #endregion
 
         // Aplica filtro baseado no role do usuário
         if ($user->isAdmin()) {
@@ -86,9 +104,23 @@ class TicketController extends Controller
 
         $query->orderByDesc('created_at');
 
+        // #region agent log
+        $debugLog('Executing paginate query');
+        // #endregion
+
         $tickets = $query->paginate($request->get('per_page', 15));
 
+        // #region agent log
+        $debugLog('Query executed successfully', ['tickets_count' => count($tickets->items())]);
+        // #endregion
+
         return response()->json($tickets);
+        } catch (\Exception $e) {
+            // #region agent log
+            $debugLog('ERROR in index', ['error' => $e->getMessage(), 'trace' => substr($e->getTraceAsString(), 0, 500)]);
+            // #endregion
+            throw $e;
+        }
     }
 
     /**
