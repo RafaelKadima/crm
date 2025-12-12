@@ -21,6 +21,7 @@ import { useAuthStore } from '@/store/authStore'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer'
 import api from '@/api/axios'
 
 interface ToolStep {
@@ -207,7 +208,11 @@ export default function AdsAgentChat() {
                         ? 'bg-blue-500 text-white'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
                     )}>
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      {message.role === 'assistant' ? (
+                        <MarkdownRenderer content={message.content} />
+                      ) : (
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      )}
                     </div>
                     
                     {/* Steps (para mensagens do assistant) */}
