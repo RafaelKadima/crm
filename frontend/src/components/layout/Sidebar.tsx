@@ -34,6 +34,10 @@ import {
   Zap,
   Lightbulb,
   ImageIcon,
+  PieChart,
+  Brain,
+  ClipboardCheck,
+  FileSpreadsheet,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -131,6 +135,17 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Bot, label: 'SDR IA', path: '/sdr', feature: 'sdr_ia', permission: 'sdr_ia.view' },
       { icon: BarChart3, label: 'Relatórios', path: '/reports', permissions: ['reports.view_own', 'reports.view_all'] },
+    ],
+  },
+  {
+    id: 'bi',
+    label: 'BI Agent',
+    icon: PieChart,
+    items: [
+      { icon: PieChart, label: 'Dashboard BI', path: '/bi', adminOnly: true },
+      { icon: Brain, label: '🤖 Analista IA', path: '/bi/analyst', adminOnly: true },
+      { icon: ClipboardCheck, label: '📋 Ações Pendentes', path: '/bi/actions', adminOnly: true },
+      { icon: FileSpreadsheet, label: '📊 Relatórios', path: '/bi/reports', adminOnly: true },
     ],
   },
   {
