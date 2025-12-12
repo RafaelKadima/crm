@@ -33,7 +33,7 @@ class TicketController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = auth()->user();
-        $query = Ticket::with(['lead', 'contact', 'channel', 'assignedUser', 'lastMessage'])
+        $query = Ticket::with(['lead', 'contact', 'channel', 'assignedUser'])
             ->withCount('messages');
 
         // Aplica filtro baseado no role do usuário
