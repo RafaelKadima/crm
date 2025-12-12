@@ -261,7 +261,49 @@ class ReportController extends Controller
 
         $tenantId = auth()->user()->tenant_id;
 
-        // Logs de atribuição
+        // Query base de leads
+        $baseQuery = Lead::where('tenant_id', $tenantId);
+
+        if ($request->date_from) {
+            $baseQuery->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->date_to) {
+            $baseQuery->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Leads por canal
+        $leadsByChannel = (clone $baseQuery)
+            ->select('channel_id', DB::raw('COUNT(*) as leads_count'))
+            ->whereNotNull('channel_id')
+            ->groupBy('channel_id')
+            ->get()
+            ->map(function ($item) {
+                $channel = \App\Models\Channel::find($item->channel_id);
+                return [
+                    'channel_id' => $item->channel_id,
+                    'channel_name' => $channel->name ?? 'Desconhecido',
+                    'channel_type' => $channel->type ?? 'outros',
+                    'leads_count' => $item->leads_count,
+                ];
+            });
+
+        // Leads por vendedor
+        $leadsByOwner = (clone $baseQuery)
+            ->select('owner_id', DB::raw('COUNT(*) as leads_count'))
+            ->whereNotNull('owner_id')
+            ->groupBy('owner_id')
+            ->get()
+            ->map(function ($item) {
+                $owner = \App\Models\User::find($item->owner_id);
+                return [
+                    'user_id' => $item->owner_id,
+                    'user_name' => $owner->name ?? 'N/A',
+                    'leads_count' => $item->leads_count,
+                ];
+            });
+
+        // Logs de atribuição Round-Robin
         $logsQuery = LeadAssignmentLog::where('tenant_id', $tenantId)
             ->with('user:id,name', 'channel:id,name');
 
@@ -275,45 +317,18 @@ class ReportController extends Controller
         $distributionByUser = $logs->groupBy('user_id')->map(function ($group) {
             $user = $group->first()->user;
             return [
-                'user_id' => $user->id,
-                'user_name' => $user->name,
+                'user_id' => $user?->id,
+                'user_name' => $user?->name ?? 'N/A',
                 'channels_count' => $group->count(),
                 'last_assigned_at' => $group->max('last_assigned_at'),
             ];
         })->values();
 
-        // Leads por vendedor (período)
-        $leadsQuery = Lead::where('tenant_id', $tenantId)
-            ->whereNotNull('owner_id');
-
-        if ($request->channel_id) {
-            $leadsQuery->where('channel_id', $request->channel_id);
-        }
-
-        if ($request->date_from) {
-            $leadsQuery->whereDate('created_at', '>=', $request->date_from);
-        }
-
-        if ($request->date_to) {
-            $leadsQuery->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        $leadsByOwner = $leadsQuery
-            ->select('owner_id', DB::raw('COUNT(*) as leads_count'))
-            ->groupBy('owner_id')
-            ->with('owner:id,name')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'user_id' => $item->owner_id,
-                    'user_name' => $item->owner->name ?? 'N/A',
-                    'leads_count' => $item->leads_count,
-                ];
-            });
-
         return response()->json([
+            'by_channel' => $leadsByChannel,
+            'by_owner' => $leadsByOwner,
             'distribution_logs' => $distributionByUser,
-            'leads_by_owner' => $leadsByOwner,
+            'leads_by_owner' => $leadsByOwner, // Mantém por compatibilidade
         ]);
     }
 }
