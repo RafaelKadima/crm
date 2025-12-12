@@ -208,13 +208,20 @@ class TicketController extends Controller
         }
 
         $newUser = User::find($validated['user_id']);
+        $previousOwnerId = $lead->owner_id;
         $result = $this->transferService->transferToUser($lead, $newUser, auth()->user());
 
         $ticket->load(['lead.queue', 'lead.owner', 'contact', 'channel', 'assignedUser']);
 
+        // 🔥 Broadcast para atualização em tempo real
+        $lead->refresh()->load(['contact', 'owner', 'stage', 'channel']);
+        broadcast(new \App\Events\LeadUpdated($lead, 'transferred'))->toOthers();
+
         return response()->json([
             'message' => $result['message'],
             'ticket' => $ticket,
+            'previous_owner_id' => $previousOwnerId,
+            'new_owner' => $newUser->only(['id', 'name']),
         ]);
     }
 
@@ -235,16 +242,22 @@ class TicketController extends Controller
 
         $newQueue = Queue::find($validated['queue_id']);
         $newUser = isset($validated['user_id']) ? User::find($validated['user_id']) : null;
+        $previousOwnerId = $lead->owner_id;
 
         $result = $this->transferService->transferToQueue($lead, $newQueue, $newUser, auth()->user());
 
         $ticket->load(['lead.queue', 'lead.owner', 'contact', 'channel', 'assignedUser']);
+
+        // 🔥 Broadcast para atualização em tempo real
+        $lead->refresh()->load(['contact', 'owner', 'stage', 'channel']);
+        broadcast(new \App\Events\LeadUpdated($lead, 'transferred'))->toOthers();
 
         return response()->json([
             'message' => $result['message'],
             'ticket' => $ticket,
             'queue' => $result['queue'],
             'user' => $result['user'],
+            'previous_owner_id' => $previousOwnerId,
         ]);
     }
 

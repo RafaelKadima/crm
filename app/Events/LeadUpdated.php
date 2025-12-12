@@ -36,6 +36,7 @@ class LeadUpdated implements ShouldBroadcastNow
     {
         return [
             new PrivateChannel("tenant.{$this->lead->tenant_id}"),
+            new PrivateChannel("lead.{$this->lead->id}"), // 🔥 Para o chat modal do lead
         ];
     }
 

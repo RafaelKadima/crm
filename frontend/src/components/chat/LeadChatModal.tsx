@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Send,
   Phone,
@@ -28,6 +28,9 @@ import {
   Bot,
   UserRound,
   MessageSquareText,
+  X,
+  Sparkles,
+  UserCheck,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
@@ -46,6 +49,8 @@ import { MessageAttachment } from '@/components/chat/MessageAttachment'
 import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import { useLeadMessages } from '@/hooks/useWebSocket'
 import { useReopenTicket } from '@/hooks/useTicketActions'
+import { notify } from '@/components/ui/FuturisticNotification'
+import { useAuth } from '@/hooks/useAuth'
 import type { Lead, PipelineStage } from '@/types'
 import api from '@/api/axios'
 
@@ -91,6 +96,7 @@ const channelIcons: Record<string, typeof MessageSquare> = {
 
 export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageChange, forceClosingForm = false, onLeadDeleted }: LeadChatModalProps) {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [ticketId, setTicketId] = useState<string | null>(null)
@@ -110,11 +116,59 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   const [iaEnabled, setIaEnabled] = useState(true)
   const [isTogglingIa, setIsTogglingIa] = useState(false)
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
+  const [suggestion, setSuggestion] = useState<{
+    action: string
+    explanation: string
+    confidence?: number
+  } | null>(null)
+  // 🔥 Estado para efeito de transferência em tempo real
+  const [transferEffect, setTransferEffect] = useState<{
+    show: boolean
+    newOwnerName?: string
+    isMyLead?: boolean
+  }>({ show: false })
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   
   const reopenTicket = useReopenTicket()
+
+  // Query para buscar o Lead Score via MCP
+  const { data: leadScore, isLoading: isLoadingScore } = useQuery({
+    queryKey: ['lead-score', lead?.id],
+    queryFn: async () => {
+      const response = await api.get(`/leads/${lead?.id}/score`)
+      return response.data
+    },
+    enabled: !!lead?.id && open,
+    staleTime: 60000, // Cache por 1 minuto
+    retry: 1,
+  })
+
+  // Mutation para sugerir ação via MCP
+  const suggestActionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post(`/leads/${lead?.id}/suggest-action`)
+      return response.data
+    },
+    onSuccess: (data) => {
+      setSuggestion(data)
+    },
+  })
+
+  // Função auxiliar para formatar nome da ação
+  const formatAction = (action: string) => {
+    const actions: Record<string, string> = {
+      'RESPOND_NORMAL': 'Responder normalmente',
+      'QUALIFY': 'Qualificar lead',
+      'SCHEDULE': 'Agendar reunião',
+      'ESCALATE': 'Escalar para humano',
+      'SEND_CONTENT': 'Enviar conteúdo',
+      'WAIT': 'Aguardar resposta',
+    }
+    return actions[action] || action
+  }
 
   const ChannelIcon = channelIcons[lead?.channel?.type || ''] || MessageSquare
   
@@ -156,8 +210,47 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
     })
   }, [])
 
-  // 🔥 WebSocket: escuta mensagens do lead em tempo real
-  useLeadMessages(open ? lead?.id || null : null, handleNewMessage)
+  // 🔥 WebSocket: callback para reagir à transferência do lead em tempo real
+  const handleLeadUpdated = useCallback((data: any) => {
+    if (data.action === 'transferred') {
+      const newOwner = data.lead?.owner
+      const newOwnerId = data.lead?.owner_id
+      const isMyLead = newOwnerId === user?.id
+      
+      // Atualiza o lead local com os novos dados
+      setCurrentLead((prev) => prev ? { ...prev, ...data.lead } : null)
+      
+      // Mostra efeito visual de transferência
+      setTransferEffect({
+        show: true,
+        newOwnerName: newOwner?.name || 'outro usuário',
+        isMyLead,
+      })
+      
+      // Notificação toast
+      if (isMyLead) {
+        notify('success', {
+          title: '🎯 Lead recebido!',
+          description: `${data.lead?.contact?.name || 'Lead'} foi transferido para você`,
+          duration: 5000,
+        })
+      } else {
+        notify('info', {
+          title: '↗️ Lead transferido',
+          description: `${data.lead?.contact?.name || 'Lead'} foi transferido para ${newOwner?.name || 'outro usuário'}`,
+          duration: 5000,
+        })
+      }
+      
+      // Esconde o efeito após 3 segundos
+      setTimeout(() => {
+        setTransferEffect({ show: false })
+      }, 3000)
+    }
+  }, [user?.id])
+
+  // 🔥 WebSocket: escuta mensagens e atualizações do lead em tempo real
+  useLeadMessages(open ? lead?.id || null : null, handleNewMessage, handleLeadUpdated)
 
   // Check if lead is in final/closing stage
   const isInClosingStage = currentStage?.is_final || currentStage?.is_won || 
@@ -480,7 +573,32 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       try {
         const response = await api.get(`/leads/${lead.id}`)
         if (response.data) {
-          setCurrentLead(response.data)
+          const newLead = response.data
+          setCurrentLead(newLead)
+          
+          // Mostra efeito visual de sucesso na transferência
+          const newOwnerName = newLead.owner?.name || 'outro usuário'
+          setTransferEffect({
+            show: true,
+            newOwnerName,
+            isMyLead: false, // Eu transferi, então não é mais meu
+          })
+          
+          // Notificação de sucesso
+          notify('success', {
+            title: '✅ Transferência concluída!',
+            description: `Lead transferido para ${newOwnerName}`,
+            duration: 4000,
+          })
+          
+          // Esconde o efeito e fecha o modal após um tempo
+          setTimeout(() => {
+            setTransferEffect({ show: false })
+            // Fecha o modal após mostrar o feedback
+            setTimeout(() => {
+              onOpenChange(false)
+            }, 500)
+          }, 2000)
         }
       } catch (error) {
         console.error('Erro ao recarregar lead:', error)
@@ -503,7 +621,81 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl" className="p-0 flex h-[85vh] max-h-[700px]">
+      <DialogContent size="xl" className="p-0 flex h-[85vh] max-h-[700px] relative overflow-hidden">
+        {/* 🔥 Efeito visual de transferência em tempo real */}
+        <AnimatePresence>
+          {transferEffect.show && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: -20 }}
+                transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                className={cn(
+                  "p-8 rounded-2xl border shadow-2xl text-center max-w-sm mx-4",
+                  transferEffect.isMyLead 
+                    ? "bg-gradient-to-br from-emerald-950 to-green-900/80 border-emerald-500/50" 
+                    : "bg-gradient-to-br from-blue-950 to-indigo-900/80 border-blue-500/50"
+                )}
+              >
+                {/* Ícone animado */}
+                <motion.div
+                  initial={{ rotate: -180, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ type: 'spring', delay: 0.1, damping: 15 }}
+                  className={cn(
+                    "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4",
+                    transferEffect.isMyLead 
+                      ? "bg-emerald-500/20 text-emerald-400" 
+                      : "bg-blue-500/20 text-blue-400"
+                  )}
+                >
+                  <UserCheck className="w-10 h-10" />
+                </motion.div>
+
+                {/* Texto */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <h3 className={cn(
+                    "text-xl font-bold mb-2",
+                    transferEffect.isMyLead ? "text-emerald-300" : "text-blue-300"
+                  )}>
+                    {transferEffect.isMyLead ? '🎯 Lead Recebido!' : '↗️ Lead Transferido'}
+                  </h3>
+                  <p className="text-white/80 text-sm">
+                    {transferEffect.isMyLead 
+                      ? 'Este lead foi transferido para você'
+                      : `Transferido para ${transferEffect.newOwnerName}`
+                    }
+                  </p>
+                </motion.div>
+
+                {/* Efeito de brilho pulsante */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className={cn(
+                    "absolute inset-0 rounded-2xl opacity-20",
+                    transferEffect.isMyLead 
+                      ? "bg-gradient-to-r from-emerald-500 to-green-500" 
+                      : "bg-gradient-to-r from-blue-500 to-indigo-500"
+                  )}
+                  style={{ filter: 'blur(20px)', zIndex: -1 }}
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Left Panel - Lead Info */}
         <div className="w-80 border-r bg-muted/30 flex flex-col">
           {/* Contact Header */}
@@ -788,7 +980,27 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                     <ChannelIcon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-medium">Conversa via {lead.channel?.name || 'Chat'}</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">Conversa via {lead.channel?.name || 'Chat'}</h4>
+                      {/* Lead Score Badge */}
+                      {leadScore && (
+                        <div className={cn(
+                          "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
+                          leadScore.score >= 70 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                          leadScore.score >= 40 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                          "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        )}>
+                          <Sparkles className="h-3 w-3" />
+                          {Math.round(leadScore.score)}% conversão
+                        </div>
+                      )}
+                      {isLoadingScore && (
+                        <div className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Analisando...
+                        </div>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {messages.length} mensagens
                     </p>
@@ -1040,7 +1252,55 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
               {/* Message Input */}
               <div className="p-4 border-t bg-background relative">
+                {/* Sugestão da IA - acima do input */}
+                {suggestion && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-3 p-3 rounded-lg bg-purple-50 border border-purple-200 dark:bg-purple-900/20 dark:border-purple-800"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bot className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                          Sugestão: {formatAction(suggestion.action)}
+                        </span>
+                        {suggestion.confidence && (
+                          <span className="text-xs text-purple-500">
+                            ({Math.round(suggestion.confidence * 100)}% confiança)
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setSuggestion(null)}
+                        className="text-purple-400 hover:text-purple-600 dark:hover:text-purple-300"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <p className="mt-1 text-sm text-purple-600 dark:text-purple-400">
+                      {suggestion.explanation}
+                    </p>
+                  </motion.div>
+                )}
+                
                 <div className="flex items-center gap-2">
+                  {/* Botão Sugerir Ação via MCP */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => suggestActionMutation.mutate()}
+                    disabled={suggestActionMutation.isPending}
+                    title="Sugerir próxima ação (IA)"
+                  >
+                    {suggestActionMutation.isPending ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+                    ) : (
+                      <Bot className="h-5 w-5 text-purple-500" />
+                    )}
+                  </Button>
+                  
                   {/* File upload button */}
                   <FileUploadButton
                     ticketId={ticketId}
@@ -1069,6 +1329,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
                       className="pr-12"
+                      spellCheck={true}
+                      lang="pt-BR"
                     />
                     <Button
                       variant="ghost"
