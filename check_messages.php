@@ -30,14 +30,14 @@ foreach ($tickets as $t) {
     // Buscar mensagens deste ticket
     $messages = DB::table('ticket_messages')
         ->where('ticket_id', $t->ticket_id)
-        ->select('id', 'direction', 'content', 'created_at')
+        ->select('id', 'direction', 'message', 'created_at')
         ->orderBy('created_at')
         ->get();
     
     echo "  Mensagens ({$messages->count()}):\n";
     foreach ($messages as $m) {
         $direction = $m->direction;
-        $content = substr($m->content ?? '', 0, 50);
+        $content = substr($m->message ?? '', 0, 50);
         echo "    - [{$direction}] {$content}...\n";
     }
     echo "\n";
