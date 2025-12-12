@@ -60,7 +60,7 @@ export default function AdsAgentChat() {
   // Mutation para enviar comando
   const chatMutation = useMutation({
     mutationFn: async (command: string) => {
-      const response = await api.post('/orchestrator/chat', {
+      const response = await api.post('/ai/orchestrator/chat', {
         message: command,
         tenant_id: user?.tenant_id,
         ad_account_id: null, // Pode vir de um selector
@@ -109,7 +109,7 @@ export default function AdsAgentChat() {
 
   const clearChat = async () => {
     try {
-      await api.post(`/orchestrator/clear-history?tenant_id=${user?.tenant_id}`)
+      await api.post(`/ai/orchestrator/clear-history?tenant_id=${user?.tenant_id}`)
       setMessages([])
       toast.success('Histórico limpo')
     } catch {
