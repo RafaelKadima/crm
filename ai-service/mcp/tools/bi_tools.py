@@ -1003,3 +1003,248 @@ BI_TOOLS = [
     get_proactive_insights,
 ]
 
+
+def register_tools(server) -> None:
+    """Registra todas as ferramentas de BI no servidor MCP."""
+    from mcp.server import ToolParameter
+    
+    # =====================================================
+    # ANÁLISE DE DADOS
+    # =====================================================
+    server.register_tool(
+        name="run_daily_analysis",
+        description="Executa análise completa do dia. Coleta métricas, detecta anomalias, gera insights e sugere ações.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+        ],
+        handler=run_daily_analysis,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="analyze_sales_funnel",
+        description="Analisa funil de vendas com gargalos e oportunidades de melhoria.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="period", type="string", description="Período: 7d, 30d, 90d", required=False, default="30d"),
+            ToolParameter(name="pipeline_id", type="string", description="ID do pipeline (opcional)", required=False),
+        ],
+        handler=analyze_sales_funnel,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="analyze_support_metrics",
+        description="Analisa métricas de atendimento: tempo de resposta, SLA, satisfação.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="period", type="string", description="Período: 7d, 30d, 90d", required=False, default="30d"),
+        ],
+        handler=analyze_support_metrics,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="analyze_marketing_performance",
+        description="Analisa performance de marketing: ROAS, CPL, atribuição por canal.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="period", type="string", description="Período: 7d, 30d, 90d", required=False, default="30d"),
+        ],
+        handler=analyze_marketing_performance,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="get_executive_summary",
+        description="Gera resumo executivo com KPIs, alertas e recomendações.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="period", type="string", description="Período: 7d, 30d, 90d", required=False, default="30d"),
+        ],
+        handler=get_executive_summary,
+        category="bi"
+    )
+    
+    # =====================================================
+    # PREDIÇÕES ML
+    # =====================================================
+    server.register_tool(
+        name="predict_revenue",
+        description="Prediz receita para os próximos meses usando modelos ML.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="months", type="number", description="Quantidade de meses para prever", required=False, default=3),
+        ],
+        handler=predict_revenue,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="predict_lead_volume",
+        description="Prediz volume de leads esperado.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="days", type="number", description="Dias para prever", required=False, default=7),
+        ],
+        handler=predict_lead_volume,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="predict_churn_risk",
+        description="Identifica leads/clientes com risco de churn.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+        ],
+        handler=predict_churn_risk,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="detect_anomalies",
+        description="Detecta anomalias em métricas específicas.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="metric", type="string", description="Métrica para analisar: conversion_rate, response_time, roas, etc"),
+        ],
+        handler=detect_anomalies,
+        category="bi"
+    )
+    
+    # =====================================================
+    # COORDENAÇÃO DE AGENTES
+    # =====================================================
+    server.register_tool(
+        name="suggest_sdr_improvement",
+        description="Sugere melhoria para o agente SDR baseado em análise.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="insight", type="object", description="Insight que gerou a sugestão"),
+        ],
+        handler=suggest_sdr_improvement,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="suggest_ads_optimization",
+        description="Sugere otimização para o agente de Ads baseado em análise.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="insight", type="object", description="Insight que gerou a sugestão"),
+        ],
+        handler=suggest_ads_optimization,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="create_action_for_approval",
+        description="Cria ação na fila de aprovação do admin.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="target_agent", type="string", description="Agente alvo: sdr, ads, knowledge"),
+            ToolParameter(name="action_type", type="string", description="Tipo de ação"),
+            ToolParameter(name="title", type="string", description="Título da ação"),
+            ToolParameter(name="description", type="string", description="Descrição detalhada"),
+            ToolParameter(name="rationale", type="string", description="Justificativa"),
+            ToolParameter(name="payload", type="object", description="Dados para executar a ação"),
+            ToolParameter(name="priority", type="string", description="Prioridade: low, medium, high, critical", required=False, default="medium"),
+            ToolParameter(name="expected_impact", type="object", description="Impacto esperado", required=False),
+        ],
+        handler=create_action_for_approval,
+        category="bi"
+    )
+    
+    # =====================================================
+    # GERAÇÃO DE CONHECIMENTO
+    # =====================================================
+    server.register_tool(
+        name="generate_insight",
+        description="Gera insight a partir de dados analisados.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="category", type="string", description="Categoria: sales, support, marketing"),
+            ToolParameter(name="data", type="object", description="Dados que suportam o insight"),
+        ],
+        handler=generate_insight,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="add_to_knowledge_base",
+        description="Adiciona conhecimento gerado ao RAG.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="content", type="string", description="Conteúdo do conhecimento"),
+            ToolParameter(name="knowledge_type", type="string", description="Tipo: insight, pattern, best_practice, warning"),
+            ToolParameter(name="category", type="string", description="Categoria: sales, support, marketing"),
+            ToolParameter(name="title", type="string", description="Título", required=False),
+            ToolParameter(name="confidence", type="number", description="Confiança (0-1)", required=False, default=0.7),
+        ],
+        handler=add_to_knowledge_base,
+        category="bi"
+    )
+    
+    # =====================================================
+    # RELATÓRIOS
+    # =====================================================
+    server.register_tool(
+        name="generate_executive_report",
+        description="Gera relatório executivo completo.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="period", type="string", description="Período: 7d, 30d, 90d", required=False, default="30d"),
+        ],
+        handler=generate_executive_report,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="export_report_pdf",
+        description="Exporta relatório em PDF.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="report_type", type="string", description="Tipo: executive, sales, marketing, support"),
+            ToolParameter(name="period", type="string", description="Período", required=False, default="30d"),
+        ],
+        handler=export_report_pdf,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="export_report_excel",
+        description="Exporta dados em Excel.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="data_type", type="string", description="Tipo de dados: leads, campaigns, tickets"),
+            ToolParameter(name="period", type="string", description="Período", required=False, default="30d"),
+        ],
+        handler=export_report_excel,
+        category="bi"
+    )
+    
+    # =====================================================
+    # CHAT COM ANALISTA
+    # =====================================================
+    server.register_tool(
+        name="ask_analyst",
+        description="Faz pergunta ao analista de BI. Responde sobre métricas, tendências e recomendações.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+            ToolParameter(name="question", type="string", description="Pergunta do usuário"),
+            ToolParameter(name="context", type="object", description="Contexto adicional", required=False),
+        ],
+        handler=ask_analyst,
+        category="bi"
+    )
+    
+    server.register_tool(
+        name="get_proactive_insights",
+        description="Obtém insights proativos gerados pelo BI Agent.",
+        parameters=[
+            ToolParameter(name="tenant_id", type="string", description="ID do tenant"),
+        ],
+        handler=get_proactive_insights,
+        category="bi"
+    )
+

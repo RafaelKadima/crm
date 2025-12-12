@@ -8,6 +8,7 @@ Cada módulo implementa ferramentas de um domínio específico:
 - ml_tools: Ferramentas de Machine Learning
 - rl_tools: Ferramentas de Reinforcement Learning
 - memory_tools: Ferramentas de Memória
+- bi_tools: Ferramentas do BI Agent
 """
 
 from mcp.tools import sdr_tools
@@ -16,6 +17,7 @@ from mcp.tools import rag_tools
 from mcp.tools import ml_tools
 from mcp.tools import rl_tools
 from mcp.tools import memory_tools
+from mcp.tools import bi_tools
 
 __all__ = [
     'sdr_tools',
@@ -24,5 +26,6 @@ __all__ = [
     'ml_tools',
     'rl_tools',
     'memory_tools',
+    'bi_tools',
 ]
 

@@ -465,7 +465,8 @@ def _register_all_tools(server: CRMMCPServer) -> None:
         rag_tools,
         ml_tools,
         rl_tools,
-        memory_tools
+        memory_tools,
+        bi_tools
     )
     
     # Registra ferramentas de cada módulo
@@ -475,6 +476,7 @@ def _register_all_tools(server: CRMMCPServer) -> None:
     ml_tools.register_tools(server)
     rl_tools.register_tools(server)
     memory_tools.register_tools(server)
+    bi_tools.register_tools(server)
     
     logger.info("All MCP tools registered",
         total_tools=len(server._tools),
