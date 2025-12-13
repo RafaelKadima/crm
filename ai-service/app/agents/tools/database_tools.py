@@ -370,7 +370,8 @@ def save_campaign_to_database(
     platform_campaign_id: str
 ) -> Dict[str, Any]:
     """
-    Salva ou atualiza uma campanha criada no banco de dados.
+    Salva ou atualiza uma campanha criada pelo AGENTE no banco de dados.
+    Marca automaticamente created_by='agent' para rastreamento de origem.
     
     Args:
         tenant_id: ID do tenant
@@ -390,11 +391,12 @@ def save_campaign_to_database(
         result = _run_async(
             _call_laravel_api(
                 "POST",
-                "internal/ads/save-campaign",
+                "ads/save-campaign",
                 tenant_id,
                 {
                     **campaign_data,
                     "platform_campaign_id": platform_campaign_id,
+                    "created_by": "agent",  # Marca como criada pelo agente IA
                 }
             )
         )
@@ -402,7 +404,8 @@ def save_campaign_to_database(
         return {
             "success": True,
             "campaign_id": result.get("campaign", {}).get("id"),
-            "message": "✅ Campanha salva no banco de dados."
+            "created_by": "agent",
+            "message": "✅ Campanha salva no banco de dados (origem: agente IA)."
         }
         
     except Exception as e:
@@ -505,7 +508,8 @@ def update_copy_status(
 def list_ad_campaigns(
     tenant_id: str,
     ad_account_id: str = None,
-    status: str = None
+    status: str = None,
+    created_by: str = None
 ) -> Dict[str, Any]:
     """
     Lista campanhas de anúncios do banco de dados local.
@@ -514,29 +518,34 @@ def list_ad_campaigns(
         tenant_id: ID do tenant
         ad_account_id: ID da conta de anúncios (opcional, filtra por conta)
         status: Status da campanha (ACTIVE, PAUSED, etc) (opcional)
+        created_by: Filtro por origem (agent, human, external) (opcional)
         
     Returns:
-        Dict com lista de campanhas
+        Dict com lista de campanhas e estatísticas por origem
     """
     logger.info(
         'Listing ad campaigns',
         tenant_id=tenant_id,
         ad_account_id=ad_account_id,
-        status=status
+        status=status,
+        created_by=created_by
     )
     
     try:
-        params = {'tenant_id': tenant_id}
+        params = {}
         if ad_account_id:
             params['ad_account_id'] = ad_account_id
         if status:
             params['status'] = status
+        if created_by:
+            params['created_by'] = created_by
             
         result = _run_async(
-            _call_laravel_api('GET', 'internal/ads/campaigns', tenant_id, params)
+            _call_laravel_api('GET', 'ads/campaigns', tenant_id, params)
         )
         
-        campaigns = result.get('data', result.get('campaigns', []))
+        campaigns = result.get('campaigns', result.get('data', []))
+        by_origin = result.get('by_origin', {})
         
         # Formata resposta
         formatted = []
@@ -549,6 +558,7 @@ def list_ad_campaigns(
                 'spend': c.get('spend', 0),
                 'impressions': c.get('impressions', 0),
                 'clicks': c.get('clicks', 0),
+                'created_by': c.get('created_by', 'external'),
             })
         
         return {
@@ -556,7 +566,8 @@ def list_ad_campaigns(
             'tenant_id': tenant_id,
             'total_campaigns': len(formatted),
             'campaigns': formatted,
-            'message': f'✅ Encontradas {len(formatted)} campanha(s).'
+            'by_origin': by_origin,
+            'message': f'✅ Encontradas {len(formatted)} campanha(s). Agente: {by_origin.get("agent", 0)}, Humano: {by_origin.get("human", 0)}, Externo: {by_origin.get("external", 0)}'
         }
         
     except Exception as e:
@@ -564,4 +575,89 @@ def list_ad_campaigns(
         return {
             'success': False,
             'error': str(e),
+        }
+
+
+@tool
+def sync_and_list_campaigns(
+    tenant_id: str,
+    ad_account_id: str
+) -> Dict[str, Any]:
+    """
+    SINCRONIZA campanhas do Meta Ads e retorna lista atualizada.
+    Use esta tool para ter acesso a TODAS as campanhas, não só as criadas pelo agente.
+    
+    Esta tool:
+    1. Sincroniza campanhas do Meta Ads Manager para o banco local
+    2. Preserva a origem (created_by) de campanhas existentes
+    3. Marca novas campanhas como 'external'
+    4. Retorna lista completa com estatísticas por origem
+    
+    Args:
+        tenant_id: ID do tenant
+        ad_account_id: ID da conta de anúncios no CRM (obrigatório)
+        
+    Returns:
+        Dict com campanhas sincronizadas, total e estatísticas por origem (agent/human/external)
+    """
+    logger.info(
+        'Syncing and listing campaigns',
+        tenant_id=tenant_id,
+        ad_account_id=ad_account_id
+    )
+    
+    try:
+        result = _run_async(
+            _call_laravel_api(
+                'POST',
+                'ads/campaigns/sync',
+                tenant_id,
+                {'ad_account_id': ad_account_id}
+            )
+        )
+        
+        campaigns = result.get('campaigns', [])
+        by_origin = result.get('by_origin', {})
+        synced = result.get('synced', 0)
+        
+        # Formata resposta
+        formatted = []
+        for c in campaigns:
+            formatted.append({
+                'id': c.get('id'),
+                'name': c.get('name'),
+                'status': c.get('status'),
+                'objective': c.get('objective'),
+                'spend': c.get('spend', 0),
+                'impressions': c.get('impressions', 0),
+                'clicks': c.get('clicks', 0),
+                'ctr': c.get('ctr', 0),
+                'cpc': c.get('cpc', 0),
+                'roas': c.get('roas', 0),
+                'created_by': c.get('created_by', 'external'),
+            })
+        
+        # Contadores
+        active_count = len([c for c in formatted if c['status'] == 'ACTIVE'])
+        paused_count = len([c for c in formatted if c['status'] == 'PAUSED'])
+        
+        return {
+            'success': True,
+            'tenant_id': tenant_id,
+            'ad_account_id': ad_account_id,
+            'synced_from_meta': synced,
+            'total_campaigns': len(formatted),
+            'active_campaigns': active_count,
+            'paused_campaigns': paused_count,
+            'campaigns': formatted,
+            'by_origin': by_origin,
+            'message': f'✅ Sincronizado! {synced} campanhas do Meta. Total: {len(formatted)} (Ativas: {active_count}, Pausadas: {paused_count}). Por origem - Agente IA: {by_origin.get("agent", 0)}, Humano: {by_origin.get("human", 0)}, Externo: {by_origin.get("external", 0)}'
+        }
+        
+    except Exception as e:
+        logger.error('Failed to sync and list campaigns', error=str(e))
+        return {
+            'success': False,
+            'error': str(e),
+            'message': f'❌ Erro ao sincronizar campanhas: {str(e)}'
         }

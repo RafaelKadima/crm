@@ -267,13 +267,87 @@ class AdCampaignController extends Controller
             $query->where('status', $request->input('status'));
         }
 
+        // Filtro por origem (created_by)
+        if ($request->has('created_by')) {
+            $query->where('created_by', $request->input('created_by'));
+        }
+
         $campaigns = $query->orderBy('created_at', 'desc')
-            ->get(['id', 'name', 'status', 'objective', 'spend', 'impressions', 'clicks', 'conversions', 'ctr', 'cpc', 'roas', 'ad_account_id', 'created_at']);
+            ->get(['id', 'name', 'status', 'objective', 'spend', 'impressions', 'clicks', 'conversions', 'ctr', 'cpc', 'roas', 'ad_account_id', 'created_by', 'created_at']);
+
+        // Estatísticas por origem
+        $byOrigin = [
+            'agent' => $campaigns->where('created_by', 'agent')->count(),
+            'human' => $campaigns->where('created_by', 'human')->count(),
+            'external' => $campaigns->where('created_by', 'external')->count(),
+        ];
 
         return response()->json([
             'success' => true,
             'campaigns' => $campaigns,
             'total' => $campaigns->count(),
+            'by_origin' => $byOrigin,
         ]);
+    }
+
+    /**
+     * Sincroniza campanhas de uma conta e retorna lista atualizada.
+     * Usado pelo AI Service para ter dados sempre atualizados.
+     */
+    public function internalSyncAndList(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        $accountId = $request->input('ad_account_id');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+        }
+
+        if (!$accountId) {
+            return response()->json(['error' => 'ad_account_id parameter required'], 400);
+        }
+
+        try {
+            $account = \App\Models\AdAccount::where('tenant_id', $tenantId)
+                ->where('id', $accountId)
+                ->first();
+
+            if (!$account) {
+                return response()->json(['error' => 'Account not found'], 404);
+            }
+
+            // Sincroniza campanhas do Meta
+            $metaService = app(\App\Services\Ads\MetaAdsService::class);
+            $syncedCampaigns = $metaService->syncCampaigns($account);
+
+            // Lista todas as campanhas atualizadas
+            $campaigns = AdCampaign::where('tenant_id', $tenantId)
+                ->where('ad_account_id', $accountId)
+                ->with('account:id,name,platform')
+                ->orderBy('created_at', 'desc')
+                ->get(['id', 'name', 'status', 'objective', 'spend', 'impressions', 'clicks', 'conversions', 'ctr', 'cpc', 'roas', 'ad_account_id', 'created_by', 'created_at']);
+
+            // Estatísticas por origem
+            $byOrigin = [
+                'agent' => $campaigns->where('created_by', 'agent')->count(),
+                'human' => $campaigns->where('created_by', 'human')->count(),
+                'external' => $campaigns->where('created_by', 'external')->count(),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'synced' => $syncedCampaigns->count(),
+                'campaigns' => $campaigns,
+                'total' => $campaigns->count(),
+                'by_origin' => $byOrigin,
+                'message' => "✅ Sincronizado {$syncedCampaigns->count()} campanhas do Meta. Total: {$campaigns->count()}",
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

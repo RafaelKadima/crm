@@ -26,6 +26,7 @@ from .database_tools import (
     update_creative_status,
     update_copy_status,
     list_ad_campaigns,
+    sync_and_list_campaigns,
 )
 
 __all__ = [
@@ -48,4 +49,5 @@ __all__ = [
     'update_creative_status',
     'update_copy_status',
     'list_ad_campaigns',
+    'sync_and_list_campaigns',
 ]

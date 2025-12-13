@@ -35,6 +35,7 @@ class AdCampaign extends Model
         'roas',
         'metadata',
         'last_sync_at',
+        'created_by',
     ];
 
     protected $casts = [
@@ -58,6 +59,13 @@ class AdCampaign extends Model
     public const STATUS_PAUSED = 'PAUSED';
     public const STATUS_DELETED = 'DELETED';
     public const STATUS_ARCHIVED = 'ARCHIVED';
+
+    /**
+     * Origem da campanha (para análise A/B).
+     */
+    public const CREATED_BY_AGENT = 'agent';      // Criada pelo agente IA
+    public const CREATED_BY_HUMAN = 'human';      // Criada manualmente pelo gestor
+    public const CREATED_BY_EXTERNAL = 'external'; // Importada do Meta (origem desconhecida)
 
     /**
      * Conta de anúncios.

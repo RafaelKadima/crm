@@ -34,6 +34,7 @@ from .tools import (
     update_creative_status,
     update_copy_status,
     list_ad_campaigns,
+    sync_and_list_campaigns,
 )
 from .guardrails_engine import get_guardrails_engine, GuardrailActionType
 from app.rag.ads_knowledge import get_ads_knowledge_service
@@ -101,6 +102,7 @@ class AdsOrchestratorAgent:
             update_creative_status,
             update_copy_status,
             list_ad_campaigns,
+            sync_and_list_campaigns,  # Sincroniza do Meta e lista todas as campanhas
         ]
     
     def _create_agent(self) -> AgentExecutor:

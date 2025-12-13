@@ -96,6 +96,11 @@ class MetaAdsService
         $campaignsData = $response->json('data', []);
 
         foreach ($campaignsData as $data) {
+            // Verifica se já existe para preservar o created_by
+            $existingCampaign = AdCampaign::where('ad_account_id', $account->id)
+                ->where('platform_campaign_id', $data['id'])
+                ->first();
+
             $campaign = AdCampaign::updateOrCreate(
                 [
                     'ad_account_id' => $account->id,
@@ -113,6 +118,8 @@ class MetaAdsService
                     'end_date' => isset($data['stop_time']) ? Carbon::parse($data['stop_time'])->toDateString() : null,
                     'metadata' => $data,
                     'last_sync_at' => now(),
+                    // Preserva created_by se já existir, senão marca como external
+                    'created_by' => $existingCampaign?->created_by ?? AdCampaign::CREATED_BY_EXTERNAL,
                 ]
             );
 
