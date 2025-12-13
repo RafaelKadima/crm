@@ -24,6 +24,7 @@ class BiAgentConfig extends Model
         'notification_settings',
         'focus_areas',
         'thresholds',
+        'monitored_accounts',
     ];
 
     protected $casts = [
@@ -33,6 +34,7 @@ class BiAgentConfig extends Model
         'notification_settings' => 'array',
         'focus_areas' => 'array',
         'thresholds' => 'array',
+        'monitored_accounts' => 'array',
     ];
 
     // Constantes para analysis_frequency

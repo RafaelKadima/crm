@@ -283,13 +283,15 @@ class BIDashboardController extends Controller
     {
         $validated = $request->validate([
             'auto_analysis_enabled' => 'nullable|boolean',
-            'analysis_frequency' => 'nullable|string|in:daily,weekly,monthly',
+            'analysis_frequency' => 'nullable|string|in:daily,weekly,monthly,twice_daily',
             'preferred_analysis_time' => 'nullable|date_format:H:i:s',
             'auto_add_to_rag' => 'nullable|boolean',
             'auto_prepare_training' => 'nullable|boolean',
             'notification_settings' => 'nullable|array',
             'focus_areas' => 'nullable|array',
             'thresholds' => 'nullable|array',
+            'monitored_accounts' => 'nullable|array',
+            'monitored_accounts.*' => 'uuid',
         ]);
 
         $config = BiAgentConfig::getOrCreate(auth()->user()->tenant_id);
@@ -298,6 +300,139 @@ class BIDashboardController extends Controller
         return response()->json([
             'message' => 'Configurações atualizadas',
             'config' => $config,
+        ]);
+    }
+
+    /**
+     * Retorna contas de anúncios disponíveis para monitoramento.
+     */
+    public function getAvailableAccounts(): JsonResponse
+    {
+        $tenantId = auth()->user()->tenant_id;
+        
+        $accounts = \App\Models\AdAccount::where('tenant_id', $tenantId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'platform', 'platform_account_id', 'status']);
+
+        $config = BiAgentConfig::where('tenant_id', $tenantId)->first();
+        $monitoredIds = $config?->monitored_accounts ?? [];
+
+        return response()->json([
+            'accounts' => $accounts->map(function ($acc) use ($monitoredIds) {
+                return [
+                    'id' => $acc->id,
+                    'name' => $acc->name,
+                    'platform' => $acc->platform,
+                    'platform_account_id' => $acc->platform_account_id,
+                    'status' => $acc->status,
+                    'is_monitored' => in_array($acc->id, $monitoredIds),
+                ];
+            }),
+            'monitored_count' => count($monitoredIds),
+        ]);
+    }
+
+    /**
+     * Atualiza contas monitoradas.
+     */
+    public function updateMonitoredAccounts(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'account_ids' => 'required|array',
+            'account_ids.*' => 'uuid',
+        ]);
+
+        $tenantId = auth()->user()->tenant_id;
+
+        // Verifica se as contas pertencem ao tenant
+        $validIds = \App\Models\AdAccount::where('tenant_id', $tenantId)
+            ->whereIn('id', $validated['account_ids'])
+            ->pluck('id')
+            ->toArray();
+
+        $config = BiAgentConfig::getOrCreate($tenantId);
+        $config->update(['monitored_accounts' => $validIds]);
+
+        return response()->json([
+            'message' => 'Contas monitoradas atualizadas',
+            'monitored_accounts' => $validIds,
+        ]);
+    }
+
+    /**
+     * Dispara análise manual do BI Agent.
+     */
+    public function runManualAnalysis(Request $request): JsonResponse
+    {
+        $tenantId = auth()->user()->tenant_id;
+        
+        $validated = $request->validate([
+            'account_ids' => 'nullable|array',
+            'account_ids.*' => 'uuid',
+        ]);
+
+        try {
+            // Chama o AI Service para executar análise
+            $response = Http::timeout(120)
+                ->withHeaders([
+                    'X-Tenant-ID' => $tenantId,
+                    'X-Internal-Key' => config('services.ai.internal_key'),
+                ])
+                ->post(config('services.ai.url') . '/bi/run-analysis', [
+                    'ad_account_ids' => $validated['account_ids'] ?? null,
+                ]);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => $result['message'] ?? 'Análise concluída',
+                    'result' => $result['result'] ?? null,
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao executar análise: ' . $response->body(),
+            ], 500);
+
+        } catch (\Exception $e) {
+            \Log::error('Erro ao executar análise manual BI', [
+                'error' => $e->getMessage(),
+                'tenant_id' => $tenantId,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro interno: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Retorna status do scheduler.
+     */
+    public function getSchedulerStatus(): JsonResponse
+    {
+        try {
+            $response = Http::timeout(10)
+                ->withHeaders([
+                    'X-Internal-Key' => config('services.ai.internal_key'),
+                ])
+                ->get(config('services.ai.url') . '/bi/scheduler/status');
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erro ao buscar status do scheduler', ['error' => $e->getMessage()]);
+        }
+
+        return response()->json([
+            'running' => false,
+            'next_run' => null,
+            'schedule' => 'Unknown',
         ]);
     }
 

@@ -626,6 +626,14 @@ Route::middleware(['auth:api', 'tenant'])->prefix('bi')->group(function () {
     Route::get('config', [\App\Http\Controllers\BI\BIDashboardController::class, 'getConfig']);
     Route::put('config', [\App\Http\Controllers\BI\BIDashboardController::class, 'updateConfig']);
     
+    // Contas monitoradas
+    Route::get('available-accounts', [\App\Http\Controllers\BI\BIDashboardController::class, 'getAvailableAccounts']);
+    Route::put('monitored-accounts', [\App\Http\Controllers\BI\BIDashboardController::class, 'updateMonitoredAccounts']);
+    
+    // Análise manual e scheduler
+    Route::post('run-manual-analysis', [\App\Http\Controllers\BI\BIDashboardController::class, 'runManualAnalysis']);
+    Route::get('scheduler-status', [\App\Http\Controllers\BI\BIDashboardController::class, 'getSchedulerStatus']);
+    
     // Fila de aprovação de ações
     Route::prefix('actions')->group(function () {
         Route::get('/', [\App\Http\Controllers\BI\ActionApprovalController::class, 'index']);
@@ -851,6 +859,14 @@ Route::middleware('internal.api')->prefix('internal')->group(function () {
         // Persistir ações e conhecimento
         Route::post('actions', [\App\Http\Controllers\BI\InternalBIController::class, 'saveAction']);
         Route::post('knowledge', [\App\Http\Controllers\BI\InternalBIController::class, 'saveKnowledge']);
+        
+        // Configuração de monitoramento (para scheduler)
+        Route::get('monitoring-configs', [\App\Http\Controllers\BI\InternalBIController::class, 'getMonitoringConfigs']);
+        Route::get('monitoring-config', [\App\Http\Controllers\BI\InternalBIController::class, 'getMonitoringConfig']);
+        Route::post('monitoring-config', [\App\Http\Controllers\BI\InternalBIController::class, 'updateMonitoringConfig']);
+        
+        // Resultados de análises
+        Route::post('analysis-results', [\App\Http\Controllers\BI\InternalBIController::class, 'saveAnalysisResult']);
     });
 });
 

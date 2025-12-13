@@ -38,6 +38,7 @@ import {
   Brain,
   ClipboardCheck,
   FileSpreadsheet,
+  Settings2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -146,6 +147,7 @@ const navGroups: NavGroup[] = [
       { icon: Brain, label: '🤖 Analista IA', path: '/bi/analyst', adminOnly: true },
       { icon: ClipboardCheck, label: '📋 Ações Pendentes', path: '/bi/actions', adminOnly: true },
       { icon: FileSpreadsheet, label: '📊 Relatórios', path: '/bi/reports', adminOnly: true },
+      { icon: Settings2, label: '⚙️ Configurações', path: '/bi/settings', adminOnly: true },
     ],
   },
   {

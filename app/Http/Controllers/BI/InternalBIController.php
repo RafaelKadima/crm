@@ -653,6 +653,163 @@ class InternalBIController extends Controller
     }
 
     /**
+     * Lista configurações de monitoramento de todos os tenants.
+     * Usado pelo scheduler do BI Agent.
+     */
+    public function getMonitoringConfigs(Request $request): JsonResponse
+    {
+        // Busca todos os tenants que têm configuração de BI ativa
+        $configs = BiAgentConfig::where('auto_analysis_enabled', true)
+            ->with(['tenant'])
+            ->get()
+            ->map(function ($config) {
+                // Busca contas de anúncios configuradas para monitoramento
+                $accountIds = $config->monitored_accounts ?? [];
+                
+                // Se não tem contas específicas, busca todas do tenant
+                if (empty($accountIds)) {
+                    $accountIds = \App\Models\AdAccount::where('tenant_id', $config->tenant_id)
+                        ->where('status', 'connected')
+                        ->pluck('id')
+                        ->toArray();
+                }
+                
+                return [
+                    'tenant_id' => $config->tenant_id,
+                    'ad_account_ids' => $accountIds,
+                    'analysis_frequency' => $config->analysis_frequency ?? 'daily',
+                ];
+            })
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'configs' => $configs,
+        ]);
+    }
+
+    /**
+     * Atualiza configuração de monitoramento do tenant.
+     */
+    public function updateMonitoringConfig(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+
+        if (!$tenantId) {
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+        }
+
+        $validated = $request->validate([
+            'auto_analysis_enabled' => 'boolean',
+            'monitored_accounts' => 'array',
+            'monitored_accounts.*' => 'uuid',
+            'analysis_frequency' => 'string|in:daily,twice_daily,weekly',
+        ]);
+
+        $config = BiAgentConfig::firstOrCreate(
+            ['tenant_id' => $tenantId],
+            ['auto_analysis_enabled' => false]
+        );
+
+        if (isset($validated['auto_analysis_enabled'])) {
+            $config->auto_analysis_enabled = $validated['auto_analysis_enabled'];
+        }
+        if (isset($validated['monitored_accounts'])) {
+            $config->monitored_accounts = $validated['monitored_accounts'];
+        }
+        if (isset($validated['analysis_frequency'])) {
+            $config->analysis_frequency = $validated['analysis_frequency'];
+        }
+
+        $config->save();
+
+        return response()->json([
+            'success' => true,
+            'config' => $config,
+        ]);
+    }
+
+    /**
+     * Retorna configuração de monitoramento do tenant.
+     */
+    public function getMonitoringConfig(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+
+        if (!$tenantId) {
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+        }
+
+        $config = BiAgentConfig::where('tenant_id', $tenantId)->first();
+
+        if (!$config) {
+            return response()->json([
+                'success' => true,
+                'config' => [
+                    'auto_analysis_enabled' => false,
+                    'monitored_accounts' => [],
+                    'analysis_frequency' => 'daily',
+                ],
+            ]);
+        }
+
+        // Busca nomes das contas monitoradas
+        $accountIds = $config->monitored_accounts ?? [];
+        $accounts = [];
+        if (!empty($accountIds)) {
+            $accounts = \App\Models\AdAccount::whereIn('id', $accountIds)
+                ->get(['id', 'name', 'platform_account_id'])
+                ->toArray();
+        }
+
+        return response()->json([
+            'success' => true,
+            'config' => [
+                'auto_analysis_enabled' => $config->auto_analysis_enabled,
+                'monitored_accounts' => $accountIds,
+                'accounts_details' => $accounts,
+                'analysis_frequency' => $config->analysis_frequency ?? 'daily',
+            ],
+        ]);
+    }
+
+    /**
+     * Salva resultado de uma análise do BI Agent.
+     */
+    public function saveAnalysisResult(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+
+        if (!$tenantId) {
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+        }
+
+        $validated = $request->validate([
+            'accounts_analyzed' => 'array',
+            'total_actions_suggested' => 'integer',
+            'total_insights' => 'integer',
+            'started_at' => 'string',
+            'completed_at' => 'string',
+        ]);
+
+        // Cria registro de análise
+        $analysis = BiAnalysis::create([
+            'tenant_id' => $tenantId,
+            'status' => 'completed',
+            'analysis_type' => 'scheduled',
+            'results' => $validated,
+            'insights_count' => $validated['total_insights'] ?? 0,
+            'actions_count' => $validated['total_actions_suggested'] ?? 0,
+            'completed_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'analysis_id' => $analysis->id,
+        ], 201);
+    }
+
+    /**
      * Converte string de período para número de dias.
      */
     private function parsePeriod(string $period): int

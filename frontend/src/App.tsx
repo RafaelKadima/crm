@@ -29,7 +29,7 @@ import { GtmSettingsPage } from '@/pages/settings/GtmSettingsPage'
 import { GtmScript } from '@/components/GtmScript'
 import { BrandingProvider } from '@/components/BrandingProvider'
 import { AdsDashboard, AdsAccounts, AdsCampaigns, AdsInsights, AdsAutomation, AdsAgent, CreativeUpload, AdsAgentChat, AdsKnowledgeBase, AdsGuardrails } from '@/pages/ads'
-import { BIDashboard, ActionApprovalQueue, AIAnalystChat, ReportsPage as BIReportsPage } from '@/pages/bi'
+import { BIDashboard, ActionApprovalQueue, AIAnalystChat, ReportsPage as BIReportsPage, BISettings } from '@/pages/bi'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -158,6 +158,7 @@ function AppRoutes() {
         <Route path="bi/actions" element={<ActionApprovalQueue />} />
         <Route path="bi/analyst" element={<AIAnalystChat />} />
         <Route path="bi/reports" element={<BIReportsPage />} />
+        <Route path="bi/settings" element={<BISettings />} />
       </Route>
     </Routes>
   )

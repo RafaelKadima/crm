@@ -20,6 +20,8 @@ from app.routers import ml as ml_router
 from mcp.llm_integration import create_mcp_router
 from app.queue.worker import queue_worker
 from app.queue.message_queue import message_queue
+from app.routers import bi as bi_router
+from bi_agent.scheduler import bi_scheduler
 
 # Configuração de logging estruturado
 structlog.configure(
@@ -89,6 +91,7 @@ app.include_router(ads_learning_router.router)
 app.include_router(knowledge_upload_router.router)
 app.include_router(rl_router.router)
 app.include_router(ml_router.router)
+app.include_router(bi_router.router)
 app.include_router(create_mcp_router())
 
 
@@ -108,6 +111,13 @@ async def startup_event():
         logger.info("queue_worker_initialized")
     except Exception as e:
         logger.warning("queue_worker_init_failed", error=str(e))
+    
+    # Inicia o scheduler do BI Agent
+    try:
+        await bi_scheduler.start()
+        logger.info("bi_scheduler_started")
+    except Exception as e:
+        logger.warning("bi_scheduler_init_failed", error=str(e))
 
 
 @app.on_event("shutdown")
@@ -119,6 +129,13 @@ async def shutdown_event():
         await message_queue.disconnect()
     except Exception:
         pass
+    
+    # Para o scheduler do BI Agent
+    try:
+        await bi_scheduler.stop()
+    except Exception:
+        pass
+    
     logger.info("service_stopped")
 
 
