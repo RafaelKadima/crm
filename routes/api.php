@@ -833,6 +833,25 @@ Route::middleware('internal.api')->prefix('internal')->group(function () {
         Route::get('accounts/{accountId}/campaigns/insights', [\App\Http\Controllers\AdAccountController::class, 'internalGetCampaignsInsights']);
         Route::post('accounts/find-by-platform-id', [\App\Http\Controllers\AdAccountController::class, 'internalFindByPlatformId']);
     });
+    
+    // BI Agent - Métricas e dados para AI Service
+    Route::prefix('bi')->group(function () {
+        // Métricas por área
+        Route::get('metrics/sales', [\App\Http\Controllers\BI\InternalBIController::class, 'salesMetrics']);
+        Route::get('metrics/support', [\App\Http\Controllers\BI\InternalBIController::class, 'supportMetrics']);
+        Route::get('metrics/marketing', [\App\Http\Controllers\BI\InternalBIController::class, 'marketingMetrics']);
+        Route::get('metrics/financial', [\App\Http\Controllers\BI\InternalBIController::class, 'financialMetrics']);
+        Route::get('metrics/ai', [\App\Http\Controllers\BI\InternalBIController::class, 'aiMetrics']);
+        
+        // Dados de funil e histórico
+        Route::get('funnel', [\App\Http\Controllers\BI\InternalBIController::class, 'funnelData']);
+        Route::get('history/leads', [\App\Http\Controllers\BI\InternalBIController::class, 'leadsHistory']);
+        Route::get('history/revenue', [\App\Http\Controllers\BI\InternalBIController::class, 'revenueHistory']);
+        
+        // Persistir ações e conhecimento
+        Route::post('actions', [\App\Http\Controllers\BI\InternalBIController::class, 'saveAction']);
+        Route::post('knowledge', [\App\Http\Controllers\BI\InternalBIController::class, 'saveKnowledge']);
+    });
 });
 
 // Rotas públicas (sem autenticação)

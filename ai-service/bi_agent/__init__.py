@@ -1,29 +1,40 @@
 """
-BI Agent - Agente Autônomo de Business Intelligence
-====================================================
+BI Agent - Agente de Business Intelligence
+==========================================
 
-Este módulo implementa o terceiro agente autônomo do sistema,
-responsável por:
-- Análise de dados
-- Predições com ML
-- Coordenação de SDR e Ads Agents
-- Geração de conhecimento para RAG
-- Preparação de dados para treinamento ML
+Módulo completo de análise de dados e inteligência de negócios.
+
+Componentes:
+- DataAnalyzer: Coleta e análise de métricas
+- PredictiveEngine: Predições com dados reais
+- AgentOrchestrator: Coordenação de ações
+- KnowledgeWriter: Gestão de conhecimento e RAG
+- ReportGenerator: Geração de relatórios PDF/Excel
+- BICache: Cache Redis para performance
+- BIAgentMetrics: Dashboard de métricas do BI Agent
+- PeriodComparison: Análise comparativa de períodos
 """
 
-from .agent import BIAgent
 from .analyzer import DataAnalyzer
 from .predictor import PredictiveEngine
 from .orchestrator import AgentOrchestrator
-from .knowledge_writer import KnowledgeWriter
-from .report_generator import ReportGenerator
+from .knowledge import KnowledgeWriter
+from .reports import ReportGenerator
+from .cache import BICache, CachedDataAnalyzer
+from .metrics import BIAgentMetrics, PeriodComparison
+from .agent import BIAgent
 
 __all__ = [
-    'BIAgent',
-    'DataAnalyzer',
-    'PredictiveEngine',
-    'AgentOrchestrator',
-    'KnowledgeWriter',
-    'ReportGenerator',
+    "BIAgent",
+    "DataAnalyzer",
+    "PredictiveEngine",
+    "AgentOrchestrator",
+    "KnowledgeWriter",
+    "ReportGenerator",
+    "BICache",
+    "CachedDataAnalyzer",
+    "BIAgentMetrics",
+    "PeriodComparison",
 ]
 
+__version__ = "2.0.0"

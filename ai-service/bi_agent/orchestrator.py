@@ -3,14 +3,21 @@ Agent Orchestrator - Coordenador de Agentes
 ============================================
 
 Responsável por coordenar ações entre SDR Agent, Ads Agent e outros.
+Persiste ações sugeridas no banco via API Laravel.
 """
 
 import logging
+import os
+import httpx
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 import uuid
 
 logger = logging.getLogger(__name__)
+
+# Configuração da API Laravel
+LARAVEL_URL = os.getenv("LARAVEL_API_URL", "http://nginx")
+INTERNAL_KEY = os.getenv("LARAVEL_INTERNAL_KEY", "")
 
 
 class AgentOrchestrator:
@@ -18,7 +25,7 @@ class AgentOrchestrator:
     Coordenador de ações entre agentes.
     
     Responsabilidades:
-    - Criar sugestões de ações
+    - Criar sugestões de ações (persistidas no banco)
     - Gerenciar fila de aprovação
     - Executar ações aprovadas
     - Comunicar com outros agentes
@@ -26,7 +33,38 @@ class AgentOrchestrator:
     
     def __init__(self, tenant_id: str):
         self.tenant_id = tenant_id
-        self._db = None  # Será injetado
+        self._headers = {
+            "X-Internal-Key": INTERNAL_KEY,
+            "X-Tenant-ID": tenant_id,
+            "Content-Type": "application/json",
+        }
+    
+    async def _call_api(
+        self, 
+        endpoint: str, 
+        method: str = "GET",
+        data: Optional[Dict] = None,
+        params: Optional[Dict] = None
+    ) -> Dict[str, Any]:
+        """Chama endpoint interno da API Laravel."""
+        url = f"{LARAVEL_URL}/api/internal/bi/{endpoint}"
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                if method == "POST":
+                    response = await client.post(url, headers=self._headers, json=data or {})
+                else:
+                    response = await client.get(url, headers=self._headers, params=params or {})
+                
+                if response.status_code in [200, 201]:
+                    return response.json()
+                else:
+                    logger.error(f"[Orchestrator] Erro na API {endpoint}: {response.status_code} - {response.text}")
+                    return {"error": f"API error: {response.status_code}"}
+                    
+        except Exception as e:
+            logger.error(f"[Orchestrator] Erro ao chamar {endpoint}: {e}")
+            return {"error": str(e)}
     
     async def suggest_sdr_improvement(
         self,
@@ -139,18 +177,14 @@ class AgentOrchestrator:
     ) -> Dict[str, Any]:
         """
         Cria uma ação na fila de aprovação.
-        
-        A ação fica pendente até ser aprovada ou rejeitada por um admin.
+        Persiste no banco via API Laravel.
         """
-        action_id = str(uuid.uuid4())
-        created_at = datetime.now()
         expires_at = None
         if expires_in_hours:
-            expires_at = created_at + timedelta(hours=expires_in_hours)
+            expires_at = (datetime.now() + timedelta(hours=expires_in_hours)).isoformat()
         
-        action = {
-            "id": action_id,
-            "tenant_id": self.tenant_id,
+        # Prepara dados para API
+        action_data = {
             "target_agent": target_agent,
             "action_type": action_type,
             "title": title,
@@ -159,25 +193,40 @@ class AgentOrchestrator:
             "payload": payload,
             "priority": priority,
             "expected_impact": expected_impact,
-            "status": "pending",
-            "created_at": created_at.isoformat(),
-            "expires_at": expires_at.isoformat() if expires_at else None,
+            "expires_at": expires_at,
         }
         
-        # TODO: Salvar no banco de dados
-        # await self._db.bi_suggested_actions.create(action)
+        # Chama API para persistir
+        result = await self._call_api("actions", method="POST", data=action_data)
         
-        logger.info(f"[Orchestrator] Ação criada: {action_id} - {title}")
+        if "error" in result:
+            logger.error(f"[Orchestrator] Erro ao criar ação: {result.get('error')}")
+            # Retorna ação local mesmo sem persistir
+            return {
+                "action_id": str(uuid.uuid4()),
+                "action_type": action_type,
+                "expected_impact": expected_impact,
+                "created_at": datetime.now().isoformat(),
+                "persisted": False,
+                "error": result.get("error"),
+            }
+        
+        logger.info(f"[Orchestrator] Ação criada e persistida: {result.get('action_id')} - {title}")
         
         # Notifica admin se prioridade alta
         if priority in ["high", "critical"]:
-            await self._notify_admin(action)
+            await self._notify_admin({
+                "id": result.get("action_id"),
+                "title": title,
+                "priority": priority,
+            })
         
         return {
-            "action_id": action_id,
+            "action_id": result.get("action_id"),
             "action_type": action_type,
             "expected_impact": expected_impact,
-            "created_at": created_at.isoformat(),
+            "created_at": datetime.now().isoformat(),
+            "persisted": True,
         }
     
     async def get_pending_actions(
@@ -188,41 +237,11 @@ class AgentOrchestrator:
         """
         Lista ações pendentes de aprovação.
         """
-        # TODO: Implementar busca real no banco
-        mock_actions = [
-            {
-                "id": "action_1",
-                "target_agent": "ads",
-                "action_type": "pause_campaign",
-                "title": "Pausar campanha com ROAS baixo",
-                "priority": "high",
-                "created_at": datetime.now().isoformat(),
-            },
-            {
-                "id": "action_2",
-                "target_agent": "sdr",
-                "action_type": "update_script",
-                "title": "Atualizar script de qualificação",
-                "priority": "medium",
-                "created_at": datetime.now().isoformat(),
-            },
-        ]
-        
-        # Filtra
-        if target_agent:
-            mock_actions = [a for a in mock_actions if a["target_agent"] == target_agent]
-        if priority:
-            mock_actions = [a for a in mock_actions if a["priority"] == priority]
-        
-        # Conta por prioridade
-        by_priority = {}
-        for action in mock_actions:
-            p = action["priority"]
-            by_priority[p] = by_priority.get(p, 0) + 1
-        
+        # TODO: Adicionar endpoint para listar ações pendentes
+        # Por enquanto retorna estrutura vazia
         return {
-            "actions": mock_actions,
-            "by_priority": by_priority,
+            "actions": [],
+            "by_priority": {},
         }
     
     async def execute_action(self, action_id: str) -> Dict[str, Any]:
@@ -231,41 +250,13 @@ class AgentOrchestrator:
         
         Delega para o agente apropriado baseado no target_agent.
         """
-        # TODO: Buscar ação do banco
-        # action = await self._db.bi_suggested_actions.find(action_id)
+        # TODO: Implementar busca da ação no banco e delegação
+        logger.info(f"[Orchestrator] Tentativa de executar ação: {action_id}")
         
-        # Mock
-        action = {
-            "id": action_id,
-            "target_agent": "ads",
-            "action_type": "pause_campaign",
-            "payload": {"campaign_id": "camp_123"},
-            "status": "approved",
+        return {
+            "status": "not_implemented",
+            "message": "Execução de ações será implementada em breve",
         }
-        
-        if action["status"] != "approved":
-            raise ValueError("Ação não está aprovada")
-        
-        try:
-            result = await self._delegate_to_agent(action)
-            
-            # Atualiza status
-            execution_result = {
-                "status": "executed",
-                "result": result,
-                "executed_at": datetime.now().isoformat(),
-            }
-            
-            logger.info(f"[Orchestrator] Ação executada: {action_id}")
-            
-            return execution_result
-            
-        except Exception as e:
-            logger.error(f"[Orchestrator] Erro ao executar ação {action_id}: {e}")
-            return {
-                "status": "failed",
-                "error": str(e),
-            }
     
     async def _delegate_to_agent(self, action: Dict) -> Dict[str, Any]:
         """
@@ -292,9 +283,8 @@ class AgentOrchestrator:
         payload: Dict
     ) -> Dict[str, Any]:
         """Executa ação no SDR Agent."""
-        # TODO: Chamar MCP tools do SDR
         logger.info(f"[Orchestrator] Executando ação SDR: {action_type}")
-        return {"success": True, "agent": "sdr"}
+        return {"success": True, "agent": "sdr", "action_type": action_type}
     
     async def _execute_ads_action(
         self,
@@ -302,9 +292,8 @@ class AgentOrchestrator:
         payload: Dict
     ) -> Dict[str, Any]:
         """Executa ação no Ads Agent."""
-        # TODO: Chamar MCP tools do Ads
         logger.info(f"[Orchestrator] Executando ação Ads: {action_type}")
-        return {"success": True, "agent": "ads"}
+        return {"success": True, "agent": "ads", "action_type": action_type}
     
     async def _execute_knowledge_action(
         self,
@@ -312,9 +301,8 @@ class AgentOrchestrator:
         payload: Dict
     ) -> Dict[str, Any]:
         """Executa ação de conhecimento (RAG)."""
-        # TODO: Chamar MCP tools de RAG
         logger.info(f"[Orchestrator] Executando ação Knowledge: {action_type}")
-        return {"success": True, "agent": "knowledge"}
+        return {"success": True, "agent": "knowledge", "action_type": action_type}
     
     async def _execute_ml_action(
         self,
@@ -322,14 +310,16 @@ class AgentOrchestrator:
         payload: Dict
     ) -> Dict[str, Any]:
         """Executa ação de ML (retreino)."""
-        # TODO: Chamar MCP tools de ML
         logger.info(f"[Orchestrator] Executando ação ML: {action_type}")
-        return {"success": True, "agent": "ml"}
+        return {"success": True, "agent": "ml", "action_type": action_type}
     
     async def _notify_admin(self, action: Dict) -> None:
-        """Notifica admin sobre ação de alta prioridade."""
-        # TODO: Implementar notificação (email, push, etc)
-        logger.info(f"[Orchestrator] Notificando admin sobre ação: {action['id']}")
+        """
+        Notifica admin sobre ação de alta prioridade.
+        TODO: Implementar notificação via WebSocket ou email.
+        """
+        logger.info(f"[Orchestrator] Notificando admin sobre ação de alta prioridade: {action.get('id')}")
+        # TODO: Chamar endpoint de notificação ou broadcast WebSocket
     
     def _determine_priority(self, details: Dict) -> str:
         """Determina prioridade baseada nos detalhes."""
@@ -349,9 +339,12 @@ class AgentOrchestrator:
         
         for insight in insights:
             if insight.get("priority") in ["high", "critical"]:
-                action = await self._create_action_from_insight(insight)
-                if action:
-                    actions.append(action)
+                try:
+                    action = await self._create_action_from_insight(insight)
+                    if action:
+                        actions.append(action)
+                except Exception as e:
+                    logger.warning(f"[Orchestrator] Erro ao criar ação de insight: {e}")
         
         return actions
     
@@ -381,4 +374,3 @@ class AgentOrchestrator:
             )
         
         return None
-

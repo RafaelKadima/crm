@@ -16,8 +16,10 @@ from typing import Optional, Dict, Any, List
 from .analyzer import DataAnalyzer
 from .predictor import PredictiveEngine
 from .orchestrator import AgentOrchestrator
-from .knowledge_writer import KnowledgeWriter
-from .report_generator import ReportGenerator
+from .knowledge import KnowledgeWriter
+from .reports import ReportGenerator
+from .cache import BICache, CachedDataAnalyzer
+from .metrics import BIAgentMetrics, PeriodComparison
 
 logger = logging.getLogger(__name__)
 
@@ -39,16 +41,32 @@ class BIAgent:
         self, 
         tenant_id: str, 
         ad_account_id: Optional[str] = None,
-        campaign_ids: Optional[List[str]] = None
+        campaign_ids: Optional[List[str]] = None,
+        use_cache: bool = True
     ):
         self.tenant_id = tenant_id
         self.ad_account_id = ad_account_id  # Filtro opcional para conta de anúncios
         self.campaign_ids = campaign_ids  # Filtro opcional para campanhas específicas
-        self.analyzer = DataAnalyzer(tenant_id, ad_account_id=ad_account_id)
+        
+        # Core analyzers
+        self._base_analyzer = DataAnalyzer(tenant_id, ad_account_id=ad_account_id)
         self.predictor = PredictiveEngine(tenant_id)
         self.orchestrator = AgentOrchestrator(tenant_id)
         self.knowledge_writer = KnowledgeWriter(tenant_id)
         self.report_generator = ReportGenerator(tenant_id)
+        
+        # Cache e métricas
+        self.cache = BICache(tenant_id)
+        self.bi_metrics = BIAgentMetrics(tenant_id)
+        
+        # Analyzer com cache opcional
+        if use_cache:
+            self.analyzer = CachedDataAnalyzer(self._base_analyzer, self.cache)
+        else:
+            self.analyzer = self._base_analyzer
+        
+        # Comparação de períodos
+        self.period_comparison = PeriodComparison(self._base_analyzer, self.predictor)
         
         # Configurações para chamadas à API do Laravel
         self.laravel_url = os.getenv("LARAVEL_API_URL", "http://nginx")
@@ -675,4 +693,111 @@ Analise esses dados e responda à pergunta considerando os objetivos de cada cam
             "opportunities": [],
             "last_analysis": None,
         }
+    
+    async def generate_report(
+        self,
+        report_type: str = "executive_summary",
+        period: str = "30d",
+        formats: List[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Gera relatório em PDF e/ou Excel.
+        
+        Args:
+            report_type: executive_summary, sales, marketing
+            period: Período de análise
+            formats: Lista de formatos desejados ["pdf", "excel"]
+        
+        Returns:
+            Dict com arquivos gerados em base64
+        """
+        if formats is None:
+            formats = ["pdf"]
+        
+        # Registra métrica
+        start = datetime.now()
+        
+        # Coleta dados baseado no tipo
+        if report_type == "executive_summary":
+            data = await self._base_analyzer.get_executive_summary(period)
+            title = f"Resumo Executivo - {datetime.now().strftime('%d/%m/%Y')}"
+        elif report_type == "sales":
+            data = await self._base_analyzer.collect_sales_metrics(period)
+            title = f"Relatório de Vendas - {datetime.now().strftime('%d/%m/%Y')}"
+        elif report_type == "marketing":
+            data = await self._base_analyzer.analyze_marketing_performance(period)
+            title = f"Relatório de Marketing - {datetime.now().strftime('%d/%m/%Y')}"
+        else:
+            data = await self._base_analyzer.get_executive_summary(period)
+            title = f"Relatório - {datetime.now().strftime('%d/%m/%Y')}"
+        
+        # Gera relatório
+        result = self.report_generator.generate_report(title, data, report_type, formats)
+        
+        # Registra métrica
+        duration = int((datetime.now() - start).total_seconds() * 1000)
+        await self.bi_metrics.record_analysis(f"report_{report_type}", duration, result.get("success", False))
+        
+        return result
+    
+    async def compare_periods(
+        self,
+        period1_days: int = 30,
+        period2_days: int = 30,
+        areas: List[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Compara métricas entre dois períodos consecutivos.
+        
+        Args:
+            period1_days: Dias do período mais recente
+            period2_days: Dias do período anterior
+            areas: Áreas para comparar (sales, marketing, financial)
+        
+        Returns:
+            Comparação detalhada entre períodos
+        """
+        return await self.period_comparison.compare_periods(period1_days, period2_days, areas)
+    
+    async def detect_trends(self, days: int = 90) -> Dict[str, Any]:
+        """
+        Detecta tendências automaticamente nos últimos N dias.
+        
+        Args:
+            days: Número de dias para análise
+        
+        Returns:
+            Tendências detectadas e recomendações
+        """
+        return await self.period_comparison.detect_trends(days)
+    
+    async def get_dashboard_metrics(self) -> Dict[str, Any]:
+        """
+        Retorna dashboard de métricas do próprio BI Agent.
+        
+        Inclui:
+        - Quantidade de análises realizadas
+        - Tempo médio de resposta
+        - Predições e acurácia
+        - Insights gerados
+        """
+        return await self.bi_metrics.get_dashboard()
+    
+    async def invalidate_cache(self) -> Dict[str, Any]:
+        """
+        Invalida cache do BI Agent.
+        
+        Útil quando dados são atualizados manualmente.
+        """
+        invalidated = await self.cache.invalidate_all()
+        return {
+            "success": True,
+            "keys_invalidated": invalidated,
+        }
+    
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """
+        Retorna estatísticas do cache.
+        """
+        return await self.cache.stats()
 
