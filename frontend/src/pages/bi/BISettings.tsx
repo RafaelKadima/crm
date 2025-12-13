@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import api from '@/lib/axios'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Switch } from '@/components/ui/Switch'
+import { Label } from '@/components/ui/Label'
+import { Badge } from '@/components/ui/Badge'
+import { Checkbox } from '@/components/ui/Checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import { Loader2, Play, Settings2, Clock, Building2, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -43,12 +43,16 @@ export default function BISettings() {
     queryFn: async () => {
       const { data } = await api.get('/bi/available-accounts')
       return data as { accounts: AdAccount[], monitored_count: number }
-    },
-    onSuccess: (data) => {
-      const monitored = data.accounts.filter(a => a.is_monitored).map(a => a.id)
-      setSelectedAccounts(monitored)
     }
   })
+
+  // Atualiza contas selecionadas quando dados carregam
+  useEffect(() => {
+    if (accountsData?.accounts) {
+      const monitored = accountsData.accounts.filter((a: AdAccount) => a.is_monitored).map((a: AdAccount) => a.id)
+      setSelectedAccounts(monitored)
+    }
+  }, [accountsData])
 
   // Busca configuração atual
   const { data: config, isLoading: loadingConfig } = useQuery({
@@ -76,8 +80,8 @@ export default function BISettings() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['bi-available-accounts'])
-      queryClient.invalidateQueries(['bi-config'])
+      queryClient.invalidateQueries({ queryKey: ['bi-available-accounts'] })
+      queryClient.invalidateQueries({ queryKey: ['bi-config'] })
       toast.success('Contas monitoradas atualizadas!')
     },
     onError: () => {
@@ -92,7 +96,7 @@ export default function BISettings() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['bi-config'])
+      queryClient.invalidateQueries({ queryKey: ['bi-config'] })
       toast.success('Configuração atualizada!')
     },
     onError: () => {
@@ -108,10 +112,10 @@ export default function BISettings() {
       })
       return data
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast.success(data.message || 'Análise concluída!')
-      queryClient.invalidateQueries(['bi-dashboard'])
-      queryClient.invalidateQueries(['bi-analyses'])
+      queryClient.invalidateQueries({ queryKey: ['bi-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['bi-analyses'] })
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Erro ao executar análise')
@@ -167,11 +171,11 @@ export default function BISettings() {
         </div>
         <Button 
           onClick={handleRunAnalysis}
-          disabled={runAnalysisMutation.isLoading}
+          disabled={runAnalysisMutation.isPending}
           size="lg"
           className="gap-2"
         >
-          {runAnalysisMutation.isLoading ? (
+          {runAnalysisMutation.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Play className="h-4 w-4" />
@@ -237,7 +241,7 @@ export default function BISettings() {
               </div>
               <Switch
                 checked={config?.auto_analysis_enabled ?? false}
-                onCheckedChange={(checked) => {
+                onCheckedChange={(checked: boolean) => {
                   updateConfigMutation.mutate({ auto_analysis_enabled: checked })
                 }}
               />
@@ -247,7 +251,7 @@ export default function BISettings() {
               <Label>Frequência</Label>
               <Select
                 value={config?.analysis_frequency ?? 'daily'}
-                onValueChange={(value) => {
+                onValueChange={(value: string) => {
                   updateConfigMutation.mutate({ analysis_frequency: value })
                 }}
               >
@@ -280,15 +284,15 @@ export default function BISettings() {
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline">
-                {selectedAccounts.length} de {accountsData?.accounts.length || 0} selecionadas
+                {selectedAccounts.length} de {accountsData?.accounts?.length || 0} selecionadas
               </Badge>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleSaveAccounts}
-                disabled={updateAccountsMutation.isLoading}
+                disabled={updateAccountsMutation.isPending}
               >
-                {updateAccountsMutation.isLoading ? (
+                {updateAccountsMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <RefreshCw className="h-4 w-4" />
@@ -299,7 +303,7 @@ export default function BISettings() {
           </div>
         </CardHeader>
         <CardContent>
-          {accountsData?.accounts.length === 0 ? (
+          {!accountsData?.accounts?.length ? (
             <div className="text-center py-8 text-muted-foreground">
               <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma conta de anúncios conectada</p>
@@ -307,7 +311,7 @@ export default function BISettings() {
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {accountsData?.accounts.map((account) => (
+              {accountsData.accounts.map((account: AdAccount) => (
                 <div
                   key={account.id}
                   className={cn(
