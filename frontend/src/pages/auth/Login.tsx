@@ -238,6 +238,19 @@ export function LoginPage() {
               </motion.div>
             </form>
 
+            {/* Value Proposition */}
+            <motion.div 
+              className="mt-6 pt-5 border-t border-white/5"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <p className="text-center text-xs text-muted-foreground leading-relaxed">
+                <span className="text-white/60 font-medium">IA que vende por você.</span>
+                <br />
+                <span className="text-white/40">CRM inteligente • SDR Autônomo • Ads automatizados</span>
+              </p>
+            </motion.div>
           </CardContent>
 
           {/* Bottom Gradient Border */}
