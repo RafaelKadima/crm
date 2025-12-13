@@ -14,6 +14,8 @@ from .meta_ads_tools import (
     get_ad_account_insights,
     get_campaigns_insights,
     get_campaign_detailed_insights,
+    find_ad_account_by_platform_id,
+    list_ad_accounts,
 )
 
 from .database_tools import (
@@ -39,6 +41,8 @@ __all__ = [
     'get_ad_account_insights',
     'get_campaigns_insights',
     'get_campaign_detailed_insights',
+    'find_ad_account_by_platform_id',
+    'list_ad_accounts',
     # Database Tools
     'get_tenant_config',
     'list_available_creatives',

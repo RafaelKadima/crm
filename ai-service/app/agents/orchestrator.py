@@ -24,6 +24,12 @@ from .tools import (
     create_meta_ad,
     upload_creative_to_meta,
     get_meta_campaign_status,
+    # Meta Ads Insights Tools (para consultar dados do Meta)
+    get_ad_account_insights,
+    get_campaigns_insights,
+    get_campaign_detailed_insights,
+    find_ad_account_by_platform_id,
+    list_ad_accounts,
     # Database Tools
     get_tenant_config,
     list_available_creatives,
@@ -86,12 +92,18 @@ class AdsOrchestratorAgent:
     def _load_tools(self) -> List:
         """Carrega todas as tools disponíveis."""
         return [
-            # Meta Ads Tools
+            # Meta Ads Tools - Criação
             create_meta_campaign,
             create_meta_adset,
             create_meta_ad,
             upload_creative_to_meta,
             get_meta_campaign_status,
+            # Meta Ads Tools - Insights (consulta dados do Meta Ads)
+            get_ad_account_insights,       # Métricas da conta (spend, clicks, ROAS, etc)
+            get_campaigns_insights,         # Lista campanhas com métricas
+            get_campaign_detailed_insights, # Detalhes de uma campanha específica
+            find_ad_account_by_platform_id, # Busca conta pelo ID do Meta (ex: 1325063905938909)
+            list_ad_accounts,               # Lista todas as contas conectadas
             # Database Tools
             get_tenant_config,
             list_available_creatives,
