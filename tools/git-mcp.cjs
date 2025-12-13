@@ -6,7 +6,7 @@ const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio
 // Utilitário para executar comandos
 function runGit(cmd) {
   return new Promise((resolve) => {
-    exec(cmd, { cwd: "C:/dev/crm" }, (error, stdout, stderr) => {
+    exec(cmd, { cwd: "/Users/rafaelxavier/crm" }, (error, stdout, stderr) => {
       if (error) {
         resolve({ content: [{ type: "text", text: stderr || error.message }], isError: true });
       } else {

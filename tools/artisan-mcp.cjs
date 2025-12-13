@@ -19,7 +19,7 @@ server.tool(
   },
   async ({ command }) => {
     return new Promise((resolve) => {
-      exec(`php spark ${command}`, { cwd: "C:/dev/crm" }, (error, stdout, stderr) => {
+      exec(`php spark ${command}`, { cwd: "/Users/rafaelxavier/crm" }, (error, stdout, stderr) => {
         if (error) {
           resolve({
             content: [{ type: "text", text: stderr || error.message }],

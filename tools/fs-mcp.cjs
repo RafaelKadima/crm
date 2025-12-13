@@ -4,7 +4,7 @@ const path = require("path");
 const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
 
-const ROOT = "C:/dev/crm";
+const ROOT = "/Users/rafaelxavier/crm";
 
 function safePath(rel) {
   const full = path.resolve(ROOT, rel);

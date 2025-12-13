@@ -27,6 +27,48 @@ def _get_laravel_url() -> str:
     return LARAVEL_API_URL
 
 
+def _call_laravel_api_sync(
+    method: str,
+    endpoint: str,
+    tenant_id: str,
+    data: Optional[Dict] = None,
+    access_token: Optional[str] = None
+) -> Dict[str, Any]:
+    """Helper SÍNCRONO para chamar API do Laravel."""
+    url = f"{_get_laravel_url()}/api/{endpoint}"
+    
+    headers = {
+        "Content-Type": "application/json",
+        "X-Tenant-ID": tenant_id,
+    }
+    
+    if access_token:
+        headers["Authorization"] = f"Bearer {access_token}"
+    
+    # Usa httpx síncrono - funciona em qualquer thread!
+    with httpx.Client(timeout=60.0) as client:
+        if method.upper() == "GET":
+            response = client.get(url, headers=headers, params=data)
+        elif method.upper() == "POST":
+            response = client.post(url, headers=headers, json=data)
+        elif method.upper() == "PUT":
+            response = client.put(url, headers=headers, json=data)
+        else:
+            raise ValueError(f"Método não suportado: {method}")
+        
+        if response.status_code >= 400:
+            logger.error(
+                "Laravel API error",
+                endpoint=endpoint,
+                status=response.status_code,
+                body=response.text[:500]
+            )
+            raise Exception(f"Erro na API: {response.status_code} - {response.text[:200]}")
+        
+        return response.json()
+
+
+# Mantém a versão async para uso em contextos assíncronos
 async def _call_laravel_api(
     method: str,
     endpoint: str,
@@ -34,7 +76,7 @@ async def _call_laravel_api(
     data: Optional[Dict] = None,
     access_token: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Helper para chamar API do Laravel."""
+    """Helper ASSÍNCRONO para chamar API do Laravel."""
     url = f"{_get_laravel_url()}/api/{endpoint}"
     
     headers = {
@@ -90,8 +132,6 @@ def create_meta_campaign(
     Returns:
         Dict com campaign_id e status da criação
     """
-    import asyncio
-    
     logger.info(
         "Creating Meta campaign",
         tenant_id=tenant_id,
@@ -101,26 +141,23 @@ def create_meta_campaign(
     )
     
     try:
-        # Chama endpoint do Laravel que faz a criação no Meta
-        result = asyncio.get_event_loop().run_until_complete(
-            _call_laravel_api(
-                "POST",
-                "ads/agent/create-campaign",
-                tenant_id,
-                {
-                    "tenant_id": tenant_id,
-                    "ad_account_id": account_id,
-                    "platform": "meta",
-                    "campaign": {
-                        "name": name,
-                        "objective": objective,
-                        "daily_budget": daily_budget,
-                        "status": status,
-                    },
-                    "adsets": [],
-                    "ads": [],
-                }
-            )
+        result = _call_laravel_api_sync(
+            "POST",
+            "ads/agent/create-campaign",
+            tenant_id,
+            {
+                "tenant_id": tenant_id,
+                "ad_account_id": account_id,
+                "platform": "meta",
+                "campaign": {
+                    "name": name,
+                    "objective": objective,
+                    "daily_budget": daily_budget,
+                    "status": status,
+                },
+                "adsets": [],
+                "ads": [],
+            }
         )
         
         return {
@@ -164,8 +201,6 @@ def create_meta_adset(
     Returns:
         Dict com adset_id e status
     """
-    import asyncio
-    
     logger.info(
         "Creating Meta adset",
         campaign_id=campaign_id,
@@ -181,20 +216,17 @@ def create_meta_adset(
         }
     
     try:
-        # Endpoint interno para criar adset
-        result = asyncio.get_event_loop().run_until_complete(
-            _call_laravel_api(
-                "POST",
-                "internal/ads/create-adset",
-                tenant_id,
-                {
-                    "campaign_id": campaign_id,
-                    "name": name,
-                    "optimization_goal": optimization_goal,
-                    "targeting": targeting,
-                    "status": status,
-                }
-            )
+        result = _call_laravel_api_sync(
+            "POST",
+            "internal/ads/create-adset",
+            tenant_id,
+            {
+                "campaign_id": campaign_id,
+                "name": name,
+                "optimization_goal": optimization_goal,
+                "targeting": targeting,
+                "status": status,
+            }
         )
         
         return {
@@ -248,8 +280,6 @@ def create_meta_ad(
     Returns:
         Dict com ad_id e status
     """
-    import asyncio
-    
     logger.info(
         "Creating Meta ad",
         adset_id=adset_id,
@@ -258,26 +288,24 @@ def create_meta_ad(
     )
     
     try:
-        result = asyncio.get_event_loop().run_until_complete(
-            _call_laravel_api(
-                "POST",
-                "internal/ads/create-ad",
-                tenant_id,
-                {
-                    "adset_id": adset_id,
-                    "name": name,
-                    "creative_id": creative_id,
-                    "copy_id": copy_id,
-                    "creative": {
-                        "headline": headline,
-                        "primary_text": primary_text,
-                        "description": description,
-                        "call_to_action": call_to_action,
-                        "link_url": link_url,
-                    },
-                    "status": status,
-                }
-            )
+        result = _call_laravel_api_sync(
+            "POST",
+            "internal/ads/create-ad",
+            tenant_id,
+            {
+                "adset_id": adset_id,
+                "name": name,
+                "creative_id": creative_id,
+                "copy_id": copy_id,
+                "creative": {
+                    "headline": headline,
+                    "primary_text": primary_text,
+                    "description": description,
+                    "call_to_action": call_to_action,
+                    "link_url": link_url,
+                },
+                "status": status,
+            }
         )
         
         return {
@@ -315,8 +343,6 @@ def upload_creative_to_meta(
     Returns:
         Dict com platform_media_id e status
     """
-    import asyncio
-    
     logger.info(
         "Uploading creative to Meta",
         creative_id=creative_id,
@@ -324,17 +350,15 @@ def upload_creative_to_meta(
     )
     
     try:
-        result = asyncio.get_event_loop().run_until_complete(
-            _call_laravel_api(
-                "POST",
-                "internal/ads/upload-creative",
-                tenant_id,
-                {
-                    "creative_id": creative_id,
-                    "account_id": account_id,
-                    "page_id": page_id,
-                }
-            )
+        result = _call_laravel_api_sync(
+            "POST",
+            "internal/ads/upload-creative",
+            tenant_id,
+            {
+                "creative_id": creative_id,
+                "account_id": account_id,
+                "page_id": page_id,
+            }
         )
         
         return {
@@ -368,15 +392,11 @@ def get_meta_campaign_status(
     Returns:
         Dict com status da campanha
     """
-    import asyncio
-    
     try:
-        result = asyncio.get_event_loop().run_until_complete(
-            _call_laravel_api(
-                "GET",
-                f"ads/campaigns/{campaign_id}",
-                tenant_id
-            )
+        result = _call_laravel_api_sync(
+            "GET",
+            f"ads/campaigns/{campaign_id}",
+            tenant_id
         )
         
         campaign = result.get("data", result)
@@ -418,16 +438,12 @@ def get_ad_account_insights(
     Returns:
         Dict com métricas da conta (spend, impressions, clicks, conversions, ROAS, etc.)
     """
-    import asyncio
-    
     try:
-        result = asyncio.get_event_loop().run_until_complete(
-            _call_laravel_api(
-                "GET",
-                f"ads/accounts/{ad_account_id}/insights",
-                tenant_id,
-                {"date_preset": date_preset}
-            )
+        result = _call_laravel_api_sync(
+            "GET",
+            f"ads/accounts/{ad_account_id}/insights",
+            tenant_id,
+            {"date_preset": date_preset}
         )
         
         data = result.get("data", result)
@@ -475,16 +491,12 @@ def get_campaigns_insights(
     Returns:
         Dict com lista de campanhas e suas métricas
     """
-    import asyncio
-    
     try:
-        result = asyncio.get_event_loop().run_until_complete(
-            _call_laravel_api(
-                "GET",
-                f"ads/accounts/{ad_account_id}/campaigns/insights",
-                tenant_id,
-                {"date_preset": date_preset}
-            )
+        result = _call_laravel_api_sync(
+            "GET",
+            f"ads/accounts/{ad_account_id}/campaigns/insights",
+            tenant_id,
+            {"date_preset": date_preset}
         )
         
         campaigns = result.get("data", result.get("campaigns", []))
@@ -542,16 +554,12 @@ def get_campaign_detailed_insights(
     Returns:
         Dict com métricas detalhadas e evolução por dia
     """
-    import asyncio
-    
     try:
-        result = asyncio.get_event_loop().run_until_complete(
-            _call_laravel_api(
-                "GET",
-                f"ads/campaigns/{campaign_id}/detailed-insights",
-                tenant_id,
-                {"date_preset": date_preset}
-            )
+        result = _call_laravel_api_sync(
+            "GET",
+            f"ads/campaigns/{campaign_id}/detailed-insights",
+            tenant_id,
+            {"date_preset": date_preset}
         )
         
         data = result.get("data", result)
@@ -585,4 +593,3 @@ def get_campaign_detailed_insights(
             "success": False,
             "error": str(e),
         }
-

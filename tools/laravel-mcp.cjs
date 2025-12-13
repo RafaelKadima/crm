@@ -10,7 +10,7 @@ const { exec } = require("child_process");
 const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
 
-const PROJECT_ROOT = "C:/dev/crm";
+const PROJECT_ROOT = "/Users/rafaelxavier/crm";
 
 function runArtisan(cmd) {
   return new Promise((resolve) => {

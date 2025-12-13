@@ -5,7 +5,7 @@ const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio
 
 function runComposer(cmd) {
   return new Promise((resolve) => {
-    exec(`composer ${cmd}`, { cwd: "C:/dev/crm" }, (error, stdout, stderr) => {
+    exec(`composer ${cmd}`, { cwd: "/Users/rafaelxavier/crm" }, (error, stdout, stderr) => {
       if (error) {
         resolve({ content: [{ type: "text", text: stderr || error.message }], isError: true });
       } else {

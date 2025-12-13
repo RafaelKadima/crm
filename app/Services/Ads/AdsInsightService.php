@@ -137,7 +137,7 @@ class AdsInsightService
                         'type' => AdInsight::TYPE_PERFORMANCE_DROP,
                         'severity' => $dropPercent >= 50 ? AdInsight::SEVERITY_CRITICAL : AdInsight::SEVERITY_WARNING,
                         'title' => "Queda de CTR em {$campaign->name}",
-                        'description' => "O CTR da campanha caiu {$dropPercent:.1f}% nos últimos 3 dias comparado à semana anterior.",
+                        'description' => "O CTR da campanha caiu " . number_format($dropPercent, 1) . "% nos últimos 3 dias comparado à semana anterior.",
                         'recommendation' => 'Revise os criativos e público-alvo. Considere pausar anúncios com baixo desempenho.',
                         'data' => [
                             'previous_ctr' => $lastWeek,
