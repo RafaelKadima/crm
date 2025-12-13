@@ -238,23 +238,6 @@ export function LoginPage() {
               </motion.div>
             </form>
 
-            <motion.div 
-              className="mt-6 text-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-            >
-              <div className="p-3 rounded-lg bg-white/5 border border-white/5">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Demonstração
-                </p>
-                <p className="text-xs">
-                  <span className="font-mono text-white/80">admin@demo.com</span>
-                  <span className="mx-2 text-muted-foreground">/</span>
-                  <span className="font-mono text-white/60">password</span>
-                </p>
-              </div>
-            </motion.div>
           </CardContent>
 
           {/* Bottom Gradient Border */}
