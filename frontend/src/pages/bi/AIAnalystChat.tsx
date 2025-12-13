@@ -17,6 +17,8 @@ import {
   Calendar,
   Filter,
   ChevronDown,
+  X,
+  Megaphone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -26,14 +28,7 @@ import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer'
 import { cn } from '@/lib/utils'
 import api from '@/api/axios'
 import { toast } from 'sonner'
-
-interface AdAccount {
-  id: string
-  name: string
-  platform: string
-  platform_account_name: string
-  status: string
-}
+import { useAdAccounts, useAdCampaigns, type AdAccount, type AdCampaign } from '@/hooks/useAds'
 
 interface PeriodOption {
   value: string
@@ -109,29 +104,40 @@ export function AIAnalystChat() {
   const [customPeriod, setCustomPeriod] = useState('')
   const [showCustomPeriod, setShowCustomPeriod] = useState(false)
   const [selectedAdAccount, setSelectedAdAccount] = useState<string | null>(null)
+  const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([])
   const [showAccountDropdown, setShowAccountDropdown] = useState(false)
+  const [showCampaignDropdown, setShowCampaignDropdown] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const campaignDropdownRef = useRef<HTMLDivElement>(null)
 
-  // Fecha dropdown ao clicar fora
+  // Fecha dropdowns ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowAccountDropdown(false)
+      }
+      if (campaignDropdownRef.current && !campaignDropdownRef.current.contains(event.target as Node)) {
+        setShowCampaignDropdown(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Busca contas de anúncios
-  const { data: adAccounts = [] } = useQuery<AdAccount[]>({
-    queryKey: ['ad-accounts'],
-    queryFn: async () => {
-      const response = await api.get('/ad-accounts')
-      return response.data.data || []
-    },
-  })
+  // Busca contas de anúncios usando hook correto
+  const { data: adAccounts = [] } = useAdAccounts()
+
+  // Busca campanhas da conta selecionada
+  const { data: campaignsData } = useAdCampaigns(
+    selectedAdAccount ? { account_id: selectedAdAccount } : undefined
+  )
+  const campaigns = campaignsData?.data || []
+
+  // Limpa campanhas selecionadas ao mudar de conta
+  useEffect(() => {
+    setSelectedCampaigns([])
+  }, [selectedAdAccount])
 
   // Busca perguntas sugeridas
   const { data: suggestions } = useQuery({
@@ -153,7 +159,7 @@ export function AIAnalystChat() {
 
   // Mutation para enviar pergunta
   const askMutation = useMutation({
-    mutationFn: async (payload: { question: string; period: string; ad_account_id: string | null }) => {
+    mutationFn: async (payload: { question: string; period: string; ad_account_id: string | null; campaign_ids: string[] | null }) => {
       const response = await api.post('/bi/analyst/ask', payload)
       return response.data
     },
@@ -191,6 +197,14 @@ export function AIAnalystChat() {
     if (selectedAccount) {
       contextInfo.push(`Conta: ${selectedAccount.name}`)
     }
+    if (selectedCampaigns.length > 0) {
+      const campaignNames = campaigns
+        .filter(c => selectedCampaigns.includes(c.id))
+        .map(c => c.name)
+        .slice(0, 3)
+      const campaignInfo = campaignNames.join(', ') + (selectedCampaigns.length > 3 ? ` +${selectedCampaigns.length - 3}` : '')
+      contextInfo.push(`Campanhas: ${campaignInfo}`)
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -203,6 +217,7 @@ export function AIAnalystChat() {
       question: input,
       period,
       ad_account_id: selectedAdAccount,
+      campaign_ids: selectedCampaigns.length > 0 ? selectedCampaigns : null,
     })
     setInput('')
   }
@@ -365,7 +380,7 @@ export function AIAnalystChat() {
 
               {/* Dropdown */}
               {showAccountDropdown && (
-                <div className="absolute top-full left-0 mt-1 z-50 bg-popover border rounded-md shadow-lg min-w-[200px]">
+                <div className="absolute top-full left-0 mt-1 z-50 bg-popover border rounded-md shadow-lg min-w-[200px] max-h-[300px] overflow-y-auto">
                   <button
                     className={cn(
                       "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors",
@@ -405,6 +420,146 @@ export function AIAnalystChat() {
                 </div>
               )}
             </div>
+
+            {/* Seletor de Campanhas (aparece quando uma conta é selecionada) */}
+            {selectedAdAccount && (
+              <>
+                {/* Separador */}
+                <div className="h-6 w-px bg-border" />
+                
+                <div className="flex items-center gap-2 relative" ref={campaignDropdownRef}>
+                  <Megaphone className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Campanhas:</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs min-w-[180px] justify-between"
+                    onClick={() => setShowCampaignDropdown(!showCampaignDropdown)}
+                  >
+                    <span className="truncate">
+                      {selectedCampaigns.length === 0
+                        ? 'Todas as campanhas'
+                        : selectedCampaigns.length === 1
+                        ? campaigns.find(c => c.id === selectedCampaigns[0])?.name || '1 selecionada'
+                        : `${selectedCampaigns.length} selecionadas`}
+                    </span>
+                    <ChevronDown className="h-3 w-3 ml-2 shrink-0" />
+                  </Button>
+
+                  {/* Limpar seleção de campanhas */}
+                  {selectedCampaigns.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setSelectedCampaigns([])}
+                      title="Limpar seleção"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+
+                  {/* Dropdown de Campanhas (múltipla seleção) */}
+                  {showCampaignDropdown && (
+                    <div className="absolute top-full left-0 mt-1 z-50 bg-popover border rounded-md shadow-lg min-w-[280px] max-h-[350px] overflow-y-auto">
+                      <div className="px-3 py-2 border-b sticky top-0 bg-popover">
+                        <p className="text-xs text-muted-foreground">
+                          Selecione uma ou mais campanhas para análise
+                        </p>
+                      </div>
+                      <button
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2",
+                          selectedCampaigns.length === 0 && "bg-muted font-medium"
+                        )}
+                        onClick={() => {
+                          setSelectedCampaigns([])
+                          setShowCampaignDropdown(false)
+                        }}
+                      >
+                        <div className={cn(
+                          "w-4 h-4 rounded border flex items-center justify-center",
+                          selectedCampaigns.length === 0 && "bg-primary border-primary"
+                        )}>
+                          {selectedCampaigns.length === 0 && (
+                            <CheckCircle className="h-3 w-3 text-primary-foreground" />
+                          )}
+                        </div>
+                        <span>Todas as campanhas</span>
+                      </button>
+                      
+                      {campaigns.length > 0 ? (
+                        campaigns.map((campaign) => {
+                          const isSelected = selectedCampaigns.includes(campaign.id)
+                          return (
+                            <button
+                              key={campaign.id}
+                              className={cn(
+                                "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2",
+                                isSelected && "bg-muted/50"
+                              )}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedCampaigns(prev => prev.filter(id => id !== campaign.id))
+                                } else {
+                                  setSelectedCampaigns(prev => [...prev, campaign.id])
+                                }
+                              }}
+                            >
+                              <div className={cn(
+                                "w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                                isSelected && "bg-primary border-primary"
+                              )}>
+                                {isSelected && (
+                                  <CheckCircle className="h-3 w-3 text-primary-foreground" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className="truncate block">{campaign.name}</span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={cn(
+                                      "text-[9px]",
+                                      campaign.status === 'ACTIVE' && "bg-green-500/10 text-green-500",
+                                      campaign.status === 'PAUSED' && "bg-yellow-500/10 text-yellow-500"
+                                    )}
+                                  >
+                                    {campaign.status === 'ACTIVE' ? 'Ativa' : campaign.status === 'PAUSED' ? 'Pausada' : campaign.status}
+                                  </Badge>
+                                  {campaign.objective && (
+                                    <span className="text-[9px] text-muted-foreground truncate">
+                                      {campaign.objective.replace('OUTCOME_', '')}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          )
+                        })
+                      ) : (
+                        <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                          Nenhuma campanha encontrada
+                        </div>
+                      )}
+                      
+                      {selectedCampaigns.length > 0 && (
+                        <div className="px-3 py-2 border-t sticky bottom-0 bg-popover">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="w-full h-7 text-xs"
+                            onClick={() => setShowCampaignDropdown(false)}
+                          >
+                            Confirmar ({selectedCampaigns.length} selecionada{selectedCampaigns.length > 1 ? 's' : ''})
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 

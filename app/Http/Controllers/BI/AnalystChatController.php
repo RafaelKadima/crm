@@ -20,6 +20,8 @@ class AnalystChatController extends Controller
             'question' => 'required|string|max:1000',
             'period' => 'nullable|string|max:50',
             'ad_account_id' => 'nullable|uuid',
+            'campaign_ids' => 'nullable|array',
+            'campaign_ids.*' => 'uuid',
             'context' => 'nullable|array',
         ]);
 
@@ -37,6 +39,20 @@ class AnalystChatController extends Controller
             }
         }
 
+        // Valida que as campanhas pertencem ao tenant e à conta (se especificada)
+        $campaignIds = [];
+        if (!empty($validated['campaign_ids'])) {
+            $query = \App\Models\AdCampaign::where('tenant_id', $tenantId)
+                ->whereIn('id', $validated['campaign_ids']);
+            
+            // Se uma conta foi especificada, filtra campanhas da conta
+            if ($adAccountId) {
+                $query->where('ad_account_id', $adAccountId);
+            }
+            
+            $campaignIds = $query->pluck('id')->toArray();
+        }
+
         try {
             $response = Http::timeout(60)->post(config('services.ai.url') . '/mcp/tool', [
                 'tool_name' => 'ask_analyst',
@@ -45,6 +61,7 @@ class AnalystChatController extends Controller
                     'question' => $validated['question'],
                     'period' => $validated['period'] ?? '30d',
                     'ad_account_id' => $adAccountId,
+                    'campaign_ids' => !empty($campaignIds) ? $campaignIds : null,
                     'context' => $validated['context'] ?? [],
                 ],
                 'agent_type' => 'bi',
@@ -59,6 +76,7 @@ class AnalystChatController extends Controller
                 'question' => $validated['question'],
                 'period' => $validated['period'] ?? '30d',
                 'ad_account_id' => $adAccountId,
+                'campaign_ids' => $campaignIds,
                 'error' => $e->getMessage(),
             ]);
         }
