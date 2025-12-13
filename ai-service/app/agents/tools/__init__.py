@@ -11,6 +11,9 @@ from .meta_ads_tools import (
     create_meta_ad,
     upload_creative_to_meta,
     get_meta_campaign_status,
+    get_ad_account_insights,
+    get_campaigns_insights,
+    get_campaign_detailed_insights,
 )
 
 from .database_tools import (
@@ -22,6 +25,7 @@ from .database_tools import (
     save_campaign_to_database,
     update_creative_status,
     update_copy_status,
+    list_ad_campaigns,
 )
 
 __all__ = [
@@ -31,6 +35,9 @@ __all__ = [
     'create_meta_ad',
     'upload_creative_to_meta',
     'get_meta_campaign_status',
+    'get_ad_account_insights',
+    'get_campaigns_insights',
+    'get_campaign_detailed_insights',
     # Database Tools
     'get_tenant_config',
     'list_available_creatives',
@@ -40,5 +47,5 @@ __all__ = [
     'save_campaign_to_database',
     'update_creative_status',
     'update_copy_status',
+    'list_ad_campaigns',
 ]
-

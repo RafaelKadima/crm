@@ -242,5 +242,38 @@ class AdCampaignController extends Controller
             ],
         ]);
     }
-}
 
+    /**
+     * Lista campanhas para uso interno (AI Service).
+     * Não requer autenticação de usuário, usa X-Tenant-ID.
+     */
+    public function internalIndex(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+        }
+
+        $query = AdCampaign::where('tenant_id', $tenantId)
+            ->with('account:id,name,platform');
+
+        // Filtros
+        if ($request->has('ad_account_id')) {
+            $query->where('ad_account_id', $request->input('ad_account_id'));
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        $campaigns = $query->orderBy('created_at', 'desc')
+            ->get(['id', 'name', 'status', 'objective', 'spend', 'impressions', 'clicks', 'conversions', 'ctr', 'cpc', 'roas', 'ad_account_id', 'created_at']);
+
+        return response()->json([
+            'success' => true,
+            'campaigns' => $campaigns,
+            'total' => $campaigns->count(),
+        ]);
+    }
+}

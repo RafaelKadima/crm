@@ -499,3 +499,69 @@ def update_copy_status(
             "message": f"❌ Erro ao atualizar copy: {str(e)}"
         }
 
+
+
+@tool
+def list_ad_campaigns(
+    tenant_id: str,
+    ad_account_id: str = None,
+    status: str = None
+) -> Dict[str, Any]:
+    """
+    Lista campanhas de anúncios do banco de dados local.
+    
+    Args:
+        tenant_id: ID do tenant
+        ad_account_id: ID da conta de anúncios (opcional, filtra por conta)
+        status: Status da campanha (ACTIVE, PAUSED, etc) (opcional)
+        
+    Returns:
+        Dict com lista de campanhas
+    """
+    logger.info(
+        'Listing ad campaigns',
+        tenant_id=tenant_id,
+        ad_account_id=ad_account_id,
+        status=status
+    )
+    
+    try:
+        params = {'tenant_id': tenant_id}
+        if ad_account_id:
+            params['ad_account_id'] = ad_account_id
+        if status:
+            params['status'] = status
+            
+        result = _run_async(
+            _call_laravel_api('GET', 'internal/ads/campaigns', tenant_id, params)
+        )
+        
+        campaigns = result.get('data', result.get('campaigns', []))
+        
+        # Formata resposta
+        formatted = []
+        for c in campaigns:
+            formatted.append({
+                'id': c.get('id'),
+                'name': c.get('name'),
+                'status': c.get('status'),
+                'objective': c.get('objective'),
+                'spend': c.get('spend', 0),
+                'impressions': c.get('impressions', 0),
+                'clicks': c.get('clicks', 0),
+            })
+        
+        return {
+            'success': True,
+            'tenant_id': tenant_id,
+            'total_campaigns': len(formatted),
+            'campaigns': formatted,
+            'message': f'✅ Encontradas {len(formatted)} campanha(s).'
+        }
+        
+    except Exception as e:
+        logger.error('Failed to list campaigns', error=str(e))
+        return {
+            'success': False,
+            'error': str(e),
+        }

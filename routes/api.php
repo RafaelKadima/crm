@@ -825,6 +825,7 @@ Route::middleware('internal.api')->prefix('internal')->group(function () {
         Route::get('copies/{copy}', [\App\Http\Controllers\AdCopyController::class, 'internalShow']);
         Route::get('accounts', [\App\Http\Controllers\AdAccountController::class, 'internalIndex']);
         Route::post('save-campaign', [\App\Http\Controllers\AdCampaignController::class, 'internalSave']);
+        Route::get('campaigns', [\App\Http\Controllers\AdCampaignController::class, 'internalIndex']);
     });
 });
 
