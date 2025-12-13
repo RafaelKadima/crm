@@ -7,6 +7,9 @@ Coordena todas as operações de análise, predição e sugestão de ações.
 
 import asyncio
 import logging
+import os
+import json
+import httpx
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 
@@ -32,14 +35,24 @@ class BIAgent:
     6. Preparar dados para ML training
     """
     
-    def __init__(self, tenant_id: str, ad_account_id: Optional[str] = None):
+    def __init__(
+        self, 
+        tenant_id: str, 
+        ad_account_id: Optional[str] = None,
+        campaign_ids: Optional[List[str]] = None
+    ):
         self.tenant_id = tenant_id
         self.ad_account_id = ad_account_id  # Filtro opcional para conta de anúncios
+        self.campaign_ids = campaign_ids  # Filtro opcional para campanhas específicas
         self.analyzer = DataAnalyzer(tenant_id, ad_account_id=ad_account_id)
         self.predictor = PredictiveEngine(tenant_id)
         self.orchestrator = AgentOrchestrator(tenant_id)
         self.knowledge_writer = KnowledgeWriter(tenant_id)
         self.report_generator = ReportGenerator(tenant_id)
+        
+        # Configurações para chamadas à API do Laravel
+        self.laravel_url = os.getenv("LARAVEL_API_URL", "http://nginx")
+        self.internal_key = os.getenv("LARAVEL_INTERNAL_KEY", "")
         
     async def run_daily_cycle(self) -> Dict[str, Any]:
         """
@@ -353,15 +366,21 @@ class BIAgent:
         Este método é usado pelo chat do analista virtual.
         """
         logger.info(f"[BI Agent] Pergunta recebida: {question}")
+        logger.info(f"[BI Agent] Contexto: {context}")
         
         # Analisa a pergunta para determinar a área de foco
         area = self._detect_question_area(question)
+        logger.info(f"[BI Agent] Área detectada: {area}")
         
-        # Coleta dados relevantes
-        data = await self._get_relevant_data(area, context)
+        # Se a pergunta é sobre marketing/campanhas e temos conta de anúncios, busca dados reais
+        if area == "marketing" and self.ad_account_id:
+            data = await self._get_campaigns_data(context)
+        else:
+            # Coleta dados relevantes do analyzer
+            data = await self._get_relevant_data(area, context)
         
-        # Gera resposta
-        answer = await self._generate_answer(question, data, area)
+        # Gera resposta com LLM
+        answer = await self._generate_answer_with_llm(question, data, area, context)
         
         # Sugere ações relacionadas se aplicável
         actions = await self._suggest_related_actions(question, data)
@@ -373,6 +392,157 @@ class BIAgent:
             "actions": actions,
             "related": self._get_related_questions(question, area),
         }
+    
+    async def _get_campaigns_data(self, context: Optional[Dict] = None) -> Dict[str, Any]:
+        """Busca dados reais das campanhas via API interna do Laravel."""
+        period = context.get("period", "30d") if context else "30d"
+        
+        # Mapeia período para date_preset do Meta
+        date_preset_map = {
+            "7d": "last_7d",
+            "30d": "last_30d",
+            "90d": "last_90d",
+            "this_month": "this_month",
+            "last_month": "last_month",
+        }
+        date_preset = date_preset_map.get(period, "last_7d")
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Busca insights das campanhas
+                url = f"{self.laravel_url}/api/internal/ads/accounts/{self.ad_account_id}/campaigns/insights"
+                headers = {
+                    "X-Internal-Key": self.internal_key,
+                    "X-Tenant-ID": self.tenant_id,
+                    "Content-Type": "application/json",
+                }
+                params = {"date_preset": date_preset}
+                
+                logger.info(f"[BI Agent] Buscando campanhas: {url}")
+                response = await client.get(url, headers=headers, params=params)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    campaigns = result.get("data", [])
+                    
+                    # Filtra campanhas específicas se solicitado
+                    if self.campaign_ids:
+                        campaigns = [c for c in campaigns if c.get("id") in self.campaign_ids]
+                    
+                    # Calcula totais
+                    total_spend = sum(float(c.get("spend", 0) or 0) for c in campaigns)
+                    total_impressions = sum(int(c.get("impressions", 0) or 0) for c in campaigns)
+                    total_clicks = sum(int(c.get("clicks", 0) or 0) for c in campaigns)
+                    total_conversions = sum(int(c.get("conversions", 0) or 0) for c in campaigns)
+                    
+                    avg_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
+                    avg_cpc = (total_spend / total_clicks) if total_clicks > 0 else 0
+                    
+                    return {
+                        "account_name": result.get("account_name", ""),
+                        "period": period,
+                        "campaigns": campaigns,
+                        "total_campaigns": len(campaigns),
+                        "totals": {
+                            "spend": total_spend,
+                            "impressions": total_impressions,
+                            "clicks": total_clicks,
+                            "conversions": total_conversions,
+                            "ctr": round(avg_ctr, 2),
+                            "cpc": round(avg_cpc, 2),
+                        },
+                        "source": "meta_ads_api",
+                    }
+                else:
+                    logger.error(f"[BI Agent] Erro ao buscar campanhas: {response.status_code} - {response.text}")
+                    
+        except Exception as e:
+            logger.error(f"[BI Agent] Erro ao buscar dados de campanhas: {e}")
+        
+        return {"campaigns": [], "error": "Não foi possível buscar dados das campanhas"}
+    
+    async def _generate_answer_with_llm(
+        self,
+        question: str,
+        data: Dict,
+        area: str,
+        context: Optional[Dict] = None
+    ) -> str:
+        """Gera resposta usando LLM com os dados coletados."""
+        try:
+            from openai import OpenAI
+            
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            
+            # Prepara dados para o prompt
+            campaigns = data.get("campaigns", [])
+            totals = data.get("totals", {})
+            
+            # Formata dados das campanhas para análise
+            campaigns_info = []
+            for c in campaigns[:10]:  # Limita a 10 campanhas
+                campaigns_info.append({
+                    "name": c.get("name", ""),
+                    "objective": c.get("objective", "").replace("OUTCOME_", ""),
+                    "status": c.get("status", ""),
+                    "spend": f"R$ {float(c.get('spend', 0)):.2f}",
+                    "impressions": c.get("impressions", 0),
+                    "clicks": c.get("clicks", 0),
+                    "ctr": f"{float(c.get('ctr', 0)):.2f}%",
+                    "cpc": f"R$ {float(c.get('cpc', 0)):.2f}",
+                    "conversions": c.get("conversions", 0),
+                    "roas": c.get("roas", 0),
+                })
+            
+            system_prompt = """Você é um analista de BI especializado em marketing digital e campanhas de anúncios.
+Analise os dados fornecidos e responda à pergunta do usuário de forma clara e profissional.
+
+REGRAS IMPORTANTES:
+1. Sempre considere o OBJETIVO da campanha ao avaliar performance:
+   - ENGAGEMENT/AWARENESS: Foque em impressões, alcance, engajamento. ROAS baixo é ESPERADO.
+   - TRAFFIC: Foque em cliques, CPC, CTR.
+   - SALES/LEADS: Foque em conversões, CPA, ROAS.
+2. Nunca critique uma campanha de engajamento por ter ROAS baixo.
+3. Forneça insights acionáveis e recomendações específicas.
+4. Use formatação clara com bullet points quando apropriado.
+5. Responda em português brasileiro.
+6. Seja direto mas completo na análise."""
+
+            user_prompt = f"""Pergunta: {question}
+
+DADOS DAS CAMPANHAS (período: {data.get('period', '30d')}):
+Conta: {data.get('account_name', 'N/A')}
+Total de campanhas: {data.get('total_campaigns', 0)}
+
+TOTAIS:
+- Investimento: R$ {totals.get('spend', 0):.2f}
+- Impressões: {totals.get('impressions', 0):,}
+- Cliques: {totals.get('clicks', 0):,}
+- CTR médio: {totals.get('ctr', 0):.2f}%
+- CPC médio: R$ {totals.get('cpc', 0):.2f}
+- Conversões: {totals.get('conversions', 0)}
+
+DETALHES POR CAMPANHA:
+{json.dumps(campaigns_info, indent=2, ensure_ascii=False)}
+
+Analise esses dados e responda à pergunta considerando os objetivos de cada campanha."""
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=1500
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            logger.error(f"[BI Agent] Erro ao gerar resposta com LLM: {e}")
+            # Fallback para resposta básica
+            return await self._generate_answer(question, data, area)
     
     def _detect_question_area(self, question: str) -> str:
         """Detecta a área de foco da pergunta."""
