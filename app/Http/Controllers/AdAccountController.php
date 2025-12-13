@@ -283,5 +283,188 @@ class AdAccountController extends Controller
             ], 400);
         }
     }
+
+    // =========================================================================
+    // MÉTODOS INTERNOS (para AI Service)
+    // =========================================================================
+
+    /**
+     * Busca insights de uma conta - Rota interna para AI Service.
+     * Autenticação via X-Internal-Key header.
+     */
+    public function internalGetInsights(Request $request, string $accountId): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+        }
+
+        $account = AdAccount::where('tenant_id', $tenantId)
+            ->where('id', $accountId)
+            ->first();
+
+        if (!$account) {
+            return response()->json([
+                'error' => 'Conta de anúncios não encontrada',
+                'account_id' => $accountId,
+                'tenant_id' => $tenantId,
+            ], 404);
+        }
+
+        if (!$account->hasValidToken()) {
+            return response()->json([
+                'error' => 'Token de acesso inválido ou expirado. A conta precisa ser reconectada.',
+                'needs_reconnect' => true,
+                'account_id' => $accountId,
+                'account_name' => $account->name,
+            ], 401);
+        }
+
+        $datePreset = $request->input('date_preset', 'last_7d');
+
+        try {
+            $insights = $this->metaAdsService->fetchAccountInsights($account, $datePreset);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $insights,
+                'account_id' => $accountId,
+                'account_name' => $account->name,
+                'platform' => $account->platform,
+                'period' => $datePreset,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Internal API: Error fetching account insights', [
+                'account_id' => $accountId,
+                'tenant_id' => $tenantId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'account_id' => $accountId,
+            ], 400);
+        }
+    }
+
+    /**
+     * Busca insights de campanhas - Rota interna para AI Service.
+     * Autenticação via X-Internal-Key header.
+     */
+    public function internalGetCampaignsInsights(Request $request, string $accountId): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+        }
+
+        $account = AdAccount::where('tenant_id', $tenantId)
+            ->where('id', $accountId)
+            ->first();
+
+        if (!$account) {
+            return response()->json([
+                'error' => 'Conta de anúncios não encontrada',
+                'account_id' => $accountId,
+                'tenant_id' => $tenantId,
+            ], 404);
+        }
+
+        if (!$account->hasValidToken()) {
+            return response()->json([
+                'error' => 'Token de acesso inválido ou expirado. A conta precisa ser reconectada.',
+                'needs_reconnect' => true,
+                'account_id' => $accountId,
+                'account_name' => $account->name,
+            ], 401);
+        }
+
+        $datePreset = $request->input('date_preset', 'last_7d');
+
+        try {
+            $campaigns = $this->metaAdsService->fetchCampaignsWithInsights($account, $datePreset);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $campaigns,
+                'account_id' => $accountId,
+                'account_name' => $account->name,
+                'platform' => $account->platform,
+                'period' => $datePreset,
+                'total' => count($campaigns),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Internal API: Error fetching campaigns insights', [
+                'account_id' => $accountId,
+                'tenant_id' => $tenantId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'account_id' => $accountId,
+            ], 400);
+        }
+    }
+
+    /**
+     * Busca conta por platform_account_id - Rota interna para AI Service.
+     * Útil quando o agente sabe o ID da conta no Meta (ex: 1325063905938909)
+     * mas não sabe o ID interno do CRM.
+     */
+    public function internalFindByPlatformId(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        $platformAccountId = $request->input('platform_account_id');
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+        }
+
+        if (!$platformAccountId) {
+            return response()->json(['error' => 'platform_account_id parameter required'], 400);
+        }
+
+        $account = AdAccount::where('tenant_id', $tenantId)
+            ->where('platform_account_id', $platformAccountId)
+            ->first();
+
+        if (!$account) {
+            // Tenta buscar sem o prefixo "act_" caso tenha sido passado
+            $cleanId = str_replace('act_', '', $platformAccountId);
+            $account = AdAccount::where('tenant_id', $tenantId)
+                ->where('platform_account_id', $cleanId)
+                ->first();
+        }
+
+        if (!$account) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Conta de anúncios não encontrada com este ID da plataforma',
+                'platform_account_id' => $platformAccountId,
+                'tenant_id' => $tenantId,
+                'hint' => 'Verifique se a conta está conectada ao CRM e se o tenant_id está correto',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $account->id,
+                'name' => $account->name,
+                'platform' => $account->platform,
+                'platform_account_id' => $account->platform_account_id,
+                'status' => $account->status,
+                'has_valid_token' => $account->hasValidToken(),
+                'last_sync_at' => $account->last_sync_at,
+                'currency' => $account->currency,
+                'timezone' => $account->timezone,
+            ],
+        ]);
+    }
 }
 

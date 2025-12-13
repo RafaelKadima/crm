@@ -827,6 +827,11 @@ Route::middleware('internal.api')->prefix('internal')->group(function () {
         Route::post('save-campaign', [\App\Http\Controllers\AdCampaignController::class, 'internalSave']);
         Route::get('campaigns', [\App\Http\Controllers\AdCampaignController::class, 'internalIndex']);
         Route::post('campaigns/sync', [\App\Http\Controllers\AdCampaignController::class, 'internalSyncAndList']);
+        
+        // Insights de contas e campanhas (para AI Service acessar dados do Meta)
+        Route::get('accounts/{accountId}/insights', [\App\Http\Controllers\AdAccountController::class, 'internalGetInsights']);
+        Route::get('accounts/{accountId}/campaigns/insights', [\App\Http\Controllers\AdAccountController::class, 'internalGetCampaignsInsights']);
+        Route::post('accounts/find-by-platform-id', [\App\Http\Controllers\AdAccountController::class, 'internalFindByPlatformId']);
     });
 });
 

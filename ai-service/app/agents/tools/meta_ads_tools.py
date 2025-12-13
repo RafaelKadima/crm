@@ -3,6 +3,9 @@ Tools para interação com a API do Meta Ads.
 
 Estas tools são chamadas pelo agente para criar campanhas,
 adsets, ads e fazer upload de criativos.
+
+IMPORTANTE: Estas tools usam a API INTERNA do Laravel (/api/internal/...)
+que requer autenticação via X-Internal-Key header.
 """
 
 import httpx
@@ -14,17 +17,75 @@ from app.config import get_settings
 
 logger = structlog.get_logger()
 
-# URL base da API do Laravel
-LARAVEL_API_URL = None
+# Cache das configurações
+_settings_cache = None
+
+
+def _get_settings():
+    """Retorna settings com cache."""
+    global _settings_cache
+    if _settings_cache is None:
+        _settings_cache = get_settings()
+    return _settings_cache
 
 
 def _get_laravel_url() -> str:
     """Retorna URL da API Laravel."""
-    global LARAVEL_API_URL
-    if LARAVEL_API_URL is None:
-        settings = get_settings()
-        LARAVEL_API_URL = settings.LARAVEL_API_URL
-    return LARAVEL_API_URL
+    return _get_settings().LARAVEL_API_URL
+
+
+def _get_internal_key() -> str:
+    """Retorna chave de API interna."""
+    return _get_settings().LARAVEL_INTERNAL_KEY
+
+
+def _call_laravel_internal_api_sync(
+    method: str,
+    endpoint: str,
+    tenant_id: str,
+    data: Optional[Dict] = None,
+) -> Dict[str, Any]:
+    """
+    Helper SÍNCRONO para chamar API INTERNA do Laravel.
+    
+    Usa o endpoint /api/internal/... com autenticação via X-Internal-Key.
+    Este é o método correto para o AI Service acessar dados do CRM.
+    """
+    url = f"{_get_laravel_url()}/api/internal/{endpoint}"
+    
+    headers = {
+        "Content-Type": "application/json",
+        "X-Tenant-ID": tenant_id,
+        "X-Internal-Key": _get_internal_key(),
+    }
+    
+    logger.debug(
+        "Calling Laravel internal API",
+        method=method,
+        endpoint=endpoint,
+        tenant_id=tenant_id,
+    )
+    
+    with httpx.Client(timeout=60.0) as client:
+        if method.upper() == "GET":
+            response = client.get(url, headers=headers, params=data)
+        elif method.upper() == "POST":
+            response = client.post(url, headers=headers, json=data)
+        elif method.upper() == "PUT":
+            response = client.put(url, headers=headers, json=data)
+        else:
+            raise ValueError(f"Método não suportado: {method}")
+        
+        if response.status_code >= 400:
+            logger.error(
+                "Laravel internal API error",
+                endpoint=endpoint,
+                status=response.status_code,
+                body=response.text[:500]
+            )
+            raise Exception(f"Erro na API interna: {response.status_code} - {response.text[:200]}")
+        
+        return response.json()
 
 
 def _call_laravel_api_sync(
@@ -34,7 +95,12 @@ def _call_laravel_api_sync(
     data: Optional[Dict] = None,
     access_token: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Helper SÍNCRONO para chamar API do Laravel."""
+    """
+    Helper SÍNCRONO para chamar API pública do Laravel.
+    
+    ATENÇÃO: Esta função usa endpoints públicos que requerem token de usuário.
+    Para a maioria dos casos, use _call_laravel_internal_api_sync() ao invés.
+    """
     url = f"{_get_laravel_url()}/api/{endpoint}"
     
     headers = {
@@ -45,7 +111,6 @@ def _call_laravel_api_sync(
     if access_token:
         headers["Authorization"] = f"Bearer {access_token}"
     
-    # Usa httpx síncrono - funciona em qualquer thread!
     with httpx.Client(timeout=60.0) as client:
         if method.upper() == "GET":
             response = client.get(url, headers=headers, params=data)
@@ -432,25 +497,42 @@ def get_ad_account_insights(
     
     Args:
         tenant_id: ID do tenant
-        ad_account_id: ID da conta de anúncios no CRM
+        ad_account_id: ID da conta de anúncios no CRM (UUID interno)
         date_preset: Período de análise (today, yesterday, last_7d, last_14d, last_30d, this_month, last_month)
         
     Returns:
         Dict com métricas da conta (spend, impressions, clicks, conversions, ROAS, etc.)
     """
+    logger.info(
+        "Getting ad account insights",
+        tenant_id=tenant_id,
+        ad_account_id=ad_account_id,
+        date_preset=date_preset
+    )
+    
     try:
-        result = _call_laravel_api_sync(
+        # Usa API interna com X-Internal-Key
+        result = _call_laravel_internal_api_sync(
             "GET",
             f"ads/accounts/{ad_account_id}/insights",
             tenant_id,
             {"date_preset": date_preset}
         )
         
+        if not result.get("success", True):
+            return {
+                "success": False,
+                "error": result.get("error", "Erro desconhecido"),
+                "needs_reconnect": result.get("needs_reconnect", False),
+            }
+        
         data = result.get("data", result)
         
         return {
             "success": True,
             "ad_account_id": ad_account_id,
+            "account_name": result.get("account_name"),
+            "platform": result.get("platform"),
             "period": date_preset,
             "spend": data.get("spend", 0),
             "impressions": data.get("impressions", 0),
@@ -471,6 +553,7 @@ def get_ad_account_insights(
         return {
             "success": False,
             "error": str(e),
+            "hint": "Verifique se a conta está conectada e se o LARAVEL_INTERNAL_KEY está configurado",
         }
 
 
@@ -485,19 +568,34 @@ def get_campaigns_insights(
     
     Args:
         tenant_id: ID do tenant
-        ad_account_id: ID da conta de anúncios no CRM
+        ad_account_id: ID da conta de anúncios no CRM (UUID interno)
         date_preset: Período de análise (today, yesterday, last_7d, last_14d, last_30d)
         
     Returns:
         Dict com lista de campanhas e suas métricas
     """
+    logger.info(
+        "Getting campaigns insights",
+        tenant_id=tenant_id,
+        ad_account_id=ad_account_id,
+        date_preset=date_preset
+    )
+    
     try:
-        result = _call_laravel_api_sync(
+        # Usa API interna com X-Internal-Key
+        result = _call_laravel_internal_api_sync(
             "GET",
             f"ads/accounts/{ad_account_id}/campaigns/insights",
             tenant_id,
             {"date_preset": date_preset}
         )
+        
+        if not result.get("success", True):
+            return {
+                "success": False,
+                "error": result.get("error", "Erro desconhecido"),
+                "needs_reconnect": result.get("needs_reconnect", False),
+            }
         
         campaigns = result.get("data", result.get("campaigns", []))
         
@@ -524,6 +622,8 @@ def get_campaigns_insights(
         return {
             "success": True,
             "ad_account_id": ad_account_id,
+            "account_name": result.get("account_name"),
+            "platform": result.get("platform"),
             "period": date_preset,
             "total_campaigns": len(formatted_campaigns),
             "campaigns": formatted_campaigns[:10],  # Top 10
@@ -531,6 +631,124 @@ def get_campaigns_insights(
         
     except Exception as e:
         logger.error("Failed to get campaigns insights", error=str(e))
+        return {
+            "success": False,
+            "error": str(e),
+            "hint": "Verifique se a conta está conectada e se o LARAVEL_INTERNAL_KEY está configurado",
+        }
+
+
+@tool
+def find_ad_account_by_platform_id(
+    tenant_id: str,
+    platform_account_id: str,
+) -> Dict[str, Any]:
+    """
+    Busca uma conta de anúncios pelo ID da plataforma (ex: ID do Meta Ads).
+    
+    Útil quando você sabe o ID da conta no Meta (ex: "1325063905938909")
+    mas não sabe o UUID interno do CRM.
+    
+    Args:
+        tenant_id: ID do tenant
+        platform_account_id: ID da conta na plataforma (ex: "1325063905938909" ou "act_1325063905938909")
+        
+    Returns:
+        Dict com dados da conta no CRM, incluindo o ID interno (UUID)
+    """
+    logger.info(
+        "Finding ad account by platform ID",
+        tenant_id=tenant_id,
+        platform_account_id=platform_account_id
+    )
+    
+    try:
+        result = _call_laravel_internal_api_sync(
+            "POST",
+            "ads/accounts/find-by-platform-id",
+            tenant_id,
+            {"platform_account_id": platform_account_id}
+        )
+        
+        if not result.get("success"):
+            return {
+                "success": False,
+                "error": result.get("error", "Conta não encontrada"),
+                "hint": result.get("hint", "Verifique se a conta está conectada ao CRM"),
+            }
+        
+        data = result.get("data", {})
+        
+        return {
+            "success": True,
+            "id": data.get("id"),  # UUID interno do CRM
+            "name": data.get("name"),
+            "platform": data.get("platform"),
+            "platform_account_id": data.get("platform_account_id"),
+            "status": data.get("status"),
+            "has_valid_token": data.get("has_valid_token"),
+            "last_sync_at": data.get("last_sync_at"),
+            "currency": data.get("currency"),
+            "timezone": data.get("timezone"),
+            "message": f"✅ Conta encontrada: {data.get('name')} (ID interno: {data.get('id')})",
+        }
+        
+    except Exception as e:
+        logger.error("Failed to find account by platform ID", error=str(e))
+        return {
+            "success": False,
+            "error": str(e),
+        }
+
+
+@tool
+def list_ad_accounts(
+    tenant_id: str,
+) -> Dict[str, Any]:
+    """
+    Lista todas as contas de anúncio conectadas ao tenant.
+    
+    Args:
+        tenant_id: ID do tenant
+        
+    Returns:
+        Dict com lista de contas e seus status
+    """
+    logger.info(
+        "Listing ad accounts",
+        tenant_id=tenant_id
+    )
+    
+    try:
+        result = _call_laravel_internal_api_sync(
+            "GET",
+            "ads/accounts",
+            tenant_id,
+        )
+        
+        accounts = result.get("data", [])
+        
+        formatted_accounts = []
+        for account in accounts:
+            formatted_accounts.append({
+                "id": account.get("id"),
+                "name": account.get("name"),
+                "platform": account.get("platform"),
+                "platform_account_id": account.get("platform_account_id"),
+                "status": account.get("status"),
+                "currency": account.get("currency"),
+                "last_sync_at": account.get("last_sync_at"),
+            })
+        
+        return {
+            "success": True,
+            "total": len(formatted_accounts),
+            "accounts": formatted_accounts,
+            "message": f"✅ {len(formatted_accounts)} conta(s) de anúncio encontrada(s)",
+        }
+        
+    except Exception as e:
+        logger.error("Failed to list ad accounts", error=str(e))
         return {
             "success": False,
             "error": str(e),
