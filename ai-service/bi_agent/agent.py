@@ -409,6 +409,30 @@ class BIAgent:
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
+                # Se temos campaign_ids (UUIDs do banco), primeiro busca os platform_campaign_ids
+                platform_campaign_ids = []
+                if self.campaign_ids:
+                    # Busca mapeamento de UUIDs para platform_campaign_ids via Laravel
+                    campaigns_url = f"{self.laravel_url}/api/internal/ads/campaigns"
+                    headers = {
+                        "X-Internal-Key": self.internal_key,
+                        "X-Tenant-ID": self.tenant_id,
+                        "Content-Type": "application/json",
+                    }
+                    params = {"ad_account_id": self.ad_account_id}
+                    
+                    campaigns_response = await client.get(campaigns_url, headers=headers, params=params)
+                    if campaigns_response.status_code == 200:
+                        campaigns_data = campaigns_response.json()
+                        all_campaigns = campaigns_data.get("campaigns", [])
+                        # Mapeia UUIDs para platform_campaign_ids
+                        for camp in all_campaigns:
+                            if camp.get("id") in self.campaign_ids:
+                                platform_id = camp.get("platform_campaign_id")
+                                if platform_id:
+                                    platform_campaign_ids.append(str(platform_id))
+                        logger.info(f"[BI Agent] Mapeou {len(platform_campaign_ids)} campanhas de {len(self.campaign_ids)} UUIDs")
+                
                 # Busca insights das campanhas
                 url = f"{self.laravel_url}/api/internal/ads/accounts/{self.ad_account_id}/campaigns/insights"
                 headers = {
@@ -425,9 +449,12 @@ class BIAgent:
                     result = response.json()
                     campaigns = result.get("data", [])
                     
-                    # Filtra campanhas específicas se solicitado
-                    if self.campaign_ids:
-                        campaigns = [c for c in campaigns if c.get("id") in self.campaign_ids]
+                    logger.info(f"[BI Agent] Recebeu {len(campaigns)} campanhas da API")
+                    
+                    # Filtra campanhas específicas se solicitado (usando platform_campaign_ids)
+                    if platform_campaign_ids:
+                        campaigns = [c for c in campaigns if str(c.get("id")) in platform_campaign_ids]
+                        logger.info(f"[BI Agent] Filtrou para {len(campaigns)} campanhas")
                     
                     # Calcula totais
                     total_spend = sum(float(c.get("spend", 0) or 0) for c in campaigns)
@@ -458,6 +485,8 @@ class BIAgent:
                     
         except Exception as e:
             logger.error(f"[BI Agent] Erro ao buscar dados de campanhas: {e}")
+            import traceback
+            logger.error(f"[BI Agent] Traceback: {traceback.format_exc()}")
         
         return {"campaigns": [], "error": "Não foi possível buscar dados das campanhas"}
     

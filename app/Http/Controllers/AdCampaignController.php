@@ -273,7 +273,7 @@ class AdCampaignController extends Controller
         }
 
         $campaigns = $query->orderBy('created_at', 'desc')
-            ->get(['id', 'name', 'status', 'objective', 'spend', 'impressions', 'clicks', 'conversions', 'ctr', 'cpc', 'roas', 'ad_account_id', 'created_by', 'created_at']);
+            ->get(['id', 'platform_campaign_id', 'name', 'status', 'objective', 'spend', 'impressions', 'clicks', 'conversions', 'ctr', 'cpc', 'roas', 'ad_account_id', 'created_by', 'created_at']);
 
         // Estatísticas por origem
         $byOrigin = [
