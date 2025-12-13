@@ -246,7 +246,7 @@ export function LoginPage() {
               transition={{ delay: 0.7 }}
             >
               <p className="text-center text-xs text-muted-foreground leading-relaxed">
-                <span className="text-white/60 font-medium">IA que vende por você.</span>
+                <span className="text-white/60 font-medium">Visão 360° do seu negócio.</span>
                 <br />
                 <span className="text-white/40">CRM inteligente • SDR Autônomo • Ads automatizados</span>
               </p>
