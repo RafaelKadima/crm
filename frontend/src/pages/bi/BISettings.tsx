@@ -389,7 +389,7 @@ export default function BISettings() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {account.status !== 'connected' && (
+                    {account.status !== 'active' && (
                       <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 gap-1">
                         <AlertTriangle className="h-3 w-3" />
                         Desconectada
@@ -488,7 +488,7 @@ export default function BISettings() {
                       {account.platform} • {account.platform_account_id}
                     </p>
                   </div>
-                  {account.status !== 'connected' && (
+                  {account.status !== 'active' && (
                     <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-xs shrink-0">
                       <AlertTriangle className="h-3 w-3 mr-1" />
                       Desconectada
