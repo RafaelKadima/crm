@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import api from '@/api/axios'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -7,8 +8,25 @@ import { Switch } from '@/components/ui/Switch'
 import { Label } from '@/components/ui/Label'
 import { Badge } from '@/components/ui/Badge'
 import { Checkbox } from '@/components/ui/Checkbox'
+import { Input } from '@/components/ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
-import { Loader2, Play, Settings2, Clock, Building2, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog'
+import { 
+  Loader2, 
+  Play, 
+  Settings2, 
+  Clock, 
+  Building2, 
+  CheckCircle2, 
+  AlertCircle,
+  Plus,
+  X,
+  Search,
+  AlertTriangle,
+  ExternalLink,
+  ClipboardList,
+  BarChart3
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -36,6 +54,9 @@ interface BIConfig {
 export default function BISettings() {
   const queryClient = useQueryClient()
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([])
+  const [modalOpen, setModalOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [tempSelectedAccounts, setTempSelectedAccounts] = useState<string[]>([])
 
   // Busca contas disponíveis
   const { data: accountsData, isLoading: loadingAccounts } = useQuery({
@@ -64,13 +85,13 @@ export default function BISettings() {
   })
 
   // Busca status do scheduler
-  const { data: schedulerStatus, isLoading: loadingScheduler } = useQuery({
+  const { data: schedulerStatus } = useQuery({
     queryKey: ['bi-scheduler-status'],
     queryFn: async () => {
       const { data } = await api.get('/bi/scheduler-status')
       return data as SchedulerStatus
     },
-    refetchInterval: 30000 // Atualiza a cada 30s
+    refetchInterval: 30000
   })
 
   // Mutation para atualizar contas monitoradas
@@ -116,23 +137,39 @@ export default function BISettings() {
       toast.success(data.message || 'Análise concluída!')
       queryClient.invalidateQueries({ queryKey: ['bi-dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['bi-analyses'] })
+      queryClient.invalidateQueries({ queryKey: ['bi-actions'] })
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Erro ao executar análise')
     }
   })
 
-  const handleAccountToggle = (accountId: string) => {
-    setSelectedAccounts(prev => {
+  // Handlers
+  const handleRemoveAccount = (accountId: string) => {
+    const newSelected = selectedAccounts.filter(id => id !== accountId)
+    setSelectedAccounts(newSelected)
+    updateAccountsMutation.mutate(newSelected)
+  }
+
+  const handleOpenModal = () => {
+    setTempSelectedAccounts([...selectedAccounts])
+    setSearchTerm('')
+    setModalOpen(true)
+  }
+
+  const handleModalSave = () => {
+    setSelectedAccounts(tempSelectedAccounts)
+    updateAccountsMutation.mutate(tempSelectedAccounts)
+    setModalOpen(false)
+  }
+
+  const handleTempAccountToggle = (accountId: string) => {
+    setTempSelectedAccounts(prev => {
       if (prev.includes(accountId)) {
         return prev.filter(id => id !== accountId)
       }
       return [...prev, accountId]
     })
-  }
-
-  const handleSaveAccounts = () => {
-    updateAccountsMutation.mutate(selectedAccounts)
   }
 
   const handleRunAnalysis = () => {
@@ -150,6 +187,17 @@ export default function BISettings() {
       minute: '2-digit'
     })
   }
+
+  // Contas selecionadas (monitoradas)
+  const monitoredAccounts = accountsData?.accounts?.filter((a: AdAccount) => 
+    selectedAccounts.includes(a.id)
+  ) || []
+
+  // Contas filtradas no modal
+  const filteredAccounts = accountsData?.accounts?.filter((a: AdAccount) =>
+    a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.platform_account_id.includes(searchTerm)
+  ) || []
 
   if (loadingAccounts || loadingConfig) {
     return (
@@ -182,6 +230,24 @@ export default function BISettings() {
           )}
           Gerar Análise Agora
         </Button>
+      </div>
+
+      {/* Links rápidos */}
+      <div className="flex gap-3">
+        <Link to="/bi/actions">
+          <Button variant="outline" size="sm" className="gap-2">
+            <ClipboardList className="h-4 w-4" />
+            Ver Ações Pendentes
+            <ExternalLink className="h-3 w-3" />
+          </Button>
+        </Link>
+        <Link to="/bi">
+          <Button variant="outline" size="sm" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Dashboard BI
+            <ExternalLink className="h-3 w-3" />
+          </Button>
+        </Link>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -269,7 +335,7 @@ export default function BISettings() {
         </Card>
       </div>
 
-      {/* Contas Monitoradas */}
+      {/* Contas Monitoradas - Nova UX */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -279,67 +345,71 @@ export default function BISettings() {
                 Contas Monitoradas
               </CardTitle>
               <CardDescription>
-                Selecione as contas de anúncios que o BI Agent deve analisar
+                Contas de anúncios que o BI Agent analisa automaticamente
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">
-                {selectedAccounts.length} de {accountsData?.accounts?.length || 0} selecionadas
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveAccounts}
-                disabled={updateAccountsMutation.isPending}
-              >
-                {updateAccountsMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                Salvar
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenModal}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Adicionar Conta
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {!accountsData?.accounts?.length ? (
-            <div className="text-center py-8 text-muted-foreground">
+          {monitoredAccounts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
               <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhuma conta de anúncios conectada</p>
-              <p className="text-sm">Conecte contas no módulo Ads Intelligence</p>
+              <p className="font-medium">Nenhuma conta selecionada</p>
+              <p className="text-sm mb-4">Adicione contas para o BI Agent monitorar</p>
+              <Button variant="outline" size="sm" onClick={handleOpenModal} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Adicionar Conta
+              </Button>
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {accountsData.accounts.map((account: AdAccount) => (
+            <div className="space-y-3">
+              {monitoredAccounts.map((account: AdAccount) => (
                 <div
                   key={account.id}
-                  className={cn(
-                    "flex items-center space-x-3 rounded-lg border p-4 cursor-pointer transition-colors",
-                    selectedAccounts.includes(account.id) 
-                      ? "border-primary bg-primary/5" 
-                      : "hover:bg-muted/50"
-                  )}
-                  onClick={() => handleAccountToggle(account.id)}
+                  className="flex items-center justify-between rounded-lg border p-4 bg-card hover:bg-muted/30 transition-colors"
                 >
-                  <Checkbox
-                    checked={selectedAccounts.includes(account.id)}
-                    onCheckedChange={() => handleAccountToggle(account.id)}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{account.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {account.platform} • {account.platform_account_id}
-                    </p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Building2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{account.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {account.platform} • {account.platform_account_id}
+                      </p>
+                    </div>
                   </div>
-                  <Badge 
-                    variant={account.status === 'connected' ? 'default' : 'secondary'}
-                    className="shrink-0"
-                  >
-                    {account.status === 'connected' ? 'Conectada' : 'Desconectada'}
-                  </Badge>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {account.status !== 'connected' && (
+                      <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Desconectada
+                      </Badge>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleRemoveAccount(account.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
+              
+              <p className="text-xs text-muted-foreground pt-2">
+                {monitoredAccounts.length} conta(s) monitorada(s)
+              </p>
             </div>
           )}
         </CardContent>
@@ -367,14 +437,88 @@ export default function BISettings() {
                 <li>Sugestão de ações para otimização</li>
               </ul>
               <p className="text-sm text-muted-foreground mt-2">
-                Use o botão <strong>"Gerar Análise Agora"</strong> para executar uma análise imediata
-                quando precisar de insights urgentes.
+                As ações sugeridas aparecem em <Link to="/bi/actions" className="text-primary hover:underline">Ações Pendentes</Link>.
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de Adicionar Contas */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Adicionar Contas para Monitoramento</DialogTitle>
+          </DialogHeader>
+          
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar conta..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-2 min-h-[300px] max-h-[400px] pr-2">
+            {filteredAccounts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Nenhuma conta encontrada</p>
+              </div>
+            ) : (
+              filteredAccounts.map((account: AdAccount) => (
+                <div
+                  key={account.id}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
+                    tempSelectedAccounts.includes(account.id) 
+                      ? "border-primary bg-primary/5" 
+                      : "hover:bg-muted/50"
+                  )}
+                  onClick={() => handleTempAccountToggle(account.id)}
+                >
+                  <Checkbox
+                    checked={tempSelectedAccounts.includes(account.id)}
+                    onCheckedChange={() => handleTempAccountToggle(account.id)}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{account.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {account.platform} • {account.platform_account_id}
+                    </p>
+                  </div>
+                  {account.status !== 'connected' && (
+                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-xs shrink-0">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Desconectada
+                    </Badge>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          <DialogFooter className="border-t pt-4">
+            <div className="flex items-center justify-between w-full">
+              <span className="text-sm text-muted-foreground">
+                {tempSelectedAccounts.length} selecionada(s)
+              </span>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleModalSave} disabled={updateAccountsMutation.isPending}>
+                  {updateAccountsMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Salvar Seleção
+                </Button>
+              </div>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-
