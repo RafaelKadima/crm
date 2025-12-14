@@ -12,6 +12,8 @@ use App\Models\AdAccount;
 use App\Models\AgentActionLog;
 use App\Models\BiSuggestedAction;
 use App\Models\BiGeneratedKnowledge;
+use App\Models\BiAnalysis;
+use App\Models\BiAgentConfig;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -586,7 +588,7 @@ class InternalBIController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'rationale' => 'required|string',
-            'payload' => 'required|array',
+            'payload' => 'nullable|array',
             'priority' => 'required|string|in:low,medium,high,critical',
             'expected_impact' => 'nullable|array',
             'expires_at' => 'nullable|date',
@@ -599,7 +601,7 @@ class InternalBIController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'],
             'rationale' => $validated['rationale'],
-            'action_payload' => $validated['payload'],
+            'action_payload' => $validated['payload'] ?? ['action' => $validated['action_type']],
             'priority' => $validated['priority'],
             'expected_impact' => $validated['expected_impact'] ?? null,
             'status' => 'pending',
