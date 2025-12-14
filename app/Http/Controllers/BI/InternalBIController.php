@@ -599,7 +599,7 @@ class InternalBIController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'],
             'rationale' => $validated['rationale'],
-            'payload' => $validated['payload'],
+            'action_payload' => $validated['payload'],
             'priority' => $validated['priority'],
             'expected_impact' => $validated['expected_impact'] ?? null,
             'status' => 'pending',

@@ -380,4 +380,48 @@ Confiança: {metadata.get('confidence', 0.8)}
                 context_parts.append(f"- {content[:300]}...")
         
         return "\n".join(context_parts) if len(context_parts) > 1 else ""
-
+    
+    async def add_to_rag(
+        self,
+        content: str,
+        knowledge_type: str,
+        category: str,
+        title: str,
+        confidence: float = 0.8
+    ) -> Dict[str, Any]:
+        """
+        Adiciona conhecimento ao RAG (método público).
+        
+        Wrapper para compatibilidade com BIAgent.
+        """
+        try:
+            result = await self.write_insight(
+                title=title,
+                content=content,
+                category=category,
+                knowledge_type=knowledge_type,
+                confidence=confidence,
+                add_to_rag=True
+            )
+            return result
+        except Exception as e:
+            logger.error(f"[KnowledgeWriter] Erro em add_to_rag: {e}")
+            return {"success": False, "error": str(e)}
+    
+    async def prepare_training_data(self, scope: str = "all") -> Dict[str, Any]:
+        """
+        Prepara dados para treinamento de modelos ML.
+        
+        Por enquanto retorna dados vazios - implementação futura.
+        """
+        # TODO: Implementar coleta de dados históricos para treinamento
+        # Por enquanto, retorna estrutura básica
+        logger.info(f"[KnowledgeWriter] Preparando dados de treino (scope: {scope})")
+        
+        return {
+            "samples": 0,
+            "scope": scope,
+            "features": [],
+            "labels": [],
+            "message": "Training data preparation not yet implemented",
+        }
