@@ -82,10 +82,11 @@ class InternalBIController extends Controller
         $avgDealSize = $closedLeads > 0 ? ($totalValue / $closedLeads) : 0;
 
         // Leads por canal
-        $leadsByChannel = Lead::where('tenant_id', $tenantId)
-            ->whereNotNull('channel')
-            ->select('channel', DB::raw('COUNT(*) as count'))
-            ->groupBy('channel')
+        $leadsByChannel = Lead::where('leads.tenant_id', $tenantId)
+            ->whereNotNull('channel_id')
+            ->join('channels', 'leads.channel_id', '=', 'channels.id')
+            ->select('channels.name as channel', DB::raw('COUNT(*) as count'))
+            ->groupBy('channels.name')
             ->get()
             ->pluck('count', 'channel')
             ->toArray();
