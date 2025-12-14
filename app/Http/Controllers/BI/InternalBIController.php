@@ -327,28 +327,23 @@ class InternalBIController extends Controller
             return response()->json(['error' => 'X-Tenant-ID header required'], 400);
         }
 
-        // Total de decisões
+        // Total de ações de IA
         $totalDecisions = AgentActionLog::where('tenant_id', $tenantId)
             ->where('created_at', '>=', $startDate)
             ->count();
 
-        // Decisões sobrescritas - não temos essa informação no momento
-        $overrides = 0;
-        $overrideRate = 0;
-        $accuracy = 0.95; // Valor padrão estimado
-
-        // Decisões por tipo de agente
-        $byAgentType = AgentActionLog::where('tenant_id', $tenantId)
+        // Taxa de sucesso
+        $successCount = AgentActionLog::where('tenant_id', $tenantId)
             ->where('created_at', '>=', $startDate)
-            ->select('agent_type', DB::raw('COUNT(*) as count'))
-            ->groupBy('agent_type')
-            ->get()
-            ->pluck('count', 'agent_type')
-            ->toArray();
+            ->where('success', true)
+            ->count();
+        
+        $accuracy = $totalDecisions > 0 ? ($successCount / $totalDecisions) : 0.95;
 
-        // Decisões por ação
+        // Ações por tipo
         $byActionType = AgentActionLog::where('tenant_id', $tenantId)
             ->where('created_at', '>=', $startDate)
+            ->whereNotNull('action_type')
             ->select('action_type', DB::raw('COUNT(*) as count'))
             ->groupBy('action_type')
             ->orderByDesc('count')
@@ -357,15 +352,25 @@ class InternalBIController extends Controller
             ->pluck('count', 'action_type')
             ->toArray();
 
+        // Tokens usados
+        $totalTokens = AgentActionLog::where('tenant_id', $tenantId)
+            ->where('created_at', '>=', $startDate)
+            ->sum('tokens_used') ?? 0;
+
+        // Latência média
+        $avgLatency = AgentActionLog::where('tenant_id', $tenantId)
+            ->where('created_at', '>=', $startDate)
+            ->avg('latency_ms') ?? 0;
+
         return response()->json([
             'success' => true,
             'period' => $period,
             'total_decisions' => $totalDecisions,
-            'overrides' => $overrides,
-            'override_rate' => round($overrideRate, 4),
+            'success_count' => $successCount,
             'accuracy' => round($accuracy, 4),
-            'by_agent_type' => $byAgentType,
             'by_action_type' => $byActionType,
+            'total_tokens' => (int) $totalTokens,
+            'avg_latency_ms' => round((float) $avgLatency, 2),
         ]);
     }
 
