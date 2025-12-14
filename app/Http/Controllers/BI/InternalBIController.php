@@ -5,7 +5,7 @@ namespace App\Http\Controllers\BI;
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use App\Models\Ticket;
-use App\Models\Stage;
+use App\Models\PipelineStage;
 use App\Models\Pipeline;
 use App\Models\AdCampaign;
 use App\Models\AdAccount;
@@ -48,38 +48,34 @@ class InternalBIController extends Controller
 
         // Leads por estágio
         $leadsByStage = Lead::where('leads.tenant_id', $tenantId)
-            ->join('stages', 'leads.stage_id', '=', 'stages.id')
-            ->select('stages.name as stage_name', DB::raw('COUNT(leads.id) as count'))
-            ->groupBy('stages.name')
+            ->join('pipeline_stages', 'leads.stage_id', '=', 'pipeline_stages.id')
+            ->select('pipeline_stages.name as stage_name', DB::raw('COUNT(leads.id) as count'))
+            ->groupBy('pipeline_stages.name')
             ->get()
             ->pluck('count', 'stage_name')
             ->toArray();
 
         // Leads fechados (won)
-        $closedLeads = Lead::where('leads.tenant_id', $tenantId)
-            ->join('stages', 'leads.stage_id', '=', 'stages.id')
-            ->where('stages.is_won', true)
+        $closedLeads = Lead::where('tenant_id', $tenantId)
+            ->where('status', 'won')
             ->count();
 
         // Valor total das vendas
-        $totalValue = Lead::where('leads.tenant_id', $tenantId)
-            ->join('stages', 'leads.stage_id', '=', 'stages.id')
-            ->where('stages.is_won', true)
-            ->sum('leads.value') ?? 0;
+        $totalValue = Lead::where('tenant_id', $tenantId)
+            ->where('status', 'won')
+            ->sum('value') ?? 0;
 
         // Leads fechados no período
-        $closedInPeriod = Lead::where('leads.tenant_id', $tenantId)
-            ->join('stages', 'leads.stage_id', '=', 'stages.id')
-            ->where('stages.is_won', true)
-            ->where('leads.updated_at', '>=', $startDate)
+        $closedInPeriod = Lead::where('tenant_id', $tenantId)
+            ->where('status', 'won')
+            ->where('updated_at', '>=', $startDate)
             ->count();
 
         // Valor no período
-        $valueInPeriod = Lead::where('leads.tenant_id', $tenantId)
-            ->join('stages', 'leads.stage_id', '=', 'stages.id')
-            ->where('stages.is_won', true)
-            ->where('leads.updated_at', '>=', $startDate)
-            ->sum('leads.value') ?? 0;
+        $valueInPeriod = Lead::where('tenant_id', $tenantId)
+            ->where('status', 'won')
+            ->where('updated_at', '>=', $startDate)
+            ->sum('value') ?? 0;
 
         // Taxa de conversão
         $conversionRate = $totalLeads > 0 ? ($closedLeads / $totalLeads) : 0;
@@ -95,10 +91,9 @@ class InternalBIController extends Controller
             ->toArray();
 
         // Tempo médio para fechar (em dias)
-        $avgTimeToClose = Lead::where('leads.tenant_id', $tenantId)
-            ->join('stages', 'leads.stage_id', '=', 'stages.id')
-            ->where('stages.is_won', true)
-            ->selectRaw('AVG(EXTRACT(EPOCH FROM (leads.updated_at - leads.created_at)) / 86400) as avg_days')
+        $avgTimeToClose = Lead::where('tenant_id', $tenantId)
+            ->where('status', 'won')
+            ->selectRaw('AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 86400) as avg_days')
             ->value('avg_days') ?? 0;
 
         return response()->json([
@@ -275,19 +270,17 @@ class InternalBIController extends Controller
         }
 
         // Receita no período atual
-        $revenueCurrentPeriod = Lead::where('leads.tenant_id', $tenantId)
-            ->join('stages', 'leads.stage_id', '=', 'stages.id')
-            ->where('stages.is_won', true)
-            ->where('leads.updated_at', '>=', $startDate)
-            ->sum('leads.value') ?? 0;
+        $revenueCurrentPeriod = Lead::where('tenant_id', $tenantId)
+            ->where('status', 'won')
+            ->where('updated_at', '>=', $startDate)
+            ->sum('value') ?? 0;
 
         // Receita no período anterior
-        $revenuePreviousPeriod = Lead::where('leads.tenant_id', $tenantId)
-            ->join('stages', 'leads.stage_id', '=', 'stages.id')
-            ->where('stages.is_won', true)
-            ->where('leads.updated_at', '>=', $previousStart)
-            ->where('leads.updated_at', '<', $startDate)
-            ->sum('leads.value') ?? 0;
+        $revenuePreviousPeriod = Lead::where('tenant_id', $tenantId)
+            ->where('status', 'won')
+            ->where('updated_at', '>=', $previousStart)
+            ->where('updated_at', '<', $startDate)
+            ->sum('value') ?? 0;
 
         // Crescimento
         $revenueGrowth = $revenuePreviousPeriod > 0 
@@ -409,8 +402,8 @@ class InternalBIController extends Controller
         }
 
         // Busca estágios com contagem de leads
-        $stages = Stage::where('pipeline_id', $pipeline->id)
-            ->orderBy('order_position')
+        $stages = PipelineStage::where('pipeline_id', $pipeline->id)
+            ->orderBy('order')
             ->withCount(['leads' => function ($query) use ($tenantId) {
                 $query->where('tenant_id', $tenantId);
             }])
@@ -418,15 +411,15 @@ class InternalBIController extends Controller
 
         $stagesData = [];
         $totalLeads = 0;
-        $wonLeads = 0;
+        $lastIndex = $stages->count() - 1;
 
         foreach ($stages as $i => $stage) {
             $count = $stage->leads_count;
             $totalLeads += $count;
             
-            if ($stage->is_won) {
-                $wonLeads = $count;
-            }
+            // Considera o último estágio como "won" e o penúltimo como "lost" (aproximação)
+            $isWon = ($i === $lastIndex);
+            $isLost = ($i === $lastIndex - 1 && $lastIndex > 0);
 
             // Conversão para próximo estágio
             $nextStage = $stages->get($i + 1);
@@ -437,17 +430,23 @@ class InternalBIController extends Controller
                 'id' => $stage->id,
                 'name' => $stage->name,
                 'color' => $stage->color,
-                'order' => $stage->order_position,
+                'order' => $stage->order,
                 'count' => $count,
-                'is_won' => $stage->is_won,
-                'is_lost' => $stage->is_lost,
+                'is_won' => $isWon,
+                'is_lost' => $isLost,
                 'conversion_to_next' => round($conversionToNext, 4),
             ];
         }
 
+        // Calcula leads ganhos baseado no status do lead
+        $wonLeads = Lead::where('tenant_id', $tenantId)
+            ->where('pipeline_id', $pipeline->id)
+            ->where('status', 'won')
+            ->count();
+
         $conversionRate = $totalLeads > 0 ? ($wonLeads / $totalLeads) : 0;
 
-        // Identifica gargalo (menor conversão, excluindo último estágio)
+        // Identifica gargalo (menor conversão, excluindo estágios finais)
         $bottleneck = null;
         $nonFinalStages = array_filter($stagesData, fn($s) => !$s['is_won'] && !$s['is_lost'] && $s['count'] > 0);
         if (count($nonFinalStages) > 0) {
@@ -537,11 +536,10 @@ class InternalBIController extends Controller
 
         $startDate = Carbon::now()->subDays($days);
 
-        $history = Lead::where('leads.tenant_id', $tenantId)
-            ->join('stages', 'leads.stage_id', '=', 'stages.id')
-            ->where('stages.is_won', true)
-            ->where('leads.updated_at', '>=', $startDate)
-            ->selectRaw('DATE(leads.updated_at) as date, SUM(leads.value) as revenue, COUNT(*) as deals')
+        $history = Lead::where('tenant_id', $tenantId)
+            ->where('status', 'won')
+            ->where('updated_at', '>=', $startDate)
+            ->selectRaw('DATE(updated_at) as date, SUM(value) as revenue, COUNT(*) as deals')
             ->groupBy('date')
             ->orderBy('date')
             ->get()
