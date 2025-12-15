@@ -23,7 +23,8 @@ settings = get_settings()
 
 
 # Function definitions para o agente
-AGENT_FUNCTIONS = [
+# Function definitions para o agente SDR
+SDR_FUNCTIONS = [
     {
         "name": "send_message",
         "description": "Envia uma mensagem para o lead",
@@ -163,24 +164,6 @@ AGENT_FUNCTIONS = [
         }
     },
     {
-        "name": "request_info",
-        "description": "Solicita informação específica do lead",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "info_type": {
-                    "type": "string",
-                    "description": "Tipo de informação a ser solicitada"
-                },
-                "message": {
-                    "type": "string",
-                    "description": "Mensagem pedindo a informação"
-                }
-            },
-            "required": ["info_type", "message"]
-        }
-    },
-    {
         "name": "follow_up",
         "description": "Agenda um follow-up para o lead",
         "parameters": {
@@ -196,6 +179,79 @@ AGENT_FUNCTIONS = [
                 }
             },
             "required": ["delay_hours"]
+        }
+    }
+]
+
+# Function definitions para o agente de Suporte
+SUPPORT_FUNCTIONS = [
+    {
+        "name": "send_message",
+        "description": "Envia uma mensagem para o cliente",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "description": "A mensagem a ser enviada"
+                }
+            },
+            "required": ["message"]
+        }
+    },
+    {
+        "name": "check_order_status",
+        "description": "Verifica o status de um pedido do cliente. Use quando o cliente perguntar 'onde está meu pedido' ou algo similar.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "string",
+                    "description": "Número/ID do pedido (se fornecido pelo cliente)"
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Mensagem informando o status ao cliente"
+                }
+            },
+            "required": ["message"]
+        }
+    },
+    {
+        "name": "analyze_problem_image",
+        "description": "Analisa uma imagem enviada pelo cliente (print de erro, foto de produto defeituoso) para identificar o problema e sugerir solução.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "type": "string",
+                    "description": "URL da imagem enviada pelo cliente"
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Mensagem inicial avisando que você está analisando a imagem"
+                }
+            },
+            "required": ["image_url", "message"]
+        }
+    },
+    {
+        "name": "transfer_to_human",
+        "description": "Transfere a conversa para um atendente humano especializado se não conseguir resolver.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "description": "Motivo da transferência"
+                },
+                "priority": {
+                    "type": "string",
+                    "enum": ["low", "medium", "high"],
+                    "description": "Prioridade do atendimento"
+                }
+            },
+            "required": ["reason"]
         }
     }
 ]
@@ -527,7 +583,8 @@ class AgentService:
             response = await self.openai.chat.completions.create(
                 model=agent_config.ai_model,
                 messages=messages,
-                tools=[{"type": "function", "function": f} for f in AGENT_FUNCTIONS],
+                messages=messages,
+                tools=[{"type": "function", "function": f} for f in (SUPPORT_FUNCTIONS if agent_config.type == "support" else SDR_FUNCTIONS)],
                 tool_choice="auto",
                 temperature=agent_config.temperature,
                 max_tokens=agent_config.max_tokens
@@ -589,6 +646,18 @@ class AgentService:
         """
         action_map = {
             "send_message": AgentAction.SEND_MESSAGE,
+            "move_stage": AgentAction.MOVE_STAGE,
+            "qualify_lead": AgentAction.QUALIFY_LEAD,
+            "check_availability": AgentAction.CHECK_AVAILABILITY,
+            "schedule_meeting": AgentAction.SCHEDULE_MEETING,
+            "finalize_and_assign": AgentAction.FINALIZE_AND_ASSIGN,
+            "transfer_to_human": AgentAction.TRANSFER_TO_HUMAN,
+            "request_info": AgentAction.REQUEST_INFO,
+            "follow_up": AgentAction.FOLLOW_UP,
+            # Support actions
+            "check_order_status": AgentAction.SEND_MESSAGE, # Mapeia para send_message por enquanto, mas com lógica customizada
+            "analyze_problem_image": AgentAction.SEND_MESSAGE # Mapeia para send_message com resposta da visão
+        }
             "move_stage": AgentAction.MOVE_STAGE,
             "qualify_lead": AgentAction.QUALIFY_LEAD,
             "check_availability": AgentAction.CHECK_AVAILABILITY,
@@ -682,6 +751,19 @@ class AgentService:
                 hours=function_args.get("delay_hours", 24)
             )
             response.message = function_args.get("message", "")
+
+        elif function_name == "check_order_status":
+            # TODO: Integrar com ERP real. Por enquanto retorna mock.
+            order_id = function_args.get("order_id", "N/A")
+            response.message = f"Verifiquei o pedido {order_id}. Ele consta como 'Em Trânsito' e deve chegar até sexta-feira."
+            response.decision.reasoning = f"Consulta de pedido {order_id} realizada."
+
+        elif function_name == "analyze_problem_image":
+            # Aqui chamaria o GPT-4o Vision separadamente ou usaria a descrição já gerada se a imagem foi passada no input inicial
+            image_url = function_args.get("image_url")
+            # Mock da análise visual por enquanto (a implementação real requer chamada multimodal ao GPT-4o)
+            response.message = f"Analisei a imagem ({image_url}). Parece haver um dano físico na lateral do produto. Nesse caso, recomendo iniciarmos o processo de troca."
+            response.decision.reasoning = "Análise visual identificou dano físico."
         
         return response
     

@@ -21,6 +21,7 @@ from mcp.llm_integration import create_mcp_router
 from app.queue.worker import queue_worker
 from app.queue.message_queue import message_queue
 from app.routers import bi as bi_router
+from app.routers import content as content_router
 from bi_agent.scheduler import bi_scheduler
 
 # Configuração de logging estruturado
@@ -58,6 +59,7 @@ app = FastAPI(
     - **RL**: Reinforcement Learning para decisões autônomas
     - **MCP**: Model Context Protocol - ferramentas para agentes LLM
     - **Agent**: Orquestração de agentes SDR e Ads autônomos
+    - **Content**: Geração de conteúdo viral para redes sociais
     
     ### Endpoints principais:
     - `POST /agent/run` - Executa o agente para uma mensagem
@@ -66,6 +68,8 @@ app = FastAPI(
     - `POST /mcp/run` - Executa agente MCP com LLM
     - `POST /mcp/tool` - Chama ferramenta MCP diretamente
     - `GET /mcp/tools` - Lista ferramentas disponíveis
+    - `POST /content/analyze-viral` - Analisa estrutura viral
+    - `POST /content/generate-viral-script` - Cria roteiro viral
     """,
     version="1.0.0",
     docs_url="/docs" if settings.debug else None,
@@ -92,6 +96,7 @@ app.include_router(knowledge_upload_router.router)
 app.include_router(rl_router.router)
 app.include_router(ml_router.router)
 app.include_router(bi_router.router)
+app.include_router(content_router.router)
 app.include_router(create_mcp_router())
 
 

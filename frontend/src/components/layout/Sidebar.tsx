@@ -134,7 +134,7 @@ const navGroups: NavGroup[] = [
     label: 'Inteligência',
     icon: Bot,
     items: [
-      { icon: Bot, label: 'SDR IA', path: '/sdr', feature: 'sdr_ia', permission: 'sdr_ia.view' },
+      { icon: Bot, label: 'Agentes IA', path: '/sdr', feature: 'sdr_ia', permission: 'sdr_ia.view' },
       { icon: BarChart3, label: 'Relatórios', path: '/reports', permissions: ['reports.view_own', 'reports.view_all'] },
     ],
   },
@@ -287,7 +287,7 @@ function NavGroupComponent({
             className="overflow-hidden"
           >
             <ul className={cn(
-              'mt-1 space-y-0.5', 
+              'mt-1 space-y-0.5',
               !isCollapsed && 'ml-4 pl-3 border-l border-white/10'
             )}>
               {filteredItems.map((item) => {
@@ -435,13 +435,13 @@ export function Sidebar() {
       }}
     >
       {/* Ambient Light Effect */}
-      <div 
+      <div
         className="absolute inset-0 pointer-events-none overflow-hidden"
         style={{
           background: 'radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.02) 0%, transparent 50%)',
         }}
       />
-      
+
       {/* Logo */}
       <div
         className="relative h-16 flex items-center justify-between px-4 border-b border-white/5"
@@ -464,8 +464,8 @@ export function Sidebar() {
             </motion.div>
           ) : (
             // OmniFy HUB default logo
-            <OmnifyLogo 
-              collapsed={sidebarCollapsed} 
+            <OmnifyLogo
+              collapsed={sidebarCollapsed}
               size="md"
               animated={true}
             />
@@ -509,7 +509,7 @@ export function Sidebar() {
         <div className="px-3 space-y-1">
           {navGroups.map((group) => {
             const filteredItems = filterItems(group.items)
-            
+
             return (
               <NavGroupComponent
                 key={group.id}
@@ -543,9 +543,9 @@ export function Sidebar() {
           </span>
         </div>
       </div>
-      
+
       {/* Bottom Gradient Line */}
-      <div 
+      <div
         className="absolute bottom-0 left-0 right-0 h-px"
         style={{
           background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1), transparent)',

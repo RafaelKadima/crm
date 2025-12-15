@@ -100,6 +100,16 @@ class TenantFeature extends Model
                 'description' => 'Gestão inteligente de campanhas Meta/Google Ads com automação',
                 'icon' => 'trending-up',
             ],
+            'bi_agent' => [
+                'name' => 'BI Agent',
+                'description' => 'Analista de Business Intelligence com previsão de Churn e LTV',
+                'icon' => 'pie-chart',
+            ],
+            'viral_content' => [
+                'name' => 'Viral Content Creator',
+                'description' => 'IA para criação de roteiros virais baseados em tendências',
+                'icon' => 'video',
+            ],
         ];
     }
 
@@ -155,7 +165,7 @@ class TenantFeature extends Model
             ->toArray();
 
         $allFeatures = static::getAvailableFeatures();
-        
+
         $result = [];
         foreach ($allFeatures as $key => $feature) {
             $result[$key] = array_merge($feature, [

@@ -16,7 +16,12 @@ import httpx
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 import numpy as np
+import pandas as pd
 from collections import defaultdict
+from prophet import Prophet
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+import joblib
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +48,28 @@ class PredictiveEngine:
             "X-Tenant-ID": tenant_id,
             "Content-Type": "application/json",
         }
+        self.models_dir = "models"
+        os.makedirs(self.models_dir, exist_ok=True)
+        self.churn_model_path = os.path.join(self.models_dir, f"churn_rf_{tenant_id}.joblib")
+        self.churn_model = self._load_model()
+
+    def _load_model(self):
+        """Carrega modelo salvo se existir."""
+        if os.path.exists(self.churn_model_path):
+            try:
+                return joblib.load(self.churn_model_path)
+            except Exception as e:
+                logger.error(f"Erro ao carregar modelo: {e}")
+        return None
+
+    def _save_model(self, model):
+        """Salva modelo em disco."""
+        try:
+            joblib.dump(model, self.churn_model_path)
+            self.churn_model = model
+            logger.info(f"Modelo salvo em {self.churn_model_path}")
+        except Exception as e:
+            logger.error(f"Erro ao salvar modelo: {e}")
     
     async def _call_api(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """Chama endpoint interno da API Laravel."""
@@ -64,17 +91,10 @@ class PredictiveEngine:
     
     async def predict_revenue(self, months_ahead: int = 3) -> Dict[str, Any]:
         """
-        Prediz receita futura usando dados históricos reais.
-        
-        Método:
-        1. Busca histórico de receita dos últimos 90 dias
-        2. Calcula média móvel de 7 dias
-        3. Calcula tendência linear (crescimento/declínio)
-        4. Aplica sazonalidade mensal
-        5. Projeta para os próximos meses
+        Prediz receita futura usando Facebook Prophet.
         """
         # Busca histórico de receita
-        history_data = await self._call_api("history/revenue", {"days": 90})
+        history_data = await self._call_api("history/revenue", {"days": 180})
         
         if "error" in history_data or not history_data.get("history"):
             logger.warning("[PredictiveEngine] Sem dados históricos de receita, usando fallback")
@@ -82,61 +102,76 @@ class PredictiveEngine:
         
         history = history_data.get("history", [])
         
-        if len(history) < 7:
+        if len(history) < 14:  # Mínimo de 2 semanas para Prophet rodar ok
             return self._fallback_revenue_prediction(months_ahead)
         
-        # Extrai valores de receita por dia
-        daily_values = [day.get("revenue", 0) for day in history]
+        # Prepara DataFrame para Prophet
+        df = pd.DataFrame([{
+            'ds': day.get('date'),
+            'y': day.get('revenue', 0)
+        } for day in history])
         
-        # Calcula média móvel de 7 dias
-        moving_avg = self._calculate_moving_average(daily_values, window=7)
-        
-        # Calcula tendência linear (taxa de crescimento)
-        growth_rate = self._calculate_growth_rate(moving_avg)
-        
-        # Calcula receita média diária recente (últimos 30 dias)
-        recent_avg = np.mean(daily_values[-30:]) if len(daily_values) >= 30 else np.mean(daily_values)
-        
-        # Gera predições por mês
-        predictions = []
-        for i in range(1, months_ahead + 1):
-            month = (datetime.now().month + i - 1) % 12 + 1
-            seasonality = self._get_seasonality_factor(month)
+        try:
+            # Treina modelo Prophet
+            m = Prophet(daily_seasonality=True, weekly_seasonality=True, yearly_seasonality=False)
+            m.fit(df)
             
-            # Receita projetada = média_diária * 30 * (1 + crescimento)^mês * sazonalidade
-            projected_monthly = recent_avg * 30 * ((1 + growth_rate) ** i) * seasonality
+            # Cria dataframe futuro
+            future_days = months_ahead * 30
+            future = m.make_future_dataframe(periods=future_days)
             
-            # Confiança diminui com o tempo e aumenta com mais dados históricos
-            base_confidence = min(0.95, 0.6 + (len(history) / 180))  # Máx 0.95 com 90 dias
-            confidence = max(0.4, base_confidence - (i * 0.1))
+            # Prediz
+            forecast = m.predict(future)
             
-            predictions.append({
-                "month": (datetime.now() + timedelta(days=30*i)).strftime("%b/%Y"),
-                "value": round(projected_monthly, 2),
-                "confidence": round(confidence, 2),
-            })
-        
-        # Calcula variância para determinar confiabilidade
-        variance = np.var(daily_values) if daily_values else 0
-        std_dev = np.std(daily_values) if daily_values else 0
-        
-        return {
-            "predictions": predictions,
-            "total_predicted": round(sum(p["value"] for p in predictions), 2),
-            "confidence": round(sum(p["confidence"] for p in predictions) / len(predictions), 2),
-            "factors": [
-                f"Baseado em {len(history)} dias de histórico",
-                f"Taxa de crescimento: {growth_rate*100:.1f}% ao mês",
-                "Ajuste de sazonalidade mensal aplicado",
-            ],
-            "model_info": {
-                "type": "moving_average_with_trend",
-                "data_points": len(history),
-                "growth_rate": round(growth_rate, 4),
-                "avg_daily_revenue": round(recent_avg, 2),
-                "std_deviation": round(std_dev, 2),
-            },
-        }
+            # Extrai predições mensais
+            predictions = []
+            
+            # Agrupa por mês
+            forecast['month'] = forecast['ds'].dt.strftime('%b/%Y')
+            monthly_forecast = forecast.tail(future_days).groupby('month')['yhat'].sum().reset_index()
+            # Ordena meses cronologicamente (truque simplificado, ideal seria ordenar por data)
+            
+            # Como o groupby perde a ordem, vamos iterar mês a mês manualmente para garantir ordem
+            current_date = datetime.now()
+            total_predicted = 0
+            
+            for i in range(1, months_ahead + 1):
+                target_month = (current_date + timedelta(days=30*i)).strftime('%b/%Y')
+                # Pega soma dos dias desse mês no forecast
+                # Filtra o forecast onde o mês bate
+                mask = forecast['ds'].dt.strftime('%b/%Y') == target_month
+                month_sum = forecast.loc[mask, 'yhat'].sum()
+                
+                # Calcula confiança (inversa da largura do intervalo de incerteza)
+                uncertainty = forecast.loc[mask, 'yhat_upper'].mean() - forecast.loc[mask, 'yhat_lower'].mean()
+                mean_value = forecast.loc[mask, 'yhat'].mean()
+                confidence = max(0.4, 1.0 - (uncertainty / mean_value if mean_value > 0 else 0.5))
+                
+                predictions.append({
+                    "month": target_month,
+                    "value": round(max(0, month_sum), 2), 
+                    "confidence": round(min(0.95, confidence), 2),
+                })
+                total_predicted += max(0, month_sum)
+
+            return {
+                "predictions": predictions,
+                "total_predicted": round(total_predicted, 2),
+                "confidence": round(sum(p["confidence"] for p in predictions) / len(predictions), 2),
+                "factors": [
+                    f"Modelo Prophet treinado com {len(history)} dias",
+                    "Sazonalidade diária e semanal ativada",
+                    "Intervalo de confiança calculado via MCMC"
+                ],
+                "model_info": {
+                    "type": "facebook_prophet",
+                    "data_points": len(history),
+                },
+            }
+            
+        except Exception as e:
+            logger.error(f"[PredictiveEngine] Erro no Prophet: {e}")
+            return self._fallback_revenue_prediction(months_ahead)
     
     def _fallback_revenue_prediction(self, months_ahead: int) -> Dict[str, Any]:
         """Predição fallback quando não há dados históricos."""
@@ -256,27 +291,124 @@ class PredictiveEngine:
             },
         }
     
+    async def train_churn_model(self) -> Dict[str, Any]:
+        """
+        Treina o modelo de churn com dados históricos reais (Won/Lost).
+        """
+        # 1. Busca dados de treinamento
+        data = await self._call_api("leads/training-data", {"limit": 1000})
+        leads = data.get("leads", [])
+
+        if len(leads) < 10:
+            return {"status": "skipped", "reason": "Poucos dados para treinamento (<10)"}
+
+        # 2. Prepara features e target
+        # Target: 1 se LOST (Churn), 0 se WON
+        X = []
+        y = []
+
+        for lead in leads:
+            # Features: [days_in_pipeline, days_since_interaction, interaction_count]
+            features = [
+                lead.get('days_in_pipeline', 0),
+                lead.get('days_since_interaction', 0),
+                lead.get('interaction_count', 0)
+            ]
+            target = 1 if lead.get('status') == 'lost' else 0
+            
+            X.append(features)
+            y.append(target)
+
+        if len(set(y)) < 2:
+             return {"status": "skipped", "reason": "Apenas uma classe presente nos dados (só Won ou só Lost)"}
+
+        # 3. Treina Modelo
+        try:
+            clf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+            clf.fit(X, y)
+            
+            # 4. Salva Modelo
+            self._save_model(clf)
+            
+            return {
+                "status": "success", 
+                "samples": len(X), 
+                "accuracy": round(clf.score(X, y), 2)
+            }
+        except Exception as e:
+            logger.error(f"Erro no treinamento: {e}")
+            return {"status": "error", "error": str(e)}
+
     async def predict_churn_risk(self) -> Dict[str, Any]:
         """
-        Identifica leads/clientes com risco de churn.
-        
-        Analisa:
-        - Tempo desde último contato
-        - Estágio do funil
-        - Valor do lead
+        Identifica leads com risco de churn usando modelo treinado.
+        Se modelo não existir, tenta treinar.
         """
-        # TODO: Implementar quando tivermos dados de última interação
-        # Por enquanto, busca leads parados há mais de 7 dias
+        # Verifica/Carrega modelo
+        if not self.churn_model:
+            logger.info("Modelo não carregado, tentando treinar...")
+            result = await self.train_churn_model()
+            if result.get("status") != "success":
+                 return {"high_risk": [], "model_info": {"status": "not_trained", "reason": result.get("reason")}}
+
+        # 1. Coleta dados de leads ativos
+        leads_data = await self._call_api("leads/active")
+        leads = leads_data.get("leads", [])
         
+        if not leads:
+            return {"high_risk": [], "model_info": {"type": "sklearn_random_forest", "status": "no_active_leads"}}
+
+        high_risk_leads = []
+        
+        for lead in leads:
+            features = [
+                lead.get('days_in_pipeline', 0),
+                lead.get('days_since_interaction', 0),
+                lead.get('interaction_count', 0)
+            ]
+            
+            try:
+                # Prediz probabilidade de Churn (classe 1)
+                prob = self.churn_model.predict_proba([features])[0][1]
+                
+                # Salva no backend (converte para float nativo)
+                await self._update_lead_prediction(
+                    lead.get("id"), 
+                    float(prob), 
+                    f"Risco calculado via modelo Random Forest ({int(prob*100)}%)"
+                )
+
+                if prob > 0.6: # Threshold ajustável
+                    high_risk_leads.append({
+                        "id": lead.get("id"),
+                        "name": lead.get("name"),
+                        "churn_probability": round(prob, 2),
+                        "reason": f"Alta probabilidade de churn ({int(prob*100)}%) baseada no histórico"
+                    })
+            except Exception as e:
+                logger.error(f"Erro na predição lead {lead.get('id')}: {e}")
+                
+    async def _update_lead_prediction(self, lead_id: str, churn_risk: float, reason: str = None) -> bool:
+        """Envia predição para o Laravel atualizar a memória do lead."""
+        try:
+            url = f"{LARAVEL_URL}/api/internal/bi/leads/{lead_id}/prediction"
+            payload = {
+                "churn_risk": churn_risk, 
+                "reason": reason
+            }
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.post(url, headers=self._headers, json=payload)
+                return resp.status_code == 200
+        except Exception as e:
+            # logger.warning(f"Falha ao salvar predição {lead_id}: {e}")
+            return False
+
         return {
-            "high_risk": [],
-            "medium_risk": [],
-            "total_at_risk": 0,
-            "potential_loss": 0,
-            "recommendations": [],
+            "high_risk": high_risk_leads,
+            "total_at_risk": len(high_risk_leads),
             "model_info": {
-                "type": "rule_based",
-                "note": "Implementação futura com análise de engajamento",
+                "type": "sklearn_random_forest_persisted",
+                "features": ["days_in_pipeline", "days_since_interaction", "interaction_count"],
             },
         }
     

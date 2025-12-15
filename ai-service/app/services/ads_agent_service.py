@@ -77,10 +77,10 @@ class AdsCampaignAgent:
             strategy = await self._generate_campaign_strategy(briefing)
             
             # 2. Gera copies dos anúncios
-            copies = await self._generate_ad_copies(briefing, strategy)
+            copies = await self._generate_ad_copies(briefing, strategy, tenant_id)
             
             # 3. Sugere segmentação de público
-            targeting = await self._generate_targeting(briefing, platform)
+            targeting = await self._generate_targeting(briefing, platform, tenant_id)
             
             # 4. Cria a campanha na plataforma
             if platform == "meta":
@@ -174,10 +174,31 @@ Responda APENAS com o JSON, sem explicações adicionais."""
     async def _generate_ad_copies(
         self, 
         briefing: Dict[str, Any], 
-        strategy: Dict[str, Any]
+        strategy: Dict[str, Any],
+        tenant_id: str = None # Added tenant_id
     ) -> List[Dict[str, Any]]:
         """Gera múltiplas variações de copy para os anúncios."""
         
+        # RAG: Busca conhecimento prévio se tenant_id for fornecido
+        knowledge_context = ""
+        if tenant_id:
+            from app.rag.ads_knowledge import get_ads_knowledge_service
+            rag_service = get_ads_knowledge_service()
+            
+            # Busca hooks vencedores e padrões
+            context = await rag_service.get_context_for_agent(
+                tenant_id=tenant_id,
+                user_message=f"Copywriting for {briefing.get('product_name')} - {briefing.get('objective')}",
+                objective=briefing.get("objective")
+            )
+            
+            if context.get("patterns") or context.get("best_practices"):
+                knowledge_context = f"\n\nWINNING PATTERNS & BEST PRACTICES (Use as inspiration):\n"
+                for p in context.get("patterns", []):
+                    knowledge_context += f"- Pattern: {p['name']} (Success Rate: {int(p['success_rate']*100)}%)\n  Recommendations: {', '.join(p['recommendations'])}\n"
+                for bp in context.get("best_practices", []):
+                    knowledge_context += f"- Tip: {bp['content']}\n"
+
         prompt = f"""Você é um copywriter especialista em anúncios de alta conversão.
 
 BRIEFING:
@@ -191,6 +212,7 @@ BRIEFING:
 
 ESTRATÉGIA DA CAMPANHA:
 {json.dumps(strategy, indent=2, ensure_ascii=False)}
+{knowledge_context}
 
 Crie 5 variações de anúncio otimizadas para conversão.
 
@@ -231,18 +253,39 @@ Responda APENAS com o JSON."""
     async def _generate_targeting(
         self, 
         briefing: Dict[str, Any],
-        platform: str
+        platform: str,
+        tenant_id: str = None # Added tenant_id
     ) -> Dict[str, Any]:
         """Gera sugestão de segmentação de público."""
         
+        # BI SMART AUDIENCES: Verifica disponibilidade de dados para Lookalike
+        bi_context = ""
+        if tenant_id:
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.get(
+                        f"{self.laravel_api_url}/api/internal/bi/customers/high-value",
+                        headers={"X-Tenant-ID": tenant_id, "X-Internal-Key": "sb-internal-secret-key-123"},
+                        params={"limit": 1} # Apenas check, count vem no response
+                    )
+                    if response.status_code == 200:
+                        data = response.json()
+                        count = data.get("count", 0)
+                        if count > 50:
+                            bi_context = f"\nAVAILABLE DATA ASSET: {count} High LTV Customers (Emails/Phones) ready for Lookalike Audience creation."
+            except Exception as e:
+                logger.warning(f"Failed to check BI data: {e}")
+
         prompt = f"""Você é um especialista em segmentação de público para {platform.upper()} Ads.
 
 BRIEFING:
 - Produto: {briefing.get('product_name')}
 - Descrição: {briefing.get('product_description')}
 - Público-alvo descrito: {briefing.get('target_audience')}
+{bi_context}
 
 Crie uma segmentação detalhada para {platform.upper()} Ads.
+SE houver "AVAILABLE DATA ASSET", você DEVE incluir uma audiência Lookalike como prioridade.
 
 Retorne um JSON:
 {{
@@ -445,8 +488,8 @@ Responda APENAS com o JSON."""
         # Busca dados da campanha
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{self.laravel_api_url}/api/ads/campaigns/{campaign_id}/full-report",
-                headers={"X-Tenant-ID": tenant_id}
+                f"{self.laravel_api_url}/api/internal/ads/campaigns/{campaign_id}/full-report",
+                headers={"X-Tenant-ID": tenant_id, "X-Internal-Key": "sb-internal-secret-key-123"} # TODO: Use env var
             )
             
             if response.status_code != 200:
@@ -474,10 +517,16 @@ Responda APENAS com o JSON."""
     ) -> Dict[str, Any]:
         """Analisa performance da campanha com IA."""
         
+        # VISUAL INTELLIGENCE: Analisa criativos
+        visual_insights = await self._analyze_visuals_batch(campaign_data.get("ads", []))
+        
         prompt = f"""Analise os dados desta campanha de anúncios e forneça insights:
 
 DADOS DA CAMPANHA:
 {json.dumps(campaign_data, indent=2, ensure_ascii=False)}
+
+INSIGHTS VISUAIS (GPT-4o Vision):
+{json.dumps(visual_insights, indent=2, ensure_ascii=False)}
 
 Retorne um JSON com a análise:
 {{
@@ -749,6 +798,77 @@ Responda APENAS com o JSON."""
         
         result = json.loads(response.choices[0].message.content)
         return result.get("variations", [])
+    
+    # =========================================================================
+    # VISUAL INTELLIGENCE
+    # =========================================================================
+    
+    async def analyze_ad_creative(self, image_url: str) -> Dict[str, Any]:
+        """
+        Analisa criativo visual usando GPT-4o Vision.
+        Identifica elementos, emoções e qualidade visual.
+        """
+        if not image_url:
+            return {}
+            
+        prompt = """Analise esta imagem de anúncio e extraia insights visuais:
+        1. Elementos principais presentes
+        2. Emoções transmitidas
+        3. Quantidade de texto (muito/pouco)
+        4. Cores predominantes
+        5. Qualidade estética (0-10)
+        
+        Retorne JSON:
+        {
+            "elements": ["pessoa sorrindo", "celular", "fundo azul"],
+            "emotions": ["felicidade", "confiança"],
+            "text_density": "low|medium|high",
+            "colors": ["blue", "white"],
+            "aesthetic_score": 8,
+            "visual_hook": "O que mais chama atenção na imagem"
+        }"""
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": image_url}
+                            },
+                        ],
+                    }
+                ],
+                max_tokens=300,
+            )
+            
+            content = response.choices[0].message.content
+            # Limpa markdown se houver
+            content = content.replace("```json", "").replace("```", "")
+            return json.loads(content)
+            
+        except Exception as e:
+            logger.error("Failed to analyze creative", error=str(e))
+            return {"error": str(e)}
+
+    async def _analyze_visuals_batch(self, ads: List[Dict]) -> Dict[str, Any]:
+        """Analisa visuais dos anúncios em lote."""
+        visual_insights = {"top_features": [], "aesthetic_scores": []}
+        
+        # Analisa apenas os top 3 para economizar tokens/tempo
+        for ad in ads[:3]:
+            if ad.get("creative", {}).get("image_url"):
+                analysis = await self.analyze_ad_creative(ad["creative"]["image_url"])
+                if "elements" in analysis:
+                    visual_insights["top_features"].extend(analysis["elements"])
+                if "aesthetic_score" in analysis:
+                    visual_insights["aesthetic_scores"].append(analysis["aesthetic_score"])
+        
+        return visual_insights
 
 
 # Instância global do agente

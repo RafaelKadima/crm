@@ -65,7 +65,10 @@ class AgentOrchestrator:
         except Exception as e:
             logger.error(f"[Orchestrator] Erro ao chamar {endpoint}: {e}")
             return {"error": str(e)}
-    
+    async def _call_agent_api(self, endpoint: str, data: Dict) -> Dict[str, Any]:
+        """Helper para chamar outros agentes via API interna."""
+        return await self._call_api(f"agents/{endpoint}", method="POST", data=data)
+
     async def suggest_sdr_improvement(
         self,
         insight_type: str,
@@ -247,16 +250,40 @@ class AgentOrchestrator:
     async def execute_action(self, action_id: str) -> Dict[str, Any]:
         """
         Executa uma ação que foi aprovada.
-        
-        Delega para o agente apropriado baseado no target_agent.
         """
-        # TODO: Implementar busca da ação no banco e delegação
-        logger.info(f"[Orchestrator] Tentativa de executar ação: {action_id}")
+        logger.info(f"[Orchestrator] Iniciando execução da ação: {action_id}")
         
-        return {
-            "status": "not_implemented",
-            "message": "Execução de ações será implementada em breve",
-        }
+        # 1. Busca detalhes da ação na API
+        action_data = await self._call_api(f"actions/{action_id}")
+        
+        if "error" in action_data or not action_data:
+            return {"error": "Ação não encontrada ou erro na API"}
+            
+        action = action_data.get("action", {})
+        
+        # 2. Marca como "in_progress"
+        await self._call_api(f"actions/{action_id}/status", method="POST", data={"status": "in_progress"})
+        
+        try:
+            # 3. Delega para o agente responsável
+            result = await self._delegate_to_agent(action)
+            
+            # 4. Atualiza com sucesso
+            await self._call_api(f"actions/{action_id}/status", method="POST", data={
+                "status": "completed",
+                "result": result
+            })
+            return result
+            
+        except Exception as e:
+            logger.error(f"[Orchestrator] Falha ao executar ação {action_id}: {e}")
+            
+            # 5. Atualiza com falha
+            await self._call_api(f"actions/{action_id}/status", method="POST", data={
+                "status": "failed",
+                "error": str(e)
+            })
+            return {"error": str(e)}
     
     async def _delegate_to_agent(self, action: Dict) -> Dict[str, Any]:
         """
@@ -284,7 +311,16 @@ class AgentOrchestrator:
     ) -> Dict[str, Any]:
         """Executa ação no SDR Agent."""
         logger.info(f"[Orchestrator] Executando ação SDR: {action_type}")
-        return {"success": True, "agent": "sdr", "action_type": action_type}
+        
+        # Chama a API do agente SDR (endpoints internos)
+        endpoint_map = {
+            "update_sdr_script": "sdr/config/script",
+            "adjust_sdr_timing": "sdr/config/timing",
+            "update_qualification_rules": "sdr/config/qualification",
+        }
+        
+        endpoint = endpoint_map.get(action_type, "sdr/actions/generic")
+        return await self._call_agent_api(endpoint, payload)
     
     async def _execute_ads_action(
         self,
@@ -293,7 +329,10 @@ class AgentOrchestrator:
     ) -> Dict[str, Any]:
         """Executa ação no Ads Agent."""
         logger.info(f"[Orchestrator] Executando ação Ads: {action_type}")
-        return {"success": True, "agent": "ads", "action_type": action_type}
+        
+        # Chama a API do agente de Ads
+        endpoint = f"ads/campaigns/{payload.get('campaign_id', 'all')}/optimize"
+        return await self._call_agent_api(endpoint, payload)
     
     async def _execute_knowledge_action(
         self,

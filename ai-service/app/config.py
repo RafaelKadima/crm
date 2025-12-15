@@ -1,7 +1,7 @@
 """
 Configurações do Microserviço de IA
 """
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
@@ -57,13 +57,13 @@ class Settings(BaseSettings):
     
     # ML Settings
     lead_classification_threshold: float = 0.7
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
 
 @lru_cache()
 def get_settings() -> Settings:
     return Settings()
-

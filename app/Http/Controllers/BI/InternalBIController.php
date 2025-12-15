@@ -14,6 +14,7 @@ use App\Models\BiSuggestedAction;
 use App\Models\BiGeneratedKnowledge;
 use App\Models\BiAnalysis;
 use App\Models\BiAgentConfig;
+use App\Models\LeadMemory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,137 @@ use Carbon\Carbon;
  */
 class InternalBIController extends Controller
 {
+    // Dados de treinamento (Leads fechados)
+    public function getTrainingLeads(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        if (!$tenantId)
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+
+        $limit = $request->input('limit', 1000);
+
+        $leads = Lead::where('tenant_id', $tenantId)
+            ->whereIn('status', ['won', 'lost'])
+            ->withCount('activities')
+            ->orderBy('updated_at', 'desc')
+            ->limit($limit)
+            ->get();
+
+        $data = $leads->map(function ($lead) {
+            $createdAt = Carbon::parse($lead->created_at);
+            $closedAt = Carbon::parse($lead->updated_at);
+            $lastInteraction = $lead->last_message_at ? Carbon::parse($lead->last_message_at) : $createdAt;
+
+            return [
+                'id' => $lead->id,
+                'status' => $lead->status,
+                'value' => (float) $lead->value,
+                'days_in_pipeline' => $createdAt->diffInDays($closedAt),
+                'days_since_interaction' => $lastInteraction->diffInDays($closedAt),
+                'interaction_count' => $lead->activities_count,
+                'stage_id' => $lead->stage_id,
+            ];
+        });
+
+        return response()->json(['leads' => $data]);
+    }
+
+    // Leads ativos para predição - Retorna dados ricos
+    public function getActiveLeads(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        if (!$tenantId)
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+
+        $leads = Lead::where('tenant_id', $tenantId)
+            ->where('status', 'open')
+            ->withCount('activities')
+            ->limit(200)
+            ->get();
+
+        $data = $leads->map(function ($lead) {
+            $createdAt = Carbon::parse($lead->created_at);
+            $lastInteraction = $lead->last_message_at ? Carbon::parse($lead->last_message_at) : $createdAt;
+            $now = Carbon::now();
+
+            return [
+                'id' => $lead->id,
+                'name' => $lead->contact ? $lead->contact->name : 'Lead sem nome',
+                'value' => (float) $lead->value,
+                'days_in_pipeline' => $createdAt->diffInDays($now),
+                'days_since_interaction' => $lastInteraction->diffInDays($now),
+                'interaction_count' => $lead->activities_count,
+                'stage_id' => $lead->stage_id,
+            ];
+        });
+
+        return response()->json(['leads' => $data]);
+    }
+
+    // Atualiza predição de um lead específico
+    public function updateLeadPrediction(Request $request, string $id): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID');
+        if (!$tenantId)
+            return response()->json(['error' => 'X-Tenant-ID header required'], 400);
+
+        $validated = $request->validate([
+            'churn_risk' => 'required|numeric|min:0|max:1',
+            'reason' => 'nullable|string'
+        ]);
+
+        $risk = $validated['churn_risk'];
+        $conversionProb = 1 - $risk; // Inverso do risco de churn
+
+        // Busca ou cria memória do lead
+        $memory = LeadMemory::updateOrCreate(
+            ['lead_id' => $id, 'tenant_id' => $tenantId],
+            [
+                'conversion_probability' => $conversionProb,
+                'updated_at' => now()
+            ]
+        );
+
+        return response()->json(['success' => true, 'memory_id' => $memory->id]);
+    }
+
+    // Retorna clientes de alto valor (hashed PII) para Lookalike audiences
+    public function getHighValueCustomers(Request $request): JsonResponse
+    {
+        $tenantId = $request->header('X-Tenant-ID') ?? $request->header('X-Internal-Key');
+        $tenantId = $request->header('X-Tenant-ID'); // Enforce tenant if needed
+
+        $limit = $request->input('limit', 1000);
+
+        // Busca leads ganhos com maior valor
+        $leads = \App\Models\Lead::with('contact')
+            ->where('tenant_id', $tenantId)
+            ->where('status', 'won')
+            ->whereNotNull('value')
+            ->where('value', '>', 0)
+            ->orderByDesc('value')
+            ->limit($limit)
+            ->get();
+
+        $data = $leads->map(function ($lead) {
+            $contact = $lead->contact;
+            if (!$contact)
+                return null;
+
+            return [
+                'id' => $lead->id,
+                'value' => $lead->value,
+                'email_hash' => $contact->email ? hash('sha256', strtolower(trim($contact->email))) : null,
+                'phone_hash' => $contact->phone ? hash('sha256', preg_replace('/[^0-9]/', '', $contact->phone)) : null,
+            ];
+        })->filter()->values();
+
+        return response()->json([
+            'count' => $data->count(),
+            'customers' => $data
+        ]);
+    }
+
     /**
      * Métricas de vendas.
      */
@@ -42,7 +174,7 @@ class InternalBIController extends Controller
 
         // Total de leads
         $totalLeads = Lead::where('tenant_id', $tenantId)->count();
-        
+
         // Leads no período
         $leadsInPeriod = Lead::where('tenant_id', $tenantId)
             ->where('created_at', '>=', $startDate)
@@ -132,7 +264,7 @@ class InternalBIController extends Controller
 
         // Total de tickets
         $totalTickets = Ticket::where('tenant_id', $tenantId)->count();
-        
+
         // Tickets no período
         $ticketsInPeriod = Ticket::where('tenant_id', $tenantId)
             ->where('created_at', '>=', $startDate)
@@ -198,7 +330,7 @@ class InternalBIController extends Controller
         }
 
         $query = AdCampaign::where('tenant_id', $tenantId);
-        
+
         if ($adAccountId) {
             $query->where('ad_account_id', $adAccountId);
         }
@@ -216,8 +348,8 @@ class InternalBIController extends Controller
 
         // ROAS médio
         $campaignsWithRoas = $campaigns->where('roas', '>', 0);
-        $avgRoas = $campaignsWithRoas->count() > 0 
-            ? $campaignsWithRoas->avg('roas') 
+        $avgRoas = $campaignsWithRoas->count() > 0
+            ? $campaignsWithRoas->avg('roas')
             : 0;
 
         // Melhor campanha por ROAS
@@ -287,8 +419,8 @@ class InternalBIController extends Controller
             ->sum('value') ?? 0;
 
         // Crescimento
-        $revenueGrowth = $revenuePreviousPeriod > 0 
-            ? (($revenueCurrentPeriod - $revenuePreviousPeriod) / $revenuePreviousPeriod) 
+        $revenueGrowth = $revenuePreviousPeriod > 0
+            ? (($revenueCurrentPeriod - $revenuePreviousPeriod) / $revenuePreviousPeriod)
             : 0;
 
         // Custo de IA (baseado em logs de ações)
@@ -341,7 +473,7 @@ class InternalBIController extends Controller
             ->where('created_at', '>=', $startDate)
             ->where('success', true)
             ->count();
-        
+
         $accuracy = $totalDecisions > 0 ? ($successCount / $totalDecisions) : 0.95;
 
         // Ações por tipo
@@ -409,9 +541,11 @@ class InternalBIController extends Controller
         // Busca estágios com contagem de leads
         $stages = PipelineStage::where('pipeline_id', $pipeline->id)
             ->orderBy('order')
-            ->withCount(['leads' => function ($query) use ($tenantId) {
-                $query->where('tenant_id', $tenantId);
-            }])
+            ->withCount([
+                'leads' => function ($query) use ($tenantId) {
+                    $query->where('tenant_id', $tenantId);
+                }
+            ])
             ->get();
 
         $stagesData = [];
@@ -421,7 +555,7 @@ class InternalBIController extends Controller
         foreach ($stages as $i => $stage) {
             $count = $stage->leads_count;
             $totalLeads += $count;
-            
+
             // Considera o último estágio como "won" e o penúltimo como "lost" (aproximação)
             $isWon = ($i === $lastIndex);
             $isLost = ($i === $lastIndex - 1 && $lastIndex > 0);
@@ -470,6 +604,7 @@ class InternalBIController extends Controller
         ]);
     }
 
+
     /**
      * Histórico de leads por dia.
      */
@@ -507,11 +642,11 @@ class InternalBIController extends Controller
             $byDayOfWeek[$dow]['total'] += $day['count'];
             $byDayOfWeek[$dow]['count']++;
         }
-        
+
         $avgByDayOfWeek = [];
         foreach ($byDayOfWeek as $dow => $data) {
-            $avgByDayOfWeek[$dow] = $data['count'] > 0 
-                ? round($data['total'] / $data['count'], 1) 
+            $avgByDayOfWeek[$dow] = $data['count'] > 0
+                ? round($data['total'] / $data['count'], 1)
                 : 0;
         }
 
@@ -520,8 +655,8 @@ class InternalBIController extends Controller
             'days' => $days,
             'history' => $history,
             'total' => array_sum(array_column($history, 'count')),
-            'avg_per_day' => count($history) > 0 
-                ? round(array_sum(array_column($history, 'count')) / count($history), 1) 
+            'avg_per_day' => count($history) > 0
+                ? round(array_sum(array_column($history, 'count')) / count($history), 1)
                 : 0,
             'avg_by_day_of_week' => $avgByDayOfWeek,
         ]);
@@ -565,8 +700,8 @@ class InternalBIController extends Controller
             'history' => $history,
             'total_revenue' => round($totalRevenue, 2),
             'total_deals' => $totalDeals,
-            'avg_daily_revenue' => count($history) > 0 
-                ? round($totalRevenue / count($history), 2) 
+            'avg_daily_revenue' => count($history) > 0
+                ? round($totalRevenue / count($history), 2)
                 : 0,
         ]);
     }
@@ -668,7 +803,7 @@ class InternalBIController extends Controller
             ->map(function ($config) {
                 // Busca contas de anúncios configuradas para monitoramento
                 $accountIds = $config->monitored_accounts ?? [];
-                
+
                 // Se não tem contas específicas, busca todas do tenant
                 if (empty($accountIds)) {
                     $accountIds = \App\Models\AdAccount::where('tenant_id', $config->tenant_id)
@@ -676,7 +811,7 @@ class InternalBIController extends Controller
                         ->pluck('id')
                         ->toArray();
                 }
-                
+
                 return [
                     'tenant_id' => $config->tenant_id,
                     'ad_account_ids' => $accountIds,

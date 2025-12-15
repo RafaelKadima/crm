@@ -93,19 +93,19 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('usage')->group(function () {
         // Resumo de uso do tenant
         Route::get('summary', [\App\Http\Controllers\AiUsageController::class, 'summary']);
-        
+
         // Histórico de uso diário
         Route::get('daily', [\App\Http\Controllers\AiUsageController::class, 'dailyUsage']);
-        
+
         // Uso por modelo
         Route::get('by-model', [\App\Http\Controllers\AiUsageController::class, 'usageByModel']);
-        
+
         // Verificar limites
         Route::get('limits', [\App\Http\Controllers\AiUsageController::class, 'checkLimits']);
-        
+
         // Calcular excedente
         Route::get('overage', [\App\Http\Controllers\AiUsageController::class, 'overageCost']);
-        
+
         // Estimativa de uso
         Route::post('estimate', [\App\Http\Controllers\AiUsageController::class, 'estimate']);
     });
@@ -114,13 +114,13 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('packages')->group(function () {
         // Pacotes disponíveis
         Route::get('available', [\App\Http\Controllers\AiUsageController::class, 'availablePackages']);
-        
+
         // Compras do tenant
         Route::get('purchases', [\App\Http\Controllers\AiUsageController::class, 'purchases']);
-        
+
         // Comprar pacote
         Route::post('purchase', [\App\Http\Controllers\AiUsageController::class, 'purchasePackage']);
-        
+
         // Confirmar pagamento
         Route::post('purchases/{purchaseId}/confirm', [\App\Http\Controllers\AiUsageController::class, 'confirmPayment']);
     });
@@ -140,11 +140,11 @@ Route::middleware('auth:api')->group(function () {
             Route::delete('{lead}', [LeadController::class, 'destroy']);
             Route::put('{lead}/stage', [LeadController::class, 'updateStage']);
             Route::put('{lead}/assign', [LeadController::class, 'assign']);
-            
+
             // MCP - Lead Score e Sugestão de Ação
             Route::get('{lead}/score', [LeadController::class, 'getScore']);
             Route::post('{lead}/suggest-action', [LeadController::class, 'suggestAction']);
-            
+
             // Dados do cliente (fechamento)
             Route::get('{lead}/customer-data', [CustomerDataController::class, 'show']);
             Route::post('{lead}/customer-data', [CustomerDataController::class, 'store']);
@@ -173,7 +173,7 @@ Route::middleware('auth:api')->group(function () {
             Route::put('{user}', [UserController::class, 'update']);
             Route::delete('{user}', [UserController::class, 'destroy']);
             Route::post('{user}/toggle-active', [UserController::class, 'toggleActive']);
-            
+
             // Permissões do usuário (apenas Admin)
             Route::get('{user}/permissions', [PermissionController::class, 'userPermissions']);
             Route::put('{user}/permissions', [PermissionController::class, 'updateUserPermissions']);
@@ -195,48 +195,48 @@ Route::middleware('auth:api')->group(function () {
             Route::put('{sdrAgent}', [SdrAgentController::class, 'update']);
             Route::delete('{sdrAgent}', [SdrAgentController::class, 'destroy']);
             Route::post('{sdrAgent}/toggle-active', [SdrAgentController::class, 'toggleActive']);
-            
+
             // Documentos
             Route::get('{sdrAgent}/documents', [SdrAgentController::class, 'listDocuments']);
             Route::post('{sdrAgent}/documents', [SdrAgentController::class, 'uploadDocument']);
             Route::delete('{sdrAgent}/documents/{document}', [SdrAgentController::class, 'deleteDocument']);
             Route::post('{sdrAgent}/documents/{document}/reprocess', [SdrAgentController::class, 'reprocessDocument']);
-            
+
             // FAQs
             Route::get('{sdrAgent}/faqs', [SdrAgentController::class, 'listFaqs']);
             Route::post('{sdrAgent}/faqs', [SdrAgentController::class, 'storeFaq']);
             Route::put('{sdrAgent}/faqs/{faq}', [SdrAgentController::class, 'updateFaq']);
             Route::delete('{sdrAgent}/faqs/{faq}', [SdrAgentController::class, 'deleteFaq']);
-            
+
             // Knowledge Entries (Base de Conhecimento em Texto)
             Route::get('{sdrAgent}/knowledge', [SdrAgentController::class, 'listKnowledge']);
             Route::post('{sdrAgent}/knowledge', [SdrAgentController::class, 'storeKnowledge']);
             Route::put('{sdrAgent}/knowledge/{entry}', [SdrAgentController::class, 'updateKnowledge']);
             Route::delete('{sdrAgent}/knowledge/{entry}', [SdrAgentController::class, 'deleteKnowledge']);
-            
+
             // Pipelines (Fluxo de vendas)
             Route::get('{sdrAgent}/pipelines', [SdrAgentController::class, 'listPipelines']);
             Route::post('{sdrAgent}/pipelines/sync', [SdrAgentController::class, 'syncPipelines']);
             Route::put('{sdrAgent}/stage-rules', [SdrAgentController::class, 'updateStageRules']);
             Route::put('{sdrAgent}/pipeline-instructions', [SdrAgentController::class, 'updatePipelineInstructions']);
-            
+
             // Testes
             Route::post('{sdrAgent}/test-prompt', [SdrAgentController::class, 'testPrompt']);
             Route::get('{sdrAgent}/preview-payload', [SdrAgentController::class, 'previewWebhookPayload']);
-            
+
             // Regras de Estágio
             Route::get('{sdrAgent}/rules/stages', [AgentRulesController::class, 'listStageRules']);
             Route::post('{sdrAgent}/rules/stages', [AgentRulesController::class, 'storeStageRule']);
             Route::put('{sdrAgent}/rules/stages/{agentStageRule}', [AgentRulesController::class, 'updateStageRule']);
             Route::delete('{sdrAgent}/rules/stages/{agentStageRule}', [AgentRulesController::class, 'deleteStageRule']);
-            
+
             // Regras de Escalação
             Route::get('{sdrAgent}/rules/escalation', [AgentRulesController::class, 'listEscalationRules']);
             Route::post('{sdrAgent}/rules/escalation', [AgentRulesController::class, 'storeEscalationRule']);
             Route::put('{sdrAgent}/rules/escalation/{agentEscalationRule}', [AgentRulesController::class, 'updateEscalationRule']);
             Route::delete('{sdrAgent}/rules/escalation/{agentEscalationRule}', [AgentRulesController::class, 'deleteEscalationRule']);
         });
-        
+
         // Templates de Agentes SDR - Requer feature: sdr_ia
         Route::middleware('feature:sdr_ia')->prefix('agent-templates')->group(function () {
             Route::get('/', [AgentTemplateController::class, 'index']);
@@ -297,7 +297,7 @@ Route::middleware('auth:api')->group(function () {
             Route::post('{pipeline}/stages', [PipelineController::class, 'storeStage']);
             Route::put('{pipeline}/stages/{stage}', [PipelineController::class, 'updateStage']);
             Route::delete('{pipeline}/stages/{stage}', [PipelineController::class, 'destroyStage']);
-            
+
             // Gerenciamento de permissões de usuários
             Route::get('{pipeline}/users', [PipelineController::class, 'users']);
             Route::post('{pipeline}/users', [PipelineController::class, 'addUser']);
@@ -316,11 +316,11 @@ Route::middleware('auth:api')->group(function () {
             Route::post('{channel}/test-connection', [ChannelController::class, 'testConnection']);
             Route::put('{channel}/ia-mode', [ChannelController::class, 'updateIaMode']);
             Route::post('{channel}/toggle-active', [ChannelController::class, 'toggleActive']);
-            
+
             // Menu de filas
             Route::put('{channel}/queue-menu', [ChannelController::class, 'updateQueueMenu']);
             Route::get('{channel}/queue-menu/preview', [ChannelController::class, 'previewQueueMenu']);
-            
+
             // Filas/Setores do canal
             Route::get('{channel}/queues', [QueueController::class, 'byChannel']);
             Route::get('{channel}/queues/stats', [QueueController::class, 'stats']);
@@ -336,13 +336,13 @@ Route::middleware('auth:api')->group(function () {
             Route::get('{queue}', [QueueController::class, 'show']);
             Route::put('{queue}', [QueueController::class, 'update']);
             Route::delete('{queue}', [QueueController::class, 'destroy']);
-            
+
             // Gerenciamento de usuários na fila
             Route::post('{queue}/users', [QueueController::class, 'addUsers']);
             Route::delete('{queue}/users', [QueueController::class, 'removeUsers']);
             Route::put('{queue}/users/sync', [QueueController::class, 'syncUsers']);
             Route::put('{queue}/users/{user}/status', [QueueController::class, 'updateUserStatus']);
-            
+
             // Ações da fila
             Route::post('{queue}/toggle-auto-distribute', [QueueController::class, 'toggleAutoDistribute']);
             Route::post('{queue}/distribute-waiting', [QueueController::class, 'distributeWaitingLeads']);
@@ -395,7 +395,7 @@ Route::middleware('auth:api')->group(function () {
             Route::put('{product}', [ProductController::class, 'update']);
             Route::delete('{product}', [ProductController::class, 'destroy']);
             Route::post('{product}/duplicate', [ProductController::class, 'duplicate']);
-            
+
             // Imagens
             Route::post('{product}/images', [ProductController::class, 'uploadImage']);
             Route::delete('{product}/images/{image}', [ProductController::class, 'deleteImage']);
@@ -472,12 +472,12 @@ Route::middleware('auth:api')->group(function () {
             Route::get('statuses', [\App\Http\Controllers\WhatsAppTemplateController::class, 'statuses']);
             Route::get('check-name', [\App\Http\Controllers\WhatsAppTemplateController::class, 'checkName']);
             Route::post('preview', [\App\Http\Controllers\WhatsAppTemplateController::class, 'preview']);
-            
+
             // Template específico
             Route::get('{template}', [\App\Http\Controllers\WhatsAppTemplateController::class, 'show']);
             Route::delete('{template}', [\App\Http\Controllers\WhatsAppTemplateController::class, 'destroy']);
             Route::get('{template}/status', [\App\Http\Controllers\WhatsAppTemplateController::class, 'checkStatus']);
-            
+
             // Operações por canal
             Route::get('meta/{channel}', [\App\Http\Controllers\WhatsAppTemplateController::class, 'listFromMeta']);
             Route::post('sync/{channel}', [\App\Http\Controllers\WhatsAppTemplateController::class, 'sync']);
@@ -501,20 +501,20 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('files')->group(function () {
         // Presigned URL para upload direto ao S3/R2
         Route::post('presigned-url', [\App\Http\Controllers\FileUploadController::class, 'getPresignedUrl']);
-        
+
         // Upload direto (fallback para storage local)
         Route::post('upload/{attachment}', [\App\Http\Controllers\FileUploadController::class, 'uploadDirect'])
             ->name('files.upload-direct');
-        
+
         // Confirmar upload concluído
         Route::post('confirm', [\App\Http\Controllers\FileUploadController::class, 'confirmUpload']);
-        
+
         // Listar anexos de um ticket
         Route::get('ticket/{ticket}', [\App\Http\Controllers\FileUploadController::class, 'listByTicket']);
-        
+
         // Obter URL de download
         Route::get('{attachment}/download-url', [\App\Http\Controllers\FileUploadController::class, 'getDownloadUrl']);
-        
+
         // Deletar anexo
         Route::delete('{attachment}', [\App\Http\Controllers\FileUploadController::class, 'destroy']);
     });
@@ -590,17 +590,17 @@ Route::middleware(['auth:api', 'tenant'])->prefix('agent-actions')->group(functi
 Route::middleware(['auth:api', 'tenant'])->prefix('agent-learning')->group(function () {
     // Feedback de mensagens (👍/👎)
     Route::post('feedback', [\App\Http\Controllers\AgentLearningController::class, 'submitFeedback']);
-    
+
     // Perguntas detectadas (FAQs automáticas)
     Route::get('questions/{agentId}', [\App\Http\Controllers\AgentLearningController::class, 'listDetectedQuestions']);
     Route::post('questions/{questionId}/review', [\App\Http\Controllers\AgentLearningController::class, 'reviewDetectedQuestion']);
-    
+
     // Memória de longo prazo do lead
     Route::get('lead-memory/{leadId}', [\App\Http\Controllers\AgentLearningController::class, 'getLeadMemory']);
-    
+
     // Padrões de conversa
     Route::get('patterns/{agentId}', [\App\Http\Controllers\AgentLearningController::class, 'listPatterns']);
-    
+
     // Estatísticas de aprendizado
     Route::get('stats/{agentId}', [\App\Http\Controllers\AgentLearningController::class, 'getLearningStats']);
 });
@@ -616,24 +616,24 @@ Route::middleware(['auth:api', 'tenant'])->prefix('bi')->group(function () {
     Route::get('support-metrics', [\App\Http\Controllers\BI\BIDashboardController::class, 'supportMetrics']);
     Route::get('marketing-analysis', [\App\Http\Controllers\BI\BIDashboardController::class, 'marketingAnalysis']);
     Route::get('ai-performance', [\App\Http\Controllers\BI\BIDashboardController::class, 'aiPerformance']);
-    
+
     // Histórico e análises
     Route::get('analyses', [\App\Http\Controllers\BI\BIDashboardController::class, 'analysisHistory']);
     Route::get('analyses/{id}', [\App\Http\Controllers\BI\BIDashboardController::class, 'analysisDetails']);
     Route::post('run-analysis', [\App\Http\Controllers\BI\BIDashboardController::class, 'runAnalysis']);
-    
+
     // Configurações
     Route::get('config', [\App\Http\Controllers\BI\BIDashboardController::class, 'getConfig']);
     Route::put('config', [\App\Http\Controllers\BI\BIDashboardController::class, 'updateConfig']);
-    
+
     // Contas monitoradas
     Route::get('available-accounts', [\App\Http\Controllers\BI\BIDashboardController::class, 'getAvailableAccounts']);
     Route::put('monitored-accounts', [\App\Http\Controllers\BI\BIDashboardController::class, 'updateMonitoredAccounts']);
-    
+
     // Análise manual e scheduler
     Route::post('run-manual-analysis', [\App\Http\Controllers\BI\BIDashboardController::class, 'runManualAnalysis']);
     Route::get('scheduler-status', [\App\Http\Controllers\BI\BIDashboardController::class, 'getSchedulerStatus']);
-    
+
     // Fila de aprovação de ações
     Route::prefix('actions')->group(function () {
         Route::get('/', [\App\Http\Controllers\BI\ActionApprovalController::class, 'index']);
@@ -644,7 +644,7 @@ Route::middleware(['auth:api', 'tenant'])->prefix('bi')->group(function () {
         Route::post('{id}/reject', [\App\Http\Controllers\BI\ActionApprovalController::class, 'reject']);
         Route::post('{id}/execute', [\App\Http\Controllers\BI\ActionApprovalController::class, 'execute']);
     });
-    
+
     // Relatórios
     Route::prefix('reports')->group(function () {
         Route::get('/', [\App\Http\Controllers\BI\ReportsController::class, 'index']);
@@ -656,7 +656,7 @@ Route::middleware(['auth:api', 'tenant'])->prefix('bi')->group(function () {
         Route::post('export/pdf', [\App\Http\Controllers\BI\ReportsController::class, 'exportPdf']);
         Route::post('export/excel', [\App\Http\Controllers\BI\ReportsController::class, 'exportExcel']);
     });
-    
+
     // Chat com analista BI
     Route::prefix('analyst')->group(function () {
         Route::post('ask', [\App\Http\Controllers\BI\AnalystChatController::class, 'ask']);
@@ -665,7 +665,7 @@ Route::middleware(['auth:api', 'tenant'])->prefix('bi')->group(function () {
         Route::post('create-action', [\App\Http\Controllers\BI\AnalystChatController::class, 'createAction']);
         Route::get('history', [\App\Http\Controllers\BI\AnalystChatController::class, 'history']);
     });
-    
+
     // API de Integração Externa
     Route::prefix('integration')->group(function () {
         Route::get('docs', [\App\Http\Controllers\BI\IntegrationApiController::class, 'docs']);
@@ -684,7 +684,7 @@ Route::middleware(['auth:api', 'tenant'])->prefix('bi')->group(function () {
 Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('ads')->group(function () {
     // Plataformas disponíveis
     Route::get('platforms', [\App\Http\Controllers\AdAccountController::class, 'platforms']);
-    
+
     // Contas de anúncio
     Route::prefix('accounts')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdAccountController::class, 'index']);
@@ -698,18 +698,18 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::get('{account}/insights', [\App\Http\Controllers\AdAccountController::class, 'getInsights']);
         Route::get('{account}/campaigns/insights', [\App\Http\Controllers\AdAccountController::class, 'getCampaignsInsights']);
     });
-    
+
     // Dashboard e métricas gerais
     Route::get('dashboard', [\App\Http\Controllers\AdCampaignController::class, 'dashboard']);
     Route::get('ranking', [\App\Http\Controllers\AdCampaignController::class, 'ranking']);
-    
+
     // Campanhas
     Route::prefix('campaigns')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdCampaignController::class, 'index']);
         Route::get('{campaign}', [\App\Http\Controllers\AdCampaignController::class, 'show']);
         Route::get('{campaign}/metrics', [\App\Http\Controllers\AdCampaignController::class, 'metrics']);
     });
-    
+
     // Insights da IA
     Route::prefix('insights')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdInsightController::class, 'index']);
@@ -719,7 +719,7 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::post('{insight}/apply', [\App\Http\Controllers\AdInsightController::class, 'apply']);
         Route::post('{insight}/dismiss', [\App\Http\Controllers\AdInsightController::class, 'dismiss']);
     });
-    
+
     // Regras de automação
     Route::prefix('rules')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdAutomationController::class, 'index']);
@@ -731,7 +731,7 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::delete('{rule}', [\App\Http\Controllers\AdAutomationController::class, 'destroy']);
         Route::post('{rule}/toggle', [\App\Http\Controllers\AdAutomationController::class, 'toggle']);
     });
-    
+
     // Logs de automação
     Route::prefix('automation')->group(function () {
         Route::get('logs', [\App\Http\Controllers\AdAutomationController::class, 'logs']);
@@ -739,7 +739,7 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::post('logs/{log}/approve', [\App\Http\Controllers\AdAutomationController::class, 'approve']);
         Route::post('logs/{log}/reject', [\App\Http\Controllers\AdAutomationController::class, 'reject']);
     });
-    
+
     // Agente de IA para criação de campanhas
     Route::prefix('agent')->group(function () {
         Route::post('generate-copy', [\App\Http\Controllers\AdAgentController::class, 'generateCopy']);
@@ -747,7 +747,7 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::get('campaigns/{campaign}/full-report', [\App\Http\Controllers\AdAgentController::class, 'getCampaignFullReport']);
         Route::get('campaigns/{campaign}/ads', [\App\Http\Controllers\AdAgentController::class, 'getCampaignAds']);
     });
-    
+
     // Criativos (upload e gestão de mídias)
     Route::prefix('creatives')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdCreativeController::class, 'index']);
@@ -759,7 +759,7 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::get('{creative}/copies', [\App\Http\Controllers\AdCreativeController::class, 'copies']);
         Route::post('{creative}/copies', [\App\Http\Controllers\AdCreativeController::class, 'addCopy']);
     });
-    
+
     // Copies (textos dos anúncios)
     Route::prefix('copies')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdCopyController::class, 'index']);
@@ -771,7 +771,7 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::delete('{copy}', [\App\Http\Controllers\AdCopyController::class, 'destroy']);
         Route::post('{copy}/approve', [\App\Http\Controllers\AdCopyController::class, 'approve']);
     });
-    
+
     // Knowledge Base (RAG para Ads)
     Route::prefix('knowledge')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdsKnowledgeController::class, 'index']);
@@ -785,7 +785,7 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
         Route::put('{knowledge}', [\App\Http\Controllers\AdsKnowledgeController::class, 'update']);
         Route::delete('{knowledge}', [\App\Http\Controllers\AdsKnowledgeController::class, 'destroy']);
     });
-    
+
     // Guardrails (regras de controle)
     Route::prefix('guardrails')->group(function () {
         Route::get('/', [\App\Http\Controllers\AdsGuardrailController::class, 'index']);
@@ -817,14 +817,14 @@ Route::middleware('internal.api')->prefix('internal')->group(function () {
     // Uso de IA
     Route::post('ai-usage', [\App\Http\Controllers\InternalAiUsageController::class, 'logUsage']);
     Route::post('ai-usage/check', [\App\Http\Controllers\InternalAiUsageController::class, 'checkAiAccess']);
-    
+
     // Uso de leads
     Route::post('leads/check', [\App\Http\Controllers\InternalAiUsageController::class, 'checkLeadAccess']);
     Route::post('leads/register', [\App\Http\Controllers\InternalAiUsageController::class, 'registerLeadCreation']);
-    
+
     // Resumo de uso
     Route::post('usage/summary', [\App\Http\Controllers\InternalAiUsageController::class, 'getUsageSummary']);
-    
+
     // Ads Intelligence para AI Service
     Route::prefix('ads')->group(function () {
         Route::get('creatives', [\App\Http\Controllers\AdCreativeController::class, 'internalIndex']);
@@ -835,13 +835,13 @@ Route::middleware('internal.api')->prefix('internal')->group(function () {
         Route::post('save-campaign', [\App\Http\Controllers\AdCampaignController::class, 'internalSave']);
         Route::get('campaigns', [\App\Http\Controllers\AdCampaignController::class, 'internalIndex']);
         Route::post('campaigns/sync', [\App\Http\Controllers\AdCampaignController::class, 'internalSyncAndList']);
-        
+
         // Insights de contas e campanhas (para AI Service acessar dados do Meta)
         Route::get('accounts/{accountId}/insights', [\App\Http\Controllers\AdAccountController::class, 'internalGetInsights']);
         Route::get('accounts/{accountId}/campaigns/insights', [\App\Http\Controllers\AdAccountController::class, 'internalGetCampaignsInsights']);
         Route::post('accounts/find-by-platform-id', [\App\Http\Controllers\AdAccountController::class, 'internalFindByPlatformId']);
     });
-    
+
     // BI Agent - Métricas e dados para AI Service
     Route::prefix('bi')->group(function () {
         // Métricas por área
@@ -850,21 +850,21 @@ Route::middleware('internal.api')->prefix('internal')->group(function () {
         Route::get('metrics/marketing', [\App\Http\Controllers\BI\InternalBIController::class, 'marketingMetrics']);
         Route::get('metrics/financial', [\App\Http\Controllers\BI\InternalBIController::class, 'financialMetrics']);
         Route::get('metrics/ai', [\App\Http\Controllers\BI\InternalBIController::class, 'aiMetrics']);
-        
+
         // Dados de funil e histórico
         Route::get('funnel', [\App\Http\Controllers\BI\InternalBIController::class, 'funnelData']);
         Route::get('history/leads', [\App\Http\Controllers\BI\InternalBIController::class, 'leadsHistory']);
         Route::get('history/revenue', [\App\Http\Controllers\BI\InternalBIController::class, 'revenueHistory']);
-        
+
         // Persistir ações e conhecimento
         Route::post('actions', [\App\Http\Controllers\BI\InternalBIController::class, 'saveAction']);
         Route::post('knowledge', [\App\Http\Controllers\BI\InternalBIController::class, 'saveKnowledge']);
-        
+
         // Configuração de monitoramento (para scheduler)
         Route::get('monitoring-configs', [\App\Http\Controllers\BI\InternalBIController::class, 'getMonitoringConfigs']);
         Route::get('monitoring-config', [\App\Http\Controllers\BI\InternalBIController::class, 'getMonitoringConfig']);
         Route::post('monitoring-config', [\App\Http\Controllers\BI\InternalBIController::class, 'updateMonitoringConfig']);
-        
+
         // Resultados de análises
         Route::post('analysis-results', [\App\Http\Controllers\BI\InternalBIController::class, 'saveAnalysisResult']);
     });
@@ -885,7 +885,7 @@ Route::prefix('webhooks')->group(function () {
     // WhatsApp webhook
     Route::get('whatsapp', [WhatsAppController::class, 'verifyWebhook']);
     Route::post('whatsapp', [WhatsAppController::class, 'receiveWebhook']);
-    
+
     // Simulação de mensagem WhatsApp para testes locais
     Route::post('simulate-message', [WhatsAppController::class, 'simulateMessage']);
 
@@ -945,27 +945,27 @@ Route::middleware(['auth:api', 'super_admin'])->prefix('super-admin')->group(fun
     Route::prefix('costs')->group(function () {
         // Dashboard de custos
         Route::get('dashboard', [\App\Http\Controllers\SuperAdminCostController::class, 'dashboard']);
-        
+
         // Listagem de tenants com uso
         Route::get('tenants', [\App\Http\Controllers\SuperAdminCostController::class, 'listTenantsUsage']);
-        
+
         // Detalhes de custo por tenant
         Route::get('tenants/{tenant}', [\App\Http\Controllers\SuperAdminCostController::class, 'tenantCostDetails']);
-        
+
         // Quotas do tenant
         Route::put('tenants/{tenant}/quota', [\App\Http\Controllers\SuperAdminCostController::class, 'updateTenantQuota']);
         Route::post('tenants/{tenant}/quota/reset', [\App\Http\Controllers\SuperAdminCostController::class, 'resetTenantQuota']);
-        
+
         // Alertas
         Route::get('alerts', [\App\Http\Controllers\SuperAdminCostController::class, 'listAlerts']);
         Route::post('alerts/{alert}/acknowledge', [\App\Http\Controllers\SuperAdminCostController::class, 'acknowledgeAlert']);
         Route::post('alerts/{alert}/resolve', [\App\Http\Controllers\SuperAdminCostController::class, 'resolveAlert']);
-        
+
         // Faturamento
         Route::get('billing', [\App\Http\Controllers\SuperAdminCostController::class, 'listBillingRecords']);
         Route::post('billing/{tenant}/generate', [\App\Http\Controllers\SuperAdminCostController::class, 'generateBilling']);
         Route::post('billing/{billing}/mark-paid', [\App\Http\Controllers\SuperAdminCostController::class, 'markBillingPaid']);
-        
+
         // Exportação e preços
         Route::get('export', [\App\Http\Controllers\SuperAdminCostController::class, 'exportReport']);
         Route::get('pricing', [\App\Http\Controllers\SuperAdminCostController::class, 'getPlanPricing']);
@@ -973,3 +973,61 @@ Route::middleware(['auth:api', 'super_admin'])->prefix('super-admin')->group(fun
 });
 
 
+
+
+// =============================================================================
+// INTERNAL APIs (Comunicação entre microsserviços - Laravel <-> Python)
+// Protegido por X-Internal-Key (validado por middleware)
+// =============================================================================
+Route::middleware([\App\Http\Middleware\EnsureInternalRequest::class])->prefix('internal')->group(function () {
+
+    // BI Agent Endpoints
+    Route::prefix('bi')->group(function () {
+        // Histórico para predição
+        Route::get('history/revenue', [\App\Http\Controllers\BI\InternalBIController::class, 'revenueHistory']);
+        Route::get('history/leads', [\App\Http\Controllers\BI\InternalBIController::class, 'leadsHistory']);
+
+        // Configurações e Persistência
+        Route::get('config/settings', [\App\Http\Controllers\BI\InternalBIController::class, 'getSettings']);
+        Route::post('analysis', [\App\Http\Controllers\BI\InternalBIController::class, 'storeAnalysis']);
+
+        // Leads (para churn prediction)
+        Route::get('leads/active', [\App\Http\Controllers\BI\InternalBIController::class, 'getActiveLeads']);
+        Route::get('leads/training-data', [\App\Http\Controllers\BI\InternalBIController::class, 'getTrainingLeads']);
+        Route::post('leads/{id}/prediction', [\App\Http\Controllers\BI\InternalBIController::class, 'updateLeadPrediction']);
+
+        // Clientes (para Lookalikes)
+        Route::get('customers/high-value', [\App\Http\Controllers\BI\InternalBIController::class, 'getHighValueCustomers']);
+
+        // Análises e Memória
+        Route::post('analysis', [\App\Http\Controllers\BI\InternalBIController::class, 'storeAnalysis']);
+        Route::get('settings', [\App\Http\Controllers\BI\InternalBIController::class, 'getSettings']);
+
+        // Ads Agent Internal
+        Route::prefix('ads')->group(function () {
+            Route::get('campaigns/{id}/full-report', [\App\Http\Controllers\Internal\AdsInternalController::class, 'getCampaignReport']);
+            Route::post('campaigns/{id}/optimize', [\App\Http\Controllers\Internal\AdsInternalController::class, 'optimizeCampaign']);
+        });
+
+        // Product Context (Viral Content)
+        Route::get('products/{id}/context', [\App\Http\Controllers\Internal\ProductInternalController::class, 'getContext']);
+
+        // SDR Agent Internal Control
+        Route::post('sdr/update-script', [\App\Http\Controllers\Internal\SdrInternalController::class, 'updateScript']);
+
+        // Ações
+        Route::post('actions', [\App\Http\Controllers\BI\InternalBIController::class, 'createAction']);
+        Route::get('actions/{id}', [\App\Http\Controllers\BI\InternalBIController::class, 'getAction']);
+        Route::post('actions/{id}/status', [\App\Http\Controllers\BI\InternalBIController::class, 'updateActionStatus']);
+    });
+
+    // SDR Agent Control
+    Route::prefix('sdr')->group(function () {
+        Route::post('config/script', [\App\Http\Controllers\Internal\SdrInternalController::class, 'updateScript']);
+        Route::post('config/timing', [\App\Http\Controllers\Internal\SdrInternalController::class, 'updateTiming']);
+        Route::post('config/qualification', [\App\Http\Controllers\Internal\SdrInternalController::class, 'updateQualification']);
+        Route::post('actions/generic', [\App\Http\Controllers\Internal\SdrInternalController::class, 'genericAction']);
+    });
+
+
+});

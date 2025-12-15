@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { 
-  Bot, 
-  Plus, 
-  Settings, 
-  Trash2, 
-  Power, 
+import {
+  Bot,
+  Plus,
+  Settings,
+  Trash2,
+  Power,
   MessageSquare,
   FileText,
   HelpCircle,
@@ -109,12 +109,12 @@ export default function SdrAgents() {
   )
 }
 
-function AgentCard({ 
-  agent, 
-  onEdit, 
-  onDelete, 
-  onToggleActive 
-}: { 
+function AgentCard({
+  agent,
+  onEdit,
+  onDelete,
+  onToggleActive
+}: {
   agent: SdrAgent
   onEdit: () => void
   onDelete: () => void
@@ -177,6 +177,12 @@ function AgentCard({
 
       {/* Tags */}
       <div className="px-5 pb-4 flex flex-wrap gap-2">
+        <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${agent.type === 'support'
+            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          }`}>
+          {agent.type === 'support' ? 'Suporte' : 'SDR'}
+        </span>
         <span className="px-2 py-1 bg-slate-700/50 rounded-lg text-xs text-slate-400">
           {toneLabels[agent.tone] || agent.tone}
         </span>

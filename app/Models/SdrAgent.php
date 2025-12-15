@@ -18,6 +18,7 @@ class SdrAgent extends Model
         'tenant_id',
         'channel_id',
         'name',
+        'type', // sdr, support
         'avatar',
         'description',
         'system_prompt',
@@ -219,14 +220,14 @@ class SdrAgent extends Model
     {
         // Usa o pipeline fornecido ou o pipeline principal do agente
         $pipeline = $pipeline ?? $this->primaryPipeline();
-        
+
         if (!$pipeline || !$this->can_move_leads) {
             return '';
         }
 
         $parts = [];
         $parts[] = "\n\n## Gerenciamento do Pipeline de Vendas";
-        
+
         // Instruções gerais de pipeline
         if ($this->pipeline_instructions) {
             $parts[] = "\n\n### Instruções Gerais\n" . $this->pipeline_instructions;
@@ -237,10 +238,10 @@ class SdrAgent extends Model
         if ($stages->isNotEmpty()) {
             $parts[] = "\n\n### Estágios do Pipeline \"" . $pipeline->name . "\"";
             $parts[] = "\nVocê pode mover leads entre os seguintes estágios:";
-            
+
             foreach ($stages as $stage) {
                 $parts[] = "\n- **{$stage->name}** (ID: {$stage->id})";
-                
+
                 // Adiciona regras específicas do estágio se configuradas
                 if ($this->stage_rules && isset($this->stage_rules[$stage->id])) {
                     $rule = $this->stage_rules[$stage->id];
@@ -269,7 +270,7 @@ class SdrAgent extends Model
      */
     public function getAvailableStages(?string $pipelineId = null): array
     {
-        $pipeline = $pipelineId 
+        $pipeline = $pipelineId
             ? $this->pipelines()->find($pipelineId)
             : $this->primaryPipeline();
 

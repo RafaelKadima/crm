@@ -75,7 +75,9 @@ class AgentConfig(BaseModel):
     prompt: str
     temperature: float = 0.7
     ai_model: str = "gpt-4o-mini"
+    ai_model: str = "gpt-4o-mini"
     max_tokens: int = 1000
+    type: str = "sdr"  # sdr, support
     
     # Comportamento
     auto_qualify: bool = True

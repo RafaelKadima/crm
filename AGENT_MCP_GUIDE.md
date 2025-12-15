@@ -493,3 +493,33 @@ mcp_crm_crm_usage_estimate({
 ---
 
 *Última atualização: Dezembro 2024*
+
+## Internal API (AI Service Communication)
+
+The Laravel backend exposes a set of internal APIs specifically for the Python AI Service. These are **not** accessible via standard user authentication tokens.
+
+**Authentication:** 
+- Header `X-Internal-Key` matching `LARAVEL_INTERNAL_KEY` env var.
+- Header `X-Tenant-ID` for multitenancy context.
+
+**Base URL:** `/api/internal`
+
+**Available Endpoints:**
+
+### BI Agent
+- `GET /bi/config/settings`: Fetch tenant-specific thresholds and config.
+- `POST /bi/analysis`: Store daily analysis results (JSON payload).
+- `GET /bi/history/revenue`: Helper for revenue prediction training data.
+- `GET /bi/history/leads`: Helper for lead volume training data.
+- `GET /bi/leads/active`: Fetch active leads for churn prediction.
+- `POST /bi/actions`: Create a suggested action for approval.
+- `GET /bi/actions/{id}`: Get action details.
+- `POST /bi/actions/{id}/status`: Update action status (e.g. `in_progress`, `completed`).
+
+### SDR Agent Control
+- `POST /sdr/config/script`: Update script/prompt.
+- `POST /sdr/config/timing`: Update follow-up timing.
+- `POST /sdr/config/qualification`: Update qualification criteria.
+
+### Ads Agent Control
+- `POST /ads/campaigns/{id}/optimize`: Trigger optimization on a specific campaign.

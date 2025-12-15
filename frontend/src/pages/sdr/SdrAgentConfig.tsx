@@ -58,6 +58,7 @@ export default function SdrAgentConfig() {
   const [activeTab, setActiveTab] = useState<TabType>('config')
   const [formData, setFormData] = useState<Partial<SdrAgent>>({
     name: '',
+    type: 'sdr', // Default type
     description: '',
     system_prompt: `Você é um SDR (Sales Development Representative) especializado em qualificar leads.
 
@@ -168,13 +169,12 @@ Sempre mantenha um tom profissional e empático.`,
                   key={tab.id}
                   onClick={() => !isDisabled && setActiveTab(tab.id as TabType)}
                   disabled={isDisabled}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors ${
-                    activeTab === tab.id
+                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors ${activeTab === tab.id
                       ? 'bg-slate-800 text-white border-b-2 border-violet-500'
                       : isDisabled
-                      ? 'text-slate-600 cursor-not-allowed'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                  }`}
+                        ? 'text-slate-600 cursor-not-allowed'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
@@ -250,6 +250,33 @@ function ConfigTab({
                 placeholder="SDR Vendas"
                 className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-2">Tipo de Agente</label>
+              <select
+                value={formData.type || 'sdr'}
+                onChange={(e) => {
+                  const newType = e.target.value as 'sdr' | 'support'
+
+                  // Auto-update prompts based on type if it's a new agent or user confirms
+                  const isSdr = newType === 'sdr'
+
+                  setFormData({
+                    ...formData,
+                    type: newType,
+                    system_prompt: isSdr
+                      ? `Você é um SDR (Sales Development Representative) especializado em qualificar leads.\n\nSuas principais responsabilidades:\n1. Cumprimentar o lead de forma cordial\n2. Identificar suas necessidades e dores\n3. Apresentar soluções relevantes\n4. Qualificar o lead para um atendimento humano\n5. Agendar reuniões quando apropriado\n\nSempre mantenha um tom profissional e empático.`
+                      : `Você é um Agente de Suporte Técnico especializado em resolver problemas pós-venda.\n\nSuas principais responsabilidades:\n1. Acolher o cliente com empatia\n2. Identificar o problema (atraso, defeito, dúvida)\n3. Solicitar fotos/prints se necessário (Visual Support)\n4. Consultar status de pedidos\n5. Oferecer soluções rápidas ou escalar para humano\n\nSeja paciente e focado na resolução.`,
+                    objectives: isSdr
+                      ? 'Qualificar leads, identificar necessidades, agendar reuniões com vendedores.'
+                      : 'Resolver problemas do cliente, consultar pedidos, analisar defeitos visualmente.',
+                  })
+                }}
+                className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              >
+                <option value="sdr">SDR (Vendas & Qualificação)</option>
+                <option value="support">Suporte (SAC & Pós-Venda)</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-2">Canal</label>
@@ -480,7 +507,7 @@ function FlowTab({ agentId }: { agentId: string }) {
       setSelectedPipelines(agentPipelines.map((p: any) => p.id))
       const primary = agentPipelines.find((p: any) => p.pivot?.is_primary)
       setPrimaryPipeline(primary?.id || agentPipelines[0]?.id || '')
-      
+
       // Carrega regras existentes
       const rules: Record<string, { trigger: string; action: string }> = {}
       agentPipelines.forEach((pipeline: any) => {
@@ -599,11 +626,10 @@ function FlowTab({ agentId }: { agentId: string }) {
           {allPipelines?.map((pipeline: any) => (
             <label
               key={pipeline.id}
-              className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
-                selectedPipelines.includes(pipeline.id)
+              className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${selectedPipelines.includes(pipeline.id)
                   ? 'border-violet-500 bg-violet-500/10'
                   : 'border-slate-700 hover:border-slate-600'
-              }`}
+                }`}
             >
               <input
                 type="checkbox"
@@ -725,7 +751,7 @@ function FlowTab({ agentId }: { agentId: string }) {
                   <GitBranch className="h-4 w-4" />
                   {pipeline.name}
                 </h3>
-                
+
                 <div className="space-y-3">
                   {pipeline.stages?.sort((a: any, b: any) => a.order - b.order).map((stage: any, index: number) => (
                     <div
@@ -748,7 +774,7 @@ function FlowTab({ agentId }: { agentId: string }) {
                       {/* Stage info and rules */}
                       <div className="flex-1 space-y-3">
                         <h4 className="font-medium text-white">{stage.name}</h4>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs text-slate-400 mb-1">
@@ -1312,11 +1338,10 @@ function DocumentsTab({ agentId }: { agentId: string }) {
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${
-          dragActive
+        className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${dragActive
             ? 'border-violet-500 bg-violet-500/10'
             : 'border-slate-700 hover:border-slate-600'
-        }`}
+          }`}
       >
         <input
           type="file"

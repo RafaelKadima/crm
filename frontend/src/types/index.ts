@@ -111,14 +111,14 @@ export interface Channel {
 // WhatsApp Template Types
 export type WhatsAppTemplateCategory = 'MARKETING' | 'AUTHENTICATION' | 'UTILITY'
 
-export type WhatsAppTemplateStatus = 
-  | 'PENDING' 
-  | 'APPROVED' 
-  | 'REJECTED' 
-  | 'PAUSED' 
-  | 'DISABLED' 
-  | 'IN_APPEAL' 
-  | 'PENDING_DELETION' 
+export type WhatsAppTemplateStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'PAUSED'
+  | 'DISABLED'
+  | 'IN_APPEAL'
+  | 'PENDING_DELETION'
   | 'DELETED'
   | 'LIMIT_EXCEEDED'
 
@@ -497,6 +497,7 @@ export interface SdrAgent {
   tenant_id: string
   channel_id?: string
   name: string
+  type: 'sdr' | 'support'
   avatar?: string
   description?: string
   system_prompt: string

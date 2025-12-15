@@ -59,6 +59,9 @@ class BIAgent:
         self.cache = BICache(tenant_id)
         self.bi_metrics = BIAgentMetrics(tenant_id)
         
+        # Configuração dinâmica (será carregada no início do ciclo)
+        self.config = {}
+        
         # Analyzer com cache opcional
         if use_cache:
             self.analyzer = CachedDataAnalyzer(self._base_analyzer, self.cache)
@@ -72,16 +75,42 @@ class BIAgent:
         self.laravel_url = os.getenv("LARAVEL_API_URL", "http://nginx")
         self.internal_key = os.getenv("LARAVEL_INTERNAL_KEY", "")
         
-    async def run_daily_cycle(self) -> Dict[str, Any]:
+    async def run_daily_cycle(self, async_mode: bool = False) -> Dict[str, Any]:
         """
         Ciclo diário de análise autônoma.
         
-        Este é o método principal que executa toda a análise do dia.
+        Args:
+            async_mode: Se True, despacha para Celery worker.
+        """
+        if async_mode:
+            try:
+                # Importação local para evitar ciclo
+                from worker import run_daily_analysis 
+                task = run_daily_analysis.delay(self.tenant_id)
+                logger.info(f"[BI Agent] Tarefa despachada para fila: {task.id}")
+                return {
+                    "status": "queued",
+                    "task_id": str(task.id),
+                    "tenant_id": self.tenant_id
+                }
+            except Exception as e:
+                logger.error(f"[BI Agent] Erro ao despachar tarefa: {e}")
+                # Fallback para execução síncrona
+                return await self._execute_daily_cycle()
+        
+        return await self._execute_daily_cycle()
+
+    async def _execute_daily_cycle(self) -> Dict[str, Any]:
+        """
+        Execução real do ciclo diário (lógica core).
         """
         start_time = datetime.now()
         logger.info(f"[BI Agent] Iniciando ciclo diário para tenant {self.tenant_id}")
         
         try:
+            # 0. Carrega configurações do tenant
+            await self._load_tenant_config()
+            
             # 1. Coleta métricas de todas as áreas
             metrics = await self._collect_all_metrics()
             logger.info(f"[BI Agent] Métricas coletadas: {len(metrics)} pontos de dados")
@@ -237,37 +266,46 @@ class BIAgent:
         insights = []
         
         # Insight de vendas
+        sales_config = self.config.get("sales", {})
+        min_conversion_drop = sales_config.get("max_conversion_drop", -0.1)  # Default -10%
+        
         sales = metrics.get("sales", {})
-        if sales.get("conversion_rate_change", 0) < -0.1:
+        if sales.get("conversion_rate_change", 0) < min_conversion_drop:
             insights.append({
                 "type": "warning",
                 "category": "sales",
                 "title": "Queda na taxa de conversão",
-                "content": f"Taxa de conversão caiu {abs(sales.get('conversion_rate_change', 0)*100):.1f}% esta semana.",
+                "content": f"Taxa de conversão caiu {abs(sales.get('conversion_rate_change', 0)*100):.1f}% esta semana (Limite: {abs(min_conversion_drop*100):.1f}%).",
                 "confidence": 0.9,
                 "priority": "high",
             })
         
         # Insight de marketing
+        marketing_config = self.config.get("marketing", {})
+        min_roas = marketing_config.get("min_roas", 1.0)  # Default 1.0
+        
         marketing = metrics.get("marketing", {})
-        if marketing.get("roas", 0) < 1.0:
+        if marketing.get("roas", 0) < min_roas:
             insights.append({
                 "type": "warning",
                 "category": "marketing",
                 "title": "ROAS abaixo do mínimo",
-                "content": f"ROAS atual de {marketing.get('roas', 0):.2f}x está abaixo do mínimo (1.0x).",
+                "content": f"ROAS atual de {marketing.get('roas', 0):.2f}x está abaixo do mínimo ({min_roas:.1f}x).",
                 "confidence": 0.95,
                 "priority": "critical",
             })
         
         # Insight de suporte
+        support_config = self.config.get("support", {})
+        max_response_time = support_config.get("max_response_time", 30)  # Default 30 min
+        
         support = metrics.get("support", {})
-        if support.get("avg_response_time", 0) > 30:  # mais de 30 min
+        if support.get("avg_response_time", 0) > max_response_time:  # mais de X min
             insights.append({
                 "type": "warning",
                 "category": "support",
                 "title": "Tempo de resposta elevado",
-                "content": f"Tempo médio de resposta está em {support.get('avg_response_time', 0):.0f} minutos.",
+                "content": f"Tempo médio de resposta está em {support.get('avg_response_time', 0):.0f} minutos (Meta: {max_response_time} min).",
                 "confidence": 0.85,
                 "priority": "medium",
             })
@@ -355,6 +393,24 @@ class BIAgent:
             logger.warning(f"Erro ao preparar dados de treino: {e}")
             return {"samples": 0}
     
+    async def _load_tenant_config(self):
+        """Carrega configurações personalizadas do tenant."""
+        try:
+            # Usa o orchestrator para buscar configs via API Laravel
+            # Endpoint: /api/internal/bi/config/settings
+            config_data = await self.orchestrator._call_api("config/settings")
+            
+            if config_data and "settings" in config_data:
+                self.config = config_data.get("settings", {})
+                logger.info(f"[BI Agent] Configurações carregadas para tenant {self.tenant_id}")
+            else:
+                logger.warning("[BI Agent] Usando configurações padrão (API sem dados)")
+                self.config = {}
+                
+        except Exception as e:
+            logger.error(f"[BI Agent] Erro ao carregar configurações: {e}")
+            self.config = {}
+
     async def _save_analysis(
         self,
         metrics: Dict,
@@ -365,12 +421,35 @@ class BIAgent:
         execution_time: int
     ) -> Dict[str, Any]:
         """Salva a análise no banco de dados."""
-        # Aqui seria a chamada para o banco de dados
-        # Por enquanto retorna um mock
+        
+        payload = {
+            "metrics": metrics,
+            "predictions": predictions,
+            "anomalies": anomalies,
+            "insights": insights,
+            "actions_generated": [a.get("action_id") for a in actions],
+            "execution_time_ms": execution_time,
+            "analyzed_at": datetime.now().isoformat(),
+        }
+        
+        try:
+            # Persiste via API Laravel
+            result = await self.orchestrator._call_api("analysis", method="POST", data=payload)
+            
+            if "id" in result:
+                return {
+                    "id": result.get("id"),
+                    "tenant_id": self.tenant_id,
+                    "status": "saved",
+                }
+        except Exception as e:
+            logger.error(f"[BI Agent] Erro ao salvar análise: {e}")
+        
+        # Fallback se falhar
         return {
-            "id": f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            "id": f"local_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             "tenant_id": self.tenant_id,
-            "status": "completed",
+            "status": "completed_but_not_saved",
         }
     
     async def answer_question(
