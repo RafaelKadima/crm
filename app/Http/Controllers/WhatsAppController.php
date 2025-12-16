@@ -170,6 +170,11 @@ class WhatsAppController extends Controller
      */
     public function sendMedia(Request $request, Ticket $ticket): JsonResponse
     {
+        Log::error('[SEND MEDIA DEBUG] sendMedia called', [
+            'ticket_id' => $ticket->id,
+            'request_data' => $request->all(),
+        ]);
+
         $validated = $request->validate([
             'attachment_id' => 'required|uuid|exists:ticket_message_attachments,id',
             'caption' => 'nullable|string|max:1024',
@@ -225,11 +230,12 @@ class WhatsAppController extends Controller
         try {
             $this->whatsAppService->loadFromChannel($channel);
 
-            Log::info('Sending media via WhatsApp', [
+            Log::error('[SEND MEDIA DEBUG] Sending media via WhatsApp', [
                 'attachment_id' => $attachment->id,
                 'mime_type' => $attachment->mime_type,
                 'file_path' => $attachment->file_path,
                 'media_type' => $mediaType,
+                'file_type' => $attachment->file_type,
             ]);
 
             // Use direct upload for all audio files (more reliable than URL method)
@@ -240,9 +246,14 @@ class WhatsAppController extends Controller
             // This makes them appear as "mensagem de voz" instead of "arquivo de áudio"
             $sendAsVoiceNote = $mediaType === 'audio';
 
+            Log::error('[SEND MEDIA DEBUG] Upload decision', [
+                'needsDirectUpload' => $needsDirectUpload,
+                'sendAsVoiceNote' => $sendAsVoiceNote,
+            ]);
+
             if ($needsDirectUpload) {
                 // Upload file directly to WhatsApp, then send using media_id
-                Log::info('Using direct upload for audio/unsupported format', [
+                Log::error('[SEND MEDIA DEBUG] Using direct upload for audio/unsupported format', [
                     'mime_type' => $attachment->mime_type,
                     'file_path' => $attachment->file_path,
                     'as_voice_note' => $sendAsVoiceNote,
@@ -260,6 +271,13 @@ class WhatsAppController extends Controller
                 $convertedMimeType = $uploadResult['mime_type'];
                 $isVoiceNote = $uploadResult['is_voice_note'] ?? false;
 
+                Log::error('[SEND MEDIA DEBUG] uploadMedia result', [
+                    'media_id' => $mediaId,
+                    'converted_path' => $convertedPath,
+                    'converted_mime_type' => $convertedMimeType,
+                    'is_voice_note' => $isVoiceNote,
+                ]);
+
                 // Send with voice:true flag if converted to OGG OPUS
                 $result = $this->whatsAppService->sendMediaById(
                     $contact->phone,
@@ -269,7 +287,8 @@ class WhatsAppController extends Controller
                     $isVoiceNote // voice:true makes it appear as voice message
                 );
 
-                Log::info('Audio sent as voice note (PTT)', [
+                Log::error('[SEND MEDIA DEBUG] sendMediaById result', [
+                    'result' => $result,
                     'is_voice_note' => $isVoiceNote,
                     'converted_mime' => $convertedMimeType,
                 ]);
