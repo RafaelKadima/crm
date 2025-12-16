@@ -899,13 +899,14 @@ class WhatsAppService
             // Settings for WhatsApp voice notes (PTT):
             // - vn: no video (important for webm files that may contain video track)
             // - libopus codec (required for PTT)
-            // - 16000 Hz sample rate (WhatsApp voice note standard)
+            // - 48000 Hz sample rate (OPUS standard - WhatsApp resamples internally)
             // - mono channel (voice)
-            // - 32k bitrate (better quality for voice)
+            // - 64k bitrate (WhatsApp standard for voice)
+            // - frame_duration 60 (WhatsApp standard)
+            // - vbr constrained (WhatsApp standard)
             // - f ogg: force OGG container format (CRITICAL: WebM won't work on mobile!)
-            // NOTE: Removed -application voip as it may cause compatibility issues
             $command = sprintf(
-                '"%s" -i "%s" -vn -ac 1 -ar 16000 -c:a libopus -b:a 32k -f ogg "%s" -y 2>&1',
+                '"%s" -i "%s" -vn -ac 1 -ar 48000 -c:a libopus -b:a 64k -frame_duration 60 -vbr constrained -f ogg "%s" -y 2>&1',
                 $ffmpegPath,
                 $inputFile,
                 $outputFile
