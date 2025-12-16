@@ -238,59 +238,41 @@ class WhatsAppController extends Controller
                 'file_type' => $attachment->file_type,
             ]);
 
-            // Use direct upload for all audio files (more reliable than URL method)
-            // WhatsApp often can't access S3 URLs due to timing/security issues
-            $needsDirectUpload = $mediaType === 'audio' || str_contains($attachment->mime_type ?? '', 'webm');
+            // Check if this is an audio file that should be sent as voice note (PTT)
+            $isAudioFile = $mediaType === 'audio' || str_contains($attachment->mime_type ?? '', 'webm');
 
-            // Audio files should be sent as voice notes (PTT) for better UX
-            // This makes them appear as "mensagem de voz" instead of "arquivo de áudio"
-            $sendAsVoiceNote = $mediaType === 'audio';
-
-            Log::error('[SEND MEDIA DEBUG] Upload decision', [
-                'needsDirectUpload' => $needsDirectUpload,
-                'sendAsVoiceNote' => $sendAsVoiceNote,
+            Log::error('[SEND MEDIA DEBUG] Media type check', [
+                'mediaType' => $mediaType,
+                'isAudioFile' => $isAudioFile,
+                'mime_type' => $attachment->mime_type,
             ]);
 
-            if ($needsDirectUpload) {
-                // Upload file directly to WhatsApp, then send using media_id
-                Log::error('[SEND MEDIA DEBUG] Using direct upload for audio/unsupported format', [
-                    'mime_type' => $attachment->mime_type,
+            if ($isAudioFile) {
+                // Use iOS-safe PTT method for all audio files
+                // This method handles: conversion to OGG OPUS, correct filename (.ogg),
+                // correct MIME (audio/ogg), upload to WhatsApp, and send with voice:true
+                Log::error('[SEND MEDIA DEBUG] Using sendVoiceNotePTT (iOS-safe)', [
                     'file_path' => $attachment->file_path,
-                    'as_voice_note' => $sendAsVoiceNote,
+                    'mime_type' => $attachment->mime_type,
                 ]);
 
-                // Upload with voice note conversion (OGG OPUS) for audio files
-                $uploadResult = $this->whatsAppService->uploadMedia(
-                    $attachment->file_path,
-                    $attachment->mime_type,
-                    $sendAsVoiceNote // Convert to OGG OPUS if true
-                );
-
-                $mediaId = $uploadResult['media_id'];
-                $convertedPath = $uploadResult['converted_path'];
-                $convertedMimeType = $uploadResult['mime_type'];
-                $isVoiceNote = $uploadResult['is_voice_note'] ?? false;
-
-                Log::error('[SEND MEDIA DEBUG] uploadMedia result', [
-                    'media_id' => $mediaId,
-                    'converted_path' => $convertedPath,
-                    'converted_mime_type' => $convertedMimeType,
-                    'is_voice_note' => $isVoiceNote,
-                ]);
-
-                // Send with voice:true flag if converted to OGG OPUS
-                $result = $this->whatsAppService->sendMediaById(
+                $pttResult = $this->whatsAppService->sendVoiceNotePTT(
                     $contact->phone,
-                    $mediaType,
-                    $mediaId,
-                    $validated['caption'] ?? null,
-                    $isVoiceNote // voice:true makes it appear as voice message
+                    $attachment->file_path,
+                    $attachment->mime_type
                 );
 
-                Log::error('[SEND MEDIA DEBUG] sendMediaById result', [
+                $result = $pttResult['result'];
+                $convertedPath = $pttResult['converted_path'];
+                $convertedMimeType = $pttResult['mime_type'];
+                $convertedFileName = $pttResult['file_name'];
+
+                Log::error('[SEND MEDIA DEBUG] sendVoiceNotePTT result', [
                     'result' => $result,
-                    'is_voice_note' => $isVoiceNote,
+                    'media_id' => $pttResult['media_id'],
+                    'converted_path' => $convertedPath,
                     'converted_mime' => $convertedMimeType,
+                    'converted_filename' => $convertedFileName,
                 ]);
 
                 // Use the converted file URL for display in chat
@@ -301,9 +283,10 @@ class WhatsAppController extends Controller
                     $mediaUrl = $disk->url($convertedPath);
                 }
 
-                // Update attachment with converted file info
+                // Update attachment with converted file info (including filename!)
                 $attachment->update([
                     'file_path' => $convertedPath,
+                    'file_name' => $convertedFileName,
                     'mime_type' => $convertedMimeType,
                 ]);
             } else {

@@ -361,6 +361,135 @@ class WhatsAppService
     }
 
     /**
+     * Send voice note (PTT) - iOS-safe method
+     *
+     * This method handles the complete flow for sending voice notes that work on ALL platforms,
+     * especially iOS which is very strict about format validation.
+     *
+     * iOS Requirements (ALL must be met):
+     * - Container: OGG (not WebM)
+     * - Codec: OPUS
+     * - Sample rate: 16000 Hz
+     * - MIME type: audio/ogg (no parameters!)
+     * - Filename extension: .ogg (iOS validates this!)
+     * - Upload via /media endpoint (not URL)
+     * - Send with voice:true flag
+     *
+     * @param string $to Recipient phone number
+     * @param string $filePath Path to audio file in storage
+     * @param string $mimeType Original MIME type of the file
+     * @return array Result from WhatsApp API
+     */
+    public function sendVoiceNotePTT(string $to, string $filePath, string $mimeType): array
+    {
+        $this->validateConfig();
+
+        Log::error('[PTT iOS-SAFE] Starting voice note send', [
+            'to' => $to,
+            'file_path' => $filePath,
+            'original_mime' => $mimeType,
+        ]);
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('media');
+
+        if (!$disk->exists($filePath)) {
+            throw new \Exception("Arquivo não encontrado: {$filePath}");
+        }
+
+        // Step 1: Convert to OGG OPUS (iOS-compatible format)
+        $convertedPath = $this->convertToOggOpus($disk, $filePath);
+
+        if (!$convertedPath) {
+            throw new \Exception('Falha na conversão do áudio para OGG OPUS. Verifique se FFmpeg está instalado.');
+        }
+
+        Log::error('[PTT iOS-SAFE] Conversion complete', [
+            'converted_path' => $convertedPath,
+        ]);
+
+        // Step 2: Read converted file
+        $fileContents = $disk->get($convertedPath);
+
+        // Step 3: Force correct filename with .ogg extension (CRITICAL for iOS!)
+        $originalFileName = pathinfo($filePath, PATHINFO_FILENAME);
+        $fileName = $originalFileName . '.ogg';
+
+        // Step 4: Force correct MIME type (CRITICAL for iOS - no parameters!)
+        $mimeType = 'audio/ogg';
+
+        Log::error('[PTT iOS-SAFE] Uploading to WhatsApp', [
+            'file_name' => $fileName,
+            'mime_type' => $mimeType,
+            'file_size' => strlen($fileContents),
+        ]);
+
+        // Step 5: Upload to WhatsApp Media API
+        $uploadResponse = Http::withToken($this->accessToken)
+            ->attach('file', $fileContents, $fileName, ['Content-Type' => $mimeType])
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/media", [
+                'messaging_product' => 'whatsapp',
+                'type' => $mimeType,
+            ]);
+
+        $uploadResult = $uploadResponse->json();
+
+        if (!$uploadResponse->successful() || !isset($uploadResult['id'])) {
+            Log::error('[PTT iOS-SAFE] Upload failed', [
+                'status' => $uploadResponse->status(),
+                'response' => $uploadResult,
+            ]);
+            throw new \Exception($uploadResult['error']['message'] ?? 'Erro ao fazer upload da mídia');
+        }
+
+        $mediaId = $uploadResult['id'];
+
+        Log::error('[PTT iOS-SAFE] Upload successful, sending message', [
+            'media_id' => $mediaId,
+        ]);
+
+        // Step 6: Send as voice note with voice:true (CRITICAL for PTT appearance)
+        $sendPayload = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => $this->formatPhoneNumber($to),
+            'type' => 'audio',
+            'audio' => [
+                'id' => $mediaId,
+                'voice' => true, // Makes it appear as voice message, not audio file
+            ],
+        ];
+
+        Log::error('[PTT iOS-SAFE] Sending with payload', [
+            'payload' => $sendPayload,
+        ]);
+
+        $sendResponse = Http::withToken($this->accessToken)
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", $sendPayload);
+
+        $sendResult = $sendResponse->json();
+
+        if (!$sendResponse->successful()) {
+            Log::error('[PTT iOS-SAFE] Send failed', [
+                'status' => $sendResponse->status(),
+                'response' => $sendResult,
+            ]);
+            throw new \Exception($sendResult['error']['message'] ?? 'Erro ao enviar mensagem de voz');
+        }
+
+        Log::error('[PTT iOS-SAFE] Success!', [
+            'message_id' => $sendResult['messages'][0]['id'] ?? null,
+        ]);
+
+        return [
+            'result' => $sendResult,
+            'media_id' => $mediaId,
+            'converted_path' => $convertedPath,
+            'file_name' => $fileName,
+            'mime_type' => $mimeType,
+        ];
+    }
+
+    /**
      * Marca mensagem como lida
      */
     public function markAsRead(string $messageId): bool
