@@ -2658,3 +2658,369 @@ Route::middleware('feature:ads_intelligence,ads.campaigns')->group(function () {
     Route::get('/ads/campaigns', [AdsController::class, 'campaigns']);
 });
 ```
+
+============================================================
+🔧 CLOUDFLARE R2 - STORAGE DE ARQUIVOS
+============================================================
+
+O sistema utiliza Cloudflare R2 (S3-compatível) para armazenamento de arquivos
+de mídia (imagens, áudios, vídeos, documentos).
+
+📌 Configuração do Backend (.env na VPS)
+----------------------------------------
+
+```env
+# Cloudflare R2 Storage
+MEDIA_DISK=media
+MEDIA_DISK_DRIVER=s3
+AWS_ACCESS_KEY_ID=<r2-access-key-id>
+AWS_SECRET_ACCESS_KEY=<r2-secret-access-key>
+AWS_DEFAULT_REGION=auto
+AWS_BUCKET=crm
+AWS_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+AWS_USE_PATH_STYLE_ENDPOINT=true
+```
+
+📌 Configuração do CORS no Cloudflare R2
+----------------------------------------
+
+Para permitir uploads do frontend, configure o CORS no bucket R2:
+
+1. Acesse https://dash.cloudflare.com
+2. Vá em **R2 Object Storage** → bucket **"crm"** → **Settings**
+3. Em **CORS Policy**, adicione:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://crm.omnify.center"],
+    "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+📌 Fluxo de Upload de Mídia
+---------------------------
+
+1. Frontend solicita URL pré-assinada → `POST /api/files/presigned-url`
+2. Frontend faz upload direto para R2 usando a URL pré-assinada
+3. Frontend confirma upload → `POST /api/files/{attachmentId}/confirm`
+4. Se WhatsApp: envia mídia → `POST /api/whatsapp/tickets/{ticketId}/media`
+
+📌 Arquivos Relevantes
+----------------------
+
+### Backend
+- `config/filesystems.php` → Configuração do disk "media"
+- `app/Http/Controllers/FileController.php` → Upload e presigned URLs
+- `app/Http/Controllers/WhatsAppController.php` → Envio de mídia via WhatsApp
+
+### Frontend
+- `frontend/src/components/chat/FileUploadButton.tsx` → Upload de arquivos
+- `frontend/src/api/endpoints.ts` → APIs de arquivo e mídia WhatsApp
+
+============================================================
+🔧 WEBSOCKET - MENSAGENS EM TEMPO REAL
+============================================================
+
+O sistema utiliza Laravel Reverb (Pusher-compatível) para WebSocket,
+permitindo atualizações em tempo real no chat.
+
+📌 Configuração do Backend (.env)
+---------------------------------
+
+```env
+# Broadcasting / WebSockets
+BROADCAST_CONNECTION=reverb
+
+# Reverb (WebSocket server)
+REVERB_APP_ID=<app-id>
+REVERB_APP_KEY=<app-key>
+REVERB_APP_SECRET=<app-secret>
+REVERB_HOST=127.0.0.1
+REVERB_PORT=8080
+REVERB_SCHEME=http
+```
+
+📌 Configuração do Frontend (.env)
+----------------------------------
+
+```env
+VITE_WEBSOCKET_ENABLED=true
+VITE_PUSHER_APP_KEY=<app-key>
+VITE_PUSHER_HOST=<websocket-host>
+VITE_PUSHER_PORT=6001
+VITE_PUSHER_SCHEME=https
+```
+
+📌 Eventos Broadcast
+--------------------
+
+### TicketMessageCreated
+Disparado quando uma nova mensagem é criada no ticket.
+
+Canais:
+- `private-ticket.{ticketId}` → Mensagens do ticket específico
+- `private-lead.{leadId}` → Atualizações do lead
+- `private-tenant.{tenantId}` → Notificações do tenant
+
+Payload:
+```json
+{
+  "message": {
+    "id": "uuid",
+    "ticket_id": "uuid",
+    "sender_type": "user|contact|ia",
+    "direction": "inbound|outbound",
+    "content": "texto da mensagem",
+    "metadata": {
+      "media_url": "https://...",
+      "media_type": "image|audio|video|document",
+      "file_name": "arquivo.jpg"
+    },
+    "created_at": "2025-12-16T12:00:00Z"
+  },
+  "ticket": {...},
+  "lead_id": "uuid",
+  "tenant_id": "uuid"
+}
+```
+
+### LeadUpdated
+Disparado quando um lead é atualizado (transferência, mudança de estágio).
+
+📌 Frontend - Recebendo Mensagens em Tempo Real
+-----------------------------------------------
+
+### frontend/src/hooks/useWebSocket.ts
+Hook `useLeadMessages(leadId, onNewMessage, onLeadUpdated)`:
+- Inscreve no canal privado do lead e tenant
+- Recebe mensagens e atualizações em tempo real
+
+### frontend/src/components/chat/LeadChatModal.tsx
+Callback `handleNewMessage`:
+- Detecta se mensagem tem mídia (metadata.media_url, etc)
+- Mensagens de texto do próprio usuário: atualiza status para 'delivered'
+- Mensagens de mídia ou inbound: adiciona ao chat em tempo real
+- Faz scroll automático para última mensagem
+
+```typescript
+const hasMedia = data.message.metadata && (
+  data.message.metadata.media_url ||
+  data.message.metadata.image_url ||
+  data.message.metadata.audio_url ||
+  data.message.metadata.video_url ||
+  data.message.metadata.document_url
+)
+
+// Mensagens de mídia são sempre adicionadas (não têm placeholder temporário)
+if (data.message.direction === 'outbound' &&
+    data.message.sender_type === 'user' && !hasMedia) {
+  // Apenas atualiza status da mensagem temporária
+  return
+}
+
+// Adiciona mensagem ao chat
+setMessages(prev => [...prev, newMsg])
+```
+
+📌 Arquivos Relevantes
+----------------------
+
+### Backend
+- `app/Events/TicketMessageCreated.php` → Evento de broadcast
+- `app/Events/LeadUpdated.php` → Evento de atualização do lead
+- `config/broadcasting.php` → Configuração do Reverb/Pusher
+- `routes/channels.php` → Autorização de canais privados
+
+### Frontend
+- `frontend/src/lib/echo.ts` → Configuração do Laravel Echo
+- `frontend/src/hooks/useWebSocket.ts` → Hooks de WebSocket
+- `frontend/src/components/chat/LeadChatModal.tsx` → Chat em tempo real
+
+📌 Desabilitando WebSocket (Desenvolvimento Local)
+--------------------------------------------------
+
+Para desabilitar WebSocket no frontend (útil para dev local sem Reverb):
+
+```env
+# frontend/.env
+VITE_WEBSOCKET_ENABLED=false
+```
+
+O sistema continua funcionando, mas sem atualizações em tempo real.
+
+============================================================
+🔧 ENVIO DE MÍDIA VIA WHATSAPP
+============================================================
+
+O sistema permite enviar imagens, áudios, vídeos e documentos via WhatsApp.
+
+📌 Fluxo Completo
+-----------------
+
+1. Usuário seleciona arquivo no `FileUploadButton`
+2. Frontend obtém URL pré-assinada do backend
+3. Frontend faz upload direto para R2
+4. Frontend confirma upload no backend
+5. Se canal é WhatsApp, chama `POST /api/whatsapp/tickets/{ticketId}/media`
+6. Backend baixa arquivo do R2 e envia para API do WhatsApp
+7. Backend cria `TicketMessage` com metadata da mídia
+8. Backend dispara evento `TicketMessageCreated`
+9. Frontend recebe via WebSocket e exibe no chat
+
+📌 Tipos de Mídia Suportados
+----------------------------
+
+- **Imagem**: JPEG, PNG, GIF, WebP (máx 16MB)
+- **Vídeo**: MP4, QuickTime, WebM (máx 64MB)
+- **Áudio**: MP3, OGG, WAV, WebM (máx 16MB)
+- **Documento**: PDF, DOC, DOCX, XLS, XLSX, TXT (máx 100MB)
+
+📌 Conversão de Áudio
+---------------------
+
+Áudios gravados no navegador (WebM/Opus) são convertidos para OGG antes
+de enviar ao WhatsApp, pois a API do WhatsApp não aceita WebM diretamente.
+
+📌 API Endpoints
+----------------
+
+### Obter URL pré-assinada
+```
+POST /api/files/presigned-url
+Body: { filename, mime_type, file_size, ticket_id }
+Response: { upload_url, method, attachment_id, headers }
+```
+
+### Confirmar upload
+```
+POST /api/files/{attachmentId}/confirm
+Response: { attachment: {...} }
+```
+
+### Enviar mídia via WhatsApp
+```
+POST /api/whatsapp/tickets/{ticketId}/media
+Body: { attachment_id, caption? }
+Response: { success, message, attachment, whatsapp_response }
+```
+
+📌 Arquivos Relevantes
+----------------------
+
+### Backend
+- `app/Http/Controllers/FileController.php` → Upload e presigned URLs
+- `app/Http/Controllers/WhatsAppController.php::sendMedia()` → Envio de mídia
+- `app/Services/WhatsAppService.php` → Integração com API WhatsApp
+- `app/Models/TicketMessageAttachment.php` → Model de anexos
+
+### Frontend
+- `frontend/src/components/chat/FileUploadButton.tsx` → Upload de arquivos
+- `frontend/src/components/chat/AudioRecorder.tsx` → Gravação de áudio
+- `frontend/src/components/chat/MessageAttachment.tsx` → Exibição de mídia
+- `frontend/src/api/endpoints.ts` → APIs (filesApi, whatsAppMediaApi)
+
+================================================================================
+## 🎤 WhatsApp Voice Notes (PTT - Push To Talk)
+================================================================================
+
+### Diferença entre Áudio e Nota de Voz no WhatsApp
+
+O WhatsApp diferencia dois tipos de mensagens de áudio:
+
+1. **Arquivo de Áudio** (`audio file`):
+   - Aparece como arquivo anexado
+   - Mostra nome do arquivo
+   - Precisa ser baixado para ouvir
+   - Qualquer formato suportado (MP3, AAC, etc.)
+
+2. **Nota de Voz / Mensagem de Voz** (`voice message` / PTT):
+   - Aparece com ícone de microfone verde
+   - Player inline integrado
+   - Reproduz diretamente no chat
+   - **Requisitos técnicos**:
+     - Formato: **OGG com codec OPUS**
+     - Flag: `voice: true` no payload da API
+
+### Implementação no CRM
+
+O sistema converte automaticamente áudios gravados/enviados para o formato PTT:
+
+#### Fluxo de Conversão
+
+```
+Áudio Original (WebM/MP3/etc)
+        ↓
+FFmpeg converte para OGG OPUS
+        ↓
+Upload para WhatsApp API
+        ↓
+Envio com flag voice: true
+        ↓
+WhatsApp exibe como "mensagem de voz" 🎤
+```
+
+#### Configuração FFmpeg (Parâmetros Otimizados)
+
+```bash
+ffmpeg -i audio_original.webm \
+  -ac 1 \              # Mono (canal único)
+  -ar 48000 \          # Sample rate 48kHz (padrão OPUS)
+  -c:a libopus \       # Codec OPUS
+  -b:a 24k \           # Bitrate 24kbps (otimizado para voz)
+  -application voip \  # Modo VoIP (otimizado para fala)
+  audio_whatsapp.ogg
+```
+
+#### Arquivos Relevantes
+
+**Backend:**
+- `app/Services/WhatsAppService.php`
+  - `convertToOggOpus()` → Converte áudio para OGG OPUS
+  - `uploadMedia($path, $mime, $asVoiceNote)` → Upload com flag de voice note
+  - `sendMediaById($to, $type, $mediaId, $caption, $voice)` → Envia com `voice: true`
+
+- `app/Http/Controllers/WhatsAppController.php`
+  - `sendMedia()` → Detecta áudio e envia como PTT automaticamente
+
+#### Payload da API WhatsApp
+
+```json
+{
+  "messaging_product": "whatsapp",
+  "recipient_type": "individual",
+  "to": "5511999999999",
+  "type": "audio",
+  "audio": {
+    "id": "media_id_do_upload",
+    "voice": true  // ← Flag que faz aparecer como mensagem de voz
+  }
+}
+```
+
+#### Requisitos
+
+1. **FFmpeg instalado** no servidor com suporte a `libopus`
+2. Áudio deve estar em formato OGG OPUS
+3. Flag `voice: true` no payload de envio
+
+#### Verificar instalação do FFmpeg
+
+```bash
+# Linux/Ubuntu
+sudo apt install ffmpeg
+
+# macOS
+brew install ffmpeg
+
+# Windows
+# Download de https://ffmpeg.org/download.html
+# Adicionar ao PATH
+
+# Verificar se libopus está disponível
+ffmpeg -encoders | grep opus
+```

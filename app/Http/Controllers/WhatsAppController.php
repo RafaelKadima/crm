@@ -224,41 +224,56 @@ class WhatsAppController extends Controller
 
         try {
             $this->whatsAppService->loadFromChannel($channel);
-            
+
             Log::info('Sending media via WhatsApp', [
                 'attachment_id' => $attachment->id,
                 'mime_type' => $attachment->mime_type,
                 'file_path' => $attachment->file_path,
                 'media_type' => $mediaType,
             ]);
-            
+
             // Use direct upload for all audio files (more reliable than URL method)
             // WhatsApp often can't access S3 URLs due to timing/security issues
             $needsDirectUpload = $mediaType === 'audio' || str_contains($attachment->mime_type ?? '', 'webm');
 
+            // Audio files should be sent as voice notes (PTT) for better UX
+            // This makes them appear as "mensagem de voz" instead of "arquivo de áudio"
+            $sendAsVoiceNote = $mediaType === 'audio';
+
             if ($needsDirectUpload) {
                 // Upload file directly to WhatsApp, then send using media_id
-                Log::info('Using direct upload for unsupported format', [
+                Log::info('Using direct upload for audio/unsupported format', [
                     'mime_type' => $attachment->mime_type,
                     'file_path' => $attachment->file_path,
+                    'as_voice_note' => $sendAsVoiceNote,
                 ]);
-                
+
+                // Upload with voice note conversion (OGG OPUS) for audio files
                 $uploadResult = $this->whatsAppService->uploadMedia(
                     $attachment->file_path,
-                    $attachment->mime_type
+                    $attachment->mime_type,
+                    $sendAsVoiceNote // Convert to OGG OPUS if true
                 );
-                
+
                 $mediaId = $uploadResult['media_id'];
                 $convertedPath = $uploadResult['converted_path'];
                 $convertedMimeType = $uploadResult['mime_type'];
-                
+                $isVoiceNote = $uploadResult['is_voice_note'] ?? false;
+
+                // Send with voice:true flag if converted to OGG OPUS
                 $result = $this->whatsAppService->sendMediaById(
                     $contact->phone,
                     $mediaType,
                     $mediaId,
-                    $validated['caption'] ?? null
+                    $validated['caption'] ?? null,
+                    $isVoiceNote // voice:true makes it appear as voice message
                 );
-                
+
+                Log::info('Audio sent as voice note (PTT)', [
+                    'is_voice_note' => $isVoiceNote,
+                    'converted_mime' => $convertedMimeType,
+                ]);
+
                 // Use the converted file URL for display in chat
                 $disk = Storage::disk($attachment->storage_disk);
                 if (config("filesystems.disks.{$attachment->storage_disk}.driver") === 's3') {
@@ -266,7 +281,7 @@ class WhatsAppController extends Controller
                 } else {
                     $mediaUrl = $disk->url($convertedPath);
                 }
-                
+
                 // Update attachment with converted file info
                 $attachment->update([
                     'file_path' => $convertedPath,

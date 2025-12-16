@@ -174,26 +174,61 @@ class WhatsAppService
     /**
      * Upload media file directly to WhatsApp (for formats like WebM that need processing)
      * Returns array with media_id and converted_path (if conversion happened)
+     *
+     * @param string $filePath Path to the file on storage disk
+     * @param string $mimeType Original MIME type of the file
+     * @param bool $asVoiceNote If true and file is audio, converts to OGG OPUS for PTT
+     * @return array{media_id: string, converted_path: string, mime_type: string, is_voice_note: bool}
      */
-    public function uploadMedia(string $filePath, string $mimeType): array
+    public function uploadMedia(string $filePath, string $mimeType, bool $asVoiceNote = false): array
     {
         $this->validateConfig();
 
         $disk = \Illuminate\Support\Facades\Storage::disk('media');
-        
+
         if (!$disk->exists($filePath)) {
             throw new \Exception("Arquivo não encontrado: {$filePath}");
         }
 
         $fileContents = $disk->get($filePath);
         $fileName = basename($filePath);
-        
+        $isVoiceNote = false;
+
         // WhatsApp accepts: audio/ogg, audio/opus, audio/mpeg, audio/amr, audio/mp4, audio/aac
-        // WebM is NOT supported - must convert to OGG using FFmpeg
+        // For voice notes (PTT), MUST use OGG OPUS format + voice:true flag
         $normalizedMimeType = $mimeType;
-        
-        // For WebM, convert to OGG using FFmpeg
-        if (str_contains($mimeType, 'webm')) {
+
+        // Check if this is an audio file
+        $isAudio = str_contains($mimeType, 'audio') || str_contains($mimeType, 'webm');
+
+        // For audio files that should be sent as voice notes, convert to OGG OPUS
+        if ($isAudio && $asVoiceNote) {
+            $convertedPath = $this->convertToOggOpus($disk, $filePath);
+            if ($convertedPath) {
+                $filePath = $convertedPath;
+                $fileContents = $disk->get($filePath);
+                $fileName = preg_replace('/\.[^.]+$/', '.ogg', $fileName);
+                $normalizedMimeType = 'audio/ogg';
+                $isVoiceNote = true;
+                Log::info('Converted audio to OGG OPUS for voice note (PTT)', ['new_path' => $filePath]);
+            } else {
+                // Fallback to MP3 if OGG conversion fails (won't be PTT but will work)
+                Log::warning('OGG OPUS conversion failed, falling back to MP3');
+                if (str_contains($mimeType, 'webm')) {
+                    $convertedPath = $this->convertWebmToMp3($disk, $filePath);
+                    if ($convertedPath) {
+                        $filePath = $convertedPath;
+                        $fileContents = $disk->get($filePath);
+                        $fileName = preg_replace('/\.[^.]+$/', '.mp3', $fileName);
+                        $normalizedMimeType = 'audio/mpeg';
+                    } else {
+                        throw new \Exception('FFmpeg não disponível. Instale FFmpeg para enviar áudios via WhatsApp.');
+                    }
+                }
+            }
+        }
+        // For WebM without voice note flag, convert to MP3 (legacy behavior)
+        elseif (str_contains($mimeType, 'webm')) {
             $convertedPath = $this->convertWebmToMp3($disk, $filePath);
             if ($convertedPath) {
                 $filePath = $convertedPath;
@@ -214,6 +249,8 @@ class WhatsAppService
             'original_mime' => $mimeType,
             'normalized_mime' => $normalizedMimeType,
             'file_name' => $fileName,
+            'as_voice_note' => $asVoiceNote,
+            'is_voice_note' => $isVoiceNote,
         ]);
 
         // Upload to WhatsApp Media API
@@ -235,19 +272,26 @@ class WhatsAppService
             throw new \Exception($result['error']['message'] ?? 'Erro ao fazer upload da mídia');
         }
 
-        Log::info('WhatsApp media uploaded', ['media_id' => $result['id']]);
+        Log::info('WhatsApp media uploaded', ['media_id' => $result['id'], 'is_voice_note' => $isVoiceNote]);
 
         return [
             'media_id' => $result['id'],
-            'converted_path' => $filePath, // Returns the converted file path (e.g., .mp3 instead of .webm)
+            'converted_path' => $filePath, // Returns the converted file path (e.g., .ogg instead of .webm)
             'mime_type' => $normalizedMimeType,
+            'is_voice_note' => $isVoiceNote, // True if converted to OGG OPUS for PTT
         ];
     }
 
     /**
      * Send media message using media_id (after uploading via uploadMedia)
+     *
+     * @param string $to Recipient phone number
+     * @param string $type Media type (image, video, audio, document, sticker)
+     * @param string $mediaId WhatsApp media ID from uploadMedia()
+     * @param string|null $caption Caption for the media (not supported for audio)
+     * @param bool $voice If true and type is 'audio', sends as voice note (PTT) instead of audio file
      */
-    public function sendMediaById(string $to, string $type, string $mediaId, ?string $caption = null): array
+    public function sendMediaById(string $to, string $type, string $mediaId, ?string $caption = null, bool $voice = false): array
     {
         $this->validateConfig();
 
@@ -257,9 +301,16 @@ class WhatsAppService
         }
 
         $mediaPayload = ['id' => $mediaId];
-        
+
         if ($caption && in_array($type, ['image', 'video', 'document'])) {
             $mediaPayload['caption'] = $caption;
+        }
+
+        // Para áudio com voice=true, envia como nota de voz (PTT - Push To Talk)
+        // Isso faz o áudio aparecer como "mensagem de voz" no WhatsApp, não como arquivo
+        if ($type === 'audio' && $voice) {
+            $mediaPayload['voice'] = true;
+            Log::info('Sending audio as voice note (PTT)', ['media_id' => $mediaId]);
         }
 
         $payload = [
@@ -274,6 +325,7 @@ class WhatsAppService
             'to' => $this->formatPhoneNumber($to),
             'media_id' => $mediaId,
             'type' => $type,
+            'voice' => $voice,
         ]);
 
         $response = Http::withToken($this->accessToken)
@@ -787,6 +839,90 @@ class WhatsAppService
 
         } catch (\Exception $e) {
             Log::error('FFmpeg conversion error', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Convert audio to OGG OPUS format for WhatsApp Voice Notes (PTT)
+     *
+     * WhatsApp requires OGG with OPUS codec for voice messages (PTT - Push To Talk).
+     * Using this format + voice:true flag makes audio appear as "voice message"
+     * instead of "audio file" in WhatsApp.
+     *
+     * Recommended settings for WhatsApp PTT:
+     * - Codec: libopus
+     * - Sample rate: 48000 Hz
+     * - Channels: mono (1)
+     * - Bitrate: 24-32k (voice optimized)
+     * - Application: voip (optimized for speech)
+     *
+     * @param mixed $disk Storage disk instance
+     * @param string $inputPath Path to input audio file
+     * @return string|null Path to converted file, or null if conversion failed
+     */
+    protected function convertToOggOpus($disk, string $inputPath): ?string
+    {
+        // Check if FFmpeg is available
+        $ffmpegPath = $this->findFfmpeg();
+        if (!$ffmpegPath) {
+            Log::warning('FFmpeg not found - cannot convert to OGG OPUS');
+            return null;
+        }
+
+        try {
+            // Create temp files
+            $tempDir = sys_get_temp_dir();
+            $extension = pathinfo($inputPath, PATHINFO_EXTENSION);
+            $inputFile = $tempDir . '/' . uniqid('audio_') . '.' . $extension;
+            $outputFile = $tempDir . '/' . uniqid('ogg_') . '.ogg';
+
+            // Write input file
+            file_put_contents($inputFile, $disk->get($inputPath));
+
+            // Convert using FFmpeg to OGG OPUS (WhatsApp PTT format)
+            // Settings optimized for WhatsApp voice notes:
+            // - libopus codec (required for PTT)
+            // - 48000 Hz sample rate (OPUS standard)
+            // - mono channel (voice)
+            // - 24k bitrate (voice optimized, good quality/size balance)
+            // - voip application mode (optimized for speech)
+            $command = sprintf(
+                '"%s" -i "%s" -ac 1 -ar 48000 -c:a libopus -b:a 24k -application voip "%s" -y 2>&1',
+                $ffmpegPath,
+                $inputFile,
+                $outputFile
+            );
+
+            Log::info('Running FFmpeg conversion to OGG OPUS (PTT)', ['command' => $command]);
+            $output = shell_exec($command);
+
+            // Check if output file was created
+            if (!file_exists($outputFile) || filesize($outputFile) === 0) {
+                Log::error('FFmpeg OGG OPUS conversion failed', ['output' => $output]);
+                @unlink($inputFile);
+                return null;
+            }
+
+            // Generate output path with .ogg extension
+            $basePath = preg_replace('/\.[^.]+$/', '', $inputPath);
+            $outputPath = $basePath . '.ogg';
+            $disk->put($outputPath, file_get_contents($outputFile));
+
+            Log::info('Audio converted to OGG OPUS successfully', [
+                'input' => $inputPath,
+                'output' => $outputPath,
+                'size' => filesize($outputFile),
+            ]);
+
+            // Cleanup temp files
+            @unlink($inputFile);
+            @unlink($outputFile);
+
+            return $outputPath;
+
+        } catch (\Exception $e) {
+            Log::error('FFmpeg OGG OPUS conversion error', ['error' => $e->getMessage()]);
             return null;
         }
     }
