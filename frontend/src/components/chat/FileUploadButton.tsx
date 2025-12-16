@@ -100,6 +100,9 @@ export function FileUploadButton({
 
   const isWhatsApp = channelType?.toLowerCase() === 'whatsapp'
 
+  // Debug log
+  console.log('📎 FileUploadButton - channelType:', channelType, 'isWhatsApp:', isWhatsApp)
+
   const updateFileStatus = useCallback(
     (
       id: string,
@@ -194,10 +197,12 @@ export function FileUploadButton({
         })
 
         // 4. If WhatsApp, send media automatically
+        console.log('📎 Upload complete. isWhatsApp:', isWhatsApp, 'ticketId:', ticketId, 'attachment.id:', attachment.id)
         if (isWhatsApp) {
           updateFileStatus(uploadId, { status: 'sending', progress: 90 })
 
           try {
+            console.log('📎 Sending media to WhatsApp...', { ticketId, attachmentId: attachment.id })
             await whatsAppMediaApi.sendMedia(ticketId, attachment.id)
             updateFileStatus(uploadId, { progress: 100, status: 'complete' })
             onMediaSent?.()
