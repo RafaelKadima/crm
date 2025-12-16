@@ -1167,6 +1167,120 @@ class WhatsAppService
     }
 
     /**
+     * Send voice note as MP3 with voice:true flag (for PTT appearance)
+     * Converts to MP3, uploads to WhatsApp API, sends with voice:true
+     */
+    public function sendVoiceNoteMP3(string $to, string $filePath, string $mimeType): array
+    {
+        $this->validateConfig();
+
+        Log::error('[PTT MP3 VOICE] Starting voice note send', [
+            'to' => $to,
+            'file_path' => $filePath,
+            'original_mime' => $mimeType,
+        ]);
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('media');
+
+        if (!$disk->exists($filePath)) {
+            throw new \Exception("Arquivo não encontrado: {$filePath}");
+        }
+
+        // Step 1: Convert to MP3
+        $convertedPath = $this->convertToMp3($disk, $filePath);
+
+        if (!$convertedPath) {
+            throw new \Exception('Falha na conversão do áudio para MP3. Verifique se FFmpeg está instalado.');
+        }
+
+        Log::error('[PTT MP3 VOICE] Conversion complete', [
+            'converted_path' => $convertedPath,
+        ]);
+
+        // Step 2: Read converted file
+        $fileContents = $disk->get($convertedPath);
+        $fileName = pathinfo($convertedPath, PATHINFO_BASENAME);
+
+        Log::error('[PTT MP3 VOICE] Uploading to WhatsApp', [
+            'file_name' => $fileName,
+            'file_size' => strlen($fileContents),
+        ]);
+
+        // Step 3: Upload to WhatsApp Media API
+        $uploadResponse = Http::withToken($this->accessToken)
+            ->attach('file', $fileContents, $fileName, ['Content-Type' => 'audio/mpeg'])
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/media", [
+                'messaging_product' => 'whatsapp',
+                'type' => 'audio/mpeg',
+            ]);
+
+        $uploadResult = $uploadResponse->json();
+
+        if (!$uploadResponse->successful() || !isset($uploadResult['id'])) {
+            Log::error('[PTT MP3 VOICE] Upload failed', [
+                'status' => $uploadResponse->status(),
+                'response' => $uploadResult,
+            ]);
+            throw new \Exception($uploadResult['error']['message'] ?? 'Erro ao fazer upload da mídia');
+        }
+
+        $mediaId = $uploadResult['id'];
+
+        Log::error('[PTT MP3 VOICE] Upload successful, sending message', [
+            'media_id' => $mediaId,
+        ]);
+
+        // Step 4: Send as voice note with voice:true
+        $sendPayload = [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => $this->formatPhoneNumber($to),
+            'type' => 'audio',
+            'audio' => [
+                'id' => $mediaId,
+                'voice' => true, // Makes it appear as voice message (PTT)
+            ],
+        ];
+
+        Log::error('[PTT MP3 VOICE] Sending with payload', [
+            'payload' => $sendPayload,
+        ]);
+
+        $sendResponse = Http::withToken($this->accessToken)
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", $sendPayload);
+
+        $sendResult = $sendResponse->json();
+
+        if (!$sendResponse->successful()) {
+            Log::error('[PTT MP3 VOICE] Send failed', [
+                'status' => $sendResponse->status(),
+                'response' => $sendResult,
+            ]);
+            throw new \Exception($sendResult['error']['message'] ?? 'Erro ao enviar mensagem de voz');
+        }
+
+        Log::error('[PTT MP3 VOICE] Success!', [
+            'message_id' => $sendResult['messages'][0]['id'] ?? null,
+        ]);
+
+        // Generate public URL for display in chat
+        if (config("filesystems.disks.media.driver") === 's3') {
+            $mediaUrl = $disk->temporaryUrl($convertedPath, now()->addDays(7));
+        } else {
+            $mediaUrl = $disk->url($convertedPath);
+        }
+
+        return [
+            'result' => $sendResult,
+            'media_id' => $mediaId,
+            'converted_path' => $convertedPath,
+            'mime_type' => 'audio/mpeg',
+            'file_name' => $fileName,
+            'media_url' => $mediaUrl,
+        ];
+    }
+
+    /**
      * Find FFmpeg executable path
      */
     protected function findFfmpeg(): ?string

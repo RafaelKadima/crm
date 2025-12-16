@@ -283,58 +283,33 @@ class WhatsAppController extends Controller
                     'result' => $result,
                 ]);
             } elseif ($isAudioFile) {
-                // Non-MP3 audio (WebM, OGG, etc.) - convert to MP3 and send via public URL
-                // This is the iOS-safe method that works on all platforms
-                Log::error('[SEND MEDIA DEBUG] Converting to MP3 (iOS-safe method)', [
+                // Non-MP3 audio (WebM, OGG, etc.) - convert to MP3 and send as voice note
+                // Uses upload method with voice:true for PTT appearance on all platforms
+                Log::error('[SEND MEDIA DEBUG] Using sendVoiceNoteMP3 (iOS-safe + PTT)', [
                     'file_path' => $attachment->file_path,
                     'mime_type' => $attachment->mime_type,
                 ]);
 
-                $disk = Storage::disk($attachment->storage_disk);
-
-                // Convert to MP3 using FFmpeg
-                $convertedPath = $this->whatsAppService->convertToMp3($disk, $attachment->file_path);
-
-                if (!$convertedPath) {
-                    Log::error('[SEND MEDIA DEBUG] MP3 conversion failed');
-                    return response()->json([
-                        'error' => 'Falha na conversão do áudio. Verifique se FFmpeg está instalado.',
-                    ], 500);
-                }
-
-                Log::error('[SEND MEDIA DEBUG] MP3 conversion successful', [
-                    'converted_path' => $convertedPath,
-                ]);
-
-                // Generate public URL for the MP3 file
-                if (config("filesystems.disks.{$attachment->storage_disk}.driver") === 's3') {
-                    $mediaUrl = $disk->temporaryUrl($convertedPath, now()->addHours(24));
-                } else {
-                    $mediaUrl = $disk->url($convertedPath);
-                }
-
-                Log::error('[SEND MEDIA DEBUG] Sending MP3 via public URL', [
-                    'mediaUrl' => $mediaUrl,
-                ]);
-
-                // Send via public URL (link method) - works on iOS, Android, Web
-                $result = $this->whatsAppService->sendMediaMessage(
+                $voiceResult = $this->whatsAppService->sendVoiceNoteMP3(
                     $contact->phone,
-                    'audio',
-                    $mediaUrl,
-                    null // no caption for audio
+                    $attachment->file_path,
+                    $attachment->mime_type
                 );
 
-                Log::error('[SEND MEDIA DEBUG] sendMediaMessage result', [
+                $result = $voiceResult['result'];
+                $mediaUrl = $voiceResult['media_url'];
+
+                Log::error('[SEND MEDIA DEBUG] sendVoiceNoteMP3 result', [
                     'result' => $result,
+                    'media_id' => $voiceResult['media_id'],
+                    'converted_path' => $voiceResult['converted_path'],
                 ]);
 
                 // Update attachment with converted file info
-                $convertedFileName = pathinfo($convertedPath, PATHINFO_BASENAME);
                 $attachment->update([
-                    'file_path' => $convertedPath,
-                    'file_name' => $convertedFileName,
-                    'mime_type' => 'audio/mpeg',
+                    'file_path' => $voiceResult['converted_path'],
+                    'file_name' => $voiceResult['file_name'],
+                    'mime_type' => $voiceResult['mime_type'],
                 ]);
             } else {
                 // Get public URL for the attachment
