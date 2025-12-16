@@ -4,102 +4,6 @@ import { Mic, Square, Send, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import api from '@/api/axios'
-import lamejs from 'lamejs'
-
-// Helper function to write string to DataView
-function writeString(view: DataView, offset: number, string: string) {
-  for (let i = 0; i < string.length; i++) {
-    view.setUint8(offset + i, string.charCodeAt(i))
-  }
-}
-
-// Convert audio blob to WAV format using AudioContext
-async function convertToWav(blob: Blob): Promise<Blob> {
-  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-  const arrayBuffer = await blob.arrayBuffer()
-  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-
-  const numChannels = 1 // mono for voice
-  const sampleRate = audioBuffer.sampleRate
-  const format = 1 // PCM
-  const bitDepth = 16
-
-  const bytesPerSample = bitDepth / 8
-  const blockAlign = numChannels * bytesPerSample
-
-  // Get audio data (use first channel only for mono)
-  const samples = audioBuffer.getChannelData(0)
-  const buffer = new ArrayBuffer(44 + samples.length * bytesPerSample)
-  const view = new DataView(buffer)
-
-  // WAV header
-  writeString(view, 0, 'RIFF')
-  view.setUint32(4, 36 + samples.length * bytesPerSample, true)
-  writeString(view, 8, 'WAVE')
-  writeString(view, 12, 'fmt ')
-  view.setUint32(16, 16, true) // fmt chunk size
-  view.setUint16(20, format, true) // audio format (PCM)
-  view.setUint16(22, numChannels, true)
-  view.setUint32(24, sampleRate, true)
-  view.setUint32(28, sampleRate * blockAlign, true) // byte rate
-  view.setUint16(32, blockAlign, true)
-  view.setUint16(34, bitDepth, true)
-  writeString(view, 36, 'data')
-  view.setUint32(40, samples.length * bytesPerSample, true)
-
-  // Write samples
-  let offset = 44
-  for (let i = 0; i < samples.length; i++) {
-    const sample = Math.max(-1, Math.min(1, samples[i]))
-    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true)
-    offset += 2
-  }
-
-  await audioContext.close()
-  return new Blob([buffer], { type: 'audio/wav' })
-}
-
-// Convert WAV to MP3 using lamejs
-async function convertToMp3(wavBlob: Blob): Promise<Blob> {
-  const arrayBuffer = await wavBlob.arrayBuffer()
-  const view = new DataView(arrayBuffer)
-
-  // Read WAV header
-  const numChannels = view.getUint16(22, true)
-  const sampleRate = view.getUint32(24, true)
-
-  // Get samples (skip 44 byte header)
-  const samples = new Int16Array(arrayBuffer, 44)
-
-  // Create MP3 encoder (mono, sample rate, 128kbps)
-  const mp3encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, 128)
-  const mp3Data: Int8Array[] = []
-
-  const sampleBlockSize = 1152
-  for (let i = 0; i < samples.length; i += sampleBlockSize) {
-    const sampleChunk = samples.subarray(i, i + sampleBlockSize)
-    const mp3buf = mp3encoder.encodeBuffer(sampleChunk)
-    if (mp3buf.length > 0) {
-      mp3Data.push(mp3buf)
-    }
-  }
-
-  const end = mp3encoder.flush()
-  if (end.length > 0) {
-    mp3Data.push(end)
-  }
-
-  // Combine all MP3 chunks
-  const totalLength = mp3Data.reduce((acc, buf) => acc + buf.length, 0)
-  const mp3Array = new Uint8Array(totalLength)
-  let offset = 0
-  for (const buf of mp3Data) {
-    mp3Array.set(new Uint8Array(buf.buffer, buf.byteOffset, buf.length), offset)
-    offset += buf.length
-  }
-
-  return new Blob([mp3Array], { type: 'audio/mpeg' })
-}
 
 interface AudioMessage {
   id: string
@@ -133,7 +37,6 @@ export function AudioRecorder({
   const [isPaused, setIsPaused] = useState(false)
   const [duration, setDuration] = useState(0)
   const [isSending, setIsSending] = useState(false)
-  const [isConverting, setIsConverting] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [error, setError] = useState<string | null>(null)
   
@@ -284,76 +187,53 @@ export function AudioRecorder({
     if (!audioBlob || !ticketId) return
 
     setIsSending(true)
-    setIsConverting(true)
     setError(null)
 
     try {
-      // 1. Convert WebM to MP3 for universal compatibility (especially iOS)
-      console.log('Converting audio...', audioBlob.type, audioBlob.size)
-
-      let finalBlob: Blob
-      let finalMimeType: string
-      let extension: string
-
-      try {
-        // Convert WebM → WAV → MP3
-        const wavBlob = await convertToWav(audioBlob)
-        console.log('Converted to WAV:', wavBlob.size)
-
-        finalBlob = await convertToMp3(wavBlob)
-        finalMimeType = 'audio/mpeg'
-        extension = 'mp3'
-        console.log('Converted to MP3:', finalBlob.size)
-      } catch (conversionError) {
-        console.error('Conversion failed, using original:', conversionError)
-        // Fallback to original blob if conversion fails
-        finalBlob = audioBlob
-        finalMimeType = audioBlob.type || 'audio/webm'
-        extension = finalMimeType.includes('ogg') ? 'ogg' :
-                    finalMimeType.includes('mp4') ? 'm4a' :
-                    finalMimeType.includes('mpeg') ? 'mp3' : 'webm'
-      }
-
-      setIsConverting(false)
+      // Send original audio - backend will convert to MP3 for iOS compatibility
+      const mimeType = audioBlob.type || 'audio/webm'
+      const extension = mimeType.includes('ogg') ? 'ogg' :
+                        mimeType.includes('mp4') ? 'm4a' :
+                        mimeType.includes('mpeg') ? 'mp3' : 'webm'
 
       const fileName = `audio_${Date.now()}.${extension}`
-      console.log('Final audio:', finalMimeType, extension, finalBlob.size)
+      console.log('Sending audio:', mimeType, extension, audioBlob.size)
 
-      // 2. Request presigned URL for upload
+      // 1. Request presigned URL for upload
       const presignedResponse = await api.post('/files/presigned-url', {
         ticket_id: ticketId,
         filename: fileName,
-        mime_type: finalMimeType,
-        file_size: finalBlob.size,
+        mime_type: mimeType,
+        file_size: audioBlob.size,
       })
-      
+
       const { upload_url, attachment_id, method, use_form_data } = presignedResponse.data
 
-      // 3. Upload to S3 or local storage
+      // 2. Upload to S3 or local storage
       if (use_form_data) {
         // Local storage fallback - use FormData
         const formData = new FormData()
-        formData.append('file', finalBlob, fileName)
+        formData.append('file', audioBlob, fileName)
         await api.post(upload_url, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         })
       } else {
-        // S3 direct upload with MP3
+        // S3 direct upload
         await fetch(upload_url, {
           method: method || 'PUT',
-          body: finalBlob,
+          body: audioBlob,
           headers: {
-            'Content-Type': finalMimeType,
+            'Content-Type': mimeType,
           },
         })
       }
       
-      // 4. Confirm upload
+      // 3. Confirm upload
       await api.post('/files/confirm', {
         attachment_id: attachment_id,
       })
       
-      // 5. Send via WhatsApp (if WhatsApp channel)
+      // 4. Send via WhatsApp (if WhatsApp channel)
       let mediaResponse: any = null
       if (channelType?.toLowerCase() === 'whatsapp') {
         const response = await api.post(`/whatsapp/tickets/${ticketId}/media`, {
@@ -362,17 +242,17 @@ export function AudioRecorder({
         })
         mediaResponse = response.data
       }
-      
+
       // Success! Create message object for real-time display
       // Use the actual message from backend if available
       const backendMessage = mediaResponse?.message
       const backendAttachment = mediaResponse?.attachment
-      
+
       // Get the media URL from backend response
-      const mediaUrl = backendAttachment?.url || 
+      const mediaUrl = backendAttachment?.url ||
                        backendMessage?.metadata?.media_url ||
                        upload_url
-      
+
       const audioMessage: AudioMessage = {
         id: backendMessage?.id || `temp-audio-${Date.now()}`,
         content: backendMessage?.message || `[audio: ${fileName}]`,
@@ -384,24 +264,23 @@ export function AudioRecorder({
           media_type: 'audio',
           media_url: mediaUrl,
           file_name: backendAttachment?.file_name || fileName,
-          file_size: backendAttachment?.file_size || finalBlob.size,
-          mime_type: backendAttachment?.mime_type || finalMimeType,
+          file_size: backendAttachment?.file_size || audioBlob.size,
+          mime_type: backendAttachment?.mime_type || mimeType,
           ...backendMessage?.metadata,
         }
       }
-      
+
       console.log('Audio message created:', audioMessage)
-      
+
       setAudioBlob(null)
       setDuration(0)
       onAudioSent?.(audioMessage)
-      
+
     } catch (err: any) {
       console.error('Error sending audio:', err)
       setError(err.response?.data?.error || 'Erro ao enviar áudio')
     } finally {
       setIsSending(false)
-      setIsConverting(false)
     }
   }
 

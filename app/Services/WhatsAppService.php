@@ -1095,6 +1095,78 @@ class WhatsAppService
     }
 
     /**
+     * Convert audio to MP3 format using FFmpeg (iOS-safe)
+     * MP3 via URL link is the proven method that works on all platforms
+     */
+    public function convertToMp3($disk, string $inputPath): ?string
+    {
+        Log::error('[PTT MP3] convertToMp3 called', ['inputPath' => $inputPath]);
+
+        $ffmpegPath = $this->findFfmpeg();
+        if (!$ffmpegPath) {
+            Log::error('[PTT MP3] FFmpeg not found');
+            return null;
+        }
+
+        try {
+            $tempDir = sys_get_temp_dir();
+            $extension = pathinfo($inputPath, PATHINFO_EXTENSION);
+            $inputFile = $tempDir . '/' . uniqid('audio_') . '.' . $extension;
+            $outputFile = $tempDir . '/' . uniqid('mp3_') . '.mp3';
+
+            // Write input file
+            file_put_contents($inputFile, $disk->get($inputPath));
+
+            // Convert to MP3 using FFmpeg
+            // Settings optimized for voice and universal compatibility:
+            // - vn: no video
+            // - ac 1: mono channel (voice)
+            // - ar 44100: standard sample rate for MP3
+            // - b:a 128k: 128kbps bitrate (good quality, small size)
+            // - f mp3: MP3 format
+            $command = sprintf(
+                '"%s" -y -i "%s" -vn -ac 1 -ar 44100 -b:a 128k -f mp3 "%s" 2>&1',
+                $ffmpegPath,
+                $inputFile,
+                $outputFile
+            );
+
+            Log::error('[PTT MP3] Running FFmpeg', ['command' => $command]);
+            $output = shell_exec($command);
+            Log::error('[PTT MP3] FFmpeg output', ['output' => substr($output ?? '', -500)]);
+
+            if (!file_exists($outputFile) || filesize($outputFile) === 0) {
+                Log::error('[PTT MP3] FFmpeg failed - no output file', ['output' => $output]);
+                @unlink($inputFile);
+                return null;
+            }
+
+            Log::error('[PTT MP3] FFmpeg success', ['size' => filesize($outputFile)]);
+
+            // Generate output path with .mp3 extension
+            $basePath = preg_replace('/\.[^.]+$/', '', $inputPath);
+            $outputPath = $basePath . '.mp3';
+            $disk->put($outputPath, file_get_contents($outputFile));
+
+            Log::info('Audio converted to MP3 successfully', [
+                'input' => $inputPath,
+                'output' => $outputPath,
+                'size' => filesize($outputFile),
+            ]);
+
+            // Cleanup temp files
+            @unlink($inputFile);
+            @unlink($outputFile);
+
+            return $outputPath;
+
+        } catch (\Exception $e) {
+            Log::error('FFmpeg MP3 conversion error', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
      * Find FFmpeg executable path
      */
     protected function findFfmpeg(): ?string
