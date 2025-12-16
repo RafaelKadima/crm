@@ -209,8 +209,9 @@ class WhatsAppService
             if ($convertedPath) {
                 $filePath = $convertedPath;
                 $fileContents = $disk->get($filePath);
-                $fileName = preg_replace('/\.[^.]+$/', '.ogg', $fileName);
-                $normalizedMimeType = 'audio/ogg';
+                // Use .opus extension and audio/opus MIME type for better WhatsApp Mobile compatibility
+                $fileName = preg_replace('/\.[^.]+$/', '.opus', $fileName);
+                $normalizedMimeType = 'audio/opus';
                 $isVoiceNote = true;
                 Log::info('Converted audio to OGG OPUS for voice note (PTT)', ['new_path' => $filePath]);
             } else {
