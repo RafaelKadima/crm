@@ -172,8 +172,20 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
   const ChannelIcon = channelIcons[lead?.channel?.type || ''] || MessageSquare
   
+  // Track processed message IDs to prevent duplicates from multiple WebSocket events
+  const processedMessageIds = useRef<Set<string>>(new Set())
+
   // 🔥 WebSocket: callback para receber mensagens em tempo real
   const handleNewMessage = useCallback((data: any) => {
+    const messageId = data.message.id
+
+    // Prevent processing same message twice (WebSocket can fire multiple times)
+    if (processedMessageIds.current.has(messageId)) {
+      console.log('📩 Mensagem já processada, ignorando:', messageId)
+      return
+    }
+    processedMessageIds.current.add(messageId)
+
     console.log('📩 Nova mensagem para o lead:', data)
 
     // Ignora mensagens enviadas pelo próprio usuário (já foram adicionadas localmente)

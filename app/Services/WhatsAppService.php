@@ -882,13 +882,15 @@ class WhatsAppService
 
             // Convert using FFmpeg to OGG OPUS (WhatsApp PTT format)
             // Settings optimized for WhatsApp voice notes:
+            // - vn: no video (important for webm files that may contain video track)
             // - libopus codec (required for PTT)
             // - 48000 Hz sample rate (OPUS standard)
             // - mono channel (voice)
-            // - 24k bitrate (voice optimized, good quality/size balance)
+            // - 32k bitrate (voice optimized, good quality for WhatsApp)
             // - voip application mode (optimized for speech)
+            // - f ogg: force OGG container format
             $command = sprintf(
-                '"%s" -i "%s" -ac 1 -ar 48000 -c:a libopus -b:a 24k -application voip "%s" -y 2>&1',
+                '"%s" -i "%s" -vn -ac 1 -ar 48000 -c:a libopus -b:a 32k -application voip -f ogg "%s" -y 2>&1',
                 $ffmpegPath,
                 $inputFile,
                 $outputFile
