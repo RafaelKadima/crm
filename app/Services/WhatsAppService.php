@@ -852,11 +852,14 @@ class WhatsAppService
      * Using this format + voice:true flag makes audio appear as "voice message"
      * instead of "audio file" in WhatsApp.
      *
-     * Recommended settings for WhatsApp PTT:
+     * IMPORTANT: WhatsApp Mobile requires 16000 Hz sample rate!
+     * 48000 Hz only works on WhatsApp Web, but fails on mobile app.
+     *
+     * Required settings for WhatsApp PTT (Mobile compatible):
      * - Codec: libopus
-     * - Sample rate: 48000 Hz
+     * - Sample rate: 16000 Hz (CRITICAL for mobile!)
      * - Channels: mono (1)
-     * - Bitrate: 24-32k (voice optimized)
+     * - Bitrate: 24k (voice optimized)
      * - Application: voip (optimized for speech)
      *
      * @param mixed $disk Storage disk instance
@@ -886,16 +889,16 @@ class WhatsAppService
             file_put_contents($inputFile, $disk->get($inputPath));
 
             // Convert using FFmpeg to OGG OPUS (WhatsApp PTT format)
-            // Settings optimized for WhatsApp voice notes:
+            // Settings optimized for WhatsApp voice notes on MOBILE:
             // - vn: no video (important for webm files that may contain video track)
             // - libopus codec (required for PTT)
-            // - 48000 Hz sample rate (OPUS standard)
+            // - 16000 Hz sample rate (REQUIRED for WhatsApp Mobile - 48000 only works on Web!)
             // - mono channel (voice)
-            // - 32k bitrate (voice optimized, good quality for WhatsApp)
+            // - 24k bitrate (voice optimized)
             // - voip application mode (optimized for speech)
             // - f ogg: force OGG container format
             $command = sprintf(
-                '"%s" -i "%s" -vn -ac 1 -ar 48000 -c:a libopus -b:a 32k -application voip -f ogg "%s" -y 2>&1',
+                '"%s" -i "%s" -vn -ac 1 -ar 16000 -c:a libopus -b:a 24k -application voip -f ogg "%s" -y 2>&1',
                 $ffmpegPath,
                 $inputFile,
                 $outputFile
