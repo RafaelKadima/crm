@@ -53,6 +53,7 @@ interface NavItem {
   label: string
   path: string
   feature?: string
+  featureFunction?: string  // Sub-função necessária do módulo (ex: 'ads.dashboard')
   permission?: string  // Ex: 'leads.view_own' ou 'leads.view_all'
   permissions?: string[] // Qualquer uma das permissões
   adminOnly?: boolean
@@ -86,8 +87,8 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Kanban, label: 'Leads', path: '/leads', permissions: ['leads.view_own', 'leads.view_all'] },
       { icon: MessageSquare, label: 'Tickets', path: '/tickets', permissions: ['tickets.view_own', 'tickets.view_all'] },
-      { icon: CalendarDays, label: 'Agendamentos', path: '/appointments', feature: 'appointments', permission: 'appointments.view' },
-      { icon: Clock, label: 'Minha Agenda', path: '/schedule', feature: 'appointments', permission: 'appointments.view' },
+      { icon: CalendarDays, label: 'Agendamentos', path: '/appointments', feature: 'appointments', featureFunction: 'appointments.list', permission: 'appointments.view' },
+      { icon: Clock, label: 'Minha Agenda', path: '/schedule', feature: 'appointments', featureFunction: 'appointments.schedule', permission: 'appointments.view' },
       { icon: LayoutGrid, label: 'Filas', path: '/queues', adminOnly: true },
       { icon: Radio, label: 'Canais', path: '/channels', permission: 'channels.view' },
     ],
@@ -97,8 +98,8 @@ const navGroups: NavGroup[] = [
     label: 'Marketing',
     icon: Megaphone,
     items: [
-      { icon: Package, label: 'Produtos', path: '/products', feature: 'products', permission: 'products.view' },
-      { icon: Globe, label: 'Landing Pages', path: '/landing-pages', feature: 'landing_pages', permissions: ['landing_pages.view', 'landing_pages.create'] },
+      { icon: Package, label: 'Produtos', path: '/products', feature: 'products', featureFunction: 'products.list', permission: 'products.view' },
+      { icon: Globe, label: 'Landing Pages', path: '/landing-pages', feature: 'landing_pages', featureFunction: 'lp.list', permissions: ['landing_pages.view', 'landing_pages.create'] },
       { icon: FileText, label: 'Templates WhatsApp', path: '/whatsapp-templates', permission: 'channels.view' },
       { icon: TrendingUp, label: 'Google Tag Manager', path: '/gtm', adminOnly: true },
     ],
@@ -108,16 +109,16 @@ const navGroups: NavGroup[] = [
     label: 'Ads Intelligence',
     icon: Target,
     items: [
-      { icon: Target, label: 'Dashboard Ads', path: '/ads', feature: 'ads_intelligence' },
-      { icon: Zap, label: '🤖 Criar Campanha (IA)', path: '/ads/agent', feature: 'ads_intelligence' },
-      { icon: Bot, label: '💬 Chat com Agente', path: '/ads/chat', feature: 'ads_intelligence' },
-      { icon: ImageIcon, label: '📁 Criativos', path: '/ads/creatives', feature: 'ads_intelligence' },
-      { icon: BarChart3, label: 'Campanhas', path: '/ads/campaigns', feature: 'ads_intelligence' },
-      { icon: Lightbulb, label: 'Insights IA', path: '/ads/insights', feature: 'ads_intelligence' },
-      { icon: Zap, label: 'Automações', path: '/ads/automation', feature: 'ads_intelligence' },
-      { icon: BookOpen, label: '📚 Base de Conhecimento', path: '/ads/knowledge', feature: 'ads_intelligence' },
-      { icon: Shield, label: '🛡️ Guardrails', path: '/ads/guardrails', feature: 'ads_intelligence' },
-      { icon: Settings, label: 'Contas de Anúncio', path: '/ads/accounts', feature: 'ads_intelligence' },
+      { icon: Target, label: 'Dashboard Ads', path: '/ads', feature: 'ads_intelligence', featureFunction: 'ads.dashboard' },
+      { icon: Zap, label: '🤖 Criar Campanha (IA)', path: '/ads/agent', feature: 'ads_intelligence', featureFunction: 'ads.create_campaign' },
+      { icon: Bot, label: '💬 Chat com Agente', path: '/ads/chat', feature: 'ads_intelligence', featureFunction: 'ads.chat' },
+      { icon: ImageIcon, label: '📁 Criativos', path: '/ads/creatives', feature: 'ads_intelligence', featureFunction: 'ads.creatives' },
+      { icon: BarChart3, label: 'Campanhas', path: '/ads/campaigns', feature: 'ads_intelligence', featureFunction: 'ads.campaigns' },
+      { icon: Lightbulb, label: 'Insights IA', path: '/ads/insights', feature: 'ads_intelligence', featureFunction: 'ads.insights' },
+      { icon: Zap, label: 'Automações', path: '/ads/automation', feature: 'ads_intelligence', featureFunction: 'ads.automation' },
+      { icon: BookOpen, label: '📚 Base de Conhecimento', path: '/ads/knowledge', feature: 'ads_intelligence', featureFunction: 'ads.knowledge' },
+      { icon: Shield, label: '🛡️ Guardrails', path: '/ads/guardrails', feature: 'ads_intelligence', featureFunction: 'ads.guardrails' },
+      { icon: Settings, label: 'Contas de Anúncio', path: '/ads/accounts', feature: 'ads_intelligence', featureFunction: 'ads.accounts' },
     ],
   },
   {
@@ -134,7 +135,7 @@ const navGroups: NavGroup[] = [
     label: 'Inteligência',
     icon: Bot,
     items: [
-      { icon: Bot, label: 'Agentes IA', path: '/sdr', feature: 'sdr_ia', permission: 'sdr_ia.view' },
+      { icon: Bot, label: 'Agentes IA', path: '/sdr', feature: 'sdr_ia', featureFunction: 'sdr.agents', permission: 'sdr_ia.view' },
       { icon: BarChart3, label: 'Relatórios', path: '/reports', permissions: ['reports.view_own', 'reports.view_all'] },
     ],
   },
@@ -143,11 +144,11 @@ const navGroups: NavGroup[] = [
     label: 'BI Agent',
     icon: PieChart,
     items: [
-      { icon: PieChart, label: 'Dashboard BI', path: '/bi', adminOnly: true },
-      { icon: Brain, label: '🤖 Analista IA', path: '/bi/analyst', adminOnly: true },
-      { icon: ClipboardCheck, label: '📋 Ações Pendentes', path: '/bi/actions', adminOnly: true },
-      { icon: FileSpreadsheet, label: '📊 Relatórios', path: '/bi/reports', adminOnly: true },
-      { icon: Settings2, label: '⚙️ Configurações', path: '/bi/settings', adminOnly: true },
+      { icon: PieChart, label: 'Dashboard BI', path: '/bi', feature: 'bi_agent', featureFunction: 'bi.dashboard', adminOnly: true },
+      { icon: Brain, label: '🤖 Analista IA', path: '/bi/analyst', feature: 'bi_agent', featureFunction: 'bi.analyst', adminOnly: true },
+      { icon: ClipboardCheck, label: '📋 Ações Pendentes', path: '/bi/actions', feature: 'bi_agent', featureFunction: 'bi.actions', adminOnly: true },
+      { icon: FileSpreadsheet, label: '📊 Relatórios', path: '/bi/reports', feature: 'bi_agent', featureFunction: 'bi.reports', adminOnly: true },
+      { icon: Settings2, label: '⚙️ Configurações', path: '/bi/settings', feature: 'bi_agent', featureFunction: 'bi.settings', adminOnly: true },
     ],
   },
   {
@@ -164,7 +165,7 @@ const navGroups: NavGroup[] = [
     label: 'Administração',
     icon: Shield,
     items: [
-      { icon: Building2, label: 'Grupos', path: '/groups', feature: 'groups', adminOnly: true },
+      { icon: Building2, label: 'Grupos', path: '/groups', feature: 'groups', featureFunction: 'groups.view', adminOnly: true },
       { icon: Shield, label: 'Super Admin', path: '/super-admin', superAdminOnly: true },
     ],
   },
@@ -359,7 +360,7 @@ export function Sidebar() {
     }))
   }
 
-  // Filtra os itens do menu baseado nas features e permissões
+  // Filtra os itens do menu baseado nas features, sub-funções e permissões
   const filterItems = (items: NavItem[]): NavItem[] => {
     return items.filter((item) => {
       // Se é item apenas para super admin
@@ -369,18 +370,27 @@ export function Sidebar() {
 
       // Se é item apenas para admin
       if (item.adminOnly) {
-        return isAdmin || isSuperAdmin || user?.role === 'admin'
+        // Admins ainda precisam verificar features
+        const isAdminUser = isAdmin || isSuperAdmin || user?.role === 'admin'
+        if (!isAdminUser) return false
+
+        // Verifica feature do tenant para admins
+        if (item.feature) {
+          if (featuresLoading || !featuresData) return false
+          const feature = featuresData.features[item.feature]
+          if (!feature?.is_enabled) return false
+
+          // Verifica sub-função se especificada
+          if (item.featureFunction) {
+            if (feature.all_functions) return true
+            if (!feature.enabled_functions?.includes(item.featureFunction)) return false
+          }
+        }
+        return true
       }
 
-      // Super admins e Admins vêem tudo (exceto superAdminOnly)
-      if (user?.is_super_admin || isSuperAdmin || featuresData?.is_super_admin || isAdmin) {
-        // Mas ainda precisa verificar feature do tenant
-        if (item.feature) {
-          if (featuresLoading || !featuresData) {
-            return false
-          }
-          return featuresData.features[item.feature]?.is_enabled ?? false
-        }
+      // Super admins vêem tudo (exceto superAdminOnly que já foi verificado)
+      if (user?.is_super_admin || isSuperAdmin || featuresData?.is_super_admin) {
         return true
       }
 
@@ -389,8 +399,22 @@ export function Sidebar() {
         if (featuresLoading || !featuresData) {
           return false
         }
-        if (!(featuresData.features[item.feature]?.is_enabled ?? false)) {
+        const feature = featuresData.features[item.feature]
+        if (!feature?.is_enabled) {
           return false
+        }
+
+        // Verifica sub-função se especificada
+        if (item.featureFunction) {
+          // Se all_functions = true, tem acesso a tudo
+          if (feature.all_functions) {
+            // continua para verificar permissões
+          } else {
+            // Verifica se a sub-função está habilitada
+            if (!feature.enabled_functions?.includes(item.featureFunction)) {
+              return false
+            }
+          }
         }
       }
 

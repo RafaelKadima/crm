@@ -67,6 +67,7 @@ Route::middleware('auth:api')->group(function () {
     // Features do tenant (para o frontend saber o que mostrar)
     Route::get('my-features', [\App\Http\Controllers\TenantFeaturesController::class, 'myFeatures']);
     Route::get('check-feature/{feature}', [\App\Http\Controllers\TenantFeaturesController::class, 'checkFeature']);
+    Route::get('check-function/{feature}/{function}', [\App\Http\Controllers\TenantFeaturesController::class, 'checkFunction']);
 
     // Configurações do tenant
     Route::get('tenant/settings', [\App\Http\Controllers\TenantSettingsController::class, 'show']);
@@ -934,6 +935,7 @@ Route::middleware(['auth:api', 'super_admin'])->prefix('super-admin')->group(fun
     // Configurações
     Route::get('permissions', [\App\Http\Controllers\SuperAdminController::class, 'listPermissions']);
     Route::get('features', [\App\Http\Controllers\SuperAdminController::class, 'listFeatures']);
+    Route::get('module-functions', [\App\Http\Controllers\SuperAdminController::class, 'listModuleFunctions']);
     Route::get('plans', [\App\Http\Controllers\SuperAdminController::class, 'listPlans']);
 
     // Logs

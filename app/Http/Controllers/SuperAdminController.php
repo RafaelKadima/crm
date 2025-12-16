@@ -207,7 +207,16 @@ class SuperAdminController extends Controller
     }
 
     /**
-     * Gerencia features de um tenant.
+     * Gerencia features e sub-funções de um tenant.
+     *
+     * Formato esperado:
+     * {
+     *   "features": [
+     *     { "key": "ads_intelligence", "enabled": true, "all_functions": true },
+     *     { "key": "sdr_ia", "enabled": true, "all_functions": false, "enabled_functions": ["sdr.agents", "sdr.documents"] },
+     *     { "key": "landing_pages", "enabled": false }
+     *   ]
+     * }
      */
     public function updateTenantFeatures(Request $request, Tenant $tenant): JsonResponse
     {
@@ -215,13 +224,36 @@ class SuperAdminController extends Controller
             'features' => 'required|array',
             'features.*.key' => 'required|string',
             'features.*.enabled' => 'required|boolean',
-            'features.*.config' => 'nullable|array',
+            'features.*.all_functions' => 'nullable|boolean',
+            'features.*.enabled_functions' => 'nullable|array',
+            'features.*.enabled_functions.*' => 'string',
         ]);
 
         foreach ($validated['features'] as $feature) {
             if ($feature['enabled']) {
-                TenantFeature::enableForTenant($tenant->id, $feature['key'], $feature['config'] ?? []);
-                SuperAdminLog::log('feature.enable', $tenant->id, null, ['feature' => $feature['key']]);
+                $config = [];
+
+                // Se especificou all_functions
+                if (isset($feature['all_functions'])) {
+                    $config['all_functions'] = $feature['all_functions'];
+                }
+
+                // Se especificou enabled_functions, definir all_functions como false
+                if (isset($feature['enabled_functions']) && !empty($feature['enabled_functions'])) {
+                    $config['enabled_functions'] = $feature['enabled_functions'];
+                    $config['all_functions'] = false;
+                }
+
+                // Se não especificou nada, libera tudo (compatibilidade)
+                if (empty($config)) {
+                    $config['all_functions'] = true;
+                }
+
+                TenantFeature::enableForTenant($tenant->id, $feature['key'], $config);
+                SuperAdminLog::log('feature.enable', $tenant->id, null, [
+                    'feature' => $feature['key'],
+                    'config' => $config,
+                ]);
             } else {
                 TenantFeature::disableForTenant($tenant->id, $feature['key']);
                 SuperAdminLog::log('feature.disable', $tenant->id, null, ['feature' => $feature['key']]);
@@ -231,6 +263,16 @@ class SuperAdminController extends Controller
         return response()->json([
             'message' => 'Features atualizadas com sucesso!',
             'features' => TenantFeature::getTenantFeatures($tenant->id),
+        ]);
+    }
+
+    /**
+     * Lista todas as sub-funções disponíveis por módulo.
+     */
+    public function listModuleFunctions(): JsonResponse
+    {
+        return response()->json([
+            'module_functions' => TenantFeature::getModuleFunctions(),
         ]);
     }
 

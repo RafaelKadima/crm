@@ -2456,3 +2456,205 @@ Com isso, o backend do CRM está **90% pronto, com:
 ✔ eventos internos
 ✔ relatórios base
 ✔ toda a fundação operacional
+
+============================================================
+🔧 SISTEMA DE SUB-FUNÇÕES POR MÓDULO
+============================================================
+
+O sistema de sub-funções permite controle granular sobre as funcionalidades
+disponíveis para cada tenant dentro de cada módulo.
+
+📌 Conceito
+-----------
+- Cada módulo (feature) pode ter múltiplas sub-funções
+- O Super Admin pode liberar:
+  - Módulo DESABILITADO → não aparece no sidebar
+  - Módulo com TODAS as funções → aparece completo
+  - Módulo com ALGUMAS funções → apenas itens selecionados aparecem
+
+📌 Estrutura de Dados
+---------------------
+O campo `config` (JSON) na tabela `tenant_features` armazena:
+
+```json
+{
+  "all_functions": false,
+  "enabled_functions": ["ads.dashboard", "ads.campaigns", "ads.accounts"]
+}
+```
+
+- `all_functions: true` → acesso a todas as sub-funções (padrão)
+- `all_functions: false` + `enabled_functions` → acesso apenas às listadas
+
+📌 Mapa de Sub-funções por Módulo
+---------------------------------
+
+### ads_intelligence (Ads Intelligence)
+- `ads.dashboard` → Dashboard Ads
+- `ads.create_campaign` → Criar Campanha (IA)
+- `ads.chat` → Chat com Agente
+- `ads.creatives` → Criativos
+- `ads.campaigns` → Campanhas
+- `ads.insights` → Insights IA
+- `ads.automation` → Automações
+- `ads.knowledge` → Base de Conhecimento
+- `ads.guardrails` → Guardrails
+- `ads.accounts` → Contas de Anúncio
+
+### sdr_ia (SDR IA)
+- `sdr.agents` → Agentes IA
+- `sdr.documents` → Documentos
+- `sdr.faqs` → FAQs
+- `sdr.rules` → Regras
+
+### bi_agent (BI Agent)
+- `bi.dashboard` → Dashboard BI
+- `bi.analyst` → Analista IA
+- `bi.actions` → Ações Pendentes
+- `bi.reports` → Relatórios
+- `bi.settings` → Configurações
+
+### landing_pages (Landing Pages)
+- `lp.list` → Listar Pages
+- `lp.create` → Criar Pages
+- `lp.publish` → Publicar
+
+### appointments (Agendamentos)
+- `appointments.list` → Ver Agendamentos
+- `appointments.create` → Criar Agendamentos
+- `appointments.schedule` → Minha Agenda
+
+### groups (Grupos)
+- `groups.view` → Ver Grupos
+- `groups.manage` → Gerenciar Grupos
+- `groups.reports` → Relatórios de Grupo
+
+### products (Produtos)
+- `products.list` → Listar Produtos
+- `products.create` → Criar Produtos
+- `products.categories` → Categorias
+
+📌 API Endpoints
+----------------
+
+### Verificar sub-função específica
+GET /api/check-function/{feature}/{function}
+
+Resposta:
+```json
+{
+  "feature": "ads_intelligence",
+  "function": "ads.dashboard",
+  "has_access": true
+}
+```
+
+### Listar sub-funções disponíveis (Super Admin)
+GET /api/super-admin/module-functions
+
+Resposta:
+```json
+{
+  "module_functions": {
+    "ads_intelligence": {
+      "ads.dashboard": {
+        "name": "Dashboard Ads",
+        "description": "Visualizar métricas e KPIs de anúncios"
+      },
+      ...
+    },
+    ...
+  }
+}
+```
+
+### Atualizar features do tenant (Super Admin)
+PUT /api/super-admin/tenants/{tenantId}/features
+
+Body:
+```json
+{
+  "features": [
+    {
+      "key": "ads_intelligence",
+      "enabled": true,
+      "all_functions": false,
+      "enabled_functions": ["ads.dashboard", "ads.campaigns"]
+    },
+    {
+      "key": "sdr_ia",
+      "enabled": true,
+      "all_functions": true
+    }
+  ]
+}
+```
+
+📌 Backend - Arquivos Modificados
+---------------------------------
+
+### app/Models/TenantFeature.php
+- `getModuleFunctions()` → Retorna mapa de todas as sub-funções
+- `tenantHasFunction($tenantId, $featureKey, $functionKey)` → Verifica acesso
+- `getTenantModuleFunctions($tenantId, $featureKey)` → Lista funções habilitadas
+- `enableForTenant()` → Suporta config de sub-funções
+- `getTenantFeatures()` → Inclui `enabled_functions` na resposta
+
+### app/Http/Middleware/CheckFeature.php
+- Aceita parâmetro opcional `$function`
+- Uso: `middleware('feature:ads_intelligence,ads.dashboard')`
+
+### app/Http/Controllers/TenantFeaturesController.php
+- `myFeatures()` → Retorna `enabled_functions` e `available_functions`
+- `checkFunction($feature, $function)` → Verifica sub-função específica
+
+### app/Http/Controllers/SuperAdminController.php
+- `updateTenantFeatures()` → Recebe `all_functions` e `enabled_functions`
+- `listModuleFunctions()` → Lista sub-funções disponíveis
+
+📌 Frontend - Arquivos Modificados
+----------------------------------
+
+### frontend/src/hooks/useFeatures.ts
+Novos hooks:
+- `useHasFunction(featureKey, functionKey)` → Verifica sub-função
+- `useFeatureAccess()` → Retorna `hasFeature()`, `hasFunction()`, `getEnabledFunctions()`
+
+### frontend/src/components/layout/Sidebar.tsx
+- Propriedade `featureFunction?: string` no `NavItem`
+- `filterItems()` verifica `featureFunction` nas sub-funções habilitadas
+- Itens do menu mapeados com `featureFunction` correspondente
+
+### frontend/src/hooks/useSuperAdmin.ts
+- Tipos atualizados: `all_functions`, `enabled_functions`
+- `useModuleFunctions()` → Busca sub-funções disponíveis
+
+### frontend/src/pages/super-admin/TenantDetailsPage.tsx
+- UI expansível para selecionar sub-funções por módulo
+- Estados: `selectedFunctions`, `expandedModules`
+- Funções: `toggleFunction()`, `toggleAllFunctions()`, `toggleModuleExpanded()`
+
+📌 Compatibilidade Retroativa
+-----------------------------
+- Tenants existentes têm `all_functions: true` por padrão
+- Nenhum tenant perde acesso após atualização
+- Frontend verifica sub-funções apenas se `featureFunction` estiver definido no NavItem
+
+📌 Uso no Middleware de Rotas
+-----------------------------
+
+```php
+// Verificar apenas o módulo
+Route::middleware('feature:ads_intelligence')->group(function () {
+    // ...
+});
+
+// Verificar módulo + sub-função
+Route::middleware('feature:ads_intelligence,ads.dashboard')->group(function () {
+    Route::get('/ads/dashboard', [AdsController::class, 'dashboard']);
+});
+
+Route::middleware('feature:ads_intelligence,ads.campaigns')->group(function () {
+    Route::get('/ads/campaigns', [AdsController::class, 'campaigns']);
+});
+```

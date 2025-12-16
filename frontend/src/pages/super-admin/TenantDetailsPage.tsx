@@ -24,7 +24,8 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react'
-import { useTenant, useUpdateTenant, useUpdateTenantFeatures, usePlans, useFeatures, useCreateSuperAdminUser } from '@/hooks/useSuperAdmin'
+import { useTenant, useUpdateTenant, useUpdateTenantFeatures, usePlans, useFeatures, useModuleFunctions, useCreateSuperAdminUser } from '@/hooks/useSuperAdmin'
+import { ChevronDown } from 'lucide-react'
 
 export function TenantDetailsPage() {
   const { tenantId } = useParams<{ tenantId: string }>()
@@ -34,6 +35,7 @@ export function TenantDetailsPage() {
   const updateFeatures = useUpdateTenantFeatures()
   const { data: plans } = usePlans()
   const { data: availableFeatures } = useFeatures()
+  const { data: moduleFunctions } = useModuleFunctions()
 
   const createUser = useCreateSuperAdminUser()
 
@@ -61,6 +63,8 @@ export function TenantDetailsPage() {
   })
 
   const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean>>({})
+  const [selectedFunctions, setSelectedFunctions] = useState<Record<string, string[]>>({})
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
 
   // Carregar dados do tenant
   useEffect(() => {
@@ -75,13 +79,19 @@ export function TenantDetailsPage() {
         is_active: tenant.is_active ?? true,
       })
 
-      // Carregar features ativas
+      // Carregar features ativas e suas sub-funções
       if (tenantData.features) {
         const featuresState: Record<string, boolean> = {}
+        const functionsState: Record<string, string[]> = {}
+
         Object.entries(tenantData.features).forEach(([key, feature]: [string, any]) => {
           featuresState[key] = feature.is_enabled
+          // Carregar sub-funções habilitadas
+          functionsState[key] = feature.enabled_functions || []
         })
+
         setSelectedFeatures(featuresState)
+        setSelectedFunctions(functionsState)
       }
     }
   }, [tenantData])
@@ -110,10 +120,18 @@ export function TenantDetailsPage() {
     setSuccess(false)
 
     try {
-      const features = Object.entries(selectedFeatures).map(([key, enabled]) => ({
-        key,
-        enabled,
-      }))
+      const features = Object.entries(selectedFeatures).map(([key, enabled]) => {
+        const functions = selectedFunctions[key] || []
+        const allFunctions = Object.keys(moduleFunctions?.[key] || {})
+        const allSelected = functions.length === allFunctions.length && allFunctions.length > 0
+
+        return {
+          key,
+          enabled,
+          all_functions: allSelected || functions.length === 0, // Se não selecionou nada, libera tudo
+          enabled_functions: allSelected ? undefined : functions,
+        }
+      })
 
       await updateFeatures.mutateAsync({
         tenantId: tenantId!,
@@ -133,6 +151,51 @@ export function TenantDetailsPage() {
       ...prev,
       [key]: !prev[key],
     }))
+
+    // Se desabilitou, limpa as sub-funções
+    if (selectedFeatures[key]) {
+      setSelectedFunctions(prev => ({
+        ...prev,
+        [key]: [],
+      }))
+    }
+  }
+
+  const toggleFunction = (moduleKey: string, functionKey: string) => {
+    setSelectedFunctions(prev => {
+      const current = prev[moduleKey] || []
+      const isSelected = current.includes(functionKey)
+
+      return {
+        ...prev,
+        [moduleKey]: isSelected
+          ? current.filter(f => f !== functionKey)
+          : [...current, functionKey],
+      }
+    })
+  }
+
+  const toggleAllFunctions = (moduleKey: string) => {
+    const allFunctions = Object.keys(moduleFunctions?.[moduleKey] || {})
+    const current = selectedFunctions[moduleKey] || []
+    const allSelected = allFunctions.length === current.length && current.length > 0
+
+    setSelectedFunctions(prev => ({
+      ...prev,
+      [moduleKey]: allSelected ? [] : allFunctions,
+    }))
+  }
+
+  const toggleModuleExpanded = (moduleKey: string) => {
+    setExpandedModules(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(moduleKey)) {
+        newSet.delete(moduleKey)
+      } else {
+        newSet.add(moduleKey)
+      }
+      return newSet
+    })
   }
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -447,38 +510,114 @@ export function TenantDetailsPage() {
             <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-400" />
-                Módulos Disponíveis
+                Módulos e Funcionalidades
               </h2>
               <p className="text-gray-400 text-sm mb-6">
-                Selecione os módulos que esta empresa terá acesso. Módulos desativados não aparecerão no menu da empresa.
+                Selecione os módulos e funcionalidades que esta empresa terá acesso. Clique em "Configurar funções" para escolher quais funcionalidades de cada módulo estarão disponíveis.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {availableFeatures && Object.entries(availableFeatures).map(([key, feature]: [string, any]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => toggleFeature(key)}
-                    className={`flex items-center gap-3 p-4 rounded-lg border transition-all text-left ${
-                      selectedFeatures[key]
-                        ? 'bg-blue-500/20 border-blue-500/50'
-                        : 'bg-gray-700/30 border-gray-600/50 hover:border-gray-500'
-                    }`}
-                  >
-                    <div className={`p-2 rounded-lg ${
-                      selectedFeatures[key] ? 'bg-blue-500/30' : 'bg-gray-600/30'
-                    }`}>
-                      {selectedFeatures[key] ? (
-                        <Check className="w-4 h-4 text-blue-400" />
-                      ) : (
-                        <div className="w-4 h-4" />
+
+              <div className="space-y-4">
+                {availableFeatures && Object.entries(availableFeatures).map(([key, feature]: [string, any]) => {
+                  const hasFunctions = moduleFunctions?.[key] && Object.keys(moduleFunctions[key]).length > 0
+                  const isExpanded = expandedModules.has(key)
+                  const functions = moduleFunctions?.[key] || {}
+                  const selectedFuncs = selectedFunctions[key] || []
+                  const allFunctions = Object.keys(functions)
+                  const allSelected = allFunctions.length === selectedFuncs.length && selectedFuncs.length > 0
+
+                  return (
+                    <div key={key} className="border border-gray-700/50 rounded-lg overflow-hidden">
+                      {/* Header do módulo */}
+                      <div className={`flex items-center justify-between p-4 ${
+                        selectedFeatures[key] ? 'bg-blue-500/10' : 'bg-gray-700/30'
+                      }`}>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => toggleFeature(key)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              selectedFeatures[key] ? 'bg-blue-500/30' : 'bg-gray-600/30'
+                            }`}
+                          >
+                            {selectedFeatures[key] ? (
+                              <Check className="w-4 h-4 text-blue-400" />
+                            ) : (
+                              <div className="w-4 h-4" />
+                            )}
+                          </button>
+                          <div>
+                            <p className="font-medium">{feature.name}</p>
+                            <p className="text-xs text-gray-400">{feature.description}</p>
+                          </div>
+                        </div>
+
+                        {hasFunctions && selectedFeatures[key] && (
+                          <button
+                            type="button"
+                            onClick={() => toggleModuleExpanded(key)}
+                            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+                          >
+                            {isExpanded ? 'Ocultar funções' : 'Configurar funções'}
+                            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Sub-funções (colapsáveis) */}
+                      {hasFunctions && selectedFeatures[key] && isExpanded && (
+                        <div className="border-t border-gray-700/50 p-4 bg-gray-800/30">
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm text-gray-400">Selecione as funcionalidades:</p>
+                            <button
+                              type="button"
+                              onClick={() => toggleAllFunctions(key)}
+                              className="text-xs text-blue-400 hover:underline"
+                            >
+                              {allSelected ? 'Desmarcar todas' : 'Selecionar todas'}
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {Object.entries(functions).map(([funcKey, funcData]: [string, any]) => (
+                              <label
+                                key={funcKey}
+                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                                  selectedFuncs.includes(funcKey)
+                                    ? 'bg-blue-500/20 border border-blue-500/50'
+                                    : 'bg-gray-700/20 border border-gray-600/30 hover:border-gray-500'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedFuncs.includes(funcKey)}
+                                  onChange={() => toggleFunction(key, funcKey)}
+                                  className="hidden"
+                                />
+                                <div className={`w-4 h-4 rounded flex items-center justify-center ${
+                                  selectedFuncs.includes(funcKey) ? 'bg-blue-500' : 'bg-gray-600'
+                                }`}>
+                                  {selectedFuncs.includes(funcKey) && <Check className="w-3 h-3 text-white" />}
+                                </div>
+                                <div>
+                                  <span className="text-sm">{funcData.name}</span>
+                                  {funcData.description && (
+                                    <p className="text-xs text-gray-500">{funcData.description}</p>
+                                  )}
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+
+                          {selectedFuncs.length === 0 && (
+                            <p className="text-xs text-amber-400 mt-3">
+                              Nenhuma função selecionada = todas as funções liberadas
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{feature.name}</p>
-                      <p className="text-xs text-gray-400">{feature.description}</p>
-                    </div>
-                  </button>
-                ))}
+                  )
+                })}
               </div>
             </div>
 

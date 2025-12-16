@@ -1,11 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
+import { useCallback } from 'react'
 import api from '@/api/axios'
+
+export interface ModuleFunction {
+  name: string
+  description: string
+}
 
 export interface TenantFeature {
   name: string
   description: string
   icon: string
   is_enabled: boolean
+  all_functions: boolean
+  enabled_functions: string[]
+  available_functions: Record<string, ModuleFunction>
 }
 
 export interface FeaturesResponse {
@@ -113,4 +122,83 @@ export const basicFeatures = [
   'channels',
   'settings',
 ]
+
+/**
+ * Hook para verificar se o tenant tem acesso a uma sub-função específica de um módulo.
+ */
+export function useHasFunction(featureKey: string, functionKey: string) {
+  const { data, isLoading } = useMyFeatures()
+
+  if (isLoading || !data) {
+    return { hasAccess: false, isLoading: true }
+  }
+
+  // Super admins têm acesso a tudo
+  if (data.is_super_admin) {
+    return { hasAccess: true, isLoading: false }
+  }
+
+  const feature = data.features[featureKey]
+  if (!feature?.is_enabled) {
+    return { hasAccess: false, isLoading: false }
+  }
+
+  // Se all_functions = true, tem acesso a tudo
+  if (feature.all_functions) {
+    return { hasAccess: true, isLoading: false }
+  }
+
+  const hasAccess = feature.enabled_functions?.includes(functionKey) ?? false
+  return { hasAccess, isLoading: false }
+}
+
+/**
+ * Hook que retorna funções para verificar acesso a features e sub-funções.
+ * Útil quando precisa verificar múltiplas features/funções em um componente.
+ */
+export function useFeatureAccess() {
+  const { data, isLoading } = useMyFeatures()
+
+  const hasFeature = useCallback(
+    (featureKey: string): boolean => {
+      if (isLoading || !data) return false
+      if (data.is_super_admin) return true
+      return data.features[featureKey]?.is_enabled ?? false
+    },
+    [data, isLoading]
+  )
+
+  const hasFunction = useCallback(
+    (featureKey: string, functionKey: string): boolean => {
+      if (isLoading || !data) return false
+      if (data.is_super_admin) return true
+
+      const feature = data.features[featureKey]
+      if (!feature?.is_enabled) return false
+
+      // Se all_functions = true, tem acesso a tudo
+      if (feature.all_functions) return true
+
+      return feature.enabled_functions?.includes(functionKey) ?? false
+    },
+    [data, isLoading]
+  )
+
+  const getEnabledFunctions = useCallback(
+    (featureKey: string): string[] => {
+      if (isLoading || !data) return []
+      if (data.is_super_admin) {
+        return Object.keys(data.features[featureKey]?.available_functions ?? {})
+      }
+
+      const feature = data.features[featureKey]
+      if (!feature?.is_enabled) return []
+
+      return feature.enabled_functions ?? []
+    },
+    [data, isLoading]
+  )
+
+  return { hasFeature, hasFunction, getEnabledFunctions, isLoading, data }
+}
 

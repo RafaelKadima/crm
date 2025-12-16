@@ -27,11 +27,26 @@ export interface Tenant {
   channels_count?: number
 }
 
+export interface ModuleFunction {
+  name: string
+  description: string
+}
+
 export interface TenantFeature {
   name: string
   description: string
   icon: string
   is_enabled: boolean
+  all_functions?: boolean
+  enabled_functions?: string[]
+  available_functions?: Record<string, ModuleFunction>
+}
+
+export interface UpdateFeatureData {
+  key: string
+  enabled: boolean
+  all_functions?: boolean
+  enabled_functions?: string[]
 }
 
 export interface CreateTenantData {
@@ -120,9 +135,9 @@ export function useUpdateTenant() {
 
 export function useUpdateTenantFeatures() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
-    mutationFn: async ({ tenantId, features }: { tenantId: string; features: { key: string; enabled: boolean; config?: any }[] }) => {
+    mutationFn: async ({ tenantId, features }: { tenantId: string; features: UpdateFeatureData[] }) => {
       const response = await api.put(`/super-admin/tenants/${tenantId}/features`, { features })
       return response.data
     },
@@ -209,6 +224,17 @@ export function useFeatures() {
     queryFn: async () => {
       const response = await api.get('/super-admin/features')
       return response.data.features
+    },
+    staleTime: 1000 * 60 * 30, // 30 minutes
+  })
+}
+
+export function useModuleFunctions() {
+  return useQuery({
+    queryKey: ['super-admin', 'module-functions'],
+    queryFn: async () => {
+      const response = await api.get('/super-admin/module-functions')
+      return response.data.module_functions as Record<string, Record<string, ModuleFunction>>
     },
     staleTime: 1000 * 60 * 30, // 30 minutes
   })
