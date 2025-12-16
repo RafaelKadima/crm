@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(dir \"C:\\dev\\crm\" /s /b /ad)",
-      "Bash(ssh:*)",
-      "Bash(curl:*)"
-    ]
-  }
-}
