@@ -898,18 +898,19 @@ class WhatsAppService
             file_put_contents($inputFile, $disk->get($inputPath));
 
             // Convert using FFmpeg to OGG OPUS (WhatsApp PTT format)
-            // CRITICAL settings for WhatsApp Mobile compatibility:
+            // CRITICAL settings for WhatsApp Mobile (especially iPhone) compatibility:
             // - vn: no video
             // - map_metadata -1: strip all metadata (mobile rejects extra tags)
             // - ac 1: mono channel
-            // - ar 48000: 48kHz sample rate (OPUS standard)
+            // - ar 16000: 16kHz sample rate (WhatsApp internal format for voice notes!)
             // - c:a libopus: OPUS codec
-            // - b:a 24k: 24kbps bitrate (CRITICAL: 64k fails on mobile!)
-            // - application voip: voice-optimized encoding (CRITICAL for mobile!)
-            // - compression_level 10: best compression
+            // - b:a 32k: 32kbps bitrate (WhatsApp typical for voice)
+            // - vbr constrained: constrained VBR for consistent quality
+            // - frame_duration 20: 20ms frames (standard, most compatible)
+            // - application voip: voice-optimized encoding
             // - f ogg: OGG container (WebM fails on mobile)
             $command = sprintf(
-                '"%s" -y -i "%s" -vn -map_metadata -1 -ac 1 -ar 48000 -c:a libopus -b:a 24k -application voip -compression_level 10 -f ogg "%s" 2>&1',
+                '"%s" -y -i "%s" -vn -map_metadata -1 -ac 1 -ar 16000 -c:a libopus -b:a 32k -vbr constrained -frame_duration 20 -application voip -f ogg "%s" 2>&1',
                 $ffmpegPath,
                 $inputFile,
                 $outputFile
