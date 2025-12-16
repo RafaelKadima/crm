@@ -209,11 +209,11 @@ class WhatsAppService
             if ($convertedPath) {
                 $filePath = $convertedPath;
                 $fileContents = $disk->get($filePath);
-                // MUST use .ogg extension and audio/ogg; codecs=opus MIME type for WhatsApp Mobile
+                // MUST use .ogg extension and audio/ogg MIME type for WhatsApp Mobile
                 // WebM container does NOT work on mobile even with opus codec!
-                // CRITICAL: WhatsApp API requires the full MIME type with codecs parameter
+                // CRITICAL: WhatsApp Mobile REJECTS "audio/ogg; codecs=opus" - use ONLY "audio/ogg"
                 $fileName = preg_replace('/\.[^.]+$/', '.ogg', $fileName);
-                $normalizedMimeType = 'audio/ogg; codecs=opus';
+                $normalizedMimeType = 'audio/ogg'; // NO parameters! Mobile rejects ; codecs=opus
                 $isVoiceNote = true;
                 Log::error('[PTT DEBUG] Conversion successful, using OGG container', [
                     'new_path' => $filePath,
