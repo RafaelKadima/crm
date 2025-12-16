@@ -583,7 +583,6 @@ class AgentService:
             response = await self.openai.chat.completions.create(
                 model=agent_config.ai_model,
                 messages=messages,
-                messages=messages,
                 tools=[{"type": "function", "function": f} for f in (SUPPORT_FUNCTIONS if agent_config.type == "support" else SDR_FUNCTIONS)],
                 tool_choice="auto",
                 temperature=agent_config.temperature,
