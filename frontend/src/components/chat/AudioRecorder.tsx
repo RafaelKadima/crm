@@ -4,7 +4,7 @@ import { Mic, Square, Send, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import api from '@/api/axios'
-import { Mp3Encoder } from 'lamejs'
+import lamejs from 'lamejs'
 
 // Helper function to write string to DataView
 function writeString(view: DataView, offset: number, string: string) {
@@ -72,7 +72,7 @@ async function convertToMp3(wavBlob: Blob): Promise<Blob> {
   const samples = new Int16Array(arrayBuffer, 44)
 
   // Create MP3 encoder (mono, sample rate, 128kbps)
-  const mp3encoder = new Mp3Encoder(numChannels, sampleRate, 128)
+  const mp3encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, 128)
   const mp3Data: Int8Array[] = []
 
   const sampleBlockSize = 1152
