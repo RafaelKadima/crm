@@ -174,14 +174,25 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   
   // 🔥 WebSocket: callback para receber mensagens em tempo real
   const handleNewMessage = useCallback((data: any) => {
+    console.log('📩 Nova mensagem para o lead:', data)
+
     // Ignora mensagens enviadas pelo próprio usuário (já foram adicionadas localmente)
-    if (data.message.direction === 'outbound' && data.message.sender_type === 'user') {
+    // EXCETO mensagens de mídia (que não têm mensagem temporária)
+    const hasMedia = data.message.metadata && (
+      data.message.metadata.media_url ||
+      data.message.metadata.image_url ||
+      data.message.metadata.audio_url ||
+      data.message.metadata.video_url ||
+      data.message.metadata.document_url
+    )
+
+    if (data.message.direction === 'outbound' && data.message.sender_type === 'user' && !hasMedia) {
       // Apenas atualiza o status da mensagem temporária para 'delivered'
       setMessages((prev) => {
         const tempMsg = prev.find(m => m.id.startsWith('temp-') && m.content === data.message.content)
         if (tempMsg) {
-          return prev.map(m => 
-            m.id === tempMsg.id 
+          return prev.map(m =>
+            m.id === tempMsg.id
               ? { ...m, id: data.message.id, status: 'delivered' as const }
               : m
           )
@@ -193,7 +204,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       return
     }
 
-    // Mensagens recebidas (inbound) - adiciona normalmente
+    // Mensagens recebidas (inbound) ou de mídia - adiciona normalmente
     const newMsg: Message = {
       id: data.message.id,
       content: data.message.content,
@@ -208,6 +219,15 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       if (prev.some(m => m.id === newMsg.id)) return prev
       return [...prev, newMsg]
     })
+
+    // Scroll para a última mensagem quando recebe mídia
+    if (hasMedia) {
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+        }
+      }, 100)
+    }
   }, [])
 
   // 🔥 WebSocket: callback para reagir à transferência do lead em tempo real
