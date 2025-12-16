@@ -209,10 +209,11 @@ class WhatsAppService
             if ($convertedPath) {
                 $filePath = $convertedPath;
                 $fileContents = $disk->get($filePath);
-                // MUST use .ogg extension and audio/ogg MIME type for WhatsApp Mobile
+                // MUST use .ogg extension and audio/ogg; codecs=opus MIME type for WhatsApp Mobile
                 // WebM container does NOT work on mobile even with opus codec!
+                // CRITICAL: WhatsApp API requires the full MIME type with codecs parameter
                 $fileName = preg_replace('/\.[^.]+$/', '.ogg', $fileName);
-                $normalizedMimeType = 'audio/ogg';
+                $normalizedMimeType = 'audio/ogg; codecs=opus';
                 $isVoiceNote = true;
                 Log::error('[PTT DEBUG] Conversion successful, using OGG container', [
                     'new_path' => $filePath,
@@ -253,10 +254,11 @@ class WhatsAppService
             $normalizedMimeType = 'audio/mp4';
         }
 
-        Log::info('Uploading media to WhatsApp', [
+        Log::error('[PTT DEBUG] Uploading media to WhatsApp', [
             'original_mime' => $mimeType,
             'normalized_mime' => $normalizedMimeType,
             'file_name' => $fileName,
+            'file_size' => strlen($fileContents),
             'as_voice_note' => $asVoiceNote,
             'is_voice_note' => $isVoiceNote,
         ]);
@@ -923,6 +925,15 @@ class WhatsAppService
                 @unlink($inputFile);
                 return null;
             }
+
+            // Run ffprobe to verify the output format
+            $ffprobePath = $this->findFfprobe();
+            if ($ffprobePath) {
+                $probeCommand = sprintf('"%s" -v error -show_format -show_streams -of json "%s" 2>&1', $ffprobePath, $outputFile);
+                $probeOutput = shell_exec($probeCommand);
+                Log::error('[PTT DEBUG] FFprobe verification', ['output' => $probeOutput]);
+            }
+
             Log::error('[PTT DEBUG] FFmpeg success', ['size' => filesize($outputFile)]);
 
             // Generate output path with .ogg extension
@@ -974,6 +985,41 @@ class WhatsAppService
                 return trim($check);
             }
             
+            // Check direct path
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Find ffprobe executable for audio analysis
+     */
+    protected function findFfprobe(): ?string
+    {
+        // Common paths to check
+        $paths = [
+            'ffprobe', // In PATH
+            '/usr/bin/ffprobe',
+            '/usr/local/bin/ffprobe',
+            'C:\\ffmpeg\\bin\\ffprobe.exe',
+            'C:\\Program Files\\ffmpeg\\bin\\ffprobe.exe',
+        ];
+
+        foreach ($paths as $path) {
+            // Check if command exists
+            if (PHP_OS_FAMILY === 'Windows') {
+                $check = shell_exec("where $path 2>nul");
+            } else {
+                $check = shell_exec("which $path 2>/dev/null");
+            }
+
+            if ($check) {
+                return trim($check);
+            }
+
             // Check direct path
             if (file_exists($path)) {
                 return $path;
