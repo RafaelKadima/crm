@@ -238,20 +238,54 @@ class WhatsAppController extends Controller
                 'file_type' => $attachment->file_type,
             ]);
 
-            // Check if this is an audio file that should be sent as voice note (PTT)
+            // Check if this is an audio file
             $isAudioFile = $mediaType === 'audio' || str_contains($attachment->mime_type ?? '', 'webm');
+            // Check if already converted to MP3 by frontend (iOS-safe method)
+            $isMp3 = str_contains($attachment->mime_type ?? '', 'mpeg') || str_contains($attachment->mime_type ?? '', 'mp3');
 
             Log::error('[SEND MEDIA DEBUG] Media type check', [
                 'mediaType' => $mediaType,
                 'isAudioFile' => $isAudioFile,
+                'isMp3' => $isMp3,
                 'mime_type' => $attachment->mime_type,
             ]);
 
-            if ($isAudioFile) {
-                // Use iOS-safe PTT method for all audio files
-                // This method handles: conversion to OGG OPUS, correct filename (.ogg),
-                // correct MIME (audio/ogg), upload to WhatsApp, and send with voice:true
-                Log::error('[SEND MEDIA DEBUG] Using sendVoiceNotePTT (iOS-safe)', [
+            if ($isAudioFile && $isMp3) {
+                // MP3 from frontend - send via public URL (iOS-safe method)
+                // This is the proven approach that works on all platforms including iOS
+                Log::error('[SEND MEDIA DEBUG] Using MP3 via public URL (iOS-safe)', [
+                    'file_path' => $attachment->file_path,
+                    'mime_type' => $attachment->mime_type,
+                ]);
+
+                // Generate public URL for the MP3 file
+                $disk = Storage::disk($attachment->storage_disk);
+                if (config("filesystems.disks.{$attachment->storage_disk}.driver") === 's3') {
+                    // Use longer TTL for WhatsApp to download
+                    $mediaUrl = $disk->temporaryUrl($attachment->file_path, now()->addHours(24));
+                } else {
+                    $mediaUrl = $disk->url($attachment->file_path);
+                }
+
+                Log::error('[SEND MEDIA DEBUG] Sending MP3 via link', [
+                    'mediaUrl' => $mediaUrl,
+                ]);
+
+                // Send via public URL (link method) - works on iOS, Android, Web
+                $result = $this->whatsAppService->sendMediaMessage(
+                    $contact->phone,
+                    'audio',
+                    $mediaUrl,
+                    null // no caption for audio
+                );
+
+                Log::error('[SEND MEDIA DEBUG] sendMediaMessage result', [
+                    'result' => $result,
+                ]);
+            } elseif ($isAudioFile) {
+                // Non-MP3 audio (WebM, OGG, etc.) - use backend conversion as fallback
+                // This handles older clients or browsers that don't support frontend conversion
+                Log::error('[SEND MEDIA DEBUG] Using sendVoiceNotePTT fallback for non-MP3', [
                     'file_path' => $attachment->file_path,
                     'mime_type' => $attachment->mime_type,
                 ]);
@@ -283,7 +317,7 @@ class WhatsAppController extends Controller
                     $mediaUrl = $disk->url($convertedPath);
                 }
 
-                // Update attachment with converted file info (including filename!)
+                // Update attachment with converted file info
                 $attachment->update([
                     'file_path' => $convertedPath,
                     'file_name' => $convertedFileName,
