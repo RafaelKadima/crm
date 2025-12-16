@@ -209,11 +209,16 @@ class WhatsAppService
             if ($convertedPath) {
                 $filePath = $convertedPath;
                 $fileContents = $disk->get($filePath);
-                // Use .opus extension and audio/opus MIME type for better WhatsApp Mobile compatibility
-                $fileName = preg_replace('/\.[^.]+$/', '.opus', $fileName);
-                $normalizedMimeType = 'audio/opus';
+                // MUST use .ogg extension and audio/ogg MIME type for WhatsApp Mobile
+                // WebM container does NOT work on mobile even with opus codec!
+                $fileName = preg_replace('/\.[^.]+$/', '.ogg', $fileName);
+                $normalizedMimeType = 'audio/ogg';
                 $isVoiceNote = true;
-                Log::info('Converted audio to OGG OPUS for voice note (PTT)', ['new_path' => $filePath]);
+                Log::error('[PTT DEBUG] Conversion successful, using OGG container', [
+                    'new_path' => $filePath,
+                    'mime_type' => $normalizedMimeType,
+                    'file_name' => $fileName,
+                ]);
             } else {
                 // Fallback to MP3 if OGG conversion fails (won't be PTT but will work)
                 Log::warning('OGG OPUS conversion failed, falling back to MP3');
@@ -849,16 +854,17 @@ class WhatsAppService
     /**
      * Convert audio to OGG OPUS format for WhatsApp Voice Notes (PTT)
      *
-     * WhatsApp requires OGG with OPUS codec for voice messages (PTT - Push To Talk).
+     * WhatsApp requires OGG container with OPUS codec for voice messages (PTT).
      * Using this format + voice:true flag makes audio appear as "voice message"
      * instead of "audio file" in WhatsApp.
      *
-     * IMPORTANT: WhatsApp Mobile requires 16000 Hz sample rate!
-     * 48000 Hz only works on WhatsApp Web, but fails on mobile app.
+     * CRITICAL: WebM container does NOT work on WhatsApp Mobile even with OPUS codec!
+     * WhatsApp Web is permissive, but Mobile strictly requires OGG container.
      *
-     * Required settings for WhatsApp PTT (Mobile compatible):
+     * Required settings for WhatsApp PTT:
+     * - Container: OGG (not WebM!)
      * - Codec: libopus
-     * - Sample rate: 16000 Hz (CRITICAL for mobile!)
+     * - Sample rate: 48000 Hz (OPUS standard)
      * - Channels: mono (1)
      * - Bitrate: 24k (voice optimized)
      * - Application: voip (optimized for speech)
@@ -890,16 +896,16 @@ class WhatsAppService
             file_put_contents($inputFile, $disk->get($inputPath));
 
             // Convert using FFmpeg to OGG OPUS (WhatsApp PTT format)
-            // Settings optimized for WhatsApp voice notes on MOBILE:
+            // Settings for WhatsApp voice notes (PTT):
             // - vn: no video (important for webm files that may contain video track)
             // - libopus codec (required for PTT)
-            // - 16000 Hz sample rate (REQUIRED for WhatsApp Mobile - 48000 only works on Web!)
+            // - 48000 Hz sample rate (OPUS standard, works on both Web and Mobile)
             // - mono channel (voice)
             // - 24k bitrate (voice optimized)
             // - voip application mode (optimized for speech)
-            // - f ogg: force OGG container format
+            // - f ogg: force OGG container format (CRITICAL: WebM won't work on mobile!)
             $command = sprintf(
-                '"%s" -i "%s" -vn -ac 1 -ar 16000 -c:a libopus -b:a 24k -application voip -f ogg "%s" -y 2>&1',
+                '"%s" -i "%s" -vn -ac 1 -ar 48000 -c:a libopus -b:a 24k -application voip -f ogg "%s" -y 2>&1',
                 $ffmpegPath,
                 $inputFile,
                 $outputFile
