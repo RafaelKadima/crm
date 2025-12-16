@@ -658,16 +658,7 @@ class AgentService:
             "check_order_status": AgentAction.SEND_MESSAGE, # Mapeia para send_message por enquanto, mas com lógica customizada
             "analyze_problem_image": AgentAction.SEND_MESSAGE # Mapeia para send_message com resposta da visão
         }
-            "move_stage": AgentAction.MOVE_STAGE,
-            "qualify_lead": AgentAction.QUALIFY_LEAD,
-            "check_availability": AgentAction.CHECK_AVAILABILITY,
-            "schedule_meeting": AgentAction.SCHEDULE_MEETING,
-            "finalize_and_assign": AgentAction.FINALIZE_AND_ASSIGN,
-            "transfer_to_human": AgentAction.TRANSFER_TO_HUMAN,
-            "request_info": AgentAction.REQUEST_INFO,
-            "follow_up": AgentAction.FOLLOW_UP
-        }
-        
+
         action = action_map.get(function_name, AgentAction.SEND_MESSAGE)
         
         response = AgentRunResponse(
