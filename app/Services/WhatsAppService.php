@@ -203,7 +203,9 @@ class WhatsAppService
 
         // For audio files that should be sent as voice notes, convert to OGG OPUS
         if ($isAudio && $asVoiceNote) {
+            Log::error('[PTT DEBUG] Starting conversion', ['filePath' => $filePath, 'mimeType' => $mimeType]);
             $convertedPath = $this->convertToOggOpus($disk, $filePath);
+            Log::error('[PTT DEBUG] Conversion result', ['convertedPath' => $convertedPath]);
             if ($convertedPath) {
                 $filePath = $convertedPath;
                 $fileContents = $disk->get($filePath);
@@ -863,10 +865,13 @@ class WhatsAppService
      */
     protected function convertToOggOpus($disk, string $inputPath): ?string
     {
+        Log::error('[PTT DEBUG] convertToOggOpus called', ['inputPath' => $inputPath]);
+
         // Check if FFmpeg is available
         $ffmpegPath = $this->findFfmpeg();
+        Log::error('[PTT DEBUG] FFmpeg path', ['ffmpegPath' => $ffmpegPath]);
         if (!$ffmpegPath) {
-            Log::warning('FFmpeg not found - cannot convert to OGG OPUS');
+            Log::error('[PTT DEBUG] FFmpeg not found');
             return null;
         }
 
@@ -896,15 +901,17 @@ class WhatsAppService
                 $outputFile
             );
 
-            Log::info('Running FFmpeg conversion to OGG OPUS (PTT)', ['command' => $command]);
+            Log::error('[PTT DEBUG] Running FFmpeg', ['command' => $command]);
             $output = shell_exec($command);
+            Log::error('[PTT DEBUG] FFmpeg output', ['output' => substr($output ?? '', -500)]);
 
             // Check if output file was created
             if (!file_exists($outputFile) || filesize($outputFile) === 0) {
-                Log::error('FFmpeg OGG OPUS conversion failed', ['output' => $output]);
+                Log::error('[PTT DEBUG] FFmpeg failed - no output file', ['output' => $output]);
                 @unlink($inputFile);
                 return null;
             }
+            Log::error('[PTT DEBUG] FFmpeg success', ['size' => filesize($outputFile)]);
 
             // Generate output path with .ogg extension
             $basePath = preg_replace('/\.[^.]+$/', '', $inputPath);
