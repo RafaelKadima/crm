@@ -212,13 +212,16 @@ class WhatsAppService
                 // MUST use .ogg extension and audio/ogg MIME type for WhatsApp Mobile
                 // WebM container does NOT work on mobile even with opus codec!
                 // CRITICAL: WhatsApp Mobile REJECTS "audio/ogg; codecs=opus" - use ONLY "audio/ogg"
-                $fileName = preg_replace('/\.[^.]+$/', '.ogg', $fileName);
+                // CRITICAL FOR iOS: filename extension MUST be .ogg - iOS validates extension + MIME + header
+                $fileNameWithoutExt = pathinfo($fileName, PATHINFO_FILENAME);
+                $fileName = $fileNameWithoutExt . '.ogg'; // Force .ogg extension for iOS compatibility
                 $normalizedMimeType = 'audio/ogg'; // NO parameters! Mobile rejects ; codecs=opus
                 $isVoiceNote = true;
                 Log::error('[PTT DEBUG] Conversion successful, using OGG container', [
                     'new_path' => $filePath,
                     'mime_type' => $normalizedMimeType,
                     'file_name' => $fileName,
+                    'original_name' => basename($filePath),
                 ]);
             } else {
                 // Fallback to MP3 if OGG conversion fails (won't be PTT but will work)
@@ -228,7 +231,8 @@ class WhatsAppService
                     if ($convertedPath) {
                         $filePath = $convertedPath;
                         $fileContents = $disk->get($filePath);
-                        $fileName = preg_replace('/\.[^.]+$/', '.mp3', $fileName);
+                        $fileNameWithoutExt = pathinfo($fileName, PATHINFO_FILENAME);
+                        $fileName = $fileNameWithoutExt . '.mp3';
                         $normalizedMimeType = 'audio/mpeg';
                     } else {
                         throw new \Exception('FFmpeg não disponível. Instale FFmpeg para enviar áudios via WhatsApp.');
@@ -242,9 +246,10 @@ class WhatsAppService
             if ($convertedPath) {
                 $filePath = $convertedPath;
                 $fileContents = $disk->get($filePath);
-                $fileName = preg_replace('/\.webm$/', '.mp3', $fileName);
+                $fileNameWithoutExt = pathinfo($fileName, PATHINFO_FILENAME);
+                $fileName = $fileNameWithoutExt . '.mp3';
                 $normalizedMimeType = 'audio/mpeg';
-                Log::info('Converted WebM to MP3', ['new_path' => $filePath]);
+                Log::info('Converted WebM to MP3', ['new_path' => $filePath, 'file_name' => $fileName]);
             } else {
                 throw new \Exception('FFmpeg não disponível. Instale FFmpeg para enviar áudios via WhatsApp.');
             }
