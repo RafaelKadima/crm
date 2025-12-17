@@ -66,4 +66,8 @@ pandas>=2.1.0
 # Async Queue
 celery==5.3.6
 flower==2.0.1
-yt-dlp==2023.11.16
+
+# Content Creator Agent
+yt-dlp>=2023.11.16
+tavily-python>=0.5.0
+groq>=0.4.0

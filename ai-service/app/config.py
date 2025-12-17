@@ -22,7 +22,14 @@ class Settings(BaseSettings):
     # Anthropic (Claude)
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"
-    
+
+    # Tavily (Web Search)
+    tavily_api_key: str = ""
+
+    # Groq (Whisper Transcription)
+    groq_api_key: str = ""
+    groq_whisper_model: str = "whisper-large-v3"
+
     # PostgreSQL (mesmo banco do Laravel)
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/crm"
     

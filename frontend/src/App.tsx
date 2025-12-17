@@ -30,7 +30,7 @@ import { GtmScript } from '@/components/GtmScript'
 import { BrandingProvider } from '@/components/BrandingProvider'
 import { AdsDashboard, AdsAccounts, AdsCampaigns, AdsInsights, AdsAutomation, AdsAgent, CreativeUpload, AdsAgentChat, AdsKnowledgeBase, AdsGuardrails } from '@/pages/ads'
 import { BIDashboard, ActionApprovalQueue, AIAnalystChat, ReportsPage as BIReportsPage, BISettings } from '@/pages/bi'
-import { ContentDashboard, AnalyzeVideo, GenerateScript, AutoDiscover } from '@/pages/content'
+import { ContentDashboard, ContentAgentChat, ContentCreators, ViralVideoSearch, AnalyzeVideo, GenerateScript, AutoDiscover } from '@/pages/content'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -163,6 +163,10 @@ function AppRoutes() {
 
         {/* Content Creator */}
         <Route path="content" element={<ContentDashboard />} />
+        <Route path="content/chat" element={<ContentAgentChat />} />
+        <Route path="content/creators" element={<ContentCreators />} />
+        <Route path="content/viral-search" element={<ViralVideoSearch />} />
+        {/* Rotas legadas */}
         <Route path="content/analyze" element={<AnalyzeVideo />} />
         <Route path="content/generate" element={<GenerateScript />} />
         <Route path="content/discover" element={<AutoDiscover />} />

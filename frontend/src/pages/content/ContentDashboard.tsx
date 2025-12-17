@@ -1,25 +1,21 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
   Video,
   TrendingUp,
   FileText,
-  Sparkles,
-  Play,
-  Eye,
-  ThumbsUp,
   Clock,
   ArrowRight,
-  Zap,
-  Search,
+  Users,
+  MessageSquare,
+  Bot,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
-import api from '@/api/axios'
 import { Link } from 'react-router-dom'
+import { contentApi } from '@/api/content'
 
 interface StatCardProps {
   title: string
@@ -56,37 +52,28 @@ function StatCard({ title, value, icon: Icon, color, description }: StatCardProp
 }
 
 export function ContentDashboard() {
-  // Stats mockados por enquanto - depois conectar com API
-  const stats = {
-    videosAnalyzed: 12,
-    scriptsGenerated: 28,
-    avgViralScore: 78,
-    autoDiscoveries: 5,
-  }
+  // Busca criadores para stats
+  const { data: creatorsData } = useQuery({
+    queryKey: ['content-creators'],
+    queryFn: async () => {
+      const response = await contentApi.listCreators()
+      return response.data
+    }
+  })
 
-  const recentScripts = [
-    {
-      id: 1,
-      title: 'Hook de Curiosidade - Produto X',
-      viralScore: 85,
-      createdAt: '2024-12-15',
-      status: 'ready',
-    },
-    {
-      id: 2,
-      title: 'Roteiro Storytelling - Serviço Y',
-      viralScore: 72,
-      createdAt: '2024-12-14',
-      status: 'ready',
-    },
-    {
-      id: 3,
-      title: 'Reels Trend - Oferta Z',
-      viralScore: 91,
-      createdAt: '2024-12-13',
-      status: 'ready',
-    },
-  ]
+  // Busca sessões para stats
+  const { data: sessionsData } = useQuery({
+    queryKey: ['content-sessions'],
+    queryFn: async () => {
+      const response = await contentApi.listSessions(10)
+      return response.data
+    }
+  })
+
+  const creators = creatorsData?.creators || []
+  const sessions = sessionsData?.sessions || []
+  const totalVideos = creators.reduce((sum, c) => sum + c.video_count, 0)
+  const completedSessions = sessions.filter(s => s.current_step === 'completed').length
 
   return (
     <div className="p-6 space-y-6">
@@ -98,20 +85,20 @@ export function ContentDashboard() {
             Content Creator
           </h1>
           <p className="text-muted-foreground mt-1">
-            Crie roteiros virais com inteligencia artificial
+            Crie roteiros virais com inteligência artificial
           </p>
         </div>
         <div className="flex gap-2">
-          <Link to="/content/analyze">
+          <Link to="/content/creators">
             <Button variant="outline" className="gap-2">
-              <Search className="h-4 w-4" />
-              Analisar Video
+              <Users className="h-4 w-4" />
+              Criadores
             </Button>
           </Link>
-          <Link to="/content/generate">
+          <Link to="/content/chat">
             <Button className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600">
-              <Sparkles className="h-4 w-4" />
-              Gerar Roteiro
+              <Bot className="h-4 w-4" />
+              Chat com Agente
             </Button>
           </Link>
         </div>
@@ -120,67 +107,48 @@ export function ContentDashboard() {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Videos Analisados"
-          value={stats.videosAnalyzed}
-          icon={Eye}
+          title="Criadores Cadastrados"
+          value={creators.length}
+          icon={Users}
           color="bg-blue-500"
-          description="Este mes"
+          description="Para modelar estilo"
+        />
+        <StatCard
+          title="Vídeos Transcritos"
+          value={totalVideos}
+          icon={Video}
+          color="bg-purple-500"
+          description="Base de conhecimento"
         />
         <StatCard
           title="Roteiros Gerados"
-          value={stats.scriptsGenerated}
+          value={completedSessions}
           icon={FileText}
-          color="bg-purple-500"
-          description="Este mes"
-        />
-        <StatCard
-          title="Score Viral Medio"
-          value={`${stats.avgViralScore}%`}
-          icon={TrendingUp}
           color="bg-green-500"
-          description="Dos roteiros gerados"
+          description="Sessões completas"
         />
         <StatCard
-          title="Auto-Descobertas"
-          value={stats.autoDiscoveries}
-          icon={Zap}
+          title="Conversas Ativas"
+          value={sessions.filter(s => s.current_step !== 'completed').length}
+          icon={MessageSquare}
           color="bg-orange-500"
-          description="Videos encontrados"
+          description="Em andamento"
         />
       </div>
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Link to="/content/analyze">
-          <Card className="border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-4 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-                  <Search className="h-8 w-8 text-blue-500" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">Analisar Video Viral</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Cole o link de um video viral e descubra sua estrutura
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link to="/content/generate">
+        <Link to="/content/chat">
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-4 rounded-xl bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
-                  <Sparkles className="h-8 w-8 text-purple-500" />
+                  <Bot className="h-8 w-8 text-purple-500" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg">Gerar Roteiro</h3>
+                  <h3 className="font-semibold text-lg">Chat com Agente</h3>
                   <p className="text-sm text-muted-foreground">
-                    Crie um roteiro viral baseado em video de referencia
+                    Converse com a IA para criar roteiros virais
                   </p>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -189,17 +157,36 @@ export function ContentDashboard() {
           </Card>
         </Link>
 
-        <Link to="/content/discover">
+        <Link to="/content/creators">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-4 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                  <Users className="h-8 w-8 text-blue-500" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">Gerenciar Criadores</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Adicione criadores para modelar o estilo
+                  </p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/content/viral-search">
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-4 rounded-xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
-                  <Zap className="h-8 w-8 text-orange-500" />
+                  <TrendingUp className="h-8 w-8 text-orange-500" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg">Auto-Descoberta</h3>
+                  <h3 className="font-semibold text-lg">Busca Viral</h3>
                   <p className="text-sm text-muted-foreground">
-                    IA busca videos virais e gera roteiros automaticamente
+                    Encontre vídeos virais para inspiração
                   </p>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -209,63 +196,71 @@ export function ContentDashboard() {
         </Link>
       </div>
 
-      {/* Recent Scripts */}
+      {/* Recent Sessions */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Roteiros Recentes
+            <Clock className="h-5 w-5" />
+            Conversas Recentes
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {recentScripts.map((script, index) => (
+            {sessions.slice(0, 5).map((session, index) => (
               <motion.div
-                key={script.id}
+                key={session.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
               >
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-lg bg-purple-500/10">
-                    <FileText className="h-5 w-5 text-purple-500" />
+                <Link to={`/content/chat?session=${session.id}`}>
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 rounded-lg bg-purple-500/10">
+                        <MessageSquare className="h-5 w-5 text-purple-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {session.topic || 'Nova conversa'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(session.updated_at).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        session.current_step === 'completed' && "border-green-500 text-green-500",
+                        session.current_step === 'write_reel' && "border-blue-500 text-blue-500",
+                        session.current_step === 'idle' && "border-gray-500 text-gray-500"
+                      )}
+                    >
+                      {session.current_step === 'completed' ? 'Concluído' :
+                       session.current_step === 'write_reel' ? 'Escrevendo' :
+                       session.current_step === 'generate_hooks' ? 'Hooks' :
+                       session.current_step === 'select_creator' ? 'Seleção' :
+                       session.current_step === 'research' ? 'Pesquisa' :
+                       'Aguardando'}
+                    </Badge>
                   </div>
-                  <div>
-                    <p className="font-medium">{script.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Criado em {new Date(script.createdAt).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "font-semibold",
-                      script.viralScore >= 80 && "border-green-500 text-green-500",
-                      script.viralScore >= 60 && script.viralScore < 80 && "border-yellow-500 text-yellow-500",
-                      script.viralScore < 60 && "border-red-500 text-red-500"
-                    )}
-                  >
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    {script.viralScore}% viral
-                  </Badge>
-                  <Button size="sm" variant="ghost">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </div>
+                </Link>
               </motion.div>
             ))}
           </div>
 
-          {recentScripts.length === 0 && (
+          {sessions.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhum roteiro gerado ainda</p>
-              <Link to="/content/generate">
+              <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhuma conversa ainda</p>
+              <Link to="/content/chat">
                 <Button className="mt-4" variant="outline">
-                  Gerar primeiro roteiro
+                  Iniciar primeira conversa
                 </Button>
               </Link>
             </div>

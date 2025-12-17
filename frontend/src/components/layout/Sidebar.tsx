@@ -161,9 +161,9 @@ const navGroups: NavGroup[] = [
     icon: Video,
     items: [
       { icon: PlayCircle, label: '📊 Dashboard', path: '/content', feature: 'viral_content', featureFunction: 'viral.dashboard' },
-      { icon: Search, label: '🔍 Analisar Vídeo', path: '/content/analyze', feature: 'viral_content', featureFunction: 'viral.analyze' },
-      { icon: Sparkles, label: '✨ Gerar Roteiro', path: '/content/generate', feature: 'viral_content', featureFunction: 'viral.generate' },
-      { icon: Zap, label: '🚀 Auto-Descoberta', path: '/content/discover', feature: 'viral_content', featureFunction: 'viral.auto_discover' },
+      { icon: Bot, label: '🤖 Chat com Agente', path: '/content/chat', feature: 'viral_content', featureFunction: 'viral.generate' },
+      { icon: Users, label: '👥 Criadores', path: '/content/creators', feature: 'viral_content', featureFunction: 'viral.analyze' },
+      { icon: TrendingUp, label: '🔥 Busca Viral', path: '/content/viral-search', feature: 'viral_content', featureFunction: 'viral.auto_discover' },
     ],
   },
   {
