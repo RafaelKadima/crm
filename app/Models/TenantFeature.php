@@ -86,6 +86,12 @@ class TenantFeature extends Model
                 'products.create' => ['name' => 'Criar Produtos', 'description' => 'Criar e editar produtos'],
                 'products.categories' => ['name' => 'Categorias', 'description' => 'Gerenciar categorias'],
             ],
+            'viral_content' => [
+                'viral.dashboard' => ['name' => 'Dashboard', 'description' => 'Visão geral do Content Creator'],
+                'viral.analyze' => ['name' => 'Analisar Vídeo', 'description' => 'Analisar estrutura de vídeo viral'],
+                'viral.generate' => ['name' => 'Gerar Roteiro', 'description' => 'Criar roteiros virais com IA'],
+                'viral.auto_discover' => ['name' => 'Auto-Descoberta', 'description' => 'Buscar vídeos virais e gerar roteiros automaticamente'],
+            ],
         ];
     }
 

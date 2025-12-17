@@ -10,6 +10,7 @@ export interface User {
   role: 'admin' | 'gestor' | 'vendedor'
   tenant_id: string
   is_active: boolean
+  is_super_admin?: boolean
   created_at: string
 }
 

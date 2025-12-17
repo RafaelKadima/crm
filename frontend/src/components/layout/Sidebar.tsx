@@ -39,6 +39,10 @@ import {
   ClipboardCheck,
   FileSpreadsheet,
   Settings2,
+  Video,
+  Search,
+  Sparkles,
+  PlayCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -149,6 +153,17 @@ const navGroups: NavGroup[] = [
       { icon: ClipboardCheck, label: '📋 Ações Pendentes', path: '/bi/actions', feature: 'bi_agent', featureFunction: 'bi.actions', adminOnly: true },
       { icon: FileSpreadsheet, label: '📊 Relatórios', path: '/bi/reports', feature: 'bi_agent', featureFunction: 'bi.reports', adminOnly: true },
       { icon: Settings2, label: '⚙️ Configurações', path: '/bi/settings', feature: 'bi_agent', featureFunction: 'bi.settings', adminOnly: true },
+    ],
+  },
+  {
+    id: 'viral_content',
+    label: 'Content Creator',
+    icon: Video,
+    items: [
+      { icon: PlayCircle, label: '📊 Dashboard', path: '/content', feature: 'viral_content', featureFunction: 'viral.dashboard' },
+      { icon: Search, label: '🔍 Analisar Vídeo', path: '/content/analyze', feature: 'viral_content', featureFunction: 'viral.analyze' },
+      { icon: Sparkles, label: '✨ Gerar Roteiro', path: '/content/generate', feature: 'viral_content', featureFunction: 'viral.generate' },
+      { icon: Zap, label: '🚀 Auto-Descoberta', path: '/content/discover', feature: 'viral_content', featureFunction: 'viral.auto_discover' },
     ],
   },
   {
