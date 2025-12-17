@@ -189,6 +189,10 @@ services:
       REDIS_PORT: 6379
       LARAVEL_API_URL: http://nginx
       LARAVEL_INTERNAL_KEY: ${INTERNAL_API_KEY}
+      # Content Creator Agent
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_WHISPER_MODEL: ${GROQ_WHISPER_MODEL:-whisper-large-v3}
     depends_on:
       redis:
         condition: service_healthy
