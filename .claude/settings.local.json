@@ -14,7 +14,17 @@
       "Bash(php -l:*)",
       "Bash(php artisan migrate:*)",
       "Bash(php artisan migrate:rollback:*)",
-      "Bash(timeout 10 npm run dev:*)"
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(sshpass -p 'Motochefe2025@' ssh -o StrictHostKeyChecking=no root@212.85.20.129 \"cd /var/www && ls -la\")",
+      "Bash(ssh -o StrictHostKeyChecking=no -o PubkeyAuthentication=no root@212.85.20.129 \"hostname && cd /var/www && ls -la\")",
+      "Bash(pacman -S:*)",
+      "Bash(apt-get install:*)",
+      "Bash(choco install:*)",
+      "Bash(ssh:*)",
+      "Bash(find:*)",
+      "Bash(xargs sed -i \"s|from ''@/components/ui/card''|from ''@/components/ui/Card''|g\")"
     ]
   }
 }
