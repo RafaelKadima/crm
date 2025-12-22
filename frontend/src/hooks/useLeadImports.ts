@@ -21,10 +21,11 @@ export function useLeadImport(id: string) {
     },
     enabled: !!id,
     refetchInterval: (query) => {
-      // Poll every 2 seconds while processing
+      // Poll every 1 second while pending or processing
       const data = query.state.data as { import: LeadImport; progress: number } | undefined
-      if (data?.import?.status === 'processing') {
-        return 2000
+      const status = data?.import?.status
+      if (status === 'pending' || status === 'processing') {
+        return 1000 // Poll every 1 second
       }
       return false
     },
