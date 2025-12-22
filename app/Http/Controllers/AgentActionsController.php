@@ -58,7 +58,9 @@ class AgentActionsController extends Controller
         }
 
         $oldStage = $lead->stage;
-        $lead->update(['stage_id' => $stage->id]);
+
+        // Usa moveToStage para disparar eventos de integração
+        $lead->moveToStage($stage, null, 'ia');
 
         // Registra atividade
         $lead->activities()->create([

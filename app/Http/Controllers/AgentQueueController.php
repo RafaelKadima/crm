@@ -243,8 +243,8 @@ class AgentQueueController extends Controller
                     ->first();
 
                 if ($newStage && $newStage->id !== $lead->stage_id) {
-                    $lead->update(['stage_id' => $newStage->id]);
-                    event(new LeadUpdated($lead->fresh()));
+                    // Usa moveToStage para disparar eventos de integracao
+                    $lead->moveToStage($newStage, null, 'ia');
                 }
 
                 Log::info('Appointment created from queue', [
@@ -278,8 +278,8 @@ class AgentQueueController extends Controller
             ->first();
 
         if ($newStage && $newStage->id !== $lead->stage_id) {
-            $lead->update(['stage_id' => $newStage->id]);
-            event(new LeadUpdated($lead->fresh()));
+            // Usa moveToStage para disparar eventos de integracao
+            $lead->moveToStage($newStage, null, 'ia');
         }
     }
 

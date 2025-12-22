@@ -1,8 +1,18 @@
 *.log
 .DS_Store
+
+# Arquivos de ambiente (NUNCA commitar!)
 .env
 .env.backup
 .env.production
+.env.local
+.env.*.local
+
+# Manter apenas os templates
+!.env.example
+!.env.local.example
+!.env.production.example
+
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -22,7 +32,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
-".env" 
 __pycache__/
 *.pyc
 

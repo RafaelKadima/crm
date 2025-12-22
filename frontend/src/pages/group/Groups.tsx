@@ -9,15 +9,25 @@ import {
   ChevronRight,
   Store,
   Loader2,
+  Settings,
+  Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { formatCurrency } from '@/lib/utils'
 import { useGroups, useGroupDashboard, useGroupMetricsPerTenant } from '@/hooks/useGroups'
+import { useAuthStore } from '@/store/authStore'
+import { usePermissions } from '@/hooks/usePermissions'
 
 export function GroupsPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const { user } = useAuthStore()
+  const { isAdmin } = usePermissions()
+
+  // Verifica se o usuário é admin (pode gerenciar) ou gestor (apenas visualiza)
+  const canManage = isAdmin || user?.role === 'admin'
+  const isGestor = user?.role === 'gestor'
 
   const { data: groups, isLoading: groupsLoading } = useGroups()
   const { data: dashboard, isLoading: dashboardLoading } = useGroupDashboard(selectedGroupId || '')
@@ -42,16 +52,21 @@ export function GroupsPage() {
           <div>
             <h1 className="text-3xl font-bold">Visão de Grupo</h1>
             <p className="text-muted-foreground mt-1">
-              Gerencie múltiplas lojas em um só lugar
+              {isGestor ? 'Visualize o desempenho das lojas' : 'Gerencie múltiplas lojas em um só lugar'}
             </p>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Grupo
-          </Button>
+          {canManage && (
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Grupo
+            </Button>
+          )}
         </div>
         <div className="text-center py-12 text-muted-foreground">
-          Você não possui grupos. Crie um grupo para gerenciar múltiplas lojas.
+          {isGestor
+            ? 'Você ainda não foi adicionado a nenhum grupo. Entre em contato com o administrador.'
+            : 'Você não possui grupos. Crie um grupo para gerenciar múltiplas lojas.'
+          }
         </div>
       </div>
     )
@@ -64,13 +79,15 @@ export function GroupsPage() {
         <div>
           <h1 className="text-3xl font-bold">Visão de Grupo</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie múltiplas lojas em um só lugar
+            {isGestor ? 'Visualize o desempenho das lojas' : 'Gerencie múltiplas lojas em um só lugar'}
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Grupo
-        </Button>
+        {canManage && (
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Grupo
+          </Button>
+        )}
       </div>
 
       {/* Group Overview */}
@@ -87,13 +104,29 @@ export function GroupsPage() {
                     <Building2 className="h-8 w-8" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold">{selectedGroup.name}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-2xl font-bold">{selectedGroup.name}</h2>
+                      {isGestor && (
+                        <Badge variant="outline" className="text-xs">
+                          <Eye className="h-3 w-3 mr-1" />
+                          Visualização
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-muted-foreground">{selectedGroup.description || 'Sem descrição'}</p>
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-lg px-4 py-1">
-                  {selectedGroup.tenants?.length || 0} lojas
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-lg px-4 py-1">
+                    {selectedGroup.tenants?.length || 0} lojas
+                  </Badge>
+                  {canManage && (
+                    <Button variant="outline" size="sm">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Gerenciar
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {dashboard && (

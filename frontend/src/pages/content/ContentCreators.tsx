@@ -28,8 +28,26 @@ import {
   DialogFooter,
 } from '@/components/ui/Dialog'
 import { cn } from '@/lib/utils'
-import { contentApi, ContentCreator } from '@/api/content'
+import { contentApi } from '@/api/content'
 import { toast } from 'sonner'
+
+interface ContentTranscription {
+  video_url: string
+  video_title?: string
+  transcription: string
+  duration_seconds?: number
+  platform?: string
+  created_at: string
+}
+
+interface ContentCreator {
+  id: string
+  name: string
+  video_count: number
+  style_summary?: string
+  created_at: string
+  transcriptions?: ContentTranscription[]
+}
 
 export function ContentCreators() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)

@@ -23,6 +23,10 @@ router = APIRouter(prefix="/content", tags=["content"])
 class ChatRequestBody(BaseModel):
     message: str
     session_id: Optional[str] = None
+    # Camadas de contexto de marca (opcionais)
+    brand_profile_id: Optional[str] = None
+    audience_profile_id: Optional[str] = None
+    product_positioning_id: Optional[str] = None
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -39,6 +43,11 @@ async def chat_with_agent(
     2. Seleção de criador para modelar
     3. Geração de hooks
     4. Escrita do roteiro final
+
+    Camadas de contexto opcionais:
+    - brand_profile_id: ID do perfil editorial de marca (DNA da Marca)
+    - audience_profile_id: ID do perfil de audiência
+    - product_positioning_id: ID do posicionamento do produto
     """
     try:
         agent = get_copywriter_agent()
@@ -46,7 +55,10 @@ async def chat_with_agent(
             tenant_id=x_tenant_id,
             user_id=x_user_id,
             message=payload.message,
-            session_id=payload.session_id
+            session_id=payload.session_id,
+            brand_profile_id=payload.brand_profile_id,
+            audience_profile_id=payload.audience_profile_id,
+            product_positioning_id=payload.product_positioning_id
         )
         return response
     except Exception as e:

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(php artisan tinker:*)",
+      "Bash(php artisan queue:work:*)",
+      "Bash(php artisan:*)",
+      "Bash(npx tsc:*)",
+      "Bash(findstr:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(grep:*)",
+      "Bash(php -l:*)",
+      "Bash(php artisan migrate:*)",
+      "Bash(php artisan migrate:rollback:*)",
+      "Bash(timeout 10 npm run dev:*)"
+    ]
+  }
+}

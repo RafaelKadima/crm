@@ -62,21 +62,22 @@ export function GtmScript() {
 
   // Escuta eventos GTM via WebSocket
   useEffect(() => {
-    if (!settings?.gtm_enabled || !tenantId) {
+    // Só conecta se WebSocket estiver habilitado (echo não é null)
+    if (!echo || !settings?.gtm_enabled || !tenantId) {
       return
     }
 
     console.log(`[GTM] Conectando ao canal WebSocket para eventos GTM...`)
-    
+
     const channel = echo.private(`tenant.${tenantId}.gtm`)
-    
+
     channel
       .subscribed(() => {
         console.log(`[GTM] ✅ Inscrito no canal de eventos GTM`)
       })
       .listen('.gtm.event', (eventData: Record<string, any>) => {
         console.log(`[GTM] 📊 Evento recebido via WebSocket:`, eventData)
-        
+
         // Faz push no dataLayer
         if (typeof window !== 'undefined' && (window as any).dataLayer) {
           (window as any).dataLayer.push(eventData)
@@ -86,7 +87,7 @@ export function GtmScript() {
 
     return () => {
       console.log(`[GTM] Desconectando do canal de eventos GTM`)
-      echo.leave(`tenant.${tenantId}.gtm`)
+      echo?.leave(`tenant.${tenantId}.gtm`)
     }
   }, [settings?.gtm_enabled, tenantId])
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\CalculateKpisJob;
 use App\Jobs\ProcessScheduledTasks;
 use App\Jobs\Ads\SyncAdMetricsJob;
 use App\Jobs\Ads\ProcessAdsAutomationJob;
@@ -37,3 +38,17 @@ Schedule::job(new ProcessAdsAutomationJob)->hourly()->withoutOverlapping();
 // Sincronização adicional às 12h e 18h para dados mais atualizados
 Schedule::job(new SyncAdMetricsJob(null, now()->toDateString()))->dailyAt('12:00')->withoutOverlapping();
 Schedule::job(new SyncAdMetricsJob(null, now()->toDateString()))->dailyAt('18:00')->withoutOverlapping();
+
+// =============================================================================
+// KPR / KPI - SCHEDULED JOBS
+// =============================================================================
+
+// Calcula KPIs e cria snapshots de KPRs diariamente às 1h da manhã
+Schedule::job(new CalculateKpisJob)->dailyAt('01:00')->withoutOverlapping();
+
+// Recalcula KPIs no início de cada mês (para consolidar mês anterior)
+Schedule::job(new CalculateKpisJob(
+    tenantId: null,
+    period: now()->subMonth()->format('Y-m'),
+    periodType: 'month'
+))->monthlyOn(1, '02:00')->withoutOverlapping();

@@ -5,10 +5,12 @@ namespace App\Providers;
 use App\Events\LeadOwnerAssigned;
 use App\Events\LeadStageChanged;
 use App\Events\TicketMessageCreated;
+use App\Listeners\GenerateStageActivities;
 use App\Listeners\RecordAdsConversionListener;
 use App\Listeners\RegisterLeadActivity;
 use App\Listeners\SyncLeadWithExternalSystems;
 use App\Listeners\TriggerGtmEvent;
+use App\Listeners\UpdateKprOnLeadWon;
 use App\Listeners\UpdateLeadLastInteraction;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -23,6 +25,8 @@ class EventServiceProvider extends ServiceProvider
         LeadStageChanged::class => [
             TriggerGtmEvent::class,
             RecordAdsConversionListener::class,
+            GenerateStageActivities::class,
+            UpdateKprOnLeadWon::class,
         ],
         TicketMessageCreated::class => [
             UpdateLeadLastInteraction::class,

@@ -30,10 +30,17 @@ class SendToExternalSystemJob implements ShouldQueue
 
     /**
      * Create a new job instance.
+     *
+     * @param Model $model O modelo a ser sincronizado
+     * @param string $tenantId ID do tenant
+     * @param string|null $triggerEvent Evento que disparou
+     * @param string|null $stageId ID do estagio (para lead_stage_changed)
      */
     public function __construct(
         public Model $model,
-        public string $tenantId
+        public string $tenantId,
+        public ?string $triggerEvent = null,
+        public ?string $stageId = null
     ) {}
 
     /**
@@ -41,7 +48,7 @@ class SendToExternalSystemJob implements ShouldQueue
      */
     public function handle(ExternalIntegrationService $service): void
     {
-        $service->syncModel($this->model, $this->tenantId);
+        $service->syncModel($this->model, $this->tenantId, $this->triggerEvent, $this->stageId);
     }
 
     /**

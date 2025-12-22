@@ -57,7 +57,7 @@ interface LeadUpdatedEvent {
  */
 export function useTicketMessages(ticketId: string | null, onMessage?: (data: MessageEvent) => void) {
   useEffect(() => {
-    if (!ticketId) return
+    if (!ticketId || !echo) return
 
     const channel = echo.private(`ticket.${ticketId}`)
 
@@ -67,7 +67,7 @@ export function useTicketMessages(ticketId: string | null, onMessage?: (data: Me
     })
 
     return () => {
-      echo.leave(`ticket.${ticketId}`)
+      echo?.leave(`ticket.${ticketId}`)
     }
   }, [ticketId, onMessage])
 }
@@ -77,40 +77,40 @@ export function useTicketMessages(ticketId: string | null, onMessage?: (data: Me
  * NÃO adiciona notificação - isso é feito pelo useTenantMessages no Kanban
  */
 export function useLeadMessages(
-  leadId: string | null, 
+  leadId: string | null,
   onMessage?: (data: MessageEvent) => void,
   onLeadUpdated?: (data: LeadUpdatedEvent) => void
 ) {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!leadId) return
+    if (!leadId || !echo) return
 
     const channel = echo.private(`lead.${leadId}`)
 
     channel
       .listen('.message.created', (data: MessageEvent) => {
         console.log('📩 Nova mensagem para o lead:', data)
-        
+
         // Invalida o cache para atualizar os dados
         queryClient.invalidateQueries({ queryKey: ['lead', leadId] })
-        
+
         // Chama callback para atualizar o chat
         onMessage?.(data)
       })
       .listen('.lead.updated', (data: LeadUpdatedEvent) => {
         console.log('📝 Lead atualizado via WebSocket:', data.action, data.lead?.id)
-        
+
         // Invalida o cache para atualizar os dados
         queryClient.invalidateQueries({ queryKey: ['lead', leadId] })
         queryClient.invalidateQueries({ queryKey: ['leads'] })
-        
+
         // Chama callback para reagir à atualização (transferência, etc)
         onLeadUpdated?.(data)
       })
 
     return () => {
-      echo.leave(`lead.${leadId}`)
+      echo?.leave(`lead.${leadId}`)
     }
   }, [leadId, onMessage, onLeadUpdated, queryClient])
 }
@@ -123,8 +123,10 @@ export function useTenantMessages(tenantId: string | null) {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!tenantId) {
-      console.log('⚠️ useTenantMessages: No tenantId provided')
+    if (!tenantId || !echo) {
+      if (!echo) {
+        console.log('ℹ️ WebSocket disabled - useTenantMessages skipped')
+      }
       return
     }
 
@@ -140,21 +142,21 @@ export function useTenantMessages(tenantId: string | null) {
       })
       .listen('.message.created', (data: MessageEvent) => {
         console.log('📩 Nova mensagem no tenant:', data)
-        
+
         // Só notifica mensagens RECEBIDAS (inbound), não as enviadas
         if (data.lead_id && data.message.direction === 'inbound') {
           addUnreadMessage(data.lead_id, data.message.content)
         }
-        
+
         // Invalida o cache de leads para atualizar o Kanban
         queryClient.invalidateQueries({ queryKey: ['leads'] })
       })
       .listen('.lead.updated', (data: { action: string; lead: any }) => {
         console.log('📝 Lead atualizado:', data.action, data.lead?.id)
-        
+
         // Invalida o cache de leads para atualizar o Kanban
         queryClient.invalidateQueries({ queryKey: ['leads'] })
-        
+
         if (data.lead?.id) {
           queryClient.invalidateQueries({ queryKey: ['lead', data.lead.id] })
         }
@@ -162,7 +164,7 @@ export function useTenantMessages(tenantId: string | null) {
 
     return () => {
       console.log('🔌 Desconectando do canal tenant:', tenantId)
-      echo.leave(`tenant.${tenantId}`)
+      echo?.leave(`tenant.${tenantId}`)
     }
   }, [tenantId, addUnreadMessage, queryClient])
 }
@@ -176,19 +178,24 @@ export function useWebSocket() {
   const queryClient = useQueryClient()
 
   const connectToTenant = useCallback((tenantId: string) => {
+    if (!echo) {
+      console.log('ℹ️ WebSocket disabled - connectToTenant skipped')
+      return () => {}
+    }
+
     const channel = echo.private(`tenant.${tenantId}`)
 
     channel.listen('.message.created', (data: MessageEvent) => {
       console.log('🔔 Nova mensagem recebida:', data)
-      
+
       // Só notifica mensagens RECEBIDAS (inbound), não as enviadas
       const isInbound = data.message.direction === 'inbound'
-      
+
       // Notificação visual (apenas para mensagens recebidas)
       if (data.lead_id && isInbound) {
         addUnreadMessage(data.lead_id, data.message.content)
       }
-      
+
       // Atualizar dados
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       if (data.ticket.id) {
@@ -208,12 +215,12 @@ export function useWebSocket() {
     })
 
     return () => {
-      echo.leave(`tenant.${tenantId}`)
+      echo?.leave(`tenant.${tenantId}`)
     }
   }, [addUnreadMessage, queryClient])
 
   const disconnectAll = useCallback(() => {
-    echo.disconnect()
+    echo?.disconnect()
   }, [])
 
   return {
@@ -222,4 +229,3 @@ export function useWebSocket() {
     disconnectAll,
   }
 }
-

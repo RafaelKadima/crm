@@ -231,6 +231,111 @@ export const reportsApi = {
 }
 
 // =====================
+// ACTIVITY ANALYSIS ENDPOINTS
+// =====================
+export interface ActivityEffectivenessItem {
+  template_id: string
+  template_title: string
+  activity_type: string
+  stage_name: string | null
+  pipeline_name: string | null
+  total_completed: number
+  won_with_activity: number
+  lost_with_activity: number
+  conversion_rate: number
+  conversion_without: number
+  impact_percentage: number
+  avg_completion_minutes: number
+  is_high_impact: boolean
+  is_critical: boolean
+}
+
+export interface ActivityEffectivenessResponse {
+  period: { start: string; end: string }
+  summary: {
+    overall_lift: number
+    total_activities_analyzed: number
+    high_impact_count: number
+    critical_count: number
+  }
+  all_activities: ActivityEffectivenessItem[]
+  top_performing: ActivityEffectivenessItem[]
+  needs_improvement: ActivityEffectivenessItem[]
+}
+
+export interface SequenceAnalysisResponse {
+  period: { start: string; end: string }
+  won: {
+    total_leads: number
+    avg_activities: number
+    avg_days_to_close: number
+    most_common_sequence: Record<string, number>
+    activity_distribution: Record<string, number>
+  }
+  lost: {
+    total_leads: number
+    avg_activities: number
+    avg_days_to_close: number
+    most_common_sequence: Record<string, number>
+    activity_distribution: Record<string, number>
+  }
+  insights: Array<{
+    type: string
+    severity: 'high' | 'medium' | 'low'
+    message: string
+    recommendation: string
+  }>
+}
+
+export interface UserEffectivenessItem {
+  user_id: string
+  user_name: string
+  total_leads: number
+  won_leads: number
+  conversion_rate: number
+  total_activities: number
+  activities_per_lead: number
+}
+
+export interface UserEffectivenessResponse {
+  period: { start: string; end: string }
+  users: UserEffectivenessItem[]
+}
+
+export const activityAnalysisApi = {
+  // User contribution analysis
+  getMyContribution: (params?: { start_date?: string; end_date?: string }) =>
+    api.get<any>('/activity-analysis/my-contribution', { params }),
+
+  getUserContribution: (userId: string, params?: { start_date?: string; end_date?: string }) =>
+    api.get<any>(`/activity-analysis/user/${userId}`, { params }),
+
+  // Lead journey analysis
+  getLeadJourney: (leadId: string) =>
+    api.get<any>(`/activity-analysis/lead/${leadId}/journey`),
+
+  // Compare users
+  compareUsers: (userIds: string[], params?: { start_date?: string; end_date?: string }) =>
+    api.post<any>('/activity-analysis/compare', { user_ids: userIds, ...params }),
+
+  // Tenant insights
+  getTenantInsights: (params?: { start_date?: string; end_date?: string }) =>
+    api.get<any>('/activity-analysis/insights', { params }),
+
+  // Activity effectiveness report
+  getEffectiveness: (params?: { start_date?: string; end_date?: string; pipeline_id?: string }) =>
+    api.get<ActivityEffectivenessResponse>('/activity-analysis/effectiveness', { params }),
+
+  // Sequence analysis (won vs lost)
+  getSequenceAnalysis: (params?: { start_date?: string; end_date?: string }) =>
+    api.get<SequenceAnalysisResponse>('/activity-analysis/sequence-analysis', { params }),
+
+  // Effectiveness by user
+  getEffectivenessByUser: (params?: { start_date?: string; end_date?: string }) =>
+    api.get<UserEffectivenessResponse>('/activity-analysis/effectiveness-by-user', { params }),
+}
+
+// =====================
 // GROUPS ENDPOINTS
 // =====================
 export const groupsApi = {
@@ -546,5 +651,522 @@ export const whatsAppMediaApi = {
       attachment_id: attachmentId,
       caption,
     }),
+}
+
+// =====================
+// STAGE ACTIVITIES ENDPOINTS
+// =====================
+import type {
+  StageActivityTemplate,
+  DealStageActivity,
+  StageProgress,
+  CanAdvanceResult,
+} from '@/types'
+
+export const stageActivityTemplatesApi = {
+  // List templates for a stage
+  list: (pipelineId: string, stageId: string) =>
+    api.get<StageActivityTemplate[]>(`/pipelines/${pipelineId}/stages/${stageId}/activity-templates`),
+
+  // Create a template
+  create: (pipelineId: string, stageId: string, data: Partial<StageActivityTemplate>) =>
+    api.post<{ message: string; template: StageActivityTemplate }>(
+      `/pipelines/${pipelineId}/stages/${stageId}/activity-templates`,
+      data
+    ),
+
+  // Get a template
+  get: (pipelineId: string, stageId: string, templateId: string) =>
+    api.get<StageActivityTemplate>(
+      `/pipelines/${pipelineId}/stages/${stageId}/activity-templates/${templateId}`
+    ),
+
+  // Update a template
+  update: (pipelineId: string, stageId: string, templateId: string, data: Partial<StageActivityTemplate>) =>
+    api.put<{ message: string; template: StageActivityTemplate }>(
+      `/pipelines/${pipelineId}/stages/${stageId}/activity-templates/${templateId}`,
+      data
+    ),
+
+  // Delete a template
+  delete: (pipelineId: string, stageId: string, templateId: string) =>
+    api.delete<{ message: string }>(
+      `/pipelines/${pipelineId}/stages/${stageId}/activity-templates/${templateId}`
+    ),
+
+  // Reorder templates
+  reorder: (pipelineId: string, stageId: string, templateIds: string[]) =>
+    api.post<{ message: string }>(
+      `/pipelines/${pipelineId}/stages/${stageId}/activity-templates/reorder`,
+      { template_ids: templateIds }
+    ),
+}
+
+export const dealStageActivitiesApi = {
+  // List activities for current stage
+  list: (leadId: string) =>
+    api.get<DealStageActivity[]>(`/leads/${leadId}/stage-activities`),
+
+  // List all activities for a lead
+  listAll: (leadId: string) =>
+    api.get<DealStageActivity[]>(`/leads/${leadId}/stage-activities/all`),
+
+  // Get stage progress
+  getProgress: (leadId: string) =>
+    api.get<StageProgress>(`/leads/${leadId}/stage-progress`),
+
+  // Check if lead can advance
+  canAdvance: (leadId: string) =>
+    api.get<CanAdvanceResult>(`/leads/${leadId}/can-advance-stage`),
+
+  // Complete an activity
+  complete: (leadId: string, activityId: string) =>
+    api.post<{ message: string; activity: DealStageActivity; points_earned: number }>(
+      `/leads/${leadId}/stage-activities/${activityId}/complete`
+    ),
+
+  // Skip an activity
+  skip: (leadId: string, activityId: string) =>
+    api.post<{ message: string; activity: DealStageActivity }>(
+      `/leads/${leadId}/stage-activities/${activityId}/skip`
+    ),
+}
+
+// =====================
+// ACTIVITIES DASHBOARD API
+// =====================
+export interface ActivityDashboardSummary {
+  overdue: number
+  due_today: number
+  due_soon: number
+  pending: number
+  completed_today: number
+}
+
+export interface DashboardActivity {
+  id: string
+  status: string
+  due_at: string | null
+  days_overdue: number
+  days_until_due: number | null
+  is_overdue: boolean
+  is_required: boolean
+  template: {
+    id: string
+    title: string
+    description: string | null
+    activity_type: string
+    icon: string
+    points: number
+  } | null
+  lead: {
+    id: string
+    name: string
+    company: string | null
+    user_id: string
+    user_name?: string
+  } | null
+  stage: {
+    id: string
+    name: string
+    color: string
+  } | null
+}
+
+export interface ActivityDashboardResponse {
+  summary: ActivityDashboardSummary
+  overdue_activities: DashboardActivity[]
+  due_today_activities: DashboardActivity[]
+}
+
+export const activitiesDashboardApi = {
+  // Get dashboard summary and activities
+  getDashboard: (params?: { user_id?: string }) =>
+    api.get<ActivityDashboardResponse>('/activities/dashboard', { params }),
+
+  // Get all overdue activities (paginated)
+  getOverdue: (params?: { user_id?: string; pipeline_id?: string; per_page?: number; page?: number }) =>
+    api.get<PaginatedResponse<DashboardActivity>>('/activities/overdue', { params }),
+
+  // Get activities due today
+  getDueToday: () =>
+    api.get<DashboardActivity[]>('/activities/due-today'),
+
+  // Get activities due soon
+  getDueSoon: (days?: number) =>
+    api.get<DashboardActivity[]>('/activities/due-soon', { params: { days } }),
+}
+
+// =====================
+// GAMIFICATION ENDPOINTS
+// =====================
+import type {
+  GamificationTier,
+  PointRule,
+  PointTransaction,
+  UserPoints,
+  Reward,
+  UserReward,
+  Achievement,
+  UserAchievement,
+  GamificationSettings,
+  UserGamificationStats,
+  LeaderboardEntry,
+  GamificationAdminStats,
+  PaginatedResponse,
+} from '@/types'
+
+export const gamificationApi = {
+  // User-facing endpoints
+  getMyStats: () =>
+    api.get<UserGamificationStats>('/gamification/my-stats'),
+
+  getMyPoints: () =>
+    api.get<UserPoints>('/gamification/my-points'),
+
+  getMyAchievements: () =>
+    api.get<UserAchievement[]>('/gamification/my-achievements'),
+
+  getMyRewards: () =>
+    api.get<UserReward[]>('/gamification/my-rewards'),
+
+  getLeaderboard: (params?: { period?: string; limit?: number }) =>
+    api.get<LeaderboardEntry[]>('/gamification/leaderboard', { params }),
+
+  getTiers: () =>
+    api.get<GamificationTier[]>('/gamification/tiers'),
+
+  getAchievements: () =>
+    api.get<Achievement[]>('/gamification/achievements'),
+
+  getRewards: () =>
+    api.get<Reward[]>('/gamification/rewards'),
+
+  claimReward: (rewardId: string) =>
+    api.post<{ message: string; user_reward: UserReward }>(`/gamification/rewards/${rewardId}/claim`),
+
+  getTransactions: (params?: { page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<PointTransaction>>('/gamification/transactions', { params }),
+
+  // Configurações públicas (para saber o que exibir na UI)
+  getPublicSettings: () =>
+    api.get<{ is_enabled: boolean; show_leaderboard: boolean; show_points_to_users: boolean; sound_enabled: boolean }>('/gamification/settings'),
+}
+
+// Admin gamification endpoints
+export const gamificationAdminApi = {
+  // Settings
+  getSettings: () =>
+    api.get<GamificationSettings>('/admin/gamification/settings'),
+
+  updateSettings: (data: Partial<GamificationSettings>) =>
+    api.put<{ message: string; settings: GamificationSettings }>('/admin/gamification/settings', data),
+
+  // Tiers
+  listTiers: () =>
+    api.get<GamificationTier[]>('/admin/gamification/tiers'),
+
+  createTier: (data: Partial<GamificationTier>) =>
+    api.post<{ message: string; tier: GamificationTier }>('/admin/gamification/tiers', data),
+
+  getTier: (tierId: string) =>
+    api.get<GamificationTier>(`/admin/gamification/tiers/${tierId}`),
+
+  updateTier: (tierId: string, data: Partial<GamificationTier>) =>
+    api.put<{ message: string; tier: GamificationTier }>(`/admin/gamification/tiers/${tierId}`, data),
+
+  deleteTier: (tierId: string) =>
+    api.delete<{ message: string }>(`/admin/gamification/tiers/${tierId}`),
+
+  // Point Rules
+  listPointRules: () =>
+    api.get<PointRule[]>('/admin/gamification/point-rules'),
+
+  createPointRule: (data: Partial<PointRule>) =>
+    api.post<{ message: string; rule: PointRule }>('/admin/gamification/point-rules', data),
+
+  getPointRule: (ruleId: string) =>
+    api.get<PointRule>(`/admin/gamification/point-rules/${ruleId}`),
+
+  updatePointRule: (ruleId: string, data: Partial<PointRule>) =>
+    api.put<{ message: string; rule: PointRule }>(`/admin/gamification/point-rules/${ruleId}`, data),
+
+  deletePointRule: (ruleId: string) =>
+    api.delete<{ message: string }>(`/admin/gamification/point-rules/${ruleId}`),
+
+  togglePointRule: (ruleId: string) =>
+    api.post<{ message: string; rule: PointRule }>(`/admin/gamification/point-rules/${ruleId}/toggle`),
+
+  // Rewards
+  listRewards: () =>
+    api.get<Reward[]>('/admin/gamification/rewards'),
+
+  createReward: (data: Partial<Reward>) =>
+    api.post<{ message: string; reward: Reward }>('/admin/gamification/rewards', data),
+
+  getReward: (rewardId: string) =>
+    api.get<Reward>(`/admin/gamification/rewards/${rewardId}`),
+
+  updateReward: (rewardId: string, data: Partial<Reward>) =>
+    api.put<{ message: string; reward: Reward }>(`/admin/gamification/rewards/${rewardId}`, data),
+
+  deleteReward: (rewardId: string) =>
+    api.delete<{ message: string }>(`/admin/gamification/rewards/${rewardId}`),
+
+  // Achievements
+  listAchievements: () =>
+    api.get<Achievement[]>('/admin/gamification/achievements'),
+
+  createAchievement: (data: Partial<Achievement>) =>
+    api.post<{ message: string; achievement: Achievement }>('/admin/gamification/achievements', data),
+
+  getAchievement: (achievementId: string) =>
+    api.get<Achievement>(`/admin/gamification/achievements/${achievementId}`),
+
+  updateAchievement: (achievementId: string, data: Partial<Achievement>) =>
+    api.put<{ message: string; achievement: Achievement }>(`/admin/gamification/achievements/${achievementId}`, data),
+
+  deleteAchievement: (achievementId: string) =>
+    api.delete<{ message: string }>(`/admin/gamification/achievements/${achievementId}`),
+
+  // User Rewards Management
+  listUserRewards: (params?: { status?: string; page?: number }) =>
+    api.get<PaginatedResponse<UserReward>>('/admin/gamification/user-rewards', { params }),
+
+  approveUserReward: (userRewardId: string) =>
+    api.post<{ message: string; user_reward: UserReward }>(`/admin/gamification/user-rewards/${userRewardId}/approve`),
+
+  deliverUserReward: (userRewardId: string) =>
+    api.post<{ message: string; user_reward: UserReward }>(`/admin/gamification/user-rewards/${userRewardId}/deliver`),
+
+  rejectUserReward: (userRewardId: string, reason?: string) =>
+    api.post<{ message: string; user_reward: UserReward }>(`/admin/gamification/user-rewards/${userRewardId}/reject`, { reason }),
+
+  updateUserReward: (userRewardId: string, data: { status: string }) =>
+    api.put<{ message: string; user_reward: UserReward }>(`/admin/gamification/user-rewards/${userRewardId}`, data),
+
+  // Stats
+  getStats: () =>
+    api.get<GamificationAdminStats>('/admin/gamification/stats'),
+}
+
+// =====================
+// EXTERNAL INTEGRATIONS ENDPOINTS
+// =====================
+import type {
+  ExternalIntegration,
+  ExternalIntegrationMapping,
+  ExternalIntegrationLog,
+  IntegrationTemplate,
+  IntegrationAvailableFields,
+} from '@/types'
+
+export const integrationsApi = {
+  // List all integrations
+  list: () =>
+    api.get<ExternalIntegration[]>('/integrations'),
+
+  // Get single integration
+  get: (id: string) =>
+    api.get<ExternalIntegration>(`/integrations/${id}`),
+
+  // Create integration
+  create: (data: Partial<ExternalIntegration> & { mapping?: Record<string, string> }) =>
+    api.post<{ message: string; integration: ExternalIntegration }>('/integrations', data),
+
+  // Update integration
+  update: (id: string, data: Partial<ExternalIntegration>) =>
+    api.put<{ message: string; integration: ExternalIntegration }>(`/integrations/${id}`, data),
+
+  // Delete integration
+  delete: (id: string) =>
+    api.delete<{ message: string }>(`/integrations/${id}`),
+
+  // Toggle active/inactive
+  toggle: (id: string) =>
+    api.post<{ message: string; integration: ExternalIntegration }>(`/integrations/${id}/toggle`),
+
+  // Test connection
+  test: (id: string) =>
+    api.post<{ success: boolean; message: string; status_code?: number; response?: unknown }>(`/integrations/${id}/test`),
+
+  // Get logs
+  getLogs: (id: string, params?: { page?: number; status?: string }) =>
+    api.get<PaginatedResponse<ExternalIntegrationLog>>(`/integrations/${id}/logs`, { params }),
+
+  // Retry failed log
+  retryLog: (integrationId: string, logId: string) =>
+    api.post<{ message: string; log: ExternalIntegrationLog }>(`/integrations/${integrationId}/logs/${logId}/retry`),
+
+  // Get mappings
+  getMappings: (id: string) =>
+    api.get<ExternalIntegrationMapping[]>(`/integrations/${id}/mappings`),
+
+  // Save mapping
+  saveMapping: (id: string, data: { model_type: string; mapping: Record<string, string> }) =>
+    api.post<{ message: string; mapping: ExternalIntegrationMapping }>(`/integrations/${id}/mappings`, data),
+
+  // Preview payload
+  previewPayload: (id: string) =>
+    api.post<{ mapping: Record<string, string>; payload: Record<string, unknown> }>(`/integrations/${id}/preview`),
+
+  // Get templates
+  getTemplates: () =>
+    api.get<IntegrationTemplate[]>('/integrations/templates'),
+
+  // Get available fields for mapping
+  getAvailableFields: () =>
+    api.get<IntegrationAvailableFields>('/integrations/available-fields'),
+}
+
+// =====================
+// PROFILE/USER ENDPOINTS (for Linx fields)
+// =====================
+export const profileApi = {
+  // Get current user profile
+  get: () =>
+    api.get<User>('/profile'),
+
+  // Update profile
+  update: (data: Partial<User>) =>
+    api.put<{ message: string; user: User }>('/profile', data),
+
+  // Change password
+  changePassword: (data: { current_password: string; password: string; password_confirmation: string }) =>
+    api.post<{ message: string }>('/profile/change-password', data),
+}
+
+// =====================
+// SUPER ADMIN ENDPOINTS
+// =====================
+export interface SuperAdminTenant {
+  id: string
+  name: string
+  slug: string
+  plan: string
+  is_active: boolean
+  created_at: string
+  users_count?: number
+  leads_count?: number
+  channels_count?: number
+}
+
+export interface SuperAdminGroup {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  is_active: boolean
+  created_at: string
+  tenants_count?: number
+  users_count?: number
+  tenants?: Array<{ id: string; name: string; slug: string }>
+  users?: Array<{ id: string; name: string; email: string; pivot?: { role: string } }>
+}
+
+export interface SuperAdminUser {
+  id: string
+  name: string
+  email: string
+  role: string
+  is_active: boolean
+  tenant_id: string
+  tenant?: { id: string; name: string }
+  created_at: string
+}
+
+export const superAdminApi = {
+  // Dashboard
+  getDashboard: () =>
+    api.get<{
+      total_tenants: number
+      active_tenants: number
+      total_users: number
+      total_leads: number
+      tenants_by_plan: Record<string, number>
+      recent_tenants: SuperAdminTenant[]
+      recent_logs: any[]
+    }>('/super-admin/dashboard'),
+
+  // Tenants
+  listTenants: (params?: { search?: string; plan?: string; is_active?: boolean; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<SuperAdminTenant>>('/super-admin/tenants', { params }),
+
+  createTenant: (data: {
+    name: string
+    slug?: string
+    plan: string
+    admin_name: string
+    admin_email: string
+    admin_password: string
+    whatsapp_number?: string
+    ia_enabled?: boolean
+    features?: string[]
+  }) =>
+    api.post<{ message: string; tenant: SuperAdminTenant }>('/super-admin/tenants', data),
+
+  getTenant: (id: string) =>
+    api.get<{ tenant: SuperAdminTenant; features: Record<string, any>; stats: any }>(`/super-admin/tenants/${id}`),
+
+  updateTenant: (id: string, data: Partial<SuperAdminTenant>) =>
+    api.put<{ message: string; tenant: SuperAdminTenant }>(`/super-admin/tenants/${id}`, data),
+
+  updateTenantFeatures: (id: string, features: Array<{ key: string; enabled: boolean; all_functions?: boolean; enabled_functions?: string[] }>) =>
+    api.put<{ message: string; features: any }>(`/super-admin/tenants/${id}/features`, { features }),
+
+  // Users
+  listUsers: (params?: { search?: string; tenant_id?: string; role?: string; is_active?: boolean; page?: number }) =>
+    api.get<PaginatedResponse<SuperAdminUser>>('/super-admin/users', { params }),
+
+  createUser: (data: { tenant_id: string; name: string; email: string; password: string; role: string; phone?: string }) =>
+    api.post<{ message: string; user: SuperAdminUser }>('/super-admin/users', data),
+
+  updateUser: (id: string, data: Partial<SuperAdminUser & { password?: string }>) =>
+    api.put<{ message: string; user: SuperAdminUser }>(`/super-admin/users/${id}`, data),
+
+  deleteUser: (id: string) =>
+    api.delete<{ message: string }>(`/super-admin/users/${id}`),
+
+  // Groups
+  listGroups: (params?: { search?: string; is_active?: boolean; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<SuperAdminGroup>>('/super-admin/groups', { params }),
+
+  createGroup: (data: { name: string; description?: string; tenant_ids?: string[] }) =>
+    api.post<{ message: string; group: SuperAdminGroup }>('/super-admin/groups', data),
+
+  getGroup: (id: string) =>
+    api.get<{ group: SuperAdminGroup }>(`/super-admin/groups/${id}`),
+
+  updateGroup: (id: string, data: { name?: string; description?: string; is_active?: boolean }) =>
+    api.put<{ message: string; group: SuperAdminGroup }>(`/super-admin/groups/${id}`, data),
+
+  deleteGroup: (id: string) =>
+    api.delete<{ message: string }>(`/super-admin/groups/${id}`),
+
+  addTenantToGroup: (groupId: string, tenantId: string) =>
+    api.post<{ message: string; group: SuperAdminGroup }>(`/super-admin/groups/${groupId}/tenants`, { tenant_id: tenantId }),
+
+  removeTenantFromGroup: (groupId: string, tenantId: string) =>
+    api.delete<{ message: string }>(`/super-admin/groups/${groupId}/tenants/${tenantId}`),
+
+  addUserToGroup: (groupId: string, userId: string, role: 'owner' | 'admin' | 'viewer') =>
+    api.post<{ message: string; group: SuperAdminGroup }>(`/super-admin/groups/${groupId}/users`, { user_id: userId, role }),
+
+  removeUserFromGroup: (groupId: string, userId: string) =>
+    api.delete<{ message: string }>(`/super-admin/groups/${groupId}/users/${userId}`),
+
+  // Config
+  listPermissions: () =>
+    api.get<{ permissions: any; modules: string[] }>('/super-admin/permissions'),
+
+  listFeatures: () =>
+    api.get<{ features: any }>('/super-admin/features'),
+
+  listPlans: () =>
+    api.get<{ plans: Array<{ value: string; label: string; has_ia_sdr: boolean }> }>('/super-admin/plans'),
+
+  // Logs
+  listLogs: (params?: { action?: string; tenant_id?: string; date_from?: string; date_to?: string; page?: number }) =>
+    api.get<PaginatedResponse<any>>('/super-admin/logs', { params }),
 }
 

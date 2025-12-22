@@ -234,13 +234,9 @@ class ProcessAgentResponse implements ShouldQueue
 
         if ($newStage && $newStage->id !== $this->lead->stage_id) {
             $oldStageId = $this->lead->stage_id;
-            $this->lead->update([
-                'stage_id' => $newStage->id,
-                'stage_changed_at' => now(),
-            ]);
 
-            // Dispara evento de atualização
-            event(new LeadUpdated($this->lead->fresh()));
+            // Usa moveToStage para disparar eventos de integracao
+            $this->lead->moveToStage($newStage, null, 'ia');
 
             Log::info('Lead stage updated by agent', [
                 'lead_id' => $this->lead->id,
@@ -366,23 +362,15 @@ class ProcessAgentResponse implements ShouldQueue
 
                 if ($newStage && $newStage->id !== $this->lead->stage_id) {
                     $oldStage = $this->lead->stage;
-                    $this->lead->update(['stage_id' => $newStage->id]);
-                    
-                    // Registra atividade de mudança de estágio
-                    $this->lead->activities()->create([
-                        'tenant_id' => $this->lead->tenant_id,
-                        'type' => 'stage_changed',
-                        'description' => "Lead movido para '{$newStage->name}' após agendamento",
-                        'source' => 'ia',
-                    ]);
+
+                    // Usa moveToStage para disparar eventos de integracao
+                    $this->lead->moveToStage($newStage, null, 'ia');
 
                     Log::info('Lead moved to stage after scheduling', [
                         'lead_id' => $this->lead->id,
                         'from_stage' => $oldStage?->name,
                         'to_stage' => $newStage->name,
                     ]);
-
-                    event(new LeadUpdated($this->lead->fresh()));
                 }
                 
                 Log::info('Appointment created by agent', [
@@ -429,7 +417,8 @@ class ProcessAgentResponse implements ShouldQueue
             ->first();
 
         if ($newStage && $newStage->id !== $this->lead->stage_id) {
-            $this->lead->update(['stage_id' => $newStage->id]);
+            // Usa moveToStage para disparar eventos de integracao
+            $this->lead->moveToStage($newStage, null, 'ia');
         }
 
         // Distribui para vendedor via round-robin (se não tiver responsável)

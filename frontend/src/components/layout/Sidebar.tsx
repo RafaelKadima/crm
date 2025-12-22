@@ -43,6 +43,8 @@ import {
   Search,
   Sparkles,
   PlayCircle,
+  Trophy,
+  Award,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -135,6 +137,14 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    id: 'goals',
+    label: 'Metas',
+    icon: Trophy,
+    items: [
+      { icon: Trophy, label: 'Metas e KPIs', path: '/goals' },
+    ],
+  },
+  {
     id: 'intelligence',
     label: 'Inteligência',
     icon: Bot,
@@ -180,7 +190,7 @@ const navGroups: NavGroup[] = [
     label: 'Administração',
     icon: Shield,
     items: [
-      { icon: Building2, label: 'Grupos', path: '/groups', feature: 'groups', featureFunction: 'groups.view', adminOnly: true },
+      { icon: Building2, label: 'Grupos', path: '/groups', feature: 'groups', featureFunction: 'groups.view' },
       { icon: Shield, label: 'Super Admin', path: '/super-admin', superAdminOnly: true },
     ],
   },

@@ -9,6 +9,7 @@ import { LeadChatModal } from '@/components/chat/LeadChatModal'
 import { PipelineManagerModal } from '@/components/pipelines/PipelineManagerModal'
 import { CreateLeadModal } from '@/components/leads/CreateLeadModal'
 import { ImportLeadsModal } from './ImportLeadsModal'
+import { SaleClosingModal } from '@/components/sales/SaleClosingModal'
 import { useLeads, useUpdateLeadStage } from '@/hooks/useLeads'
 import { usePipelines, type Pipeline } from '@/hooks/usePipelines'
 import { useNotificationStore } from '@/store/notificationStore'
@@ -38,6 +39,8 @@ export function LeadsKanbanPage() {
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null)
   const [showPipelineSelector, setShowPipelineSelector] = useState(false)
   const [ticketFilter, setTicketFilter] = useState<TicketFilterType>('all') // Filtro de status do ticket
+  const [isSaleModalOpen, setIsSaleModalOpen] = useState(false) // Modal de fechamento de venda
+  const [pendingWonLead, setPendingWonLead] = useState<Lead | null>(null) // Lead aguardando fechamento
 
   // Fetch data from API
   const { data: leadsData, isLoading: leadsLoading } = useLeads()
@@ -98,7 +101,9 @@ export function LeadsKanbanPage() {
       color: s.color,
       order: s.order,
       is_final: s.order === currentPipeline.stages.length - 1,
-      is_won: s.slug === 'fechamento',
+      is_won: s.stage_type === 'won' || s.slug === 'fechamento',
+      stage_type: s.stage_type || 'open',
+      slug: s.slug,
     })).sort((a: PipelineStage, b: PipelineStage) => a.order - b.order)
   }, [currentPipeline])
 
@@ -168,14 +173,21 @@ export function LeadsKanbanPage() {
     return { pending, open, closed, total: enrichedLeads.length }
   }, [enrichedLeads])
 
-  // Verifica se o estágio é de fechamento
+  // Verifica se o estágio é de ganho (won)
+  const isWonStage = (stageId: string): boolean => {
+    const stage = stages.find(s => s.id === stageId)
+    if (!stage) return false
+    return stage.stage_type === 'won' || stage.is_won
+  }
+
+  // Verifica se o estágio é de fechamento (won ou lost)
   const isClosingStage = (stageId: string): boolean => {
     const stage = stages.find(s => s.id === stageId)
     if (!stage) return false
-    return stage.is_final || 
-           stage.is_won || 
-           stage.name?.toLowerCase().includes('fechamento') ||
-           stage.name?.toLowerCase().includes('ganho')
+    return stage.stage_type === 'won' ||
+           stage.stage_type === 'lost' ||
+           stage.is_final ||
+           stage.is_won
   }
 
   const handleLeadMove = (leadId: string, newStageId: string) => {
@@ -199,8 +211,16 @@ export function LeadsKanbanPage() {
       }
     )
 
-    // Se moveu para estágio de fechamento, abre o modal com formulário obrigatório
-    if (isClosingStage(newStageId)) {
+    // Se moveu para estágio de GANHO, abre o modal de fechamento de venda
+    if (isWonStage(newStageId)) {
+      const lead = localLeads.find(l => l.id === leadId)
+      if (lead) {
+        setPendingWonLead(lead)
+        setIsSaleModalOpen(true)
+      }
+    }
+    // Se moveu para outro estágio de fechamento (ex: perda), abre o chat normal
+    else if (isClosingStage(newStageId)) {
       const lead = localLeads.find(l => l.id === leadId)
       if (lead) {
         const enrichedLead = {
@@ -213,6 +233,12 @@ export function LeadsKanbanPage() {
         setIsModalOpen(true)
       }
     }
+  }
+
+  // Callback quando a venda e fechada com sucesso
+  const handleSaleSuccess = () => {
+    setPendingWonLead(null)
+    // Pode mostrar uma notificacao de sucesso se quiser
   }
 
   const handleLeadClick = (lead: Lead) => {
@@ -493,6 +519,18 @@ export function LeadsKanbanPage() {
       <ImportLeadsModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
+      />
+
+      {/* Sale Closing Modal - Abre quando lead vai para estagio de ganho */}
+      <SaleClosingModal
+        isOpen={isSaleModalOpen}
+        onClose={() => {
+          setIsSaleModalOpen(false)
+          setPendingWonLead(null)
+        }}
+        leadId={pendingWonLead?.id || ''}
+        leadName={pendingWonLead?.contact?.name || pendingWonLead?.name || 'Cliente'}
+        onSuccess={handleSaleSuccess}
       />
 
       {/* Click outside to close pipeline selector */}

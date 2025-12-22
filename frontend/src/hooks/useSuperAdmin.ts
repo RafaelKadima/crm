@@ -262,3 +262,189 @@ export function useSuperAdminLogs(params?: { action?: string; tenant_id?: string
   })
 }
 
+// =====================
+// GROUPS
+// =====================
+
+export interface SuperAdminGroup {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  is_active: boolean
+  created_at: string
+  tenants_count?: number
+  users_count?: number
+  tenants?: Array<{ id: string; name: string; slug: string }>
+  users?: Array<{ id: string; name: string; email: string; pivot?: { role: string } }>
+}
+
+export interface CreateGroupData {
+  name: string
+  description?: string
+  tenant_ids?: string[]
+}
+
+export interface UpdateGroupData {
+  name?: string
+  description?: string
+  is_active?: boolean
+}
+
+// List all groups
+export function useSuperAdminGroups(params?: { search?: string; is_active?: boolean; page?: number; per_page?: number }) {
+  return useQuery({
+    queryKey: ['super-admin', 'groups', params],
+    queryFn: async () => {
+      const response = await api.get('/super-admin/groups', { params })
+      return response.data
+    },
+  })
+}
+
+// Get single group
+export function useSuperAdminGroup(groupId: string) {
+  return useQuery({
+    queryKey: ['super-admin', 'group', groupId],
+    queryFn: async () => {
+      const response = await api.get(`/super-admin/groups/${groupId}`)
+      return response.data
+    },
+    enabled: !!groupId,
+  })
+}
+
+// Create group
+export function useCreateSuperAdminGroup() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: CreateGroupData) => {
+      const response = await api.post('/super-admin/groups', data)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'dashboard'] })
+    },
+  })
+}
+
+// Update group
+export function useUpdateSuperAdminGroup() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ groupId, data }: { groupId: string; data: UpdateGroupData }) => {
+      const response = await api.put(`/super-admin/groups/${groupId}`, data)
+      return response.data
+    },
+    onSuccess: (_, { groupId }) => {
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'group', groupId] })
+    },
+  })
+}
+
+// Delete group
+export function useDeleteSuperAdminGroup() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (groupId: string) => {
+      const response = await api.delete(`/super-admin/groups/${groupId}`)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'dashboard'] })
+    },
+  })
+}
+
+// Add tenant to group
+export function useAddTenantToGroup() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ groupId, tenantId }: { groupId: string; tenantId: string }) => {
+      const response = await api.post(`/super-admin/groups/${groupId}/tenants`, { tenant_id: tenantId })
+      return response.data
+    },
+    onSuccess: (_, { groupId }) => {
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'group', groupId] })
+    },
+  })
+}
+
+// Remove tenant from group
+export function useRemoveTenantFromGroup() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ groupId, tenantId }: { groupId: string; tenantId: string }) => {
+      const response = await api.delete(`/super-admin/groups/${groupId}/tenants/${tenantId}`)
+      return response.data
+    },
+    onSuccess: (_, { groupId }) => {
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'group', groupId] })
+    },
+  })
+}
+
+// Add user to group
+export function useAddUserToGroup() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ groupId, userId, role }: { groupId: string; userId: string; role: 'owner' | 'admin' | 'viewer' }) => {
+      const response = await api.post(`/super-admin/groups/${groupId}/users`, { user_id: userId, role })
+      return response.data
+    },
+    onSuccess: (_, { groupId }) => {
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'group', groupId] })
+    },
+  })
+}
+
+// Remove user from group
+export function useRemoveUserFromGroup() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) => {
+      const response = await api.delete(`/super-admin/groups/${groupId}/users/${userId}`)
+      return response.data
+    },
+    onSuccess: (_, { groupId }) => {
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['super-admin', 'group', groupId] })
+    },
+  })
+}
+
+// List all tenants (for adding to group)
+export function useAllTenants(params?: { search?: string; page?: number; per_page?: number }) {
+  return useQuery({
+    queryKey: ['super-admin', 'all-tenants', params],
+    queryFn: async () => {
+      const response = await api.get('/super-admin/tenants', { params: { ...params, per_page: params?.per_page || 100 } })
+      return response.data
+    },
+  })
+}
+
+// List all users (for adding to group)
+export function useAllUsers(params?: { search?: string; page?: number; per_page?: number }) {
+  return useQuery({
+    queryKey: ['super-admin', 'all-users', params],
+    queryFn: async () => {
+      const response = await api.get('/super-admin/users', { params: { ...params, per_page: params?.per_page || 100 } })
+      return response.data
+    },
+  })
+}
+

@@ -18,6 +18,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { Avatar } from '@/components/ui/Avatar'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import { UserPointsBadge } from '@/components/gamification/UserPointsBadge'
 
 export function Header() {
   const navigate = useNavigate()
@@ -85,6 +86,9 @@ export function Header() {
             <Sparkles className="h-4 w-4 text-white/60 animate-pulse" />
             <span className="text-xs font-medium text-white/60">IA Ativa</span>
           </div>
+
+          {/* Gamification Points Badge */}
+          <UserPointsBadge className="hidden md:block" />
 
           {/* Theme Toggle */}
           <Button 

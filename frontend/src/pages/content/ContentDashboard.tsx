@@ -9,6 +9,7 @@ import {
   Users,
   MessageSquare,
   Bot,
+  Palette,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -89,6 +90,12 @@ export function ContentDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Link to="/content/brand-settings">
+            <Button variant="outline" className="gap-2">
+              <Palette className="h-4 w-4" />
+              DNA da Marca
+            </Button>
+          </Link>
           <Link to="/content/creators">
             <Button variant="outline" className="gap-2">
               <Users className="h-4 w-4" />
@@ -137,7 +144,7 @@ export function ContentDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Link to="/content/chat">
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
             <CardContent className="p-6">
@@ -149,6 +156,25 @@ export function ContentDashboard() {
                   <h3 className="font-semibold text-lg">Chat com Agente</h3>
                   <p className="text-sm text-muted-foreground">
                     Converse com a IA para criar roteiros virais
+                  </p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/content/brand-settings">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-4 rounded-xl bg-pink-500/10 group-hover:bg-pink-500/20 transition-colors">
+                  <Palette className="h-8 w-8 text-pink-500" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">DNA da Marca</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Configure voz, público e posicionamento
                   </p>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />

@@ -11,6 +11,7 @@ import { ContactsPage } from '@/pages/contacts/Contacts'
 import { TicketsPage } from '@/pages/tickets/Tickets'
 import { TasksPage } from '@/pages/tasks/Tasks'
 import { ReportsPage } from '@/pages/reports/Reports'
+import { ActivityEffectivenessPage } from '@/pages/reports/ActivityEffectivenessPage'
 import { SettingsPage } from '@/pages/settings/Settings'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
@@ -23,14 +24,15 @@ import { QueuesPage } from '@/pages/queues'
 import { SdrHubPage, SdrAgentConfig } from '@/pages/sdr'
 import { AppointmentsPage, ScheduleConfigPage } from '@/pages/appointments'
 import { DetectedQuestionsPage, AgentLearningDashboard } from '@/pages/learning'
-import { SuperAdminDashboard, TenantsPage, CreateTenantPage, TenantDetailsPage } from '@/pages/super-admin'
+import { SuperAdminDashboard, TenantsPage, CreateTenantPage, TenantDetailsPage, GroupsPage as SuperAdminGroupsPage, GroupDetailsPage } from '@/pages/super-admin'
 import { WhatsAppTemplatesPage } from '@/pages/whatsapp-templates'
 import { GtmSettingsPage } from '@/pages/settings/GtmSettingsPage'
 import { GtmScript } from '@/components/GtmScript'
 import { BrandingProvider } from '@/components/BrandingProvider'
 import { AdsDashboard, AdsAccounts, AdsCampaigns, AdsInsights, AdsAutomation, AdsAgent, CreativeUpload, AdsAgentChat, AdsKnowledgeBase, AdsGuardrails } from '@/pages/ads'
 import { BIDashboard, ActionApprovalQueue, AIAnalystChat, ReportsPage as BIReportsPage, BISettings } from '@/pages/bi'
-import { ContentDashboard, ContentAgentChat, ContentCreators, ViralVideoSearch, AnalyzeVideo, GenerateScript, AutoDiscover } from '@/pages/content'
+import { ContentDashboard, ContentAgentChat, ContentCreators, ViralVideoSearch, BrandSettings, AnalyzeVideo, GenerateScript, AutoDiscover } from '@/pages/content'
+import { GoalsDashboard, GoalForm } from '@/pages/goals'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -109,7 +111,23 @@ function AppRoutes() {
           </SuperAdminRoute>
         }
       />
-      
+      <Route
+        path="/super-admin/groups"
+        element={
+          <SuperAdminRoute>
+            <SuperAdminGroupsPage />
+          </SuperAdminRoute>
+        }
+      />
+      <Route
+        path="/super-admin/groups/:groupId"
+        element={
+          <SuperAdminRoute>
+            <GroupDetailsPage />
+          </SuperAdminRoute>
+        }
+      />
+
       <Route
         path="/"
         element={
@@ -124,6 +142,7 @@ function AppRoutes() {
         <Route path="tickets" element={<TicketsPage />} />
         <Route path="tasks" element={<TasksPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="reports/activity-effectiveness" element={<ActivityEffectivenessPage />} />
         <Route path="settings/*" element={<SettingsPage />} />
         <Route path="groups" element={<GroupsPage />} />
         <Route path="channels" element={<ChannelsPage />} />
@@ -161,11 +180,17 @@ function AppRoutes() {
         <Route path="bi/reports" element={<BIReportsPage />} />
         <Route path="bi/settings" element={<BISettings />} />
 
+        {/* Goals / KPR / KPI */}
+        <Route path="goals" element={<GoalsDashboard />} />
+        <Route path="goals/new" element={<GoalForm />} />
+        <Route path="goals/:id" element={<GoalForm />} />
+
         {/* Content Creator */}
         <Route path="content" element={<ContentDashboard />} />
         <Route path="content/chat" element={<ContentAgentChat />} />
         <Route path="content/creators" element={<ContentCreators />} />
         <Route path="content/viral-search" element={<ViralVideoSearch />} />
+        <Route path="content/brand-settings" element={<BrandSettings />} />
         {/* Rotas legadas */}
         <Route path="content/analyze" element={<AnalyzeVideo />} />
         <Route path="content/generate" element={<GenerateScript />} />

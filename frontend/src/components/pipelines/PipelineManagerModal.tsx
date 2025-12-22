@@ -16,6 +16,9 @@ import {
   Globe,
   Lock,
   Bot,
+  ClipboardList,
+  Clock,
+  CheckSquare,
 } from 'lucide-react'
 import {
   usePipelines,
@@ -34,6 +37,12 @@ import {
 } from '@/hooks/usePipelines'
 import { useUsers } from '@/hooks/useUsers'
 import { useSdrAgents } from '@/hooks/useSdrAgents'
+import {
+  useStageActivityTemplates,
+  useCreateStageActivityTemplate,
+  useUpdateStageActivityTemplate,
+  useDeleteStageActivityTemplate,
+} from '@/hooks/useStageActivities'
 
 interface PipelineManagerModalProps {
   isOpen: boolean
@@ -68,7 +77,8 @@ export function PipelineManagerModal({
   const removeUserFromPipeline = useRemoveUserFromPipeline()
 
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'stages' | 'permissions'>('stages')
+  const [activeTab, setActiveTab] = useState<'stages' | 'permissions' | 'activities'>('stages')
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(null)
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +89,7 @@ export function PipelineManagerModal({
   const [isPublic, setIsPublic] = useState(false)
   const [isDefault, setIsDefault] = useState(false)
   const [sdrAgentId, setSdrAgentId] = useState<string | null>(null)
-  const [stages, setStages] = useState<Array<{ id?: string; name: string; color: string; order: number }>>([])
+  const [stages, setStages] = useState<Array<{ id?: string; name: string; color: string; order: number; stage_type: 'open' | 'won' | 'lost' }>>([])
 
   const selectedPipeline = pipelines?.find((p: Pipeline) => p.id === selectedPipelineId)
   const { data: pipelineUsers } = usePipelineUsers(selectedPipelineId || '')
@@ -100,11 +110,12 @@ export function PipelineManagerModal({
       setIsDefault(selectedPipeline.is_default)
       setSdrAgentId(selectedPipeline.sdr_agent_id || null)
       setStages(
-        selectedPipeline.stages.map((s: PipelineStage) => ({
+        selectedPipeline.stages.map((s: any) => ({
           id: s.id,
           name: s.name,
           color: s.color,
           order: s.order,
+          stage_type: s.stage_type || 'open',
         }))
       )
       setIsCreatingNew(false)
@@ -120,11 +131,11 @@ export function PipelineManagerModal({
     setIsDefault(false)
     setSdrAgentId(null)
     setStages([
-      { name: 'Novo Lead', color: '#6366F1', order: 0 },
-      { name: 'Contato', color: '#8B5CF6', order: 1 },
-      { name: 'Proposta', color: '#F59E0B', order: 2 },
-      { name: 'Negociação', color: '#3B82F6', order: 3 },
-      { name: 'Fechado', color: '#22C55E', order: 4 },
+      { name: 'Novo Lead', color: '#6366F1', order: 0, stage_type: 'open' },
+      { name: 'Contato', color: '#8B5CF6', order: 1, stage_type: 'open' },
+      { name: 'Proposta', color: '#F59E0B', order: 2, stage_type: 'open' },
+      { name: 'Negociação', color: '#3B82F6', order: 3, stage_type: 'open' },
+      { name: 'Fechado', color: '#22C55E', order: 4, stage_type: 'won' },
     ])
   }
 
@@ -145,7 +156,7 @@ export function PipelineManagerModal({
           is_public: isPublic,
           is_default: isDefault,
           sdr_agent_id: sdrAgentId,
-          stages: stages.map((s, i) => ({ name: s.name, color: s.color, order: i })),
+          stages: stages.map((s, i) => ({ name: s.name, color: s.color, order: i, stage_type: s.stage_type })),
         })
         setSuccess('Pipeline criado com sucesso!')
         setIsCreatingNew(false)
@@ -187,11 +198,11 @@ export function PipelineManagerModal({
   const handleAddStage = () => {
     setStages([
       ...stages,
-      { name: 'Novo Estágio', color: COLORS[stages.length % COLORS.length], order: stages.length },
+      { name: 'Novo Estágio', color: COLORS[stages.length % COLORS.length], order: stages.length, stage_type: 'open' },
     ])
   }
 
-  const handleStageChange = (index: number, field: 'name' | 'color', value: string) => {
+  const handleStageChange = (index: number, field: 'name' | 'color' | 'stage_type', value: string) => {
     const newStages = [...stages]
     newStages[index] = { ...newStages[index], [field]: value }
     setStages(newStages)
@@ -219,6 +230,7 @@ export function PipelineManagerModal({
           name: stage.name,
           color: stage.color,
           order: index,
+          stage_type: stage.stage_type,
         })
       } else {
         await createStage.mutateAsync({
@@ -226,6 +238,7 @@ export function PipelineManagerModal({
           name: stage.name,
           color: stage.color,
           order: index,
+          stage_type: stage.stage_type,
         })
       }
       setSuccess('Estágio salvo!')
@@ -503,6 +516,15 @@ export function PipelineManagerModal({
                   <Users className="w-4 h-4" />
                   Permissões
                 </button>
+                <button
+                  onClick={() => setActiveTab('activities')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
+                    activeTab === 'activities' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+                  }`}
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  Atividades
+                </button>
               </div>
             )}
 
@@ -516,20 +538,38 @@ export function PipelineManagerModal({
                       className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg"
                     >
                       <GripVertical className="w-4 h-4 text-gray-500 cursor-grab" />
-                      
+
                       <input
                         type="color"
                         value={stage.color}
                         onChange={(e) => handleStageChange(index, 'color', e.target.value)}
                         className="w-8 h-8 rounded cursor-pointer border-0"
                       />
-                      
+
                       <input
                         type="text"
                         value={stage.name}
                         onChange={(e) => handleStageChange(index, 'name', e.target.value)}
                         className="flex-1 px-3 py-1.5 bg-gray-600 rounded border border-gray-500 focus:border-blue-500 outline-none"
                       />
+
+                      {/* Stage Type Selector */}
+                      <select
+                        value={stage.stage_type}
+                        onChange={(e) => handleStageChange(index, 'stage_type', e.target.value)}
+                        className={`px-2 py-1.5 rounded border text-xs font-medium ${
+                          stage.stage_type === 'won'
+                            ? 'bg-green-500/20 border-green-500 text-green-400'
+                            : stage.stage_type === 'lost'
+                            ? 'bg-red-500/20 border-red-500 text-red-400'
+                            : 'bg-gray-600 border-gray-500 text-gray-300'
+                        }`}
+                        title="Tipo do estágio"
+                      >
+                        <option value="open">Em Aberto</option>
+                        <option value="won">Ganho ✓</option>
+                        <option value="lost">Perdido ✗</option>
+                      </select>
 
                       {!isCreatingNew && (
                         <button
@@ -540,7 +580,7 @@ export function PipelineManagerModal({
                           <Save className="w-4 h-4" />
                         </button>
                       )}
-                      
+
                       <button
                         onClick={() => isCreatingNew ? handleRemoveStage(index) : handleDeleteStage(stage, index)}
                         className="p-1.5 hover:bg-gray-600 rounded transition-colors text-red-400"
@@ -650,6 +690,15 @@ export function PipelineManagerModal({
                   )}
                 </div>
               )}
+
+              {activeTab === 'activities' && !isCreatingNew && (
+                <StageActivitiesTab
+                  pipelineId={selectedPipelineId || ''}
+                  stages={stages}
+                  selectedStageId={selectedStageId}
+                  onSelectStage={setSelectedStageId}
+                />
+              )}
             </div>
 
             {/* Footer */}
@@ -685,6 +734,271 @@ export function PipelineManagerModal({
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  )
+}
+
+// =============================================================================
+// STAGE ACTIVITIES TAB COMPONENT
+// =============================================================================
+
+interface StageActivitiesTabProps {
+  pipelineId: string
+  stages: Array<{ id?: string; name: string; color: string; order: number }>
+  selectedStageId: string | null
+  onSelectStage: (stageId: string | null) => void
+}
+
+function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage }: StageActivitiesTabProps) {
+  const [newActivityName, setNewActivityName] = useState('')
+  const [newActivityDescription, setNewActivityDescription] = useState('')
+  const [newActivityRequired, setNewActivityRequired] = useState(true)
+  const [editingActivity, setEditingActivity] = useState<any>(null)
+
+  // Get the selected stage (default to first stage with id)
+  const effectiveStageId = selectedStageId || stages.find(s => s.id)?.id || ''
+  const selectedStage = stages.find(s => s.id === effectiveStageId)
+
+  const { data: activities, isLoading, refetch } = useStageActivityTemplates(pipelineId, effectiveStageId)
+  const createActivity = useCreateStageActivityTemplate(pipelineId, effectiveStageId)
+  const updateActivity = useUpdateStageActivityTemplate(pipelineId, effectiveStageId)
+  const deleteActivity = useDeleteStageActivityTemplate(pipelineId, effectiveStageId)
+
+  const handleAddActivity = async () => {
+    if (!newActivityName.trim() || !effectiveStageId) return
+
+    try {
+      await createActivity.mutateAsync({
+        title: newActivityName,
+        description: newActivityDescription || undefined,
+        activity_type: 'task',
+        is_required: newActivityRequired,
+        order: (activities?.length || 0),
+        points: 10,
+      })
+      setNewActivityName('')
+      setNewActivityDescription('')
+      setNewActivityRequired(true)
+      refetch()
+    } catch (err) {
+      console.error('Error creating activity:', err)
+    }
+  }
+
+  const handleUpdateActivity = async (activityId: string, data: any) => {
+    try {
+      await updateActivity.mutateAsync({
+        id: activityId,
+        data,
+      })
+      setEditingActivity(null)
+      refetch()
+    } catch (err) {
+      console.error('Error updating activity:', err)
+    }
+  }
+
+  const handleDeleteActivity = async (activityId: string) => {
+    if (!window.confirm('Excluir esta atividade?')) return
+
+    try {
+      await deleteActivity.mutateAsync(activityId)
+      refetch()
+    } catch (err) {
+      console.error('Error deleting activity:', err)
+    }
+  }
+
+  // Filter only stages that have been saved (have id)
+  const savedStages = stages.filter(s => s.id)
+
+  if (savedStages.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-400">
+        <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-50" />
+        <p>Salve os estágios primeiro para configurar atividades.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Stage selector */}
+      <div className="flex gap-2 flex-wrap">
+        {savedStages.map((stage) => (
+          <button
+            key={stage.id}
+            onClick={() => onSelectStage(stage.id || null)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+              effectiveStageId === stage.id
+                ? 'bg-blue-600'
+                : 'bg-gray-700 hover:bg-gray-600'
+            }`}
+          >
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: stage.color }}
+            />
+            {stage.name}
+            {activities && effectiveStageId === stage.id && (
+              <span className="text-xs bg-black/30 px-1.5 rounded">
+                {activities.length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Selected stage info */}
+      {selectedStage && (
+        <div className="p-3 bg-gray-700/50 rounded-lg">
+          <p className="text-sm text-gray-400">
+            Configure as atividades obrigatórias para a etapa <strong style={{ color: selectedStage.color }}>{selectedStage.name}</strong>.
+            O vendedor precisará completar essas atividades antes de avançar o lead.
+          </p>
+        </div>
+      )}
+
+      {/* Activities list */}
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {activities?.map((activity: any, index: number) => (
+            <div
+              key={activity.id}
+              className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg"
+            >
+              <GripVertical className="w-4 h-4 text-gray-500 cursor-grab" />
+
+              <div className={`w-6 h-6 rounded flex items-center justify-center ${
+                activity.is_required ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-600 text-gray-400'
+              }`}>
+                {activity.is_required ? (
+                  <CheckSquare className="w-4 h-4" />
+                ) : (
+                  <Clock className="w-4 h-4" />
+                )}
+              </div>
+
+              {editingActivity?.id === activity.id ? (
+                <div className="flex-1 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editingActivity.title}
+                    onChange={(e) => setEditingActivity({ ...editingActivity, title: e.target.value })}
+                    className="flex-1 px-2 py-1 bg-gray-600 rounded border border-gray-500 focus:border-blue-500 outline-none text-sm"
+                  />
+                  <label className="flex items-center gap-1 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={editingActivity.is_required}
+                      onChange={(e) => setEditingActivity({ ...editingActivity, is_required: e.target.checked })}
+                      className="rounded"
+                    />
+                    Obrigatória
+                  </label>
+                  <button
+                    onClick={() => handleUpdateActivity(activity.id, editingActivity)}
+                    className="p-1 text-green-400 hover:bg-gray-600 rounded"
+                  >
+                    <Save className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setEditingActivity(null)}
+                    className="p-1 text-gray-400 hover:bg-gray-600 rounded"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{activity.title}</p>
+                    {activity.description && (
+                      <p className="text-xs text-gray-400">{activity.description}</p>
+                    )}
+                  </div>
+
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    activity.is_required
+                      ? 'bg-blue-500/20 text-blue-300'
+                      : 'bg-gray-600 text-gray-400'
+                  }`}>
+                    {activity.is_required ? 'Obrigatória' : 'Opcional'}
+                  </span>
+
+                  <button
+                    onClick={() => setEditingActivity({ id: activity.id, title: activity.title, is_required: activity.is_required })}
+                    className="p-1 hover:bg-gray-600 rounded text-gray-400"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteActivity(activity.id)}
+                    className="p-1 hover:bg-gray-600 rounded text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+
+          {(!activities || activities.length === 0) && (
+            <div className="text-center py-6 text-gray-500 text-sm">
+              Nenhuma atividade configurada para este estágio.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add new activity */}
+      <div className="border-2 border-dashed border-gray-600 rounded-lg p-4 space-y-3">
+        <h4 className="text-sm font-medium text-gray-400">Adicionar Atividade</h4>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newActivityName}
+            onChange={(e) => setNewActivityName(e.target.value)}
+            placeholder="Nome da atividade (ex: Fazer ligação de descoberta)"
+            className="flex-1 px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:border-blue-500 outline-none text-sm"
+            onKeyDown={(e) => e.key === 'Enter' && handleAddActivity()}
+          />
+          <button
+            onClick={handleAddActivity}
+            disabled={!newActivityName.trim() || createActivity.isPending}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg text-sm transition-colors"
+          >
+            {createActivity.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            Adicionar
+          </button>
+        </div>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-gray-400">
+            <input
+              type="checkbox"
+              checked={newActivityRequired}
+              onChange={(e) => setNewActivityRequired(e.target.checked)}
+              className="rounded"
+            />
+            Atividade obrigatória
+          </label>
+        </div>
+        <input
+          type="text"
+          value={newActivityDescription}
+          onChange={(e) => setNewActivityDescription(e.target.value)}
+          placeholder="Descrição (opcional)"
+          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:border-blue-500 outline-none text-sm"
+        />
+      </div>
+    </div>
   )
 }
 

@@ -11,6 +11,12 @@ export interface User {
   tenant_id: string
   is_active: boolean
   is_super_admin?: boolean
+  // Campos de integracao Linx
+  linx_empresa_id?: string
+  linx_vendedor_id?: string
+  linx_loja_id?: string
+  linx_showroom_id?: string
+  external_integrations?: Record<string, unknown>
   created_at: string
 }
 
@@ -47,6 +53,8 @@ export interface PipelineStage {
   order: number
   is_final: boolean
   is_won: boolean
+  stage_type?: 'open' | 'won' | 'lost'
+  slug?: string
 }
 
 // Lead Types
@@ -644,5 +652,326 @@ export interface PaginatedResponse<T> {
   last_page: number
   per_page: number
   total: number
+}
+
+// =============================================================================
+// STAGE ACTIVITY TYPES (Atividades por Etapa)
+// =============================================================================
+export type StageActivityType = 'call' | 'email' | 'meeting' | 'task' | 'demo' | 'follow_up'
+export type StageActivityStatus = 'pending' | 'completed' | 'skipped'
+
+export interface StageActivityTemplate {
+  id: string
+  tenant_id: string
+  pipeline_id: string
+  stage_id: string
+  title: string
+  description?: string
+  activity_type: StageActivityType
+  is_required: boolean
+  order: number
+  default_duration_minutes?: number
+  due_days?: number
+  points: number
+  is_active: boolean
+  created_by?: string
+  created_at: string
+  updated_at: string
+  creator?: User
+}
+
+export interface DealStageActivity {
+  id: string
+  tenant_id: string
+  lead_id: string
+  stage_id: string
+  template_id?: string
+  title: string
+  description?: string
+  activity_type: StageActivityType
+  is_required: boolean
+  status: StageActivityStatus
+  due_at?: string
+  completed_at?: string
+  completed_by?: string
+  points_earned: number
+  created_at: string
+  updated_at: string
+  template?: StageActivityTemplate
+  stage?: PipelineStage
+  lead?: Lead
+  completed_by_user?: User
+}
+
+export interface StageProgress {
+  total: number
+  completed: number
+  pending: number
+  skipped: number
+  required_total: number
+  required_completed: number
+  required_pending: number
+  percentage: number
+  can_advance: boolean
+}
+
+export interface CanAdvanceResult {
+  can_advance: boolean
+  pending_required_count: number
+  pending_required: DealStageActivity[]
+}
+
+// =============================================================================
+// GAMIFICATION TYPES (Pontos, Tiers, Conquistas, Ranking)
+// =============================================================================
+export interface GamificationTier {
+  id: string
+  tenant_id: string
+  name: string
+  slug: string
+  icon?: string
+  color: string
+  min_points: number
+  max_points?: number
+  order: number
+  benefits?: string[]
+  is_active: boolean
+  created_at: string
+}
+
+export interface PointRule {
+  id: string
+  tenant_id: string
+  action_type: string
+  name: string
+  description?: string
+  points: number
+  multiplier: number
+  conditions?: Record<string, unknown>
+  is_active: boolean
+  created_at: string
+}
+
+export interface PointTransaction {
+  id: string
+  tenant_id: string
+  user_id: string
+  action: string
+  points: number
+  balance_after: number
+  reference_type?: string
+  reference_id?: string
+  description?: string
+  metadata?: Record<string, unknown>
+  created_at: string
+  user?: User
+}
+
+export interface UserPoints {
+  id: string
+  tenant_id: string
+  user_id: string
+  period: string
+  total_points: number
+  current_tier_id?: string
+  rank?: number
+  activities_completed: number
+  deals_won: number
+  deals_value: number
+  created_at: string
+  updated_at: string
+  user?: User
+  tier?: GamificationTier
+}
+
+export interface Reward {
+  id: string
+  tenant_id: string
+  tier_id?: string
+  name: string
+  description?: string
+  image?: string
+  reward_type: 'physical' | 'digital' | 'experience' | 'badge'
+  value?: number
+  points_cost?: number
+  stock?: number
+  is_active: boolean
+  created_at: string
+  tier?: GamificationTier
+}
+
+export interface UserReward {
+  id: string
+  tenant_id: string
+  user_id: string
+  reward_id: string
+  status: 'pending' | 'approved' | 'delivered' | 'rejected'
+  claimed_at: string
+  approved_at?: string
+  approved_by?: string
+  delivered_at?: string
+  rejected_at?: string
+  rejection_reason?: string
+  notes?: string
+  created_at: string
+  user?: User
+  reward?: Reward
+  approver?: User
+}
+
+export interface Achievement {
+  id: string
+  tenant_id: string
+  name: string
+  description?: string
+  icon: string
+  condition_type: string
+  condition_value: Record<string, unknown>
+  points_bonus: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface UserAchievement {
+  id: string
+  user_id: string
+  achievement_id: string
+  earned_at: string
+  progress?: number
+  created_at: string
+  achievement?: Achievement
+}
+
+export interface GamificationSettings {
+  id: string
+  tenant_id: string
+  is_enabled: boolean
+  show_leaderboard: boolean
+  show_points_to_users: boolean
+  notify_tier_change: boolean
+  notify_achievements: boolean
+  reset_period: 'monthly' | 'quarterly' | 'yearly' | 'never'
+  created_at: string
+  updated_at: string
+}
+
+export interface UserGamificationStats {
+  user: User
+  current_period: UserPoints
+  tier: GamificationTier | null
+  next_tier: GamificationTier | null
+  points_to_next_tier: number
+  recent_transactions: PointTransaction[]
+  achievements: UserAchievement[]
+  available_rewards: Reward[]
+  rank: number
+}
+
+export interface LeaderboardEntry {
+  rank: number
+  user: User
+  total_points: number
+  tier: GamificationTier | null
+  activities_completed: number
+  deals_won: number
+  deals_value: number
+}
+
+export interface GamificationAdminStats {
+  total_users: number
+  active_users: number
+  total_points_awarded: number
+  total_rewards_claimed: number
+  pending_rewards: number
+  tiers_distribution: {
+    tier: GamificationTier
+    count: number
+  }[]
+}
+
+// =============================================================================
+// EXTERNAL INTEGRATION TYPES (Integracoes Externas - Linx, Webhooks, ERPs)
+// =============================================================================
+export type AuthType = 'none' | 'basic' | 'bearer' | 'api_key' | 'linx_smart'
+export type IntegrationType = 'erp' | 'crm' | 'sales_system' | 'other'
+export type IntegrationStatus = 'success' | 'error'
+export type TriggerEvent = 'lead_created' | 'lead_stage_changed' | 'lead_owner_assigned'
+
+export interface ExternalIntegration {
+  id: string
+  tenant_id: string
+  name: string
+  slug?: string
+  description?: string
+  type: IntegrationType
+  endpoint_url: string
+  http_method: 'POST' | 'PUT' | 'PATCH'
+  headers?: Record<string, string>
+  auth_type: AuthType
+  auth_config?: {
+    // Basic Auth
+    username?: string
+    password?: string
+    // Bearer Token
+    token?: string
+    // API Key
+    header_name?: string
+    key?: string
+    // Linx Smart API
+    subscription_key?: string
+    ambiente?: string
+    cnpj_empresa?: string
+  }
+  trigger_on?: TriggerEvent[]
+  trigger_stages?: string[]
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  mappings?: ExternalIntegrationMapping[]
+  logs_count?: number
+  last_sync_at?: string
+  last_sync_status?: IntegrationStatus
+}
+
+export interface ExternalIntegrationMapping {
+  id: string
+  tenant_id: string
+  integration_id: string
+  model_type: 'Lead' | 'Contact'
+  mapping: Record<string, string>
+  created_at: string
+  updated_at: string
+}
+
+export interface ExternalIntegrationLog {
+  id: string
+  tenant_id: string
+  integration_id: string
+  model_type: string
+  model_id: string
+  status: IntegrationStatus
+  request_payload: Record<string, unknown>
+  response_payload: Record<string, unknown>
+  executed_at: string
+  created_at: string
+}
+
+export interface IntegrationTemplate {
+  id: string
+  name: string
+  description: string
+  type: IntegrationType
+  trigger_on: TriggerEvent[]
+  auth_type: AuthType
+  mapping: Record<string, string>
+}
+
+export interface IntegrationAvailableFields {
+  lead: Record<string, string>
+  contact: Record<string, string>
+  owner: Record<string, string>
+  pipeline: Record<string, string>
+  channel: Record<string, string>
+  tenant: Record<string, string>
 }
 

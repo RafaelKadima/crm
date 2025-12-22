@@ -1,23 +1,20 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
   TrendingUp,
   Play,
   Eye,
-  Clock,
   ExternalLink,
   Loader2,
   Plus,
-  FileText,
+  Trash2,
   Youtube,
   Instagram,
-  Filter,
-  Calendar,
+  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Badge } from '@/components/ui/Badge'
@@ -35,20 +32,34 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/Dialog'
-import { cn } from '@/lib/utils'
-import { contentApi, ViralVideo, ContentCreator } from '@/api/content'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/Table'
+import { Checkbox } from '@/components/ui/Checkbox'
+import { contentApi } from '@/api/content'
 import { toast } from 'sonner'
 
-const platformIcons: Record<string, React.ElementType> = {
-  youtube: Youtube,
-  instagram: Instagram,
-  tiktok: Play, // TikTok icon não existe no Lucide
+interface ViralVideo {
+  title: string
+  url: string
+  platform: string
+  views?: number
+  duration?: number
+  channel?: string
+  thumbnail?: string
 }
 
-const platformColors: Record<string, string> = {
-  youtube: 'bg-red-500',
-  instagram: 'bg-gradient-to-r from-purple-500 to-pink-500',
-  tiktok: 'bg-black',
+interface ContentCreator {
+  id: string
+  name: string
+  video_count: number
+  style_summary?: string
+  created_at: string
 }
 
 export function ViralVideoSearch() {
@@ -56,9 +67,10 @@ export function ViralVideoSearch() {
   const [platform, setPlatform] = useState('youtube')
   const [period, setPeriod] = useState('week')
   const [videos, setVideos] = useState<ViralVideo[]>([])
-  const [selectedVideo, setSelectedVideo] = useState<ViralVideo | null>(null)
+  const [selectedVideos, setSelectedVideos] = useState<Set<number>>(new Set())
   const [addToCreatorModal, setAddToCreatorModal] = useState(false)
   const [selectedCreatorId, setSelectedCreatorId] = useState<string>('')
+  const [videoToAdd, setVideoToAdd] = useState<ViralVideo | null>(null)
   const queryClient = useQueryClient()
 
   // Busca criadores para adicionar vídeos
@@ -75,6 +87,7 @@ export function ViralVideoSearch() {
     mutationFn: () => contentApi.searchViralVideos(searchTopic, platform, period),
     onSuccess: (response) => {
       setVideos(response.data.videos)
+      setSelectedVideos(new Set())
       if (response.data.videos.length === 0) {
         toast.info('Nenhum vídeo encontrado. Tente outros termos.')
       }
@@ -91,7 +104,7 @@ export function ViralVideoSearch() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['content-creators'] })
       setAddToCreatorModal(false)
-      setSelectedVideo(null)
+      setVideoToAdd(null)
       setSelectedCreatorId('')
       toast.success('Vídeo adicionado ao criador!')
     },
@@ -109,22 +122,58 @@ export function ViralVideoSearch() {
   }
 
   const handleAddToCreator = () => {
-    if (!selectedVideo || !selectedCreatorId) return
+    if (!videoToAdd || !selectedCreatorId) return
     addVideoMutation.mutate({
       creatorId: selectedCreatorId,
-      videoUrl: selectedVideo.url
+      videoUrl: videoToAdd.url
     })
   }
 
+  const handleRemoveVideo = (index: number) => {
+    setVideos(prev => prev.filter((_, i) => i !== index))
+    setSelectedVideos(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(index)
+      return newSet
+    })
+    toast.success('Vídeo removido da lista')
+  }
+
+  const handleRemoveSelected = () => {
+    setVideos(prev => prev.filter((_, i) => !selectedVideos.has(i)))
+    setSelectedVideos(new Set())
+    toast.success(`${selectedVideos.size} vídeos removidos`)
+  }
+
+  const toggleSelectVideo = (index: number) => {
+    setSelectedVideos(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(index)) {
+        newSet.delete(index)
+      } else {
+        newSet.add(index)
+      }
+      return newSet
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedVideos.size === videos.length) {
+      setSelectedVideos(new Set())
+    } else {
+      setSelectedVideos(new Set(videos.map((_, i) => i)))
+    }
+  }
+
   const formatViews = (views?: number) => {
-    if (!views) return 'N/A'
+    if (!views) return '-'
     if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`
     if (views >= 1000) return `${(views / 1000).toFixed(1)}K`
     return views.toString()
   }
 
   const formatDuration = (seconds?: number) => {
-    if (!seconds) return 'N/A'
+    if (!seconds) return '-'
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
@@ -187,6 +236,9 @@ export function ViralVideoSearch() {
                   </SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                * Busca via YouTube Shorts/Reels
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -228,116 +280,141 @@ export function ViralVideoSearch() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : videos.length > 0 ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              {videos.length} vídeos encontrados
-            </h2>
-            <Badge variant="outline" className="gap-1">
-              <Filter className="h-3 w-3" />
-              {platform} • {period === 'day' ? '24h' : period === 'week' ? '7 dias' : period === 'month' ? '30 dias' : '1 ano'}
-            </Badge>
-          </div>
+        <Card>
+          <CardContent className="p-0">
+            {/* Table Header Actions */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium">
+                  {videos.length} vídeos encontrados
+                </span>
+                {selectedVideos.size > 0 && (
+                  <Badge variant="secondary">
+                    {selectedVideos.size} selecionados
+                  </Badge>
+                )}
+              </div>
+              {selectedVideos.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleRemoveSelected}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remover Selecionados
+                </Button>
+              )}
+            </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence>
-              {videos.map((video, index) => {
-                const PlatformIcon = platformIcons[video.platform] || Play
-
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                      {/* Thumbnail */}
+            {/* Table */}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedVideos.size === videos.length && videos.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead className="w-16">Thumb</TableHead>
+                  <TableHead>Título</TableHead>
+                  <TableHead className="w-32">Canal</TableHead>
+                  <TableHead className="w-24 text-center">
+                    <Eye className="h-4 w-4 inline" />
+                  </TableHead>
+                  <TableHead className="w-20 text-center">
+                    <Clock className="h-4 w-4 inline" />
+                  </TableHead>
+                  <TableHead className="w-40 text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {videos.map((video, index) => (
+                  <TableRow key={index} className="group">
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedVideos.has(index)}
+                        onCheckedChange={() => toggleSelectVideo(index)}
+                      />
+                    </TableCell>
+                    <TableCell>
                       {video.thumbnail ? (
-                        <div className="aspect-video relative bg-muted">
-                          <img
-                            src={video.thumbnail}
-                            alt={video.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <a
-                              href={video.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-3 rounded-full bg-white/20 hover:bg-white/30"
-                            >
-                              <Play className="h-8 w-8 text-white" />
-                            </a>
-                          </div>
-                          {video.duration && (
-                            <Badge className="absolute bottom-2 right-2 bg-black/70">
-                              {formatDuration(video.duration)}
-                            </Badge>
-                          )}
-                        </div>
+                        <img
+                          src={video.thumbnail}
+                          alt=""
+                          className="w-14 h-10 object-cover rounded"
+                        />
                       ) : (
-                        <div className="aspect-video bg-muted flex items-center justify-center">
-                          <PlatformIcon className="h-12 w-12 text-muted-foreground" />
+                        <div className="w-14 h-10 bg-muted rounded flex items-center justify-center">
+                          <Play className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
-
-                      <CardContent className="p-4">
-                        <h3 className="font-medium line-clamp-2 mb-2">
-                          {video.title}
-                        </h3>
-
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
-                          {video.channel && (
-                            <span className="truncate">{video.channel}</span>
-                          )}
-                          {video.views && (
-                            <span className="flex items-center gap-1">
-                              <Eye className="h-3 w-3" />
-                              {formatViews(video.views)}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            asChild
+                    </TableCell>
+                    <TableCell>
+                      <a
+                        href={video.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium hover:text-primary line-clamp-2"
+                      >
+                        {video.title}
+                      </a>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground truncate block max-w-[120px]">
+                        {video.channel || '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="text-sm">{formatViews(video.views)}</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="text-sm">{formatDuration(video.duration)}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                        >
+                          <a
+                            href={video.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
                           >
-                            <a
-                              href={video.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <ExternalLink className="h-4 w-4 mr-1" />
-                              Ver
-                            </a>
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => {
-                              setSelectedVideo(video)
-                              setAddToCreatorModal(true)
-                            }}
-                            disabled={creators.length === 0}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Adicionar
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
-          </div>
-        </div>
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setVideoToAdd(video)
+                            setAddToCreatorModal(true)
+                          }}
+                          disabled={creators.length === 0}
+                          title="Adicionar a um criador"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveVideo(index)}
+                          className="text-destructive hover:text-destructive"
+                          title="Remover da lista"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : videos.length === 0 && !searchMutation.isPending && searchTopic ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -370,11 +447,11 @@ export function ViralVideoSearch() {
             <DialogTitle>Adicionar Vídeo ao Criador</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {selectedVideo && (
+            {videoToAdd && (
               <div className="p-3 bg-muted rounded-lg">
-                <p className="font-medium line-clamp-2">{selectedVideo.title}</p>
+                <p className="font-medium line-clamp-2">{videoToAdd.title}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {selectedVideo.channel}
+                  {videoToAdd.channel}
                 </p>
               </div>
             )}

@@ -157,6 +157,7 @@ export function useCreateStage() {
       color?: string
       order?: number
       gtm_event_key?: string
+      stage_type?: 'open' | 'won' | 'lost'
     }) => {
       const response = await api.post(`/pipelines/${pipelineId}/stages`, data)
       return response.data
@@ -184,6 +185,7 @@ export function useUpdateStage() {
       color?: string
       order?: number
       gtm_event_key?: string
+      stage_type?: 'open' | 'won' | 'lost'
     }) => {
       const response = await api.put(`/pipelines/${pipelineId}/stages/${stageId}`, data)
       return response.data

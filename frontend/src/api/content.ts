@@ -26,7 +26,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
   step?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   created_at: string
 }
 
@@ -36,9 +36,9 @@ export interface ChatResponse {
   current_step: string
   requires_action: boolean
   action_type?: string
-  options?: any[]
+  options?: unknown[]
   final_content?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface ContentSession {
@@ -71,18 +71,40 @@ export interface TranscriptionResult {
 }
 
 // =====================
+// CHAT OPTIONS
+// =====================
+
+export interface ChatOptions {
+  message: string
+  sessionId?: string
+  brandProfileId?: string
+  audienceProfileId?: string
+  productPositioningId?: string
+}
+
+// =====================
 // API ENDPOINTS
 // =====================
 
 export const contentApi = {
   // Chat
-  chat: (message: string, sessionId?: string) =>
-    api.post<ChatResponse>('/ai/content/chat', {
-      message,
-      session_id: sessionId
-    }),
+  chat: (options: ChatOptions | string, sessionId?: string) => {
+    if (typeof options === 'string') {
+      return api.post<ChatResponse>('/ai/content/chat', {
+        message: options,
+        session_id: sessionId
+      })
+    }
+    return api.post<ChatResponse>('/ai/content/chat', {
+      message: options.message,
+      session_id: options.sessionId,
+      brand_profile_id: options.brandProfileId,
+      audience_profile_id: options.audienceProfileId,
+      product_positioning_id: options.productPositioningId
+    })
+  },
 
-  // Sessões
+  // Sessoes
   listSessions: (limit = 20) =>
     api.get<{ sessions: ContentSession[]; total: number }>('/ai/content/sessions', {
       params: { limit }
@@ -112,7 +134,7 @@ export const contentApi = {
   deleteCreator: (creatorId: string) =>
     api.delete<{ success: boolean; message: string }>(`/ai/content/creators/${creatorId}`),
 
-  // Busca de vídeos virais
+  // Busca de videos virais
   searchViralVideos: (topic: string, platform = 'youtube', period = 'week', limit = 10) =>
     api.post<{ videos: ViralVideo[]; topic: string; platform: string; period: string; total: number }>('/ai/content/search-viral', {
       topic,
@@ -121,7 +143,7 @@ export const contentApi = {
       limit
     }),
 
-  // Transcrição
+  // Transcricao
   transcribeVideo: (videoUrl: string) =>
     api.post<TranscriptionResult>('/ai/content/transcribe', {
       video_url: videoUrl

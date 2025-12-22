@@ -38,7 +38,7 @@ class LeadImportService
     }
 
     /**
-     * Processa a importação.
+     * Processa a importação (versão otimizada com batch processing).
      */
     public function processImport(LeadImport $import): void
     {
@@ -57,64 +57,182 @@ class LeadImportService
             $distributeLeads = $settings['distribute_leads'] ?? false;
             $specificOwnerId = $settings['specific_owner_id'] ?? null;
 
-            // Atualizar total de linhas
-            $import->update(['total_rows' => count($rows)]);
+            $totalRows = count($rows);
+            $import->update(['total_rows' => $totalRows]);
 
-            // Determinar modo de atribuição:
-            // 1. Se tem owner específico -> todos os leads vão para ele
-            // 2. Se distribute_leads = true -> Round-Robin entre vendedores
-            // 3. Se nenhum dos dois -> leads ficam sem owner
-            
-            // Obter canal padrão do tenant (primeiro disponível)
+            if ($totalRows === 0) {
+                $import->markAsCompleted();
+                return;
+            }
+
+            // Obter canal padrão do tenant
             $defaultChannel = \App\Models\Channel::where('tenant_id', $import->tenant_id)->first();
             if (!$defaultChannel) {
                 throw new \Exception("Nenhum canal configurado para este tenant. Configure um canal antes de importar leads.");
             }
             $channelId = $defaultChannel->id;
 
+            // Preparar lista de vendedores para Round-Robin
             $sellers = collect();
-            $sellerIndex = 0;
-            $sellerCount = 0;
-
             if ($specificOwnerId) {
-                // Owner específico - todos os leads vão para este usuário
                 $specificOwner = User::find($specificOwnerId);
                 if ($specificOwner) {
                     $sellers = collect([$specificOwner]);
-                    $sellerCount = 1;
                 }
             } elseif ($distributeLeads) {
-                // Round-Robin entre vendedores ativos
                 $sellers = User::where('tenant_id', $import->tenant_id)
                     ->where('role', 'seller')
                     ->where('is_active', true)
                     ->get();
-                $sellerCount = $sellers->count();
+            }
+            $sellerCount = $sellers->count();
+
+            // OTIMIZAÇÃO 1: Pré-carregar todos os telefones para verificação de duplicatas em batch
+            $allPhones = [];
+            foreach ($rows as $row) {
+                $phone = $this->normalizePhone($row['telefone'] ?? '');
+                if (!empty($phone)) {
+                    $allPhones[] = $phone;
+                }
             }
 
-            foreach ($rows as $index => $row) {
-                try {
-                    $this->processRow(
-                        $import,
-                        $row,
-                        $index + 2, // +2 porque linha 1 é cabeçalho
-                        $skipDuplicates,
-                        $sellers,
-                        $sellerIndex,
-                        $sellerCount,
-                        $channelId
-                    );
-                    
-                    // Só incrementa o índice se for Round-Robin (não tem owner específico)
-                    if ($sellerCount > 1 && !$specificOwnerId) {
-                        $sellerIndex = ($sellerIndex + 1) % $sellerCount;
+            $existingPhones = [];
+            if ($skipDuplicates && !empty($allPhones)) {
+                $existingPhones = Contact::where('tenant_id', $import->tenant_id)
+                    ->whereIn('phone', $allPhones)
+                    ->pluck('phone')
+                    ->flip()
+                    ->toArray();
+            }
+
+            // OTIMIZAÇÃO 2: Processar em chunks para batch insert
+            $chunkSize = 100;
+            $chunks = array_chunk($rows, $chunkSize, true);
+
+            $successCount = 0;
+            $errorCount = 0;
+            $errors = [];
+            $sellerIndex = 0;
+
+            foreach ($chunks as $chunkIndex => $chunk) {
+                $contactsToInsert = [];
+                $leadsToInsert = [];
+                $contactPhoneMap = []; // Para mapear phone -> contact data
+                $now = now();
+
+                foreach ($chunk as $rowIndex => $row) {
+                    $lineNumber = $rowIndex + 2; // +2 porque linha 1 é cabeçalho
+
+                    try {
+                        $name = trim($row['nome'] ?? '');
+                        $phone = $this->normalizePhone($row['telefone'] ?? '');
+                        $email = trim($row['email'] ?? '');
+
+                        // Validar dados obrigatórios
+                        if (empty($name)) {
+                            throw new \Exception("Nome é obrigatório");
+                        }
+
+                        if (empty($phone)) {
+                            throw new \Exception("Telefone é obrigatório");
+                        }
+
+                        // Verificar duplicidade (usando array pré-carregado)
+                        if ($skipDuplicates && isset($existingPhones[$phone])) {
+                            throw new \Exception("Telefone já cadastrado: {$phone}");
+                        }
+
+                        // Verificar duplicidade dentro do próprio arquivo
+                        if (isset($contactPhoneMap[$phone])) {
+                            throw new \Exception("Telefone duplicado no arquivo: {$phone}");
+                        }
+
+                        // Gerar UUIDs
+                        $contactId = (string) Str::uuid();
+                        $leadId = (string) Str::uuid();
+
+                        // Determinar owner (Round-Robin)
+                        $ownerId = null;
+                        if ($sellerCount > 0) {
+                            $ownerId = $sellers[$sellerIndex % $sellerCount]->id;
+                            if ($sellerCount > 1 && !$specificOwnerId) {
+                                $sellerIndex++;
+                            }
+                        }
+
+                        // Preparar dados do contato
+                        $contactsToInsert[] = [
+                            'id' => $contactId,
+                            'tenant_id' => $import->tenant_id,
+                            'name' => $name,
+                            'phone' => $phone,
+                            'email' => $email ?: null,
+                            'company' => trim($row['empresa'] ?? '') ?: null,
+                            'extra_data' => json_encode([
+                                'position' => trim($row['cargo'] ?? '') ?: null,
+                                'imported_at' => $now->toISOString(),
+                                'import_id' => $import->id,
+                            ]),
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+
+                        // Preparar dados do lead
+                        $leadsToInsert[] = [
+                            'id' => $leadId,
+                            'tenant_id' => $import->tenant_id,
+                            'contact_id' => $contactId,
+                            'channel_id' => $channelId,
+                            'pipeline_id' => $import->pipeline_id,
+                            'stage_id' => $import->stage_id,
+                            'owner_id' => $ownerId,
+                            'value' => $this->parseValue($row['valor_estimado'] ?? null),
+                            'status' => \App\Enums\LeadStatusEnum::OPEN->value,
+                            'custom_fields' => json_encode([
+                                'source' => trim($row['origem'] ?? '') ?: 'import',
+                                'notes' => trim($row['observacoes'] ?? '') ?: null,
+                            ]),
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+
+                        // Marcar telefone como usado neste batch
+                        $contactPhoneMap[$phone] = true;
+                        $existingPhones[$phone] = true; // Adicionar ao cache para próximos chunks
+
+                        $successCount++;
+
+                    } catch (\Exception $e) {
+                        $errors[] = ['row' => $lineNumber, 'message' => $e->getMessage()];
+                        $errorCount++;
+                        Log::warning("Erro ao importar linha {$lineNumber}: " . $e->getMessage());
                     }
-                } catch (\Exception $e) {
-                    $import->addError($index + 2, $e->getMessage());
-                    $import->incrementProcessed(false);
-                    
-                    Log::warning("Erro ao importar linha " . ($index + 2) . ": " . $e->getMessage());
                 }
+
+                // OTIMIZAÇÃO 3: Batch insert em uma única transação
+                if (!empty($contactsToInsert)) {
+                    DB::transaction(function () use ($contactsToInsert, $leadsToInsert) {
+                        Contact::insert($contactsToInsert);
+                        Lead::insert($leadsToInsert);
+                    });
+                }
+
+                // Atualizar progresso a cada chunk (não a cada linha)
+                $processedSoFar = min(($chunkIndex + 1) * $chunkSize, $totalRows);
+                $import->update(['processed_rows' => $processedSoFar]);
+            }
+
+            // OTIMIZAÇÃO 4: Atualizar contadores uma única vez no final
+            $import->update([
+                'processed_rows' => $totalRows,
+                'success_count' => $successCount,
+                'error_count' => $errorCount,
+                'errors' => $errors,
+            ]);
+
+            // Atualizar TenantUsageStats em batch (já suporta quantidade)
+            if ($successCount > 0) {
+                \App\Models\TenantUsageStats::incrementLeads($import->tenant_id, $successCount);
             }
 
             $import->markAsCompleted();
@@ -124,87 +242,6 @@ class LeadImportService
             $import->markAsFailed([['row' => 0, 'message' => $e->getMessage()]]);
             throw $e;
         }
-    }
-
-    /**
-     * Processa uma linha do arquivo.
-     */
-    protected function processRow(
-        LeadImport $import,
-        array $row,
-        int $rowNumber,
-        bool $skipDuplicates,
-        $sellers,
-        int $sellerIndex,
-        int $sellerCount,
-        string $channelId
-    ): void {
-        // Validar dados obrigatórios
-        $name = trim($row['nome'] ?? '');
-        $phone = $this->normalizePhone($row['telefone'] ?? '');
-        $email = trim($row['email'] ?? '');
-
-        if (empty($name)) {
-            throw new \Exception("Nome é obrigatório");
-        }
-
-        if (empty($phone)) {
-            throw new \Exception("Telefone é obrigatório");
-        }
-
-        // Verificar duplicidade por telefone
-        if ($skipDuplicates) {
-            $existingContact = Contact::where('tenant_id', $import->tenant_id)
-                ->where('phone', $phone)
-                ->first();
-
-            if ($existingContact) {
-                throw new \Exception("Telefone já cadastrado: {$phone}");
-            }
-        }
-
-        DB::transaction(function () use (
-            $import, $row, $name, $phone, $email,
-            $sellers, $sellerIndex, $sellerCount, $channelId
-        ) {
-            // Criar contato
-            $contact = Contact::create([
-                'tenant_id' => $import->tenant_id,
-                'name' => $name,
-                'phone' => $phone,
-                'email' => $email ?: null,
-                'company' => trim($row['empresa'] ?? '') ?: null,
-                'extra_data' => [
-                    'position' => trim($row['cargo'] ?? '') ?: null,
-                    'imported_at' => now()->toISOString(),
-                    'import_id' => $import->id,
-                ],
-            ]);
-
-            // Determinar owner (Round-Robin)
-            $ownerId = null;
-            if ($sellerCount > 0) {
-                $ownerId = $sellers[$sellerIndex]->id;
-            }
-
-            // Criar lead
-            $lead = Lead::create([
-                'tenant_id' => $import->tenant_id,
-                'contact_id' => $contact->id,
-                'channel_id' => $channelId,
-                'pipeline_id' => $import->pipeline_id,
-                'stage_id' => $import->stage_id,
-                'owner_id' => $ownerId,
-                'value' => $this->parseValue($row['valor_estimado'] ?? null),
-                'status' => \App\Enums\LeadStatusEnum::OPEN,
-                'custom_fields' => [
-                    'source' => trim($row['origem'] ?? '') ?: 'import',
-                    'notes' => trim($row['observacoes'] ?? '') ?: null,
-                ],
-            ]);
-
-            $import->incrementProcessed(true);
-        });
     }
 
     /**

@@ -2,6 +2,7 @@ export { ContentDashboard } from './ContentDashboard'
 export { ContentAgentChat } from './ContentAgentChat'
 export { ContentCreators } from './ContentCreators'
 export { ViralVideoSearch } from './ViralVideoSearch'
+export { BrandSettings } from './BrandSettings'
 
 // Páginas legadas (podem ser removidas depois)
 export { AnalyzeVideo } from './AnalyzeVideo'

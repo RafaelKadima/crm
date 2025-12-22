@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Crown,
   Loader2,
+  Users2,
 } from 'lucide-react'
 import { useTenants, useUpdateTenant } from '@/hooks/useSuperAdmin'
 import { formatDateTime } from '@/lib/utils'
@@ -65,13 +66,22 @@ export function TenantsPage() {
                 </div>
               </div>
             </div>
-            <Link
-              to="/super-admin/tenants/new"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Nova Empresa
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/super-admin/groups"
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
+              >
+                <Users2 className="w-4 h-4" />
+                Grupos
+              </Link>
+              <Link
+                to="/super-admin/tenants/new"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Nova Empresa
+              </Link>
+            </div>
           </div>
         </div>
       </div>

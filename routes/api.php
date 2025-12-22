@@ -26,6 +26,17 @@ use App\Http\Controllers\AgentTemplateController;
 use App\Http\Controllers\AgentRulesController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\StageActivityTemplateController;
+use App\Http\Controllers\DealStageActivityController;
+use App\Http\Controllers\GamificationController;
+use App\Http\Controllers\Admin\GamificationAdminController;
+use App\Http\Controllers\AIContentProxyController;
+use App\Http\Controllers\BrandLayersController;
+use App\Http\Controllers\ExternalIntegrationController;
+use App\Http\Controllers\KprController;
+use App\Http\Controllers\KpiController;
+use App\Http\Controllers\ActivityAnalysisController;
+use App\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -89,6 +100,26 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('tenant/branding/image', [\App\Http\Controllers\BrandingController::class, 'deleteImage']);
 
     // =============================================================================
+    // INTEGRACOES EXTERNAS (Linx, Webhooks CRM, ERPs)
+    // =============================================================================
+    Route::prefix('integrations')->group(function () {
+        Route::get('/', [ExternalIntegrationController::class, 'index']);
+        Route::post('/', [ExternalIntegrationController::class, 'store']);
+        Route::get('templates', [ExternalIntegrationController::class, 'getTemplates']);
+        Route::get('available-fields', [ExternalIntegrationController::class, 'getAvailableFields']);
+        Route::get('{integration}', [ExternalIntegrationController::class, 'show']);
+        Route::put('{integration}', [ExternalIntegrationController::class, 'update']);
+        Route::delete('{integration}', [ExternalIntegrationController::class, 'destroy']);
+        Route::post('{integration}/toggle', [ExternalIntegrationController::class, 'toggleActive']);
+        Route::post('{integration}/test', [ExternalIntegrationController::class, 'testConnection']);
+        Route::get('{integration}/logs', [ExternalIntegrationController::class, 'getLogs']);
+        Route::post('{integration}/logs/{log}/retry', [ExternalIntegrationController::class, 'retryLog']);
+        Route::get('{integration}/mappings', [ExternalIntegrationController::class, 'getMappings']);
+        Route::post('{integration}/mappings', [ExternalIntegrationController::class, 'saveMapping']);
+        Route::post('{integration}/preview', [ExternalIntegrationController::class, 'previewPayload']);
+    });
+
+    // =============================================================================
     // USO DE IA E PACOTES (Unidades de IA)
     // =============================================================================
     Route::prefix('usage')->group(function () {
@@ -150,6 +181,14 @@ Route::middleware('auth:api')->group(function () {
             Route::get('{lead}/customer-data', [CustomerDataController::class, 'show']);
             Route::post('{lead}/customer-data', [CustomerDataController::class, 'store']);
 
+            // Atividades da etapa do lead
+            Route::get('{lead}/stage-activities', [DealStageActivityController::class, 'index']);
+            Route::get('{lead}/stage-activities/all', [DealStageActivityController::class, 'all']);
+            Route::get('{lead}/stage-progress', [DealStageActivityController::class, 'progress']);
+            Route::get('{lead}/can-advance-stage', [DealStageActivityController::class, 'canAdvance']);
+            Route::post('{lead}/stage-activities/{activity}/complete', [DealStageActivityController::class, 'complete']);
+            Route::post('{lead}/stage-activities/{activity}/skip', [DealStageActivityController::class, 'skip']);
+
             // Importação de Leads
             Route::prefix('imports')->group(function () {
                 Route::get('/', [LeadImportController::class, 'index']);
@@ -157,6 +196,14 @@ Route::middleware('auth:api')->group(function () {
                 Route::get('template', [LeadImportController::class, 'template']);
                 Route::get('{import}', [LeadImportController::class, 'show']);
             });
+        });
+
+        // Dashboard de Atividades (Admin)
+        Route::prefix('activities')->group(function () {
+            Route::get('dashboard', [DealStageActivityController::class, 'dashboard']);
+            Route::get('overdue', [DealStageActivityController::class, 'overdue']);
+            Route::get('due-today', [DealStageActivityController::class, 'dueToday']);
+            Route::get('due-soon', [DealStageActivityController::class, 'dueSoon']);
         });
 
         // Perfil do usuário logado
@@ -305,6 +352,16 @@ Route::middleware('auth:api')->group(function () {
             Route::put('{pipeline}/users/{userId}', [PipelineController::class, 'updateUserPermissions']);
             Route::delete('{pipeline}/users/{userId}', [PipelineController::class, 'removeUser']);
             Route::post('{pipeline}/users/sync', [PipelineController::class, 'syncUsers']);
+
+            // Templates de atividades por etapa
+            Route::prefix('{pipeline}/stages/{stage}/activity-templates')->group(function () {
+                Route::get('/', [StageActivityTemplateController::class, 'index']);
+                Route::post('/', [StageActivityTemplateController::class, 'store']);
+                Route::get('{template}', [StageActivityTemplateController::class, 'show']);
+                Route::put('{template}', [StageActivityTemplateController::class, 'update']);
+                Route::delete('{template}', [StageActivityTemplateController::class, 'destroy']);
+                Route::post('reorder', [StageActivityTemplateController::class, 'reorder']);
+            });
         });
 
         // Canais
@@ -367,6 +424,74 @@ Route::middleware('auth:api')->group(function () {
             Route::get('distribution', [ReportController::class, 'distribution']);
         });
 
+        // =============================================================================
+        // KPR (Metas) - Key Performance Results
+        // =============================================================================
+        Route::prefix('kprs')->group(function () {
+            Route::get('/', [KprController::class, 'index']);
+            Route::post('/', [KprController::class, 'store']);
+            Route::get('my-progress', [KprController::class, 'myProgress']);
+            Route::get('dashboard', [KprController::class, 'dashboard']);
+            Route::get('{kpr}', [KprController::class, 'show']);
+            Route::put('{kpr}', [KprController::class, 'update']);
+            Route::delete('{kpr}', [KprController::class, 'destroy']);
+            Route::post('{kpr}/distribute', [KprController::class, 'distribute']);
+            Route::post('{kpr}/distribute-to-team', [KprController::class, 'distributeToTeam']);
+            Route::get('{kpr}/progress', [KprController::class, 'progress']);
+            Route::get('{kpr}/ranking', [KprController::class, 'ranking']);
+            Route::post('{kpr}/activate', [KprController::class, 'activate']);
+            Route::post('{kpr}/complete', [KprController::class, 'complete']);
+        });
+
+        // =============================================================================
+        // KPI (Indicadores) - Key Performance Indicators
+        // =============================================================================
+        Route::prefix('kpis')->group(function () {
+            Route::get('/', [KpiController::class, 'index']);
+            Route::post('/', [KpiController::class, 'store']);
+            Route::get('my-kpis', [KpiController::class, 'myKpis']);
+            Route::get('dashboard', [KpiController::class, 'dashboard']);
+            Route::post('calculate', [KpiController::class, 'calculate']);
+            Route::post('initialize-defaults', [KpiController::class, 'initializeDefaults']);
+            Route::get('user/{user}', [KpiController::class, 'userKpis']);
+            Route::get('team/{team}', [KpiController::class, 'teamKpis']);
+            Route::get('{kpi}', [KpiController::class, 'show']);
+            Route::put('{kpi}', [KpiController::class, 'update']);
+            Route::delete('{kpi}', [KpiController::class, 'destroy']);
+            Route::get('{kpi}/trend', [KpiController::class, 'trend']);
+        });
+
+        // =============================================================================
+        // Análise de Atividades
+        // =============================================================================
+        Route::prefix('activity-analysis')->group(function () {
+            Route::get('my-contribution', [ActivityAnalysisController::class, 'myContribution']);
+            Route::get('user/{user}', [ActivityAnalysisController::class, 'userContribution']);
+            Route::get('lead/{lead}/journey', [ActivityAnalysisController::class, 'leadJourney']);
+            Route::post('compare', [ActivityAnalysisController::class, 'compare']);
+            Route::get('insights', [ActivityAnalysisController::class, 'tenantInsights']);
+
+            // Relatório de Efetividade de Atividades
+            Route::get('effectiveness', [ActivityAnalysisController::class, 'effectiveness']);
+            Route::get('sequence-analysis', [ActivityAnalysisController::class, 'sequenceAnalysis']);
+            Route::get('effectiveness-by-user', [ActivityAnalysisController::class, 'effectivenessByUser']);
+        });
+
+        // =============================================================================
+        // VENDAS (Sales) - Fechamento de Leads
+        // =============================================================================
+        Route::prefix('sales')->group(function () {
+            Route::get('/', [SaleController::class, 'index']);
+            Route::post('/', [SaleController::class, 'store']);
+            Route::get('my-stats', [SaleController::class, 'myStats']);
+            Route::get('search-products', [SaleController::class, 'searchProducts']);
+            Route::get('lead/{lead}', [SaleController::class, 'byLead']);
+            Route::get('{sale}', [SaleController::class, 'show']);
+            Route::put('{sale}', [SaleController::class, 'update']);
+            Route::post('{sale}/items', [SaleController::class, 'addItem']);
+            Route::delete('{sale}/items/{item}', [SaleController::class, 'removeItem']);
+        });
+
         // Google Tag Manager
         Route::prefix('gtm')->group(function () {
             Route::get('settings', [\App\Http\Controllers\GtmController::class, 'getSettings']);
@@ -416,6 +541,34 @@ Route::middleware('auth:api')->group(function () {
             Route::post('{landingPage}/duplicate', [LandingPageController::class, 'duplicate']);
             Route::get('{landingPage}/stats', [LandingPageController::class, 'stats']);
             Route::post('{landingPage}/upload-image', [LandingPageController::class, 'uploadImage']);
+        });
+
+        // =============================================================================
+        // GAMIFICAÇÃO (Pontos, Tiers, Conquistas, Ranking)
+        // =============================================================================
+        Route::prefix('gamification')->group(function () {
+            // Estatísticas do usuário logado
+            Route::get('my-stats', [GamificationController::class, 'myStats']);
+            Route::get('my-points', [GamificationController::class, 'myPoints']);
+            Route::get('my-achievements', [GamificationController::class, 'myAchievements']);
+            Route::get('my-rewards', [GamificationController::class, 'myRewards']);
+
+            // Leaderboard
+            Route::get('leaderboard', [GamificationController::class, 'leaderboard']);
+
+            // Tiers e conquistas disponíveis
+            Route::get('tiers', [GamificationController::class, 'tiers']);
+            Route::get('achievements', [GamificationController::class, 'achievements']);
+
+            // Prêmios disponíveis e resgate
+            Route::get('rewards', [GamificationController::class, 'rewards']);
+            Route::post('rewards/{reward}/claim', [GamificationController::class, 'claimReward']);
+
+            // Histórico de pontos
+            Route::get('transactions', [GamificationController::class, 'transactions']);
+
+            // Configurações públicas (para saber o que exibir)
+            Route::get('settings', [GamificationController::class, 'settings']);
         });
     });
 
@@ -546,6 +699,50 @@ Route::middleware(['auth:api', 'super_admin'])->prefix('admin')->group(function 
         Route::put('{group}', [GroupController::class, 'update']);
         Route::delete('{group}', [GroupController::class, 'destroy']);
     });
+});
+
+// =============================================================================
+// ADMIN GAMIFICAÇÃO (Configuração do sistema de gamificação)
+// Requer autenticação + tenant + permissão de admin
+// =============================================================================
+Route::middleware(['auth:api', 'tenant'])->prefix('admin/gamification')->group(function () {
+    // Configurações gerais
+    Route::get('settings', [GamificationAdminController::class, 'showSettings']);
+    Route::put('settings', [GamificationAdminController::class, 'updateSettings']);
+
+    // Tiers
+    Route::get('tiers', [GamificationAdminController::class, 'indexTiers']);
+    Route::post('tiers', [GamificationAdminController::class, 'storeTier']);
+    Route::put('tiers/{tier}', [GamificationAdminController::class, 'updateTier']);
+    Route::delete('tiers/{tier}', [GamificationAdminController::class, 'destroyTier']);
+
+    // Regras de pontuação
+    Route::get('point-rules', [GamificationAdminController::class, 'indexPointRules']);
+    Route::post('point-rules', [GamificationAdminController::class, 'storePointRule']);
+    Route::put('point-rules/{rule}', [GamificationAdminController::class, 'updatePointRule']);
+    Route::delete('point-rules/{rule}', [GamificationAdminController::class, 'destroyPointRule']);
+
+    // Prêmios
+    Route::get('rewards', [GamificationAdminController::class, 'indexRewards']);
+    Route::post('rewards', [GamificationAdminController::class, 'storeReward']);
+    Route::put('rewards/{reward}', [GamificationAdminController::class, 'updateReward']);
+    Route::delete('rewards/{reward}', [GamificationAdminController::class, 'destroyReward']);
+
+    // Conquistas
+    Route::get('achievements', [GamificationAdminController::class, 'indexAchievements']);
+    Route::post('achievements', [GamificationAdminController::class, 'storeAchievement']);
+    Route::put('achievements/{achievement}', [GamificationAdminController::class, 'updateAchievement']);
+    Route::delete('achievements/{achievement}', [GamificationAdminController::class, 'destroyAchievement']);
+
+    // Gestão de prêmios resgatados
+    Route::get('user-rewards', [GamificationAdminController::class, 'indexUserRewards']);
+    Route::post('user-rewards/{userReward}/approve', [GamificationAdminController::class, 'approveUserReward']);
+    Route::post('user-rewards/{userReward}/deliver', [GamificationAdminController::class, 'deliverUserReward']);
+    Route::post('user-rewards/{userReward}/reject', [GamificationAdminController::class, 'rejectUserReward']);
+
+    // Tipos disponíveis
+    Route::get('action-types', [GamificationAdminController::class, 'getActionTypes']);
+    Route::get('condition-types', [GamificationAdminController::class, 'getConditionTypes']);
 });
 
 // =============================================================================
@@ -802,6 +999,62 @@ Route::middleware(['auth:api', 'tenant', 'feature:ads_intelligence'])->prefix('a
 });
 
 // =============================================================================
+// CONTENT CREATOR - Agente de Criação de Conteúdo Viral
+// Proxy para o microserviço Python (ai-service)
+// =============================================================================
+Route::middleware(['auth:api', 'tenant'])->prefix('ai/content')->group(function () {
+    // Chat com o agente
+    Route::post('chat', [AIContentProxyController::class, 'chat']);
+
+    // Sessões de chat
+    Route::get('sessions', [AIContentProxyController::class, 'listSessions']);
+    Route::get('sessions/{sessionId}', [AIContentProxyController::class, 'getSession']);
+
+    // Criadores (creators)
+    Route::get('creators', [AIContentProxyController::class, 'listCreators']);
+    Route::post('creators', [AIContentProxyController::class, 'createCreator']);
+    Route::get('creators/{creatorId}', [AIContentProxyController::class, 'getCreator']);
+    Route::delete('creators/{creatorId}', [AIContentProxyController::class, 'deleteCreator']);
+    Route::post('creators/{creatorId}/videos', [AIContentProxyController::class, 'addVideoToCreator']);
+
+    // Busca de vídeos virais
+    Route::post('search-viral', [AIContentProxyController::class, 'searchViralVideos']);
+
+    // Transcrição de vídeos
+    Route::post('transcribe', [AIContentProxyController::class, 'transcribeVideo']);
+});
+
+// =============================================================================
+// BRAND LAYERS - Camadas de Contexto para Content Creator
+// (Brand DNA, Audience Profile, Product Positioning)
+// =============================================================================
+Route::middleware(['auth:api', 'tenant'])->prefix('brand-layers')->group(function () {
+    // Todas as camadas (para seleção no chat)
+    Route::get('all', [BrandLayersController::class, 'getAllLayers']);
+
+    // Brand Editorial Profiles (DNA da Marca)
+    Route::get('brand-profiles', [BrandLayersController::class, 'listBrandProfiles']);
+    Route::post('brand-profiles', [BrandLayersController::class, 'storeBrandProfile']);
+    Route::get('brand-profiles/{id}', [BrandLayersController::class, 'showBrandProfile']);
+    Route::put('brand-profiles/{id}', [BrandLayersController::class, 'updateBrandProfile']);
+    Route::delete('brand-profiles/{id}', [BrandLayersController::class, 'destroyBrandProfile']);
+
+    // Audience Profiles (Perfil do Público)
+    Route::get('audience-profiles', [BrandLayersController::class, 'listAudienceProfiles']);
+    Route::post('audience-profiles', [BrandLayersController::class, 'storeAudienceProfile']);
+    Route::get('audience-profiles/{id}', [BrandLayersController::class, 'showAudienceProfile']);
+    Route::put('audience-profiles/{id}', [BrandLayersController::class, 'updateAudienceProfile']);
+    Route::delete('audience-profiles/{id}', [BrandLayersController::class, 'destroyAudienceProfile']);
+
+    // Product Positionings (Posicionamento do Produto)
+    Route::get('product-positionings', [BrandLayersController::class, 'listProductPositionings']);
+    Route::post('product-positionings', [BrandLayersController::class, 'storeProductPositioning']);
+    Route::get('product-positionings/{id}', [BrandLayersController::class, 'showProductPositioning']);
+    Route::put('product-positionings/{id}', [BrandLayersController::class, 'updateProductPositioning']);
+    Route::delete('product-positionings/{id}', [BrandLayersController::class, 'destroyProductPositioning']);
+});
+
+// =============================================================================
 // Rotas para integração com Worker Python (fila de mensagens)
 // Autenticação via X-API-Key header
 // =============================================================================
@@ -940,6 +1193,17 @@ Route::middleware(['auth:api', 'super_admin'])->prefix('super-admin')->group(fun
 
     // Logs
     Route::get('logs', [\App\Http\Controllers\SuperAdminController::class, 'listLogs']);
+
+    // Grupos
+    Route::get('groups', [\App\Http\Controllers\SuperAdminController::class, 'listGroups']);
+    Route::post('groups', [\App\Http\Controllers\SuperAdminController::class, 'createGroup']);
+    Route::get('groups/{group}', [\App\Http\Controllers\SuperAdminController::class, 'showGroup']);
+    Route::put('groups/{group}', [\App\Http\Controllers\SuperAdminController::class, 'updateGroup']);
+    Route::delete('groups/{group}', [\App\Http\Controllers\SuperAdminController::class, 'deleteGroup']);
+    Route::post('groups/{group}/tenants', [\App\Http\Controllers\SuperAdminController::class, 'addTenantToGroup']);
+    Route::delete('groups/{group}/tenants/{tenant}', [\App\Http\Controllers\SuperAdminController::class, 'removeTenantFromGroup']);
+    Route::post('groups/{group}/users', [\App\Http\Controllers\SuperAdminController::class, 'addUserToGroup']);
+    Route::delete('groups/{group}/users/{user}', [\App\Http\Controllers\SuperAdminController::class, 'removeUserFromGroup']);
 
     // =====================
     // CUSTOS E USO (Super Admin Only)

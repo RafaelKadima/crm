@@ -57,13 +57,30 @@ class CopywriterAgentService:
         tenant_id: str,
         user_id: str,
         message: str,
-        session_id: Optional[str] = None
+        session_id: Optional[str] = None,
+        brand_profile_id: Optional[str] = None,
+        audience_profile_id: Optional[str] = None,
+        product_positioning_id: Optional[str] = None,
     ) -> ChatResponse:
         """
         Processa mensagem do usuário e retorna resposta do agente.
         Gerencia o fluxo de criação de conteúdo em etapas.
+
+        Args:
+            tenant_id: ID do tenant
+            user_id: ID do usuário
+            message: Mensagem do usuário
+            session_id: ID da sessão (opcional)
+            brand_profile_id: ID do perfil editorial de marca (Camada 1)
+            audience_profile_id: ID do perfil de audiência (Camada 2)
+            product_positioning_id: ID do posicionamento de produto (Camada 3)
         """
         logger.info("copywriter_chat", tenant_id=tenant_id, session_id=session_id, message=message[:50])
+
+        # Carrega as camadas de contexto se fornecidas
+        brand_context = await self._load_brand_context(
+            tenant_id, brand_profile_id, audience_profile_id, product_positioning_id
+        )
 
         # Cria ou recupera sessão
         if not session_id:
@@ -85,23 +102,23 @@ class CopywriterAgentService:
 
         if current_step == ContentAgentStep.IDLE:
             # Nova conversa - detecta intenção
-            response = await self._handle_new_request(tenant_id, session_id, message, session_data)
+            response = await self._handle_new_request(tenant_id, session_id, message, session_data, brand_context)
 
         elif current_step == ContentAgentStep.RESEARCH:
             # Aguardando aprovação da pesquisa
-            response = await self._handle_research_approval(tenant_id, session_id, message, session_data)
+            response = await self._handle_research_approval(tenant_id, session_id, message, session_data, brand_context)
 
         elif current_step == ContentAgentStep.SELECT_CREATOR:
             # Aguardando seleção de criador
-            response = await self._handle_creator_selection(tenant_id, session_id, message, session_data)
+            response = await self._handle_creator_selection(tenant_id, session_id, message, session_data, brand_context)
 
         elif current_step == ContentAgentStep.GENERATE_HOOKS:
             # Aguardando seleção de hook
-            response = await self._handle_hook_selection(tenant_id, session_id, message, session_data)
+            response = await self._handle_hook_selection(tenant_id, session_id, message, session_data, brand_context)
 
         elif current_step == ContentAgentStep.WRITE_REEL:
             # Reel escrito, aguardando feedback
-            response = await self._handle_reel_feedback(tenant_id, session_id, message, session_data)
+            response = await self._handle_reel_feedback(tenant_id, session_id, message, session_data, brand_context)
 
         else:
             response = await self._handle_general_chat(tenant_id, session_id, message, session_data)
@@ -113,6 +130,39 @@ class CopywriterAgentService:
 
         return response
 
+    async def _load_brand_context(
+        self,
+        tenant_id: str,
+        brand_profile_id: Optional[str],
+        audience_profile_id: Optional[str],
+        product_positioning_id: Optional[str]
+    ) -> str:
+        """
+        Carrega as camadas de contexto de marca e constroi o prompt.
+
+        Returns:
+            String formatada com todo o contexto de marca para injeção nos prompts
+        """
+        brand_profile = None
+        audience_profile = None
+        product_positioning = None
+
+        if brand_profile_id:
+            brand_profile = await self.storage.get_brand_profile(tenant_id, brand_profile_id)
+
+        if audience_profile_id:
+            audience_profile = await self.storage.get_audience_profile(tenant_id, audience_profile_id)
+
+        if product_positioning_id:
+            product_positioning = await self.storage.get_product_positioning(tenant_id, product_positioning_id)
+
+        # Usa o método do storage para construir o contexto
+        return self.storage.build_brand_context(
+            brand_profile=brand_profile,
+            audience_profile=audience_profile,
+            product_positioning=product_positioning
+        )
+
     # =========================================================================
     # HANDLERS POR ETAPA
     # =========================================================================
@@ -122,7 +172,8 @@ class CopywriterAgentService:
         tenant_id: str,
         session_id: str,
         message: str,
-        session_data: Dict
+        session_data: Dict,
+        brand_context: str = ""
     ) -> ChatResponse:
         """Processa nova requisição - detecta se quer criar conteúdo"""
 
@@ -212,7 +263,8 @@ Retorne JSON: {{"intent": "criar_reel|pesquisar|listar_criadores|adicionar_criad
         tenant_id: str,
         session_id: str,
         message: str,
-        session_data: Dict
+        session_data: Dict,
+        brand_context: str = ""
     ) -> ChatResponse:
         """Processa aprovação ou alteração da pesquisa"""
 
@@ -278,7 +330,8 @@ Retorne JSON: {{"approved": true/false, "changes_requested": "descrição das al
         tenant_id: str,
         session_id: str,
         message: str,
-        session_data: Dict
+        session_data: Dict,
+        brand_context: str = ""
     ) -> ChatResponse:
         """Processa seleção de criador"""
 
@@ -323,7 +376,8 @@ Retorne JSON: {{"approved": true/false, "changes_requested": "descrição das al
             tenant_id,
             session_data.get("topic", ""),
             selected_creator["name"],
-            session_data.get("research_data", {})
+            session_data.get("research_data", {}),
+            brand_context
         )
 
         await self.storage.update_session(session_id, generated_hooks=hooks)
@@ -344,7 +398,8 @@ Retorne JSON: {{"approved": true/false, "changes_requested": "descrição das al
         tenant_id: str,
         session_id: str,
         message: str,
-        session_data: Dict
+        session_data: Dict,
+        brand_context: str = ""
     ) -> ChatResponse:
         """Processa seleção de hook"""
 
@@ -384,7 +439,8 @@ Retorne JSON: {{"approved": true/false, "changes_requested": "descrição das al
             session_data.get("topic", ""),
             selected_hook,
             session_data.get("selected_creator", ""),
-            session_data.get("research_data", {})
+            session_data.get("research_data", {}),
+            brand_context
         )
 
         await self.storage.update_session(session_id, final_reel=reel_script)
@@ -401,7 +457,8 @@ Retorne JSON: {{"approved": true/false, "changes_requested": "descrição das al
         tenant_id: str,
         session_id: str,
         message: str,
-        session_data: Dict
+        session_data: Dict,
+        brand_context: str = ""
     ) -> ChatResponse:
         """Processa feedback sobre o reel gerado"""
 
@@ -646,9 +703,10 @@ Foque em informações DOPAMINÉRGICAS e surpreendentes, não óbvias."""
         tenant_id: str,
         topic: str,
         creator_name: str,
-        research_data: Dict[str, Any]
+        research_data: Dict[str, Any],
+        brand_context: str = ""
     ) -> List[str]:
-        """Gera hooks no estilo do criador"""
+        """Gera hooks no estilo do criador, alinhados com a marca"""
 
         # Busca transcrições do criador
         transcriptions = await self.storage.get_creator_transcriptions(tenant_id, creator_name)
@@ -659,7 +717,22 @@ Foque em informações DOPAMINÉRGICAS e surpreendentes, não óbvias."""
             # Usa até 3 transcrições como referência
             transcriptions_context = "\n\n---\n\n".join(transcriptions[:3])
 
+        # Adiciona contexto de marca se disponível
+        brand_section = ""
+        if brand_context:
+            brand_section = f"""
+{brand_context}
+
+IMPORTANTE: Os hooks devem estar 100% alinhados com:
+- A voz e tom da marca
+- As crenças e valores definidos
+- A linguagem do público-alvo
+- O posicionamento do produto (se aplicável)
+
+"""
+
         prompt = f"""Você é um copywriter sênior. Crie hooks para um Reel sobre "{topic}".
+{brand_section}
 
 ESTILO DO CRIADOR ({creator_name}):
 {transcriptions_context}
@@ -700,9 +773,10 @@ Retorne JSON: {{"hooks": ["hook 1", "hook 2", ..., "hook 10"]}}"""
         topic: str,
         hook: str,
         creator_name: str,
-        research_data: Dict[str, Any]
+        research_data: Dict[str, Any],
+        brand_context: str = ""
     ) -> str:
-        """Escreve roteiro completo do Reel"""
+        """Escreve roteiro completo do Reel, alinhado com a marca"""
 
         # Busca transcrições do criador
         transcriptions = await self.storage.get_creator_transcriptions(tenant_id, creator_name)
@@ -712,7 +786,23 @@ Retorne JSON: {{"hooks": ["hook 1", "hook 2", ..., "hook 10"]}}"""
         else:
             transcriptions_context = f"\n\nEXEMPLOS DO CRIADOR ({creator_name}):\n" + "\n\n---\n\n".join(transcriptions[:2])
 
+        # Adiciona contexto de marca se disponível
+        brand_section = ""
+        if brand_context:
+            brand_section = f"""
+{brand_context}
+
+ALINHAMENTO COM A MARCA:
+- Use EXATAMENTE o tom de voz e vocabulário definidos na marca
+- Incorpore as crenças e valores da marca naturalmente
+- Fale a linguagem do público-alvo (girias, expressões)
+- Se houver produto, destaque a transformação e promessas
+- Evite mencionar os "inimigos" de forma explícita, mas posicione-se contra
+
+"""
+
         prompt = f"""Você é um copywriter sênior. Escreva um roteiro de Reel COMPLETO sobre "{topic}".
+{brand_section}
 
 HOOK SELECIONADO:
 {hook}

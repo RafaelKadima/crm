@@ -23,6 +23,7 @@ import {
   FileText,
   Edit,
   ArrowRightLeft,
+  ListChecks,
   MessageSquareOff,
   RotateCcw,
   Bot,
@@ -40,6 +41,7 @@ import { Badge } from '@/components/ui/Badge'
 import { CustomerDataForm } from '@/components/forms/CustomerDataForm'
 import { LeadEditForm } from '@/components/forms/LeadEditForm'
 import { MessageFeedback } from '@/components/chat/MessageFeedback'
+import { StageActivityChecklist } from '@/components/stage-activities/StageActivityChecklist'
 import { TransferModal } from '@/components/chat/TransferModal'
 import { CloseConversationModal } from '@/components/chat/CloseConversationModal'
 import { TemplateSelector } from '@/components/chat/TemplateSelector'
@@ -106,7 +108,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   const [isMovingStage, setIsMovingStage] = useState(false)
   const [showStageSelector, setShowStageSelector] = useState(false)
   const [currentStage, setCurrentStage] = useState<PipelineStage | null>(null)
-  const [activeView, setActiveView] = useState<'chat' | 'closing' | 'edit'>('chat')
+  const [activeView, setActiveView] = useState<'chat' | 'closing' | 'edit' | 'activities'>('chat')
   const [currentLead, setCurrentLead] = useState<Lead | null>(lead)
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMoreMessages, setHasMoreMessages] = useState(true)
@@ -983,6 +985,18 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                 <Edit className="h-4 w-4" />
                 Editar
               </button>
+              <button
+                onClick={() => setActiveView('activities')}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                  activeView === 'activities'
+                    ? "bg-amber-600 text-white"
+                    : "hover:bg-muted"
+                )}
+              >
+                <ListChecks className="h-4 w-4" />
+                Atividades
+              </button>
               {isInClosingStage && (
                 <button
                   onClick={() => setActiveView('closing')}
@@ -1131,13 +1145,38 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           {/* Content Area */}
           {activeView === 'closing' ? (
             <div className="flex-1 overflow-y-auto p-6 bg-muted/20">
-              <CustomerDataForm 
-                lead={currentLead || lead} 
+              <CustomerDataForm
+                lead={currentLead || lead}
                 onSave={() => {
                   setActiveView('chat')
                 }}
                 isRequired={forceClosingForm}
               />
+            </div>
+          ) : activeView === 'activities' ? (
+            <div className="flex-1 overflow-y-auto p-6 bg-muted/20">
+              <div className="max-w-2xl mx-auto">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-1">Atividades da Etapa</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Complete as atividades obrigatórias para avançar o lead no funil.
+                    Cada atividade concluída vale pontos!
+                  </p>
+                </div>
+                <StageActivityChecklist
+                  leadId={lead.id}
+                  onActivityComplete={(activity, points) => {
+                    if (points > 0) {
+                      notify('success', {
+                        title: `+${points} pontos!`,
+                        description: `Atividade "${activity.template?.title || 'Atividade'}" concluída`,
+                        duration: 3000,
+                      })
+                    }
+                  }}
+                  defaultExpanded={true}
+                />
+              </div>
             </div>
           ) : activeView === 'edit' ? (
             <div className="flex-1 overflow-y-auto bg-muted/20">

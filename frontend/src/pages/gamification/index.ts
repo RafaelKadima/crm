@@ -1,0 +1,7 @@
+export { GamificationAdminPage } from './GamificationAdminPage'
+export { TiersManagement } from './TiersManagement'
+export { PointRulesManagement } from './PointRulesManagement'
+export { RewardsManagement } from './RewardsManagement'
+export { AchievementsManagement } from './AchievementsManagement'
+export { GamificationSettingsTab } from './GamificationSettingsTab'
+export { UserRewardsManagement } from './UserRewardsManagement'

@@ -16,14 +16,43 @@ import {
   CheckCircle,
   Clock,
   MessageSquare,
+  Palette,
+  Package,
+  ChevronDown,
+  Settings2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Textarea } from '@/components/ui/Textarea'
 import { Badge } from '@/components/ui/Badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/Select'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/Popover'
+import { Label } from '@/components/ui/Label'
 import { cn } from '@/lib/utils'
-import { contentApi, ChatResponse, ChatMessage } from '@/api/content'
+import { contentApi } from '@/api/content'
+import { brandLayersApi } from '@/api/brandLayers'
 import ReactMarkdown from 'react-markdown'
+
+interface ChatResponse {
+  message: string
+  session_id: string
+  current_step: string
+  requires_action: boolean
+  action_type?: string
+  options?: any[]
+  final_content?: string
+  metadata?: Record<string, any>
+}
 
 interface Message {
   role: 'user' | 'assistant'
@@ -53,6 +82,24 @@ export function ContentAgentChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
 
+  // Brand layers state
+  const [selectedBrandProfile, setSelectedBrandProfile] = useState<string>('')
+  const [selectedAudienceProfile, setSelectedAudienceProfile] = useState<string>('')
+  const [selectedProductPositioning, setSelectedProductPositioning] = useState<string>('')
+
+  // Fetch available layers
+  const { data: layersData } = useQuery({
+    queryKey: ['brand-layers-all'],
+    queryFn: () => brandLayersApi.getAllLayers(),
+  })
+
+  const brandProfiles = layersData?.data?.brand_profiles || []
+  const audienceProfiles = layersData?.data?.audience_profiles || []
+  const productPositionings = layersData?.data?.product_positionings || []
+
+  const hasLayers = brandProfiles.length > 0 || audienceProfiles.length > 0 || productPositionings.length > 0
+  const selectedLayersCount = [selectedBrandProfile, selectedAudienceProfile, selectedProductPositioning].filter(Boolean).length
+
   // Auto scroll para última mensagem
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -60,7 +107,13 @@ export function ContentAgentChat() {
 
   // Mutation para enviar mensagem
   const chatMutation = useMutation({
-    mutationFn: (message: string) => contentApi.chat(message, sessionId || undefined),
+    mutationFn: (message: string) => contentApi.chat({
+      message,
+      sessionId: sessionId || undefined,
+      brandProfileId: selectedBrandProfile || undefined,
+      audienceProfileId: selectedAudienceProfile || undefined,
+      productPositioningId: selectedProductPositioning || undefined,
+    }),
     onSuccess: (response) => {
       const data = response.data
 
@@ -167,6 +220,127 @@ export function ContentAgentChat() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Layer Selector */}
+          {hasLayers && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Settings2 className="h-4 w-4" />
+                  Contexto
+                  {selectedLayersCount > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                      {selectedLayersCount}
+                    </Badge>
+                  )}
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Settings2 className="h-4 w-4" />
+                      Camadas de Contexto
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Selecione perfis para gerar conteudo alinhado com sua marca
+                    </p>
+                  </div>
+
+                  {brandProfiles.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-sm">
+                        <Palette className="h-3 w-3" />
+                        DNA da Marca
+                      </Label>
+                      <Select
+                        value={selectedBrandProfile}
+                        onValueChange={setSelectedBrandProfile}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar perfil..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhum</SelectItem>
+                          {brandProfiles.map((profile) => (
+                            <SelectItem key={profile.id} value={profile.id}>
+                              {profile.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {audienceProfiles.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-sm">
+                        <Users className="h-3 w-3" />
+                        Publico-Alvo
+                      </Label>
+                      <Select
+                        value={selectedAudienceProfile}
+                        onValueChange={setSelectedAudienceProfile}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar perfil..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhum</SelectItem>
+                          {audienceProfiles.map((profile) => (
+                            <SelectItem key={profile.id} value={profile.id}>
+                              {profile.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {productPositionings.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-sm">
+                        <Package className="h-3 w-3" />
+                        Produto
+                      </Label>
+                      <Select
+                        value={selectedProductPositioning}
+                        onValueChange={setSelectedProductPositioning}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar posicionamento..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhum</SelectItem>
+                          {productPositionings.map((positioning) => (
+                            <SelectItem key={positioning.id} value={positioning.id}>
+                              {positioning.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {selectedLayersCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedBrandProfile('')
+                        setSelectedAudienceProfile('')
+                        setSelectedProductPositioning('')
+                      }}
+                    >
+                      Limpar selecoes
+                    </Button>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+
           {/* Step Indicator */}
           <Badge className={cn("gap-1", stepInfo.color, "text-white")}>
             <stepInfo.icon className="h-3 w-3" />

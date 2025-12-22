@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Building2, Users, Plug, Bell, Palette, Paintbrush, Zap } from 'lucide-react'
+import { User, Building2, Users, Plug, Bell, Palette, Paintbrush, Zap, Trophy, CalendarClock } from 'lucide-react'
 import { CompanySettingsPage } from './CompanySettingsPage'
 import { TeamSettingsPage } from './TeamSettingsPage'
 import { IntegrationsSettingsPage } from './IntegrationsSettingsPage'
@@ -9,18 +9,22 @@ import { AppearanceSettingsPage } from './AppearanceSettingsPage'
 import { BrandingSettingsPage } from './BrandingSettingsPage'
 import { ProfileSettingsPage } from './ProfileSettingsPage'
 import { AiUsageDashboard } from './AiUsageDashboard'
+import { ActivitiesDashboard } from './ActivitiesDashboard'
+import { GamificationAdminPage } from '@/pages/gamification'
 
-type SettingsTab = 'profile' | 'company' | 'team' | 'integrations' | 'notifications' | 'appearance' | 'branding' | 'ai-usage'
+type SettingsTab = 'profile' | 'company' | 'team' | 'integrations' | 'notifications' | 'appearance' | 'branding' | 'ai-usage' | 'gamification' | 'activities'
 
 const settingsSections = [
-  { icon: User, title: 'Perfil', description: 'Suas informações pessoais', tab: 'profile' as SettingsTab },
+  { icon: User, title: 'Perfil', description: 'Suas informacoes pessoais', tab: 'profile' as SettingsTab },
   { icon: Building2, title: 'Empresa', description: 'Dados da empresa', tab: 'company' as SettingsTab },
   { icon: Paintbrush, title: 'Identidade Visual', description: 'Logo, cores e marca', tab: 'branding' as SettingsTab },
+  { icon: CalendarClock, title: 'Atividades', description: 'Prazos e atrasos', tab: 'activities' as SettingsTab },
   { icon: Zap, title: 'Uso de IA', description: 'Unidades e pacotes', tab: 'ai-usage' as SettingsTab },
-  { icon: Users, title: 'Equipe', description: 'Gerenciar usuários', tab: 'team' as SettingsTab },
-  { icon: Plug, title: 'Integrações', description: 'Conectar serviços', tab: 'integrations' as SettingsTab },
-  { icon: Bell, title: 'Notificações', description: 'Preferências de alertas', tab: 'notifications' as SettingsTab },
-  { icon: Palette, title: 'Aparência', description: 'Tema e personalização', tab: 'appearance' as SettingsTab },
+  { icon: Trophy, title: 'Gamificacao', description: 'Pontos, tiers e recompensas', tab: 'gamification' as SettingsTab },
+  { icon: Users, title: 'Equipe', description: 'Gerenciar usuarios', tab: 'team' as SettingsTab },
+  { icon: Plug, title: 'Integracoes', description: 'Conectar servicos', tab: 'integrations' as SettingsTab },
+  { icon: Bell, title: 'Notificacoes', description: 'Preferencias de alertas', tab: 'notifications' as SettingsTab },
+  { icon: Palette, title: 'Aparencia', description: 'Tema e personalizacao', tab: 'appearance' as SettingsTab },
 ]
 
 export function SettingsPage() {
@@ -74,10 +78,11 @@ export function SettingsPage() {
           className="lg:col-span-3"
         >
           {activeTab === 'profile' && <ProfileSettingsPage />}
-
           {activeTab === 'company' && <CompanySettingsPage />}
           {activeTab === 'branding' && <BrandingSettingsPage />}
+          {activeTab === 'activities' && <ActivitiesDashboard />}
           {activeTab === 'ai-usage' && <AiUsageDashboard />}
+          {activeTab === 'gamification' && <GamificationAdminPage />}
           {activeTab === 'team' && <TeamSettingsPage />}
           {activeTab === 'integrations' && <IntegrationsSettingsPage />}
           {activeTab === 'notifications' && <NotificationsSettingsPage />}

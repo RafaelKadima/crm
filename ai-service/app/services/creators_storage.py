@@ -412,6 +412,307 @@ class CreatorsStorage:
                 for row in rows
             ]
 
+    # ==================== BRAND LAYERS ====================
+
+    async def get_brand_profile(self, tenant_id: str, profile_id: str) -> Optional[Dict[str, Any]]:
+        """Busca um perfil editorial de marca pelo ID"""
+        async with self.async_session() as session:
+            result = await session.execute(
+                text("""
+                    SELECT id, name, brand_voice, brand_identity, beliefs_and_enemies, content_pillars
+                    FROM brand_editorial_profiles
+                    WHERE tenant_id = :tenant_id AND id = :profile_id
+                """),
+                {"tenant_id": tenant_id, "profile_id": profile_id}
+            )
+            row = result.fetchone()
+
+            if not row:
+                return None
+
+            return {
+                "id": str(row[0]),
+                "name": row[1],
+                "brand_voice": row[2] if row[2] else {},
+                "brand_identity": row[3] if row[3] else {},
+                "beliefs_and_enemies": row[4] if row[4] else {},
+                "content_pillars": row[5] if row[5] else [],
+            }
+
+    async def get_audience_profile(self, tenant_id: str, profile_id: str) -> Optional[Dict[str, Any]]:
+        """Busca um perfil de audiencia pelo ID"""
+        async with self.async_session() as session:
+            result = await session.execute(
+                text("""
+                    SELECT id, name, demographics, psychographics, objections, language_patterns
+                    FROM audience_profiles
+                    WHERE tenant_id = :tenant_id AND id = :profile_id
+                """),
+                {"tenant_id": tenant_id, "profile_id": profile_id}
+            )
+            row = result.fetchone()
+
+            if not row:
+                return None
+
+            return {
+                "id": str(row[0]),
+                "name": row[1],
+                "demographics": row[2] if row[2] else {},
+                "psychographics": row[3] if row[3] else {},
+                "objections": row[4] if row[4] else {},
+                "language_patterns": row[5] if row[5] else {},
+            }
+
+    async def get_product_positioning(self, tenant_id: str, positioning_id: str) -> Optional[Dict[str, Any]]:
+        """Busca um posicionamento de produto pelo ID"""
+        async with self.async_session() as session:
+            result = await session.execute(
+                text("""
+                    SELECT id, name, transformation, mechanism, promises, objection_handling
+                    FROM product_positionings
+                    WHERE tenant_id = :tenant_id AND id = :positioning_id
+                """),
+                {"tenant_id": tenant_id, "positioning_id": positioning_id}
+            )
+            row = result.fetchone()
+
+            if not row:
+                return None
+
+            return {
+                "id": str(row[0]),
+                "name": row[1],
+                "transformation": row[2] if row[2] else {},
+                "mechanism": row[3] if row[3] else {},
+                "promises": row[4] if row[4] else {},
+                "objection_handling": row[5] if row[5] else [],
+            }
+
+    async def list_brand_profiles(self, tenant_id: str) -> List[Dict[str, Any]]:
+        """Lista todos os perfis editoriais de marca de um tenant"""
+        async with self.async_session() as session:
+            result = await session.execute(
+                text("""
+                    SELECT id, name
+                    FROM brand_editorial_profiles
+                    WHERE tenant_id = :tenant_id
+                    ORDER BY name ASC
+                """),
+                {"tenant_id": tenant_id}
+            )
+            rows = result.fetchall()
+
+            return [{"id": str(row[0]), "name": row[1]} for row in rows]
+
+    async def list_audience_profiles(self, tenant_id: str) -> List[Dict[str, Any]]:
+        """Lista todos os perfis de audiencia de um tenant"""
+        async with self.async_session() as session:
+            result = await session.execute(
+                text("""
+                    SELECT id, name
+                    FROM audience_profiles
+                    WHERE tenant_id = :tenant_id
+                    ORDER BY name ASC
+                """),
+                {"tenant_id": tenant_id}
+            )
+            rows = result.fetchall()
+
+            return [{"id": str(row[0]), "name": row[1]} for row in rows]
+
+    async def list_product_positionings(self, tenant_id: str) -> List[Dict[str, Any]]:
+        """Lista todos os posicionamentos de produto de um tenant"""
+        async with self.async_session() as session:
+            result = await session.execute(
+                text("""
+                    SELECT id, name
+                    FROM product_positionings
+                    WHERE tenant_id = :tenant_id
+                    ORDER BY name ASC
+                """),
+                {"tenant_id": tenant_id}
+            )
+            rows = result.fetchall()
+
+            return [{"id": str(row[0]), "name": row[1]} for row in rows]
+
+    def build_brand_context(
+        self,
+        brand_profile: Optional[Dict[str, Any]] = None,
+        audience_profile: Optional[Dict[str, Any]] = None,
+        product_positioning: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Constroi o contexto de marca para injecao nos prompts"""
+        parts = []
+
+        if brand_profile:
+            parts.append("=" * 60)
+            parts.append("CAMADA 1 - DNA EDITORIAL DA MARCA")
+            parts.append("=" * 60)
+
+            # Brand Voice
+            voice = brand_profile.get('brand_voice', {})
+            if voice:
+                parts.append("\n## VOZ DA MARCA")
+                if voice.get('personality_traits'):
+                    parts.append(f"Tracos de personalidade: {', '.join(voice['personality_traits'])}")
+                if voice.get('tone_descriptors'):
+                    parts.append(f"Tom de voz: {', '.join(voice['tone_descriptors'])}")
+                if voice.get('vocabulary_style'):
+                    parts.append(f"Estilo de vocabulario: {voice['vocabulary_style']}")
+
+            # Brand Identity
+            identity = brand_profile.get('brand_identity', {})
+            if identity:
+                parts.append("\n## IDENTIDADE DA MARCA")
+                if identity.get('mission'):
+                    parts.append(f"Missao: {identity['mission']}")
+                if identity.get('values'):
+                    parts.append(f"Valores: {', '.join(identity['values'])}")
+                if identity.get('unique_proposition'):
+                    parts.append(f"Proposicao unica: {identity['unique_proposition']}")
+
+            # Beliefs and Enemies
+            beliefs = brand_profile.get('beliefs_and_enemies', {})
+            if beliefs:
+                parts.append("\n## CRENCAS E POSICIONAMENTOS")
+                if beliefs.get('core_beliefs'):
+                    parts.append(f"Crencas centrais: {' | '.join(beliefs['core_beliefs'])}")
+                if beliefs.get('industry_enemies'):
+                    parts.append(f"Inimigos da industria: {', '.join(beliefs['industry_enemies'])}")
+                if beliefs.get('contrarian_views'):
+                    parts.append(f"Visoes contrarias: {' | '.join(beliefs['contrarian_views'])}")
+
+            # Content Pillars
+            pillars = brand_profile.get('content_pillars', [])
+            if pillars:
+                parts.append("\n## PILARES DE CONTEUDO")
+                for pillar in pillars:
+                    parts.append(f"- {pillar.get('name', '')}: {pillar.get('description', '')}")
+                    if pillar.get('example_topics'):
+                        parts.append(f"  Topicos: {', '.join(pillar['example_topics'])}")
+
+        if audience_profile:
+            parts.append("\n")
+            parts.append("=" * 60)
+            parts.append("CAMADA 2 - PERFIL DO PUBLICO-ALVO")
+            parts.append("=" * 60)
+
+            # Demographics
+            demo = audience_profile.get('demographics', {})
+            if demo:
+                parts.append("\n## DEMOGRAFIA")
+                demo_parts = []
+                if demo.get('age_range'):
+                    demo_parts.append(f"Idade: {demo['age_range']}")
+                if demo.get('gender'):
+                    demo_parts.append(f"Genero: {demo['gender']}")
+                if demo.get('location'):
+                    demo_parts.append(f"Localizacao: {demo['location']}")
+                if demo.get('income_level'):
+                    demo_parts.append(f"Renda: {demo['income_level']}")
+                if demo.get('education'):
+                    demo_parts.append(f"Educacao: {demo['education']}")
+                if demo_parts:
+                    parts.append(" | ".join(demo_parts))
+
+            # Psychographics
+            psycho = audience_profile.get('psychographics', {})
+            if psycho:
+                parts.append("\n## PSICOGRAFIA")
+                if psycho.get('pains'):
+                    parts.append("DORES (problemas que enfrentam):")
+                    for pain in psycho['pains']:
+                        parts.append(f"- {pain}")
+                if psycho.get('desires'):
+                    parts.append("DESEJOS (o que querem alcancar):")
+                    for desire in psycho['desires']:
+                        parts.append(f"- {desire}")
+                if psycho.get('fears'):
+                    parts.append("MEDOS (o que temem):")
+                    for fear in psycho['fears']:
+                        parts.append(f"- {fear}")
+                if psycho.get('dreams'):
+                    parts.append("SONHOS (aspiracoes):")
+                    for dream in psycho['dreams']:
+                        parts.append(f"- {dream}")
+
+            # Objections
+            objections = audience_profile.get('objections', {})
+            if objections:
+                parts.append("\n## OBJECOES")
+                if objections.get('common_objections'):
+                    parts.append(f"Objecoes comuns: {' | '.join(objections['common_objections'])}")
+                if objections.get('trust_barriers'):
+                    parts.append(f"Barreiras de confianca: {' | '.join(objections['trust_barriers'])}")
+
+            # Language Patterns
+            lang = audience_profile.get('language_patterns', {})
+            if lang:
+                parts.append("\n## PADROES DE LINGUAGEM DO PUBLICO")
+                if lang.get('slang_terms'):
+                    parts.append(f"Girias/termos que usam: {', '.join(lang['slang_terms'])}")
+                if lang.get('phrases_they_use'):
+                    parts.append(f"Frases comuns: \"{' | '.join(lang['phrases_they_use'])}\"")
+                if lang.get('tone_preference'):
+                    parts.append(f"Preferencia de tom: {lang['tone_preference']}")
+
+        if product_positioning:
+            parts.append("\n")
+            parts.append("=" * 60)
+            parts.append("CAMADA 3 - POSICIONAMENTO DO PRODUTO")
+            parts.append("=" * 60)
+
+            # Transformation
+            transform = product_positioning.get('transformation', {})
+            if transform:
+                parts.append("\n## TRANSFORMACAO")
+                if transform.get('before_state'):
+                    parts.append(f"ANTES (situacao atual do cliente): {transform['before_state']}")
+                if transform.get('after_state'):
+                    parts.append(f"DEPOIS (resultado esperado): {transform['after_state']}")
+                if transform.get('journey_description'):
+                    parts.append(f"JORNADA: {transform['journey_description']}")
+
+            # Mechanism
+            mech = product_positioning.get('mechanism', {})
+            if mech:
+                parts.append("\n## MECANISMO (como funciona)")
+                if mech.get('how_it_works'):
+                    parts.append(f"Como funciona: {mech['how_it_works']}")
+                if mech.get('unique_method'):
+                    parts.append(f"Metodo unico: {mech['unique_method']}")
+                if mech.get('differentiator'):
+                    parts.append(f"Diferenciador: {mech['differentiator']}")
+
+            # Promises
+            promises = product_positioning.get('promises', {})
+            if promises:
+                parts.append("\n## PROMESSAS")
+                if promises.get('main_promise'):
+                    parts.append(f"PROMESSA PRINCIPAL: {promises['main_promise']}")
+                if promises.get('secondary_promises'):
+                    parts.append("Promessas secundarias:")
+                    for promise in promises['secondary_promises']:
+                        parts.append(f"- {promise}")
+                if promises.get('proof_points'):
+                    parts.append("Provas/resultados:")
+                    for proof in promises['proof_points']:
+                        parts.append(f"- {proof}")
+
+            # Objection Handling
+            handlers = product_positioning.get('objection_handling', [])
+            if handlers:
+                parts.append("\n## TRATAMENTO DE OBJECOES")
+                for handler in handlers:
+                    parts.append(f"OBJECAO: \"{handler.get('objection', '')}\"")
+                    parts.append(f"  RESPOSTA: {handler.get('response', '')}")
+                    if handler.get('proof'):
+                        parts.append(f"  PROVA: {handler['proof']}")
+
+        return "\n".join(parts) if parts else ""
+
 
 # Singleton
 _creators_storage: Optional[CreatorsStorage] = None

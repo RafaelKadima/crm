@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AuthTypeEnum;
 use App\Enums\HttpMethodEnum;
 use App\Enums\IntegrationTypeEnum;
 use App\Traits\BelongsToTenant;
@@ -22,10 +23,16 @@ class ExternalIntegration extends Model
     protected $fillable = [
         'tenant_id',
         'name',
+        'slug',
+        'description',
         'type',
         'endpoint_url',
         'http_method',
         'headers',
+        'auth_type',
+        'auth_config',
+        'trigger_on',
+        'trigger_stages',
         'is_active',
     ];
 
@@ -40,8 +47,45 @@ class ExternalIntegration extends Model
             'type' => IntegrationTypeEnum::class,
             'http_method' => HttpMethodEnum::class,
             'headers' => 'array',
+            'auth_type' => AuthTypeEnum::class,
+            'auth_config' => 'encrypted:array',
+            'trigger_on' => 'array',
+            'trigger_stages' => 'array',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Scope para filtrar integracoes por evento de trigger.
+     */
+    public function scopeTriggeredBy($query, string $event)
+    {
+        return $query->whereJsonContains('trigger_on', $event);
+    }
+
+    /**
+     * Verifica se a integracao e acionada por um evento especifico.
+     */
+    public function isTriggeredBy(string $event): bool
+    {
+        return is_array($this->trigger_on) && in_array($event, $this->trigger_on);
+    }
+
+    /**
+     * Verifica se a integracao deve ser acionada para um estagio especifico.
+     * Retorna true se:
+     * - trigger_stages esta vazio/null (dispara para qualquer estagio)
+     * - O stageId esta na lista de trigger_stages
+     */
+    public function shouldTriggerForStage(?string $stageId): bool
+    {
+        // Se nao tem trigger_stages configurado, dispara para qualquer estagio
+        if (empty($this->trigger_stages)) {
+            return true;
+        }
+
+        // Verifica se o estagio esta na lista
+        return in_array($stageId, $this->trigger_stages);
     }
 
     /**

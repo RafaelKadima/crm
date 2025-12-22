@@ -33,6 +33,12 @@ class User extends Authenticatable
         'avatar',
         'is_active',
         'is_super_admin',
+        // Campos de integracao Linx
+        'linx_empresa_id',
+        'linx_vendedor_id',
+        'linx_loja_id',
+        'linx_showroom_id',
+        'external_integrations',
     ];
 
     /**
@@ -58,7 +64,16 @@ class User extends Authenticatable
             'role' => RoleEnum::class,
             'is_active' => 'boolean',
             'is_super_admin' => 'boolean',
+            'external_integrations' => 'array',
         ];
+    }
+
+    /**
+     * Verifica se o usuario tem configuracao Linx completa.
+     */
+    public function hasLinxConfig(): bool
+    {
+        return !empty($this->linx_empresa_id) && !empty($this->linx_vendedor_id);
     }
 
     /**

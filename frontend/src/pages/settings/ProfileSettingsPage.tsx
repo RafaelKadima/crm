@@ -12,23 +12,39 @@ import {
   EyeOff,
   Camera,
   Save,
+  Building2,
+  Store,
+  UserCog,
+  Warehouse,
 } from 'lucide-react'
 import api from '@/api/axios'
 import { useAuthStore } from '@/store/authStore'
+import { useIntegrations } from '@/hooks/useIntegrations'
 
 export function ProfileSettingsPage() {
   const { user, setAuth, token, tenant } = useAuthStore()
-  
+  const { data: integrations } = useIntegrations()
+
   const [loading, setLoading] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Verifica se existe integracao Linx ativa
+  const hasLinxIntegration = integrations?.some(
+    (i) => i.slug === 'linx' && i.is_active
+  ) || false
+
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
     phone: '',
+    // Campos Linx
+    linx_empresa_id: '',
+    linx_vendedor_id: '',
+    linx_loja_id: '',
+    linx_showroom_id: '',
   })
 
   const [passwordData, setPasswordData] = useState({
@@ -50,6 +66,10 @@ export function ProfileSettingsPage() {
         name: user.name || '',
         email: user.email || '',
         phone: user.phone || '',
+        linx_empresa_id: user.linx_empresa_id || '',
+        linx_vendedor_id: user.linx_vendedor_id || '',
+        linx_loja_id: user.linx_loja_id || '',
+        linx_showroom_id: user.linx_showroom_id || '',
       })
     }
   }, [user])
@@ -222,6 +242,77 @@ export function ProfileSettingsPage() {
               </div>
             </div>
           </div>
+
+          {/* Campos Linx - apenas se tiver integracao ativa */}
+          {hasLinxIntegration && (
+            <div className="mt-6 pt-4 border-t border-gray-700">
+              <h4 className="font-medium text-gray-300 mb-4 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-400" />
+                Dados de Integracao Linx
+              </h4>
+              <p className="text-sm text-gray-500 mb-4">
+                Preencha seus dados do sistema Linx para que os leads sejam enviados corretamente.
+              </p>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">ID Empresa (Linx)</label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input
+                      type="text"
+                      value={profileData.linx_empresa_id}
+                      onChange={(e) => setProfileData({ ...profileData, linx_empresa_id: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                      placeholder="Ex: 123"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">ID Vendedor (Linx)</label>
+                  <div className="relative">
+                    <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input
+                      type="text"
+                      value={profileData.linx_vendedor_id}
+                      onChange={(e) => setProfileData({ ...profileData, linx_vendedor_id: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                      placeholder="Ex: 456"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">ID Loja (Linx)</label>
+                  <div className="relative">
+                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input
+                      type="text"
+                      value={profileData.linx_loja_id}
+                      onChange={(e) => setProfileData({ ...profileData, linx_loja_id: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                      placeholder="Ex: 789"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">ID Showroom (Linx)</label>
+                  <div className="relative">
+                    <Warehouse className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input
+                      type="text"
+                      value={profileData.linx_showroom_id}
+                      onChange={(e) => setProfileData({ ...profileData, linx_showroom_id: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                      placeholder="Ex: 101"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end pt-2">
             <button

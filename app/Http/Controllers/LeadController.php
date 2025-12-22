@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ActivitySourceEnum;
+use App\Events\LeadCreated;
 use App\Models\Contact;
 use App\Models\Lead;
 use App\Models\LeadActivity;
@@ -149,6 +150,9 @@ class LeadController extends Controller
 
         $lead->load(['contact', 'pipeline', 'stage', 'channel', 'owner']);
 
+        // Dispara evento para integracoes externas (Linx, Webhooks, etc.)
+        LeadCreated::dispatch($lead, auth()->user(), 'user');
+
         return response()->json([
             'message' => 'Lead criado com sucesso.',
             'lead' => $lead,
@@ -206,13 +210,13 @@ class LeadController extends Controller
         if (isset($validated['product_id'])) {
             $productId = $validated['product_id'];
             unset($validated['product_id']);
-            
+
             if ($productId) {
                 $product = \App\Models\Product::find($productId);
-                
+
                 // Remove produtos anteriores
                 \App\Models\LeadProduct::where('lead_id', $lead->id)->delete();
-                
+
                 // Adiciona o novo produto usando o modelo (para gerar UUID)
                 \App\Models\LeadProduct::create([
                     'lead_id' => $lead->id,
@@ -220,7 +224,7 @@ class LeadController extends Controller
                     'quantity' => 1,
                     'unit_price' => $product->current_price,
                 ]);
-                
+
                 // Atualiza o valor do lead com o preço do produto
                 $validated['value'] = $product->current_price;
             } else {
@@ -230,7 +234,20 @@ class LeadController extends Controller
             }
         }
 
-        $lead->update($validated);
+        // Se está mudando de estágio, usa moveToStage para disparar eventos
+        if (isset($validated['stage_id']) && $validated['stage_id'] !== $lead->stage_id) {
+            $newStage = \App\Models\PipelineStage::find($validated['stage_id']);
+            if ($newStage) {
+                $lead->moveToStage($newStage, auth()->user(), 'user');
+            }
+            unset($validated['stage_id']);
+        }
+
+        // Atualiza os demais campos
+        if (!empty($validated)) {
+            $lead->update($validated);
+        }
+
         $lead->load(['contact', 'pipeline', 'stage', 'channel', 'owner', 'products']);
 
         // Broadcast para atualização em tempo real

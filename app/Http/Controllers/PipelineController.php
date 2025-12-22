@@ -349,6 +349,10 @@ class PipelineController extends Controller
             'order' => 'nullable|integer|min:0',
             'color' => 'nullable|string|max:20',
             'gtm_event_key' => 'nullable|string|max:100',
+            'stage_type' => 'nullable|string|in:open,won,lost',
+            'probability' => 'nullable|integer|min:0|max:100',
+            'kpi_weight' => 'nullable|integer|min:0|max:100',
+            'counts_for_goal' => 'nullable|boolean',
         ]);
 
         // Se não informou a ordem, coloca no final
@@ -379,6 +383,10 @@ class PipelineController extends Controller
             'order' => 'nullable|integer|min:0',
             'color' => 'nullable|string|max:20',
             'gtm_event_key' => 'nullable|string|max:100',
+            'stage_type' => 'nullable|string|in:open,won,lost',
+            'probability' => 'nullable|integer|min:0|max:100',
+            'kpi_weight' => 'nullable|integer|min:0|max:100',
+            'counts_for_goal' => 'nullable|boolean',
         ]);
 
         $stage->update($validated);

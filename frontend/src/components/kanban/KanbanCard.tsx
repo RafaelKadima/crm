@@ -5,6 +5,8 @@ import { Phone, Mail, MessageSquare, Clock, MessageCircle } from 'lucide-react'
 import { cn, formatCurrency, formatPhone, truncate } from '@/lib/utils'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
+import { StageProgressBar } from '@/components/stage-activities/StageProgressBar'
+import { useLeadStageProgress } from '@/hooks/useStageActivities'
 import type { Lead } from '@/types'
 
 interface KanbanCardProps {
@@ -29,6 +31,9 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
     transition,
     isDragging: isSortableDragging,
   } = useSortable({ id: lead.id })
+
+  // Busca progresso das atividades do lead
+  const { data: progress } = useLeadStageProgress(lead.id)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -126,6 +131,13 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
           <span className="text-xs text-purple-600 dark:text-purple-400 font-medium truncate">
             {lead.owner.name}
           </span>
+        </div>
+      )}
+
+      {/* Stage Activities Progress */}
+      {progress && progress.total > 0 && (
+        <div className="mb-3">
+          <StageProgressBar progress={progress} variant="minimal" />
         </div>
       )}
 

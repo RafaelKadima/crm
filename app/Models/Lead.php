@@ -208,6 +208,24 @@ class Lead extends Model
     }
 
     /**
+     * Atividades de etapa do lead.
+     */
+    public function stageActivities(): HasMany
+    {
+        return $this->hasMany(DealStageActivity::class)->orderBy('created_at');
+    }
+
+    /**
+     * Atividades da etapa atual.
+     */
+    public function currentStageActivities(): HasMany
+    {
+        return $this->hasMany(DealStageActivity::class)
+            ->where('stage_id', $this->stage_id)
+            ->orderBy('created_at');
+    }
+
+    /**
      * Valor total dos produtos de interesse.
      */
     public function getProductsTotalAttribute(): float
