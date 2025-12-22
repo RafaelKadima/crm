@@ -13,7 +13,7 @@ interface DialogProps {
 interface DialogContentProps {
   children: React.ReactNode
   className?: string
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full'
 }
 
 interface DialogHeaderProps {
@@ -60,6 +60,8 @@ export function DialogContent({ children, className, size = 'md' }: DialogConten
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
+    '2xl': 'max-w-6xl',
+    '3xl': 'max-w-[85vw]',
     full: 'max-w-[95vw] h-[90vh]',
   }
 

@@ -13,6 +13,9 @@ import {
   Tag,
   ChevronRight,
   ChevronDown,
+  ChevronLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
   Smile,
   MoreVertical,
   ArrowRight,
@@ -118,6 +121,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   const [iaEnabled, setIaEnabled] = useState(true)
   const [isTogglingIa, setIsTogglingIa] = useState(false)
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [suggestion, setSuggestion] = useState<{
     action: string
     explanation: string
@@ -655,7 +659,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl" className="p-0 flex h-[85vh] max-h-[700px] relative overflow-hidden">
+      <DialogContent size="3xl" className="p-0 flex h-[90vh] max-h-[850px] relative overflow-hidden">
         {/* 🔥 Efeito visual de transferência em tempo real */}
         <AnimatePresence>
           {transferEffect.show && (
@@ -730,48 +734,80 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           )}
         </AnimatePresence>
 
-        {/* Left Panel - Lead Info */}
-        <div className="w-80 border-r bg-muted/30 flex flex-col">
+        {/* Left Panel - Lead Info (Collapsible) */}
+        <motion.div
+          className={cn(
+            "border-r bg-muted/30 flex flex-col relative transition-all duration-300",
+            isSidebarCollapsed ? "w-16" : "w-80"
+          )}
+          animate={{ width: isSidebarCollapsed ? 64 : 320 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          {/* Toggle Button */}
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="absolute -right-3 top-20 z-10 p-1.5 rounded-full bg-background border shadow-md hover:bg-muted transition-colors"
+            title={isSidebarCollapsed ? "Expandir painel" : "Recolher painel"}
+          >
+            {isSidebarCollapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </button>
+
           {/* Contact Header */}
-          <div className="p-6 border-b bg-gradient-to-br from-primary/10 to-transparent">
-            <div className="flex items-center gap-4">
+          <div className={cn(
+            "border-b bg-gradient-to-br from-primary/10 to-transparent transition-all",
+            isSidebarCollapsed ? "p-3" : "p-6"
+          )}>
+            <div className={cn(
+              "flex items-center",
+              isSidebarCollapsed ? "justify-center" : "gap-4"
+            )}>
               <Avatar
                 src={null}
                 fallback={lead.contact?.name || 'Lead'}
-                size="lg"
-                className="h-16 w-16 text-xl ring-4 ring-background"
+                size={isSidebarCollapsed ? "md" : "lg"}
+                className={cn(
+                  "ring-4 ring-background",
+                  isSidebarCollapsed ? "h-10 w-10 text-sm" : "h-16 w-16 text-xl"
+                )}
               />
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg truncate">
-                  {lead.contact?.name || 'Sem nome'}
-                </h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="secondary" className="text-xs">
-                    <ChannelIcon className="h-3 w-3 mr-1" />
-                    {lead.channel?.name || 'Direto'}
-                  </Badge>
+              {!isSidebarCollapsed && (
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-lg truncate">
+                    {lead.contact?.name || 'Sem nome'}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="secondary" className="text-xs">
+                      <ChannelIcon className="h-3 w-3 mr-1" />
+                      {lead.channel?.name || 'Direto'}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
-          {/* Contact Info */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Phone */}
-            {lead.contact?.phone && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted transition-colors cursor-pointer">
-                <div className="p-2 rounded-lg bg-green-500/10 text-green-600">
-                  <Phone className="h-4 w-4" />
+          {/* Contact Info - Hidden when collapsed */}
+          {!isSidebarCollapsed ? (
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Phone */}
+              {lead.contact?.phone && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted transition-colors cursor-pointer">
+                  <div className="p-2 rounded-lg bg-green-500/10 text-green-600">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Telefone</p>
+                    <p className="font-medium truncate">{formatPhone(lead.contact.phone)}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Telefone</p>
-                  <p className="font-medium truncate">{formatPhone(lead.contact.phone)}</p>
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+              )}
 
             {/* Email */}
             {lead.contact?.email && (
@@ -860,100 +896,136 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
               </div>
             )}
 
-            {/* Notes */}
-            {lead.title && (
-              <div className="p-3 rounded-lg bg-background">
-                <p className="text-xs text-muted-foreground mb-1">Observações</p>
-                <p className="text-sm">{lead.title}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="p-4 border-t space-y-2">
-            {/* Move to next stage button */}
-            {nextStage ? (
-              <Button 
-                className="w-full" 
-                variant="default" 
-                size="sm"
-                onClick={handleMoveToNextStage}
-                disabled={isMovingStage}
-              >
-                {isMovingStage ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                )}
-                Mover para {nextStage.name}
-              </Button>
-            ) : (
-              <Button className="w-full" variant="default" size="sm" disabled>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Estágio final
-              </Button>
-            )}
-
-            {/* Stage selector dropdown */}
-            <div className="relative">
-              <Button 
-                className="w-full" 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowStageSelector(!showStageSelector)}
-              >
-                <Tag className="h-4 w-4 mr-2" />
-                Escolher estágio
-                <ChevronDown className={cn(
-                  "h-4 w-4 ml-auto transition-transform",
-                  showStageSelector && "rotate-180"
-                )} />
-              </Button>
-
-              {/* Dropdown */}
-              {showStageSelector && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute bottom-full left-0 right-0 mb-2 bg-background border rounded-lg shadow-lg overflow-hidden z-50"
-                >
-                  {stages.map((stage) => (
-                    <button
-                      key={stage.id}
-                      onClick={() => handleMoveToStage(stage)}
-                      disabled={stage.id === currentStage?.id}
-                      className={cn(
-                        "w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-muted transition-colors",
-                        stage.id === currentStage?.id && "bg-muted opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      <span 
-                        className="h-3 w-3 rounded-full" 
-                        style={{ backgroundColor: stage.color }}
-                      />
-                      <span>{stage.name}</span>
-                      {stage.id === currentStage?.id && (
-                        <Check className="h-4 w-4 ml-auto text-green-500" />
-                      )}
-                    </button>
-                  ))}
-                </motion.div>
+              {/* Notes */}
+              {lead.title && (
+                <div className="p-3 rounded-lg bg-background">
+                  <p className="text-xs text-muted-foreground mb-1">Observações</p>
+                  <p className="text-sm">{lead.title}</p>
+                </div>
               )}
             </div>
+          ) : (
+            /* Collapsed state - show only icons */
+            <div className="flex-1 flex flex-col items-center py-4 space-y-3">
+              {lead.contact?.phone && (
+                <div className="p-2 rounded-lg bg-green-500/10 text-green-600" title={formatPhone(lead.contact.phone)}>
+                  <Phone className="h-4 w-4" />
+                </div>
+              )}
+              {lead.contact?.email && (
+                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600" title={lead.contact.email}>
+                  <Mail className="h-4 w-4" />
+                </div>
+              )}
+              {lead.value && lead.value > 0 && (
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600" title={formatCurrency(lead.value)}>
+                  <DollarSign className="h-4 w-4" />
+                </div>
+              )}
+              {lead.owner && (
+                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600" title={lead.owner.name}>
+                  <User className="h-4 w-4" />
+                </div>
+              )}
+              {currentStage && (
+                <div
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: currentStage.color + '20', color: currentStage.color }}
+                  title={currentStage.name}
+                >
+                  <Tag className="h-4 w-4" />
+                </div>
+              )}
+            </div>
+          )}
 
-            {/* Edit Lead Button */}
-            <Button 
-              className="w-full" 
-              variant="outline" 
-              size="sm"
-              onClick={() => setActiveView('edit')}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar Lead
-            </Button>
-          </div>
-        </div>
+          {/* Quick Actions - Hidden when collapsed */}
+          {!isSidebarCollapsed && (
+            <div className="p-4 border-t space-y-2">
+              {/* Move to next stage button */}
+              {nextStage ? (
+                <Button
+                  className="w-full"
+                  variant="default"
+                  size="sm"
+                  onClick={handleMoveToNextStage}
+                  disabled={isMovingStage}
+                >
+                  {isMovingStage ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                  )}
+                  Mover para {nextStage.name}
+                </Button>
+              ) : (
+                <Button className="w-full" variant="default" size="sm" disabled>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Estágio final
+                </Button>
+              )}
+
+              {/* Stage selector dropdown */}
+              <div className="relative">
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowStageSelector(!showStageSelector)}
+                >
+                  <Tag className="h-4 w-4 mr-2" />
+                  Escolher estágio
+                  <ChevronDown className={cn(
+                    "h-4 w-4 ml-auto transition-transform",
+                    showStageSelector && "rotate-180"
+                  )} />
+                </Button>
+
+                {/* Dropdown */}
+                {showStageSelector && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute bottom-full left-0 right-0 mb-2 bg-background border rounded-lg shadow-lg overflow-hidden z-50"
+                  >
+                    {stages.map((stage) => (
+                      <button
+                        key={stage.id}
+                        onClick={() => handleMoveToStage(stage)}
+                        disabled={stage.id === currentStage?.id}
+                        className={cn(
+                          "w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-muted transition-colors",
+                          stage.id === currentStage?.id && "bg-muted opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <span
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: stage.color }}
+                        />
+                        <span>{stage.name}</span>
+                        {stage.id === currentStage?.id && (
+                          <Check className="h-4 w-4 ml-auto text-green-500" />
+                        )}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Edit Lead Button */}
+              <Button
+                className="w-full"
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveView('edit')}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar Lead
+              </Button>
+            </div>
+          )}
+        </motion.div>
 
         {/* Right Panel - Chat / Closing */}
         <div className="flex-1 flex flex-col">
@@ -1246,7 +1318,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                         <div className="group flex flex-col gap-1">
                           <div
                             className={cn(
-                              'max-w-[70%] rounded-2xl px-4 py-2 shadow-sm',
+                              'max-w-[80%] rounded-2xl px-4 py-3 shadow-sm',
                               msg.direction === 'outbound'
                                 ? 'bg-primary text-primary-foreground rounded-br-md'
                                 : 'bg-background border rounded-bl-md'
@@ -1382,14 +1454,15 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                   />
                   {/* Template button - only for WhatsApp */}
                   {lead?.channel?.type?.toLowerCase() === 'whatsapp' && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="shrink-0"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 border-green-500/30 text-green-500 hover:bg-green-500/10"
                       onClick={() => setIsTemplateModalOpen(true)}
-                      title="Enviar Template"
+                      title="Enviar Template WhatsApp"
                     >
-                      <MessageSquareText className="h-5 w-5 text-green-500" />
+                      <MessageSquareText className="h-4 w-4 mr-1" />
+                      Templates
                     </Button>
                   )}
                   <div className="flex-1 relative">
