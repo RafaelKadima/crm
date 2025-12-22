@@ -21,13 +21,14 @@ export function useLeadImport(id: string) {
     },
     enabled: !!id,
     refetchInterval: (query) => {
-      // Poll every 1 second while pending or processing
       const data = query.state.data as { import: LeadImport; progress: number } | undefined
       const status = data?.import?.status
-      if (status === 'pending' || status === 'processing') {
+
+      // Poll if: no data yet, or status is pending/processing
+      if (!data || status === 'pending' || status === 'processing') {
         return 1000 // Poll every 1 second
       }
-      return false
+      return false // Stop polling when completed or failed
     },
   })
 }
