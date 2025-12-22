@@ -252,12 +252,15 @@ class LeadImportService
         $rows = [];
         $headers = [];
 
+        // Detectar delimitador automaticamente
+        $delimiter = $this->detectDelimiter($path);
+
         if (($handle = fopen($path, 'r')) !== false) {
             $lineNumber = 0;
-            
-            while (($data = fgetcsv($handle, 0, ';')) !== false) {
+
+            while (($data = fgetcsv($handle, 0, $delimiter)) !== false) {
                 $lineNumber++;
-                
+
                 // Primeira linha são os cabeçalhos
                 if ($lineNumber === 1) {
                     foreach ($data as $header) {
@@ -280,11 +283,42 @@ class LeadImportService
 
                 $rows[] = $rowData;
             }
-            
+
             fclose($handle);
         }
 
         return $rows;
+    }
+
+    /**
+     * Detecta o delimitador do CSV automaticamente.
+     */
+    protected function detectDelimiter(string $path): string
+    {
+        $delimiters = [',', ';', "\t", '|'];
+        $firstLine = '';
+
+        if (($handle = fopen($path, 'r')) !== false) {
+            $firstLine = fgets($handle);
+            fclose($handle);
+        }
+
+        if (empty($firstLine)) {
+            return ';'; // Default
+        }
+
+        // Contar ocorrências de cada delimitador
+        $counts = [];
+        foreach ($delimiters as $delimiter) {
+            $counts[$delimiter] = substr_count($firstLine, $delimiter);
+        }
+
+        // Retornar o delimitador com mais ocorrências
+        arsort($counts);
+        $detected = array_key_first($counts);
+
+        // Se não encontrou nenhum delimitador válido, usar ponto-e-vírgula
+        return $counts[$detected] > 0 ? $detected : ';';
     }
 
     /**
