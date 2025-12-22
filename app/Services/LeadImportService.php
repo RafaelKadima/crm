@@ -167,8 +167,9 @@ class LeadImportService
                             'name' => $name,
                             'phone' => $phone,
                             'email' => $email ?: null,
-                            'company' => trim($row['empresa'] ?? '') ?: null,
+                            'source' => trim($row['origem'] ?? '') ?: 'import',
                             'extra_data' => json_encode([
+                                'company' => trim($row['empresa'] ?? '') ?: null,
                                 'position' => trim($row['cargo'] ?? '') ?: null,
                                 'imported_at' => $now->toISOString(),
                                 'import_id' => $import->id,
