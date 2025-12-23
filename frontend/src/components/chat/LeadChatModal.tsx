@@ -136,6 +136,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const sidebarContentRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   
   const reopenTicket = useReopenTicket()
@@ -326,18 +327,27 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       setMessage('') // Limpa o input ao abrir nova conversa
       setTicketId(null) // ⚠️ IMPORTANTE: Reseta ticketId para forçar busca do ticket correto
       loadMessages(1, false)
+      // Reset sidebar scroll to top
+      if (sidebarContentRef.current) {
+        sidebarContentRef.current.scrollTop = 0
+      }
     }
   }, [open, lead])
 
   // Scroll to bottom only on initial load (page 1)
   useEffect(() => {
     if (currentPage === 1 && messages.length > 0 && !isLoading) {
-      // Delay para garantir que os elementos foram renderizados
-      setTimeout(() => {
+      // Scroll imediatamente e depois de um delay para garantir renderização
+      const scrollToBottom = () => {
         if (messagesContainerRef.current) {
           messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
         }
-      }, 100)
+      }
+      // Tenta várias vezes para garantir que elementos de mídia foram renderizados
+      scrollToBottom()
+      setTimeout(scrollToBottom, 50)
+      setTimeout(scrollToBottom, 200)
+      setTimeout(scrollToBottom, 500)
     }
   }, [messages, currentPage, isLoading])
 
@@ -795,7 +805,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
           {/* Contact Info - Hidden when collapsed */}
           {!isSidebarCollapsed ? (
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div ref={sidebarContentRef} className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* Phone */}
               {lead.contact?.phone && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted transition-colors cursor-pointer">
