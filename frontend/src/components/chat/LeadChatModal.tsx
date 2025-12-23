@@ -53,6 +53,7 @@ import { useLeadMessages } from '@/hooks/useWebSocket'
 import { useReopenTicket } from '@/hooks/useTicketActions'
 import { notify } from '@/components/ui/FuturisticNotification'
 import { useAuth } from '@/hooks/useAuth'
+import { useHasFeature } from '@/hooks/useFeatures'
 import type { Lead, PipelineStage } from '@/types'
 import api from '@/api/axios'
 
@@ -99,6 +100,7 @@ const channelIcons: Record<string, typeof MessageSquare> = {
 export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageChange, forceClosingForm = false, onLeadDeleted }: LeadChatModalProps) {
   const queryClient = useQueryClient()
   const { user } = useAuth()
+  const { hasAccess: hasIaFeature } = useHasFeature('sdr_ia')
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [ticketId, setTicketId] = useState<string | null>(null)
@@ -138,14 +140,14 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   
   const reopenTicket = useReopenTicket()
 
-  // Query para buscar o Lead Score via MCP
+  // Query para buscar o Lead Score via MCP - só executa se tenant tem feature de IA
   const { data: leadScore, isLoading: isLoadingScore } = useQuery({
     queryKey: ['lead-score', lead?.id],
     queryFn: async () => {
       const response = await api.get(`/leads/${lead?.id}/score`)
       return response.data
     },
-    enabled: !!lead?.id && open,
+    enabled: !!lead?.id && open && hasIaFeature,
     staleTime: 60000, // Cache por 1 minuto
     retry: 1,
   })
@@ -1108,8 +1110,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium">Conversa via {lead.channel?.name || 'Chat'}</h4>
-                      {/* Lead Score Badge */}
-                      {leadScore && (
+                      {/* Lead Score Badge - só aparece se tenant tem feature de IA */}
+                      {hasIaFeature && leadScore && (
                         <div className={cn(
                           "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
                           leadScore.score >= 70 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
@@ -1120,7 +1122,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                           {Math.round(leadScore.score)}% conversão
                         </div>
                       )}
-                      {isLoadingScore && (
+                      {hasIaFeature && isLoadingScore && (
                         <div className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground flex items-center gap-1">
                           <Loader2 className="h-3 w-3 animate-spin" />
                           Analisando...
@@ -1136,28 +1138,30 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                 <div className="flex items-center gap-2">
                   {ticketStatus === 'open' ? (
                     <>
-                      {/* Toggle IA Button */}
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleToggleIa}
-                        disabled={isTogglingIa}
-                        className={cn(
-                          iaEnabled 
-                            ? "text-purple-400 border-purple-400/30 hover:bg-purple-400/10" 
-                            : "text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
-                        )}
-                        title={iaEnabled ? "Desativar IA e assumir atendimento" : "Reativar IA"}
-                      >
-                        {isTogglingIa ? (
-                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                        ) : iaEnabled ? (
-                          <Bot className="h-4 w-4 mr-1" />
-                        ) : (
-                          <UserRound className="h-4 w-4 mr-1" />
-                        )}
-                        {iaEnabled ? 'IA Ativa' : 'Você'}
-                      </Button>
+                      {/* Toggle IA Button - só aparece se tenant tem feature de IA */}
+                      {hasIaFeature && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleToggleIa}
+                          disabled={isTogglingIa}
+                          className={cn(
+                            iaEnabled
+                              ? "text-purple-400 border-purple-400/30 hover:bg-purple-400/10"
+                              : "text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
+                          )}
+                          title={iaEnabled ? "Desativar IA e assumir atendimento" : "Reativar IA"}
+                        >
+                          {isTogglingIa ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : iaEnabled ? (
+                            <Bot className="h-4 w-4 mr-1" />
+                          ) : (
+                            <UserRound className="h-4 w-4 mr-1" />
+                          )}
+                          {iaEnabled ? 'IA Ativa' : 'Você'}
+                        </Button>
+                      )}
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -1403,8 +1407,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
               {/* Message Input */}
               <div className="p-4 border-t bg-background relative">
-                {/* Sugestão da IA - acima do input */}
-                {suggestion && (
+                {/* Sugestão da IA - acima do input - só aparece se tenant tem feature de IA */}
+                {hasIaFeature && suggestion && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1434,24 +1438,26 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                     </p>
                   </motion.div>
                 )}
-                
+
                 <div className="flex items-center gap-2">
-                  {/* Botão Sugerir Ação via MCP */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0"
-                    onClick={() => suggestActionMutation.mutate()}
-                    disabled={suggestActionMutation.isPending}
-                    title="Sugerir próxima ação (IA)"
-                  >
-                    {suggestActionMutation.isPending ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
-                    ) : (
-                      <Bot className="h-5 w-5 text-purple-500" />
-                    )}
-                  </Button>
-                  
+                  {/* Botão Sugerir Ação via MCP - só aparece se tenant tem feature de IA */}
+                  {hasIaFeature && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => suggestActionMutation.mutate()}
+                      disabled={suggestActionMutation.isPending}
+                      title="Sugerir próxima ação (IA)"
+                    >
+                      {suggestActionMutation.isPending ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+                      ) : (
+                        <Bot className="h-5 w-5 text-purple-500" />
+                      )}
+                    </Button>
+                  )}
+
                   {/* File upload button */}
                   <FileUploadButton
                     ticketId={ticketId}
