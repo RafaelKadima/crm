@@ -14,10 +14,7 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronLeft,
-  PanelLeftClose,
-  PanelLeftOpen,
   Smile,
-  MoreVertical,
   ArrowRight,
   CheckCheck,
   Check,
@@ -334,22 +331,42 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
     }
   }, [open, lead])
 
-  // Scroll to bottom only on initial load (page 1)
-  useEffect(() => {
-    if (currentPage === 1 && messages.length > 0 && !isLoading) {
-      // Scroll imediatamente e depois de um delay para garantir renderização
-      const scrollToBottom = () => {
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
-        }
-      }
-      // Tenta várias vezes para garantir que elementos de mídia foram renderizados
-      scrollToBottom()
-      setTimeout(scrollToBottom, 50)
-      setTimeout(scrollToBottom, 200)
-      setTimeout(scrollToBottom, 500)
+  // Helper para verificar se está no final do scroll
+  const isAtBottom = useCallback(() => {
+    const el = messagesContainerRef.current
+    if (!el) return true
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 100
+  }, [])
+
+  // Scroll to bottom - só quando necessário
+  const scrollToBottom = useCallback((force = false) => {
+    if (messagesContainerRef.current && (force || isAtBottom())) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
     }
-  }, [messages, currentPage, isLoading])
+  }, [isAtBottom])
+
+  // Track se é o primeiro render das mensagens
+  const isFirstMessageLoad = useRef(true)
+
+  // Scroll to bottom only on initial load
+  useEffect(() => {
+    if (messages.length > 0 && !isLoading) {
+      if (isFirstMessageLoad.current) {
+        // Primeiro load - força scroll para o final
+        isFirstMessageLoad.current = false
+        requestAnimationFrame(() => {
+          scrollToBottom(true)
+        })
+      }
+    }
+  }, [messages, isLoading, scrollToBottom])
+
+  // Reset first load flag quando modal abre
+  useEffect(() => {
+    if (open) {
+      isFirstMessageLoad.current = true
+    }
+  }, [open])
 
   // Focus input when modal opens
   useEffect(() => {
