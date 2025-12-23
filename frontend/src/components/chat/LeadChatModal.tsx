@@ -324,49 +324,27 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       setMessage('') // Limpa o input ao abrir nova conversa
       setTicketId(null) // ⚠️ IMPORTANTE: Reseta ticketId para forçar busca do ticket correto
       loadMessages(1, false)
-      // Reset sidebar scroll to top
-      if (sidebarContentRef.current) {
-        sidebarContentRef.current.scrollTop = 0
+
+      // Reset sidebar scroll to top - com múltiplas tentativas para garantir
+      const resetSidebarScroll = () => {
+        if (sidebarContentRef.current) {
+          sidebarContentRef.current.scrollTop = 0
+        }
       }
+      // Tentativas imediata + com delays para garantir que o DOM renderizou
+      resetSidebarScroll()
+      requestAnimationFrame(resetSidebarScroll)
+      setTimeout(resetSidebarScroll, 50)
+      setTimeout(resetSidebarScroll, 150)
     }
   }, [open, lead])
 
-  // Helper para verificar se está no final do scroll
-  const isAtBottom = useCallback(() => {
-    const el = messagesContainerRef.current
-    if (!el) return true
-    return el.scrollHeight - el.scrollTop - el.clientHeight < 100
-  }, [])
-
-  // Scroll to bottom - só quando necessário
-  const scrollToBottom = useCallback((force = false) => {
-    if (messagesContainerRef.current && (force || isAtBottom())) {
+  // Scroll das mensagens para o final - apenas quando usuário envia mensagem
+  const scrollToBottom = useCallback(() => {
+    if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
     }
-  }, [isAtBottom])
-
-  // Track se é o primeiro render das mensagens
-  const isFirstMessageLoad = useRef(true)
-
-  // Scroll to bottom only on initial load
-  useEffect(() => {
-    if (messages.length > 0 && !isLoading) {
-      if (isFirstMessageLoad.current) {
-        // Primeiro load - força scroll para o final
-        isFirstMessageLoad.current = false
-        requestAnimationFrame(() => {
-          scrollToBottom(true)
-        })
-      }
-    }
-  }, [messages, isLoading, scrollToBottom])
-
-  // Reset first load flag quando modal abre
-  useEffect(() => {
-    if (open) {
-      isFirstMessageLoad.current = true
-    }
-  }, [open])
+  }, [])
 
   // Focus input when modal opens
   useEffect(() => {
