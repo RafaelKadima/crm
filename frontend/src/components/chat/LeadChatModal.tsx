@@ -659,7 +659,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="3xl" className="p-0 flex h-[90vh] max-h-[850px] relative overflow-hidden">
+      <DialogContent size="2xl" className="p-0 flex h-[85vh] max-h-[800px] relative overflow-hidden">
         {/* 🔥 Efeito visual de transferência em tempo real */}
         <AnimatePresence>
           {transferEffect.show && (
@@ -743,16 +743,19 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           animate={{ width: isSidebarCollapsed ? 64 : 320 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
-          {/* Toggle Button */}
+          {/* Toggle Button - positioned at top right of sidebar */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="absolute -right-3 top-20 z-10 p-1.5 rounded-full bg-background border shadow-md hover:bg-muted transition-colors"
+            className={cn(
+              "absolute z-10 p-1 rounded-md bg-muted/80 hover:bg-muted transition-colors",
+              isSidebarCollapsed ? "top-2 right-2" : "top-3 right-3"
+            )}
             title={isSidebarCollapsed ? "Expandir painel" : "Recolher painel"}
           >
             {isSidebarCollapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             ) : (
-              <PanelLeftClose className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
             )}
           </button>
 
