@@ -74,8 +74,11 @@ interface NavGroup {
   defaultOpen?: boolean
 }
 
-// Menu organizado por grupos/setores
+// Menu reorganizado - 7 grupos principais
 const navGroups: NavGroup[] = [
+  // ═══════════════════════════════════════════════════════════════
+  // PRINCIPAL
+  // ═══════════════════════════════════════════════════════════════
   {
     id: 'main',
     label: 'Principal',
@@ -85,6 +88,10 @@ const navGroups: NavGroup[] = [
       { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     ],
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // ATENDIMENTO - Core do dia-a-dia (inclui Contatos e Tarefas)
+  // ═══════════════════════════════════════════════════════════════
   {
     id: 'support',
     label: 'Atendimento',
@@ -93,102 +100,125 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Kanban, label: 'Leads', path: '/leads', permissions: ['leads.view_own', 'leads.view_all'] },
       { icon: MessageSquare, label: 'Tickets', path: '/tickets', permissions: ['tickets.view_own', 'tickets.view_all'] },
+      { icon: Users, label: 'Contatos', path: '/contacts', permission: 'contacts.view' },
+      { icon: CheckSquare, label: 'Tarefas', path: '/tasks', permissions: ['tasks.view_own', 'tasks.view_all'] },
       { icon: CalendarDays, label: 'Agendamentos', path: '/appointments', feature: 'appointments', featureFunction: 'appointments.list', permission: 'appointments.view' },
       { icon: Clock, label: 'Minha Agenda', path: '/schedule', feature: 'appointments', featureFunction: 'appointments.schedule', permission: 'appointments.view' },
-      { icon: LayoutGrid, label: 'Filas', path: '/queues', adminOnly: true },
-      { icon: Radio, label: 'Canais', path: '/channels', permission: 'channels.view' },
     ],
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // MARKETING - Produtos e Landing Pages (removido Templates e GTM)
+  // ═══════════════════════════════════════════════════════════════
   {
     id: 'marketing',
     label: 'Marketing',
     icon: Megaphone,
+    defaultOpen: false,
     items: [
       { icon: Package, label: 'Produtos', path: '/products', feature: 'products', featureFunction: 'products.list', permission: 'products.view' },
       { icon: Globe, label: 'Landing Pages', path: '/landing-pages', feature: 'landing_pages', featureFunction: 'lp.list', permissions: ['landing_pages.view', 'landing_pages.create'] },
-      { icon: FileText, label: 'Templates WhatsApp', path: '/whatsapp-templates', permission: 'channels.view' },
-      { icon: TrendingUp, label: 'Google Tag Manager', path: '/gtm', adminOnly: true },
     ],
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // CRIADOR DE CONTEÚDO - Colapsável
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'viral_content',
+    label: 'Criador de Conteúdo',
+    icon: Video,
+    defaultOpen: false,
+    items: [
+      { icon: PlayCircle, label: 'Dashboard', path: '/content', feature: 'viral_content', featureFunction: 'viral.dashboard' },
+      { icon: Bot, label: 'Chat com Agente', path: '/content/chat', feature: 'viral_content', featureFunction: 'viral.generate' },
+      { icon: Users, label: 'Criadores', path: '/content/creators', feature: 'viral_content', featureFunction: 'viral.analyze' },
+      { icon: TrendingUp, label: 'Busca Viral', path: '/content/viral-search', feature: 'viral_content', featureFunction: 'viral.auto_discover' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // VENDAS & METAS - Novo grupo unificado
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'sales',
+    label: 'Vendas & Metas',
+    icon: Trophy,
+    defaultOpen: true,
+    items: [
+      { icon: Trophy, label: 'Metas e KPIs', path: '/goals' },
+      { icon: BarChart3, label: 'Relatórios', path: '/reports', permissions: ['reports.view_own', 'reports.view_all'] },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // SDR COM IA
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'intelligence',
+    label: 'SDR com IA',
+    icon: Bot,
+    defaultOpen: false,
+    items: [
+      { icon: Bot, label: 'Agentes IA', path: '/sdr', feature: 'sdr_ia', featureFunction: 'sdr.agents', permission: 'sdr_ia.view' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // ADS INTELLIGENCE - Colapsável (removido configs para Settings)
+  // ═══════════════════════════════════════════════════════════════
   {
     id: 'ads',
     label: 'Ads Intelligence',
     icon: Target,
+    defaultOpen: false,
     items: [
-      { icon: Target, label: 'Dashboard Ads', path: '/ads', feature: 'ads_intelligence', featureFunction: 'ads.dashboard' },
-      { icon: Zap, label: '🤖 Criar Campanha (IA)', path: '/ads/agent', feature: 'ads_intelligence', featureFunction: 'ads.create_campaign' },
-      { icon: Bot, label: '💬 Chat com Agente', path: '/ads/chat', feature: 'ads_intelligence', featureFunction: 'ads.chat' },
-      { icon: ImageIcon, label: '📁 Criativos', path: '/ads/creatives', feature: 'ads_intelligence', featureFunction: 'ads.creatives' },
+      { icon: Target, label: 'Dashboard', path: '/ads', feature: 'ads_intelligence', featureFunction: 'ads.dashboard' },
+      { icon: Zap, label: 'Criar Campanha', path: '/ads/agent', feature: 'ads_intelligence', featureFunction: 'ads.create_campaign' },
+      { icon: Bot, label: 'Chat com Agente', path: '/ads/chat', feature: 'ads_intelligence', featureFunction: 'ads.chat' },
+      { icon: ImageIcon, label: 'Criativos', path: '/ads/creatives', feature: 'ads_intelligence', featureFunction: 'ads.creatives' },
       { icon: BarChart3, label: 'Campanhas', path: '/ads/campaigns', feature: 'ads_intelligence', featureFunction: 'ads.campaigns' },
-      { icon: Lightbulb, label: 'Insights IA', path: '/ads/insights', feature: 'ads_intelligence', featureFunction: 'ads.insights' },
+      { icon: Lightbulb, label: 'Insights', path: '/ads/insights', feature: 'ads_intelligence', featureFunction: 'ads.insights' },
       { icon: Zap, label: 'Automações', path: '/ads/automation', feature: 'ads_intelligence', featureFunction: 'ads.automation' },
-      { icon: BookOpen, label: '📚 Base de Conhecimento', path: '/ads/knowledge', feature: 'ads_intelligence', featureFunction: 'ads.knowledge' },
-      { icon: Shield, label: '🛡️ Guardrails', path: '/ads/guardrails', feature: 'ads_intelligence', featureFunction: 'ads.guardrails' },
-      { icon: Settings, label: 'Contas de Anúncio', path: '/ads/accounts', feature: 'ads_intelligence', featureFunction: 'ads.accounts' },
     ],
   },
-  {
-    id: 'crm',
-    label: 'CRM',
-    icon: Users,
-    items: [
-      { icon: Users, label: 'Contatos', path: '/contacts', permission: 'contacts.view' },
-      { icon: CheckSquare, label: 'Tarefas', path: '/tasks', permissions: ['tasks.view_own', 'tasks.view_all'] },
-    ],
-  },
-  {
-    id: 'goals',
-    label: 'Metas',
-    icon: Trophy,
-    items: [
-      { icon: Trophy, label: 'Metas e KPIs', path: '/goals' },
-    ],
-  },
-  {
-    id: 'intelligence',
-    label: 'Inteligência',
-    icon: Bot,
-    items: [
-      { icon: Bot, label: 'Agentes IA', path: '/sdr', feature: 'sdr_ia', featureFunction: 'sdr.agents', permission: 'sdr_ia.view' },
-      { icon: BarChart3, label: 'Relatórios', path: '/reports', permissions: ['reports.view_own', 'reports.view_all'] },
-    ],
-  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // BI ANALYTICS - Colapsável, Admin only (removido configs)
+  // ═══════════════════════════════════════════════════════════════
   {
     id: 'bi',
-    label: 'BI Agent',
+    label: 'BI Analytics',
     icon: PieChart,
+    defaultOpen: false,
     items: [
-      { icon: PieChart, label: 'Dashboard BI', path: '/bi', feature: 'bi_agent', featureFunction: 'bi.dashboard', adminOnly: true },
-      { icon: Brain, label: '🤖 Analista IA', path: '/bi/analyst', feature: 'bi_agent', featureFunction: 'bi.analyst', adminOnly: true },
-      { icon: ClipboardCheck, label: '📋 Ações Pendentes', path: '/bi/actions', feature: 'bi_agent', featureFunction: 'bi.actions', adminOnly: true },
-      { icon: FileSpreadsheet, label: '📊 Relatórios', path: '/bi/reports', feature: 'bi_agent', featureFunction: 'bi.reports', adminOnly: true },
-      { icon: Settings2, label: '⚙️ Configurações', path: '/bi/settings', feature: 'bi_agent', featureFunction: 'bi.settings', adminOnly: true },
+      { icon: PieChart, label: 'Dashboard', path: '/bi', feature: 'bi_agent', featureFunction: 'bi.dashboard', adminOnly: true },
+      { icon: Brain, label: 'Analista IA', path: '/bi/analyst', feature: 'bi_agent', featureFunction: 'bi.analyst', adminOnly: true },
+      { icon: ClipboardCheck, label: 'Ações Pendentes', path: '/bi/actions', feature: 'bi_agent', featureFunction: 'bi.actions', adminOnly: true },
     ],
   },
-  {
-    id: 'viral_content',
-    label: 'Content Creator',
-    icon: Video,
-    items: [
-      { icon: PlayCircle, label: '📊 Dashboard', path: '/content', feature: 'viral_content', featureFunction: 'viral.dashboard' },
-      { icon: Bot, label: '🤖 Chat com Agente', path: '/content/chat', feature: 'viral_content', featureFunction: 'viral.generate' },
-      { icon: Users, label: '👥 Criadores', path: '/content/creators', feature: 'viral_content', featureFunction: 'viral.analyze' },
-      { icon: TrendingUp, label: '🔥 Busca Viral', path: '/content/viral-search', feature: 'viral_content', featureFunction: 'viral.auto_discover' },
-    ],
-  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // CONFIGURAÇÕES - Link único para página de settings
+  // ═══════════════════════════════════════════════════════════════
   {
     id: 'settings',
     label: 'Configurações',
     icon: Cog,
+    defaultOpen: false,
     items: [
-      { icon: Plug, label: 'Integrações', path: '/integrations', permission: 'settings.integrations' },
       { icon: Settings, label: 'Configurações', path: '/settings', permission: 'settings.view' },
     ],
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // ADMINISTRAÇÃO
+  // ═══════════════════════════════════════════════════════════════
   {
     id: 'admin',
     label: 'Administração',
     icon: Shield,
+    defaultOpen: false,
     items: [
       { icon: Building2, label: 'Grupos', path: '/groups', feature: 'groups', featureFunction: 'groups.view' },
       { icon: Shield, label: 'Super Admin', path: '/super-admin', superAdminOnly: true },
