@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { cn } from '@/lib/utils'
-import { useChatProducts, useSendProductToChat, ChatProduct } from '@/hooks/useChatProducts'
+import { useChatProducts, useSendProductToChat, type ChatProduct } from '@/hooks/useChatProducts'
 import { toast } from 'sonner'
 
 interface ProductSelectorProps {
@@ -42,7 +42,7 @@ export function ProductSelector({ ticketId, isOpen, onClose, onSent }: ProductSe
 
     const searchLower = search.toLowerCase()
     return products.filter(
-      p =>
+      (p: ChatProduct) =>
         p.name.toLowerCase().includes(searchLower) ||
         p.sku?.toLowerCase().includes(searchLower)
     )
@@ -184,7 +184,7 @@ export function ProductSelector({ ticketId, isOpen, onClose, onSent }: ProductSe
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
-                    {filteredProducts.map((product) => (
+                    {filteredProducts.map((product: ChatProduct) => (
                       <motion.div
                         key={product.id}
                         initial={{ opacity: 0, y: 10 }}
