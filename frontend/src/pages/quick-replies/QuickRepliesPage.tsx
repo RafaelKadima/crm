@@ -37,7 +37,7 @@ import {
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { QuickReply } from '@/types'
-import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react'
+import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react'
 
 export function QuickRepliesPage() {
   const [searchQuery, setSearchQuery] = useState('')
