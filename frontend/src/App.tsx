@@ -33,6 +33,7 @@ import { AdsDashboard, AdsAccounts, AdsCampaigns, AdsInsights, AdsAutomation, Ad
 import { BIDashboard, ActionApprovalQueue, AIAnalystChat, ReportsPage as BIReportsPage, BISettings } from '@/pages/bi'
 import { ContentDashboard, ContentAgentChat, ContentCreators, ViralVideoSearch, BrandSettings, AnalyzeVideo, GenerateScript, AutoDiscover } from '@/pages/content'
 import { GoalsDashboard, GoalForm } from '@/pages/goals'
+import { QuickRepliesPage } from '@/pages/quick-replies/QuickRepliesPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -141,6 +142,7 @@ function AppRoutes() {
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="tickets" element={<TicketsPage />} />
         <Route path="tasks" element={<TasksPage />} />
+        <Route path="quick-replies" element={<QuickRepliesPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="reports/activity-effectiveness" element={<ActivityEffectivenessPage />} />
         <Route path="settings/*" element={<SettingsPage />} />

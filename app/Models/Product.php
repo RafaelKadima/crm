@@ -16,6 +16,11 @@ class Product extends Model
 {
     use HasFactory, HasUuids, BelongsToTenant, SoftDeletes;
 
+    /**
+     * Número máximo de imagens por produto
+     */
+    public const MAX_IMAGES = 4;
+
     protected $fillable = [
         'tenant_id',
         'category_id',
@@ -155,6 +160,22 @@ class Product extends Model
     public function scopeForLandingPage($query)
     {
         return $query->where('show_on_landing_page', true)->where('is_active', true);
+    }
+
+    /**
+     * Verifica se pode adicionar mais imagens
+     */
+    public function canAddMoreImages(): bool
+    {
+        return $this->images()->count() < self::MAX_IMAGES;
+    }
+
+    /**
+     * Retorna quantidade de imagens
+     */
+    public function getImagesCountAttribute(): int
+    {
+        return $this->images()->count();
     }
 }
 

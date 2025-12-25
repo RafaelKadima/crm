@@ -37,6 +37,8 @@ use App\Http\Controllers\KprController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\ActivityAnalysisController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\QuickReplyController;
+use App\Http\Controllers\ProductChatController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -332,6 +334,14 @@ Route::middleware('auth:api')->group(function () {
             // Toggle IA para atendimento humano
             Route::put('{ticket}/toggle-ia', [TicketController::class, 'toggleIa']); // Toggle IA on/off
             Route::get('{ticket}/ia-status', [TicketController::class, 'iaStatus']); // Status da IA
+
+            // Enviar produto no chat
+            Route::post('{ticket}/send-product', [ProductChatController::class, 'sendToChat']);
+        });
+
+        // Chat Products (Catálogo para envio no chat)
+        Route::prefix('chat-products')->group(function () {
+            Route::get('/', [ProductChatController::class, 'index']);
         });
 
         // Pipelines
@@ -527,6 +537,18 @@ Route::middleware('auth:api')->group(function () {
             Route::delete('{product}/images/{image}', [ProductController::class, 'deleteImage']);
             Route::put('{product}/images/{image}/primary', [ProductController::class, 'setPrimaryImage']);
             Route::post('{product}/images/reorder', [ProductController::class, 'reorderImages']);
+        });
+
+        // Respostas Rápidas (por usuário)
+        Route::prefix('quick-replies')->group(function () {
+            Route::get('/', [QuickReplyController::class, 'index']);
+            Route::post('/', [QuickReplyController::class, 'store']);
+            Route::get('variables', [QuickReplyController::class, 'variables']);
+            Route::post('reorder', [QuickReplyController::class, 'reorder']);
+            Route::get('{quickReply}', [QuickReplyController::class, 'show']);
+            Route::put('{quickReply}', [QuickReplyController::class, 'update']);
+            Route::delete('{quickReply}', [QuickReplyController::class, 'destroy']);
+            Route::post('{quickReply}/render', [QuickReplyController::class, 'render']);
         });
 
         // Landing Pages - Requer feature: landing_pages

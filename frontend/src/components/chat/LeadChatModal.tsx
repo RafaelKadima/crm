@@ -32,6 +32,7 @@ import {
   X,
   Sparkles,
   UserCheck,
+  Package,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
@@ -45,6 +46,8 @@ import { StageActivityChecklist } from '@/components/stage-activities/StageActiv
 import { TransferModal } from '@/components/chat/TransferModal'
 import { CloseConversationModal } from '@/components/chat/CloseConversationModal'
 import { TemplateSelector } from '@/components/chat/TemplateSelector'
+import { QuickReplySelector } from '@/components/chat/QuickReplySelector'
+import { ProductSelector } from '@/components/chat/ProductSelector'
 import { FileUploadButton } from '@/components/chat/FileUploadButton'
 import { AudioRecorder } from '@/components/chat/AudioRecorder'
 import { MessageAttachment } from '@/components/chat/MessageAttachment'
@@ -120,7 +123,9 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   const [iaEnabled, setIaEnabled] = useState(true)
   const [isTogglingIa, setIsTogglingIa] = useState(false)
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [showQuickReplies, setShowQuickReplies] = useState(false)
   const [suggestion, setSuggestion] = useState<{
     action: string
     explanation: string
@@ -1479,13 +1484,49 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       Templates
                     </Button>
                   )}
+                  {/* Product Catalog button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 border-primary/30 text-primary hover:bg-primary/10"
+                    onClick={() => setIsProductSelectorOpen(true)}
+                    title="Enviar Produto do Catalogo"
+                  >
+                    <Package className="h-4 w-4 mr-1" />
+                    Catalogo
+                  </Button>
                   <div className="flex-1 relative">
+                    {/* Quick Reply Selector */}
+                    <QuickReplySelector
+                      inputValue={message}
+                      leadId={lead?.id}
+                      isVisible={showQuickReplies}
+                      onSelect={(content) => {
+                        setMessage(content)
+                        setShowQuickReplies(false)
+                        inputRef.current?.focus()
+                      }}
+                      onClose={() => setShowQuickReplies(false)}
+                    />
                     <Input
                       ref={inputRef}
-                      placeholder="Digite sua mensagem..."
+                      placeholder="Digite sua mensagem... (use / para atalhos)"
                       value={message}
-                      onChange={(e) => setMessage(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setMessage(value)
+                        // Mostra dropdown de respostas rápidas quando digita "/"
+                        if (value.startsWith('/') && value.length >= 1) {
+                          setShowQuickReplies(true)
+                        } else {
+                          setShowQuickReplies(false)
+                        }
+                      }}
                       onKeyPress={handleKeyPress}
+                      onBlur={() => {
+                        // Delay para permitir clique no dropdown
+                        setTimeout(() => setShowQuickReplies(false), 200)
+                      }}
                       className="pr-12"
                       spellCheck={true}
                       lang="pt-BR"
@@ -1558,6 +1599,17 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           onClose={() => setIsTemplateModalOpen(false)}
           onSent={() => {
             // Refresh messages after sending template
+            queryClient.invalidateQueries({ queryKey: ['leads'] })
+          }}
+        />
+
+        {/* Product Selector Modal */}
+        <ProductSelector
+          ticketId={ticketId}
+          isOpen={isProductSelectorOpen}
+          onClose={() => setIsProductSelectorOpen(false)}
+          onSent={() => {
+            // Refresh messages after sending product
             queryClient.invalidateQueries({ queryKey: ['leads'] })
           }}
         />

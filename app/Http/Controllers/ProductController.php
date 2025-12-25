@@ -159,6 +159,15 @@ class ProductController extends Controller
      */
     public function uploadImage(Request $request, Product $product): JsonResponse
     {
+        // Verifica limite de imagens
+        if (!$product->canAddMoreImages()) {
+            return response()->json([
+                'error' => 'Limite de ' . Product::MAX_IMAGES . ' imagens por produto atingido.',
+                'max_images' => Product::MAX_IMAGES,
+                'current_count' => $product->images()->count(),
+            ], 422);
+        }
+
         $request->validate([
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB
             'alt' => 'nullable|string|max:255',

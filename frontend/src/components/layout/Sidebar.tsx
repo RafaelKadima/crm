@@ -7,6 +7,7 @@ import {
   Users,
   Kanban,
   MessageSquare,
+  MessageSquareText,
   CheckSquare,
   BarChart3,
   Settings,
@@ -104,6 +105,7 @@ const navGroups: NavGroup[] = [
       { icon: CheckSquare, label: 'Tarefas', path: '/tasks', permissions: ['tasks.view_own', 'tasks.view_all'] },
       { icon: CalendarDays, label: 'Agendamentos', path: '/appointments', feature: 'appointments', featureFunction: 'appointments.list', permission: 'appointments.view' },
       { icon: Clock, label: 'Minha Agenda', path: '/schedule', feature: 'appointments', featureFunction: 'appointments.schedule', permission: 'appointments.view' },
+      { icon: MessageSquareText, label: 'Respostas Rápidas', path: '/quick-replies' },
     ],
   },
 

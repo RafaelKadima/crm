@@ -975,3 +975,25 @@ export interface IntegrationAvailableFields {
   tenant: Record<string, string>
 }
 
+// =============================================================================
+// QUICK REPLIES (Respostas Rápidas)
+// =============================================================================
+export interface QuickReply {
+  id: string
+  tenant_id: string
+  user_id: string
+  title: string
+  shortcut: string
+  content: string
+  variables?: string[]
+  is_active: boolean
+  use_count: number
+  order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface QuickReplyVariable {
+  key: string
+  description: string
+}

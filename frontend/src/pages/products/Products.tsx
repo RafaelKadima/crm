@@ -36,7 +36,11 @@ import {
   useProductCategories,
 } from '@/hooks/useProducts'
 import { cn, formatCurrency } from '@/lib/utils'
+import { toast } from 'sonner'
 import type { Product, ProductImage } from '@/types'
+
+// Limite máximo de imagens por produto
+const MAX_PRODUCT_IMAGES = 4
 
 export function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -397,15 +401,33 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
   const handleImageUpload = async (files: FileList | null) => {
     if (!files || !product) return
 
+    // Verifica limite de imagens antes de fazer upload
+    const remainingSlots = MAX_PRODUCT_IMAGES - images.length
+    if (remainingSlots <= 0) {
+      toast.error(`Limite de ${MAX_PRODUCT_IMAGES} imagens atingido`)
+      return
+    }
+
+    // Limita arquivos ao espaço disponível
+    const filesToUpload = Array.from(files).slice(0, remainingSlots)
+    if (files.length > remainingSlots) {
+      toast.warning(`Apenas ${remainingSlots} imagem(ns) será(ão) enviada(s). Limite: ${MAX_PRODUCT_IMAGES}`)
+    }
+
     setUploading(true)
     try {
-      for (const file of Array.from(files)) {
+      for (const file of filesToUpload) {
         const newImage = await uploadMutation.mutateAsync({
           productId: product.id,
           file,
           isPrimary: images.length === 0,
         })
         setImages((prev) => [...prev, newImage])
+      }
+    } catch (error: any) {
+      // Trata erro de limite do backend
+      if (error?.response?.status === 422 && error?.response?.data?.error) {
+        toast.error(error.response.data.error)
       }
     } finally {
       setUploading(false)
@@ -578,7 +600,17 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
             {/* Images (only when editing) */}
             {product && (
               <div className="space-y-3">
-                <label className="text-sm font-medium">Imagens</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Imagens</label>
+                  <span className={cn(
+                    "text-xs font-medium px-2 py-0.5 rounded",
+                    images.length >= MAX_PRODUCT_IMAGES
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {images.length}/{MAX_PRODUCT_IMAGES}
+                  </span>
+                </div>
                 <div className="grid grid-cols-4 gap-3">
                   {images.map((image) => (
                     <div key={image.id} className="relative aspect-square group">
@@ -617,22 +649,24 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                     </div>
                   ))}
 
-                  {/* Upload Button */}
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                  >
-                    {uploading ? (
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    ) : (
-                      <>
-                        <Upload className="h-6 w-6 mb-1" />
-                        <span className="text-xs">Adicionar</span>
-                      </>
-                    )}
-                  </button>
+                  {/* Upload Button - só aparece se não atingiu o limite */}
+                  {images.length < MAX_PRODUCT_IMAGES && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      ) : (
+                        <>
+                          <Upload className="h-6 w-6 mb-1" />
+                          <span className="text-xs">Adicionar</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
                 <input
                   ref={fileInputRef}
