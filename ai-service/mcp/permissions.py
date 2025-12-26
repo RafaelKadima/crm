@@ -117,6 +117,66 @@ class MCPPermissions:
             # Admin tem acesso a tudo
             '*',
         ],
+
+        'support': [
+            # === SDR Tools (para atendimento ao cliente via WhatsApp) ===
+            # Lead Tools
+            'predict_lead_score',
+            'get_lead_context',
+            'get_lead_memory',
+            'update_lead_memory',
+            'search_similar_leads',
+            'move_lead_stage',
+            'classify_intent',
+            'detect_objection',
+            'get_response_suggestion',
+            'get_conversation_summary',
+            'escalate_to_human',
+
+            # Action Tools
+            'select_sdr_action',
+            'send_message',
+            'schedule_meeting',
+
+            # Knowledge Tools
+            'search_knowledge',
+            'get_best_practices',
+            'get_rules',
+
+            # Memory Tools
+            'get_short_term_memory',
+            'get_long_term_memory',
+            'store_insight',
+
+            # Product Tools
+            'get_product_info',
+            'check_availability',
+
+            # === Support Tools (para resolver bugs e deploy) ===
+            # Manual e Código
+            'search_manual',
+            'search_codebase',
+            'read_file',
+            'edit_file',           # Requer aprovação
+            'create_file',         # Requer aprovação
+
+            # SSH e Logs
+            'ssh_execute',         # Requer aprovação
+            'get_error_logs',
+
+            # Git
+            'git_status',
+            'git_diff',
+            'git_commit',          # Requer aprovação
+            'git_push',            # Requer aprovação
+
+            # Deploy e Testes
+            'deploy_production',   # Requer aprovação
+            'run_tests',
+
+            # CRM
+            'support_move_lead_stage',
+        ],
     }
     
     # Ferramentas que são perigosas (podem gastar dinheiro ou causar danos)
@@ -126,12 +186,26 @@ class MCPPermissions:
         'delete_knowledge',     # Perde conhecimento
         'clear_experiences',    # Perde dados de RL
         'rollback_model',       # Pode degradar performance
+        # Support Agent - Operações de código e infraestrutura
+        'edit_file',            # Modifica código em produção
+        'create_file',          # Cria arquivos
+        'ssh_execute',          # Executa comandos no servidor
+        'git_commit',           # Altera histórico do repositório
+        'git_push',             # Envia alterações para produção
+        'deploy_production',    # Deploy em produção
     }
-    
+
     # Ferramentas que sempre requerem aprovação
     APPROVAL_REQUIRED_TOOLS = {
         'scale_campaign',
         'delete_knowledge',
+        # Support Agent - Operações críticas
+        'edit_file',
+        'create_file',
+        'ssh_execute',
+        'git_commit',
+        'git_push',
+        'deploy_production',
     }
     
     # Limites de chamadas por minuto por ferramenta

@@ -76,6 +76,36 @@ class PipelineSeeder extends Seeder
                 'color' => $stage['color'],
             ]);
         }
+
+        // Pipeline de Suporte Técnico (para Support Agent)
+        $pipelineSuporte = Pipeline::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Suporte Técnico',
+            'description' => 'Atendimento de suporte e resolução de bugs',
+            'is_default' => false,
+        ]);
+
+        $stagesSuporte = [
+            ['name' => 'Nova Solicitação', 'slug' => 'nova-solicitacao', 'order' => 0, 'color' => '#3B82F6', 'gtm_event' => 'support_new'],
+            ['name' => 'Em Análise', 'slug' => 'em-analise', 'order' => 1, 'color' => '#8B5CF6', 'gtm_event' => 'support_analysis'],
+            ['name' => 'Aguardando Correção', 'slug' => 'aguardando-correcao', 'order' => 2, 'color' => '#F59E0B', 'gtm_event' => 'support_fixing'],
+            ['name' => 'Aguardando Teste', 'slug' => 'aguardando-teste', 'order' => 3, 'color' => '#EC4899', 'gtm_event' => 'support_testing'],
+            ['name' => 'Resolvido', 'slug' => 'resolvido', 'order' => 4, 'color' => '#10B981', 'type' => 'won', 'gtm_event' => 'support_resolved'],
+            ['name' => 'Escalado', 'slug' => 'escalado', 'order' => 5, 'color' => '#EF4444', 'gtm_event' => 'support_escalated'],
+        ];
+
+        foreach ($stagesSuporte as $stage) {
+            PipelineStage::create([
+                'tenant_id' => $tenant->id,
+                'pipeline_id' => $pipelineSuporte->id,
+                'name' => $stage['name'],
+                'slug' => $stage['slug'],
+                'order' => $stage['order'],
+                'color' => $stage['color'],
+                'type' => $stage['type'] ?? 'open',
+                'gtm_event_key' => $stage['gtm_event'] ?? null,
+            ]);
+        }
     }
 }
 
