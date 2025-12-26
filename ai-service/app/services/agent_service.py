@@ -360,7 +360,10 @@ class AgentService:
         Executa o agente para uma mensagem recebida.
         """
         start_time = datetime.now()
-        
+
+        # Debug: mostra o que chegou no request.agent
+        print(f"[AGENT] Received agent config: name={request.agent.name}, type={request.agent.type}", flush=True)
+
         logger.info(
             "agent_run_started",
             lead_id=request.lead.id,
