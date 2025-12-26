@@ -1086,6 +1086,18 @@ Route::prefix('agent')->group(function () {
 });
 
 // =============================================================================
+// Rotas de Suporte (Histórico de ações do Zion) - Somente SuperAdmin
+// =============================================================================
+Route::middleware(['auth:sanctum', \App\Http\Middleware\SuperAdminMiddleware::class])
+    ->prefix('support')
+    ->group(function () {
+        Route::get('activities', [\App\Http\Controllers\SupportActivityController::class, 'index']);
+        Route::get('activities/{id}', [\App\Http\Controllers\SupportActivityController::class, 'show']);
+        Route::get('tickets/{ticketId}/activities', [\App\Http\Controllers\SupportActivityController::class, 'byTicket']);
+        Route::get('stats', [\App\Http\Controllers\SupportActivityController::class, 'stats']);
+    });
+
+// =============================================================================
 // Rotas internas para microserviço de IA (Python)
 // Autenticação via X-Internal-Key header
 // =============================================================================
@@ -1093,6 +1105,9 @@ Route::middleware('internal.api')->prefix('internal')->group(function () {
     // Uso de IA
     Route::post('ai-usage', [\App\Http\Controllers\InternalAiUsageController::class, 'logUsage']);
     Route::post('ai-usage/check', [\App\Http\Controllers\InternalAiUsageController::class, 'checkAiAccess']);
+
+    // Support Activity Logs (do Python para Laravel)
+    Route::post('support/activity', [\App\Http\Controllers\SupportActivityController::class, 'logActivity']);
 
     // Uso de leads
     Route::post('leads/check', [\App\Http\Controllers\InternalAiUsageController::class, 'checkLeadAccess']);

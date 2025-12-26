@@ -4,7 +4,9 @@ Serviço Principal do Agente - Orquestra RAG, Memory, ML e LLM
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import json
+import time
 import structlog
+import httpx
 from openai import AsyncOpenAI
 
 from app.config import get_settings
@@ -492,13 +494,22 @@ class AgentService:
             )
             
             # 8. Gera resposta via LLM com function calling
+            # Contexto para logging de atividades de suporte
+            log_context = {
+                "tenant_id": request.tenant.id,
+                "agent_id": request.agent.id,
+                "ticket_id": request.ticket_id,
+                "lead_id": request.lead.id,
+                "user_message": request.message
+            }
             response = await self._generate_response(
                 message=request.message,
                 context=context,
                 agent_config=request.agent,
                 tenant_config=request.tenant,
                 intent=intent_result.intent,
-                qualification=qualification
+                qualification=qualification,
+                log_context=log_context
             )
             
             # 9. Salva contexto atualizado
@@ -582,7 +593,8 @@ class AgentService:
         agent_config,
         tenant_config,
         intent: str,
-        qualification: Qualification
+        qualification: Qualification,
+        log_context: Optional[Dict[str, Any]] = None
     ) -> AgentRunResponse:
         """
         Gera resposta usando LLM com function calling.
@@ -722,7 +734,7 @@ class AgentService:
 
                 # Se for uma ferramenta de diagnóstico, executa e continua o loop
                 if function_name in DIAGNOSTIC_TOOLS:
-                    tool_result = await self._execute_diagnostic_tool(function_name, function_args)
+                    tool_result = await self._execute_diagnostic_tool(function_name, function_args, log_context)
 
                     # Adiciona a chamada e resultado à conversa
                     messages.append({
@@ -785,13 +797,22 @@ class AgentService:
             logger.error("generate_response_error", error=str(e))
             raise
 
-    async def _execute_diagnostic_tool(self, function_name: str, function_args: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_diagnostic_tool(
+        self,
+        function_name: str,
+        function_args: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
         Executa uma ferramenta de diagnóstico e retorna o resultado.
+        Também registra a atividade para histórico do suporte.
         """
+        start_time = time.time()
+        result = None
+
         try:
             if function_name == "get_error_logs":
-                return await get_error_logs(
+                result = await get_error_logs(
                     log_type=function_args.get("error_type", "laravel"),
                     lines=100,
                     filter=function_args.get("search_term")
@@ -800,31 +821,109 @@ class AgentService:
             elif function_name == "search_codebase":
                 file_type = function_args.get("file_type")
                 pattern = f"**/*.{file_type}" if file_type and file_type != "all" else "**/*"
-                return await search_codebase(
+                result = await search_codebase(
                     query=function_args.get("query", ""),
                     file_pattern=pattern,
                     max_results=20
                 )
 
             elif function_name == "read_file":
-                return await read_file(
+                result = await read_file(
                     file_path=function_args.get("file_path", ""),
                     line_start=function_args.get("start_line"),
                     line_end=function_args.get("end_line")
                 )
 
             elif function_name == "search_knowledge":
-                return await search_manual(
+                result = await search_manual(
                     query=function_args.get("query", ""),
                     section=function_args.get("category")
                 )
 
             else:
-                return {"success": False, "error": f"Ferramenta desconhecida: {function_name}"}
+                result = {"success": False, "error": f"Ferramenta desconhecida: {function_name}"}
+
+            # Calcula tempo de execução
+            execution_time_ms = int((time.time() - start_time) * 1000)
+
+            # Registra atividade de diagnóstico (em background, não bloqueia)
+            if context:
+                await self._log_support_activity(
+                    tenant_id=context.get("tenant_id"),
+                    agent_id=context.get("agent_id"),
+                    ticket_id=context.get("ticket_id"),
+                    lead_id=context.get("lead_id"),
+                    action_type="diagnostic",
+                    tool_used=function_name,
+                    tool_arguments=function_args,
+                    tool_result=json.dumps(result, ensure_ascii=False, default=str)[:5000],
+                    execution_time_ms=execution_time_ms,
+                    user_message=context.get("user_message")
+                )
+
+            return result
 
         except Exception as e:
             logger.error("diagnostic_tool_error", function=function_name, error=str(e))
             return {"success": False, "error": str(e)}
+
+    async def _log_support_activity(
+        self,
+        tenant_id: Optional[str],
+        agent_id: Optional[str],
+        ticket_id: Optional[str],
+        lead_id: Optional[str],
+        action_type: str,
+        tool_used: Optional[str] = None,
+        tool_arguments: Optional[Dict] = None,
+        tool_result: Optional[str] = None,
+        user_message: Optional[str] = None,
+        agent_response: Optional[str] = None,
+        error_found: bool = False,
+        error_details: Optional[Dict] = None,
+        resolution_provided: bool = False,
+        resolution_summary: Optional[str] = None,
+        execution_time_ms: Optional[int] = None,
+        tokens_used: Optional[int] = None
+    ):
+        """
+        Envia log de atividade de suporte para o Laravel.
+        Executa em background sem bloquear a resposta.
+        """
+        if not tenant_id or not agent_id:
+            return
+
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.post(
+                    f"{settings.LARAVEL_API_URL}/api/internal/support/activity",
+                    json={
+                        "tenant_id": tenant_id,
+                        "agent_id": agent_id,
+                        "ticket_id": ticket_id,
+                        "lead_id": lead_id,
+                        "action_type": action_type,
+                        "tool_used": tool_used,
+                        "tool_arguments": tool_arguments,
+                        "tool_result": tool_result,
+                        "user_message": user_message,
+                        "agent_response": agent_response,
+                        "error_found": error_found,
+                        "error_details": error_details,
+                        "resolution_provided": resolution_provided,
+                        "resolution_summary": resolution_summary,
+                        "execution_time_ms": execution_time_ms,
+                        "tokens_used": tokens_used,
+                    },
+                    headers={
+                        "X-Internal-Key": settings.LARAVEL_API_KEY,
+                        "Content-Type": "application/json"
+                    },
+                    timeout=5
+                )
+        except Exception as e:
+            # Log silencioso - não deve interromper o fluxo principal
+            logger.warning("support_activity_log_failed", error=str(e))
     
     def _process_function_call(
         self,
