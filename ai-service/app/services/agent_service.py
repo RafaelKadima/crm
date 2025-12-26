@@ -606,15 +606,26 @@ class AgentService:
             locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
         except:
             pass
-        
+
         now = datetime.now()
         today_str = now.strftime("%Y-%m-%d")
         today_formatted = now.strftime("%d/%m/%Y")
         current_time = now.strftime("%H:%M")
         weekday = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'][now.weekday()]
-        
-        # Monta system prompt
-        system_prompt = f"""{agent_config.prompt}
+
+        # System prompt diferente para agente de SUPORTE vs SDR
+        if agent_config.type == "support":
+            # Prompt simplificado para suporte - foco em diagnóstico
+            system_prompt = f"""{agent_config.prompt}
+
+## Contexto da Conversa
+{context}
+
+## Data/Hora Atual
+{weekday}, {today_formatted} às {current_time}"""
+        else:
+            # Monta system prompt para SDR
+            system_prompt = f"""{agent_config.prompt}
 
 ## ⚠️ DATA E HORA ATUAL (CRÍTICO - LEIA COM ATENÇÃO!)
 - HOJE é: {weekday}, {today_formatted} ({today_str})
@@ -684,6 +695,8 @@ class AgentService:
             max_iterations = 5
 
             for iteration in range(max_iterations):
+                print(f"[AGENT] Iteration {iteration + 1}/{max_iterations}, calling OpenAI...", flush=True)
+
                 response = await self.openai.chat.completions.create(
                     model=agent_config.ai_model,
                     messages=messages,
@@ -694,6 +707,7 @@ class AgentService:
                 )
 
                 assistant_message = response.choices[0].message
+                print(f"[AGENT] Response: tool_calls={assistant_message.tool_calls is not None}, content={assistant_message.content[:100] if assistant_message.content else 'None'}", flush=True)
 
                 # Acumula tokens usados
                 usage_info = response.usage
@@ -704,6 +718,7 @@ class AgentService:
 
                 # Se não houver function call, temos a resposta final
                 if not assistant_message.tool_calls:
+                    print(f"[AGENT] No tool calls, returning response", flush=True)
                     token_metrics = {
                         "input_tokens": total_tokens["input"],
                         "output_tokens": total_tokens["output"],
@@ -725,6 +740,7 @@ class AgentService:
                 tool_call = assistant_message.tool_calls[0]
                 function_name = tool_call.function.name
                 function_args = json.loads(tool_call.function.arguments)
+                print(f"[AGENT] Tool call: {function_name}({function_args})", flush=True)
 
                 logger.info("agent_tool_call",
                     function=function_name,
