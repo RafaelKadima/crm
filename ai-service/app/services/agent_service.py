@@ -658,7 +658,9 @@ class AgentService:
         ]
 
         # Seleciona funções baseado no tipo do agente
+        print(f"[AGENT] Agent type: '{agent_config.type}', using {'SUPPORT' if agent_config.type == 'support' else 'SDR'} functions", flush=True)
         available_functions = SUPPORT_FUNCTIONS if agent_config.type == "support" else SDR_FUNCTIONS
+        print(f"[AGENT] Available functions: {[f['name'] for f in available_functions]}", flush=True)
 
         try:
             # Loop para executar ferramentas de diagnóstico antes de responder
