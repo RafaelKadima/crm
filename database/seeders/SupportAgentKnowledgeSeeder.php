@@ -198,20 +198,6 @@ PROMPT;
                 'priority' => 75,
             ],
 
-            // === TICKETS ===
-            [
-                'question' => 'Como criar um ticket de suporte?',
-                'answer' => 'Acesse Menu > Tickets > "+ Novo Ticket". Preencha o assunto, descrição do problema, selecione a prioridade e o departamento responsável.',
-                'keywords' => ['ticket', 'criar', 'suporte', 'chamado', 'novo'],
-                'priority' => 90,
-            ],
-            [
-                'question' => 'Como acompanhar o status de um ticket?',
-                'answer' => 'Na lista de Tickets, você vê o status de cada um. Clique no ticket para ver o histórico completo de interações e atualizações.',
-                'keywords' => ['ticket', 'status', 'acompanhar', 'ver', 'historico'],
-                'priority' => 85,
-            ],
-
             // === CONTATOS ===
             [
                 'question' => 'Qual a diferença entre Lead e Contato?',
@@ -264,22 +250,22 @@ PROMPT;
 
             // === WHATSAPP ===
             [
-                'question' => 'Como conectar o WhatsApp ao CRM?',
-                'answer' => 'Acesse Configurações > Canais > WhatsApp > "Conectar". Escaneie o QR Code com seu WhatsApp. A conexão usa Evolution API e as mensagens serão sincronizadas automaticamente.',
-                'keywords' => ['whatsapp', 'conectar', 'integrar', 'qrcode', 'canal'],
+                'question' => 'Como o WhatsApp está integrado ao CRM?',
+                'answer' => 'O CRM usa a API Oficial do WhatsApp Business. As mensagens são enviadas e recebidas automaticamente. Todo atendimento ao cliente acontece diretamente pelo WhatsApp.',
+                'keywords' => ['whatsapp', 'integrado', 'api', 'oficial', 'business'],
                 'priority' => 95,
             ],
             [
-                'question' => 'Por que o WhatsApp desconectou?',
-                'answer' => 'Pode ser: 1) Celular sem internet, 2) WhatsApp Web aberto em outro lugar, 3) Sessão expirada. Acesse Canais > WhatsApp e reconecte escaneando o QR Code novamente.',
-                'keywords' => ['whatsapp', 'desconectou', 'offline', 'problema', 'qrcode'],
+                'question' => 'Como responder um cliente no WhatsApp?',
+                'answer' => 'Acesse Menu > Chat, selecione a conversa do cliente. Digite sua mensagem e envie. Você pode enviar textos, imagens, documentos e áudios.',
+                'keywords' => ['whatsapp', 'responder', 'mensagem', 'cliente', 'chat'],
                 'priority' => 90,
             ],
             [
-                'question' => 'Como usar o chat do CRM?',
-                'answer' => 'Acesse Menu > Chat ou clique no ícone de chat. Selecione a conversa desejada. Você pode responder clientes, enviar arquivos, áudios e usar respostas rápidas.',
-                'keywords' => ['chat', 'mensagem', 'responder', 'conversa'],
-                'priority' => 85,
+                'question' => 'Como usar respostas rápidas?',
+                'answer' => 'No chat, digite "/" para ver as respostas rápidas disponíveis. Selecione a desejada e ela será inserida automaticamente. Configure novas em Configurações > Respostas Rápidas.',
+                'keywords' => ['resposta', 'rapida', 'atalho', 'template', 'mensagem'],
+                'priority' => 80,
             ],
 
             // === AUTOMAÇÕES ===
@@ -546,7 +532,7 @@ CONTENT,
 - **500 Internal Server Error**: Verificar logs do PHP
 - **404 Not Found**: Verificar rotas em routes/api.php
 - **CORS Error**: Verificar config/cors.php
-- **WhatsApp Offline**: Verificar Evolution API
+- **WhatsApp não envia**: Verificar configuração da API Oficial do WhatsApp
 CONTENT,
             ],
 
@@ -626,55 +612,50 @@ CONTENT,
 - Score de leads (IA)
 - Importação/Exportação
 
-### 2. Tickets (Helpdesk)
-- Abertura de chamados
-- Prioridades e SLA
-- Atribuição por departamento
-- Histórico de atendimento
-
-### 3. Chat (Omnichannel)
-- WhatsApp integrado
+### 2. Chat (WhatsApp)
+- Integração com API Oficial do WhatsApp Business
+- Atendimento ao cliente via WhatsApp
 - Respostas rápidas
 - Transferência entre atendentes
 - Chatbot/Agente IA
 
-### 4. Contatos & Empresas
+### 3. Contatos & Empresas
 - Cadastro de pessoas
 - Cadastro de empresas
 - Vínculos entre contatos e empresas
 - Campos personalizados
 
-### 5. Produtos
+### 4. Produtos
 - Catálogo de produtos
 - Variações (cor, tamanho)
 - Controle de estoque
 - Categorias
 
-### 6. Propostas
+### 5. Propostas
 - Criação de orçamentos
 - Templates personalizáveis
 - Envio por email
 - Assinatura eletrônica
 
-### 7. Automações
+### 6. Automações
 - Workflows visuais
 - Gatilhos e ações
 - Envio automático de mensagens
 - Mudança automática de estágio
 
-### 8. Relatórios
+### 7. Relatórios
 - Dashboard de vendas
 - Métricas de atendimento
 - Performance de equipe
 - Exportação PDF/Excel
 
-### 9. Agentes IA
+### 8. Agentes IA
 - SDR automatizado
 - Base de conhecimento (RAG)
 - FAQs
 - Suporte técnico IA
 
-### 10. Configurações
+### 9. Configurações
 - Usuários e permissões
 - Canais de comunicação
 - Pipelines/Funis
@@ -682,44 +663,50 @@ CONTENT,
 CONTENT,
             ],
 
-            // === WHATSAPP EVOLUTION API ===
+            // === WHATSAPP API OFICIAL ===
             [
-                'title' => 'Integração WhatsApp (Evolution API)',
+                'title' => 'Integração WhatsApp (API Oficial)',
                 'category' => 'integracoes',
-                'tags' => ['whatsapp', 'evolution', 'integracao', 'api'],
+                'tags' => ['whatsapp', 'api', 'oficial', 'business', 'meta'],
                 'content' => <<<'CONTENT'
-## Evolution API v2
+## API Oficial do WhatsApp Business
 
 ### Sobre
-O OmniFy HUB usa Evolution API para integração com WhatsApp. É uma API open-source que permite enviar/receber mensagens via WhatsApp Web.
+O OmniFy HUB usa a API Oficial do WhatsApp Business da Meta para integração. É uma API enterprise que permite enviar/receber mensagens de forma profissional.
+
+### Vantagens
+- Conexão estável e confiável
+- Suporte oficial da Meta
+- Templates de mensagem aprovados
+- Webhooks para receber mensagens
+- Sem necessidade de celular conectado
 
 ### Configuração
-- A instância é criada por tenant
-- QR Code escaneado para conectar
-- Webhooks recebem mensagens
+- Conta Business verificada no Meta
+- Número de telefone dedicado
+- Webhooks configurados para receber mensagens
+- Access Token para autenticação
+
+### Tipos de Mensagem
+1. **Mensagens de Sessão**: Respostas dentro de 24h
+2. **Mensagens de Template**: Para iniciar conversas ou fora da janela de 24h
 
 ### Problemas Comuns
 
-#### WhatsApp Desconectado
-1. Celular sem internet
-2. WhatsApp Web aberto em outro lugar
-3. Sessão expirada
-**Solução**: Reconectar via QR Code
+#### Mensagem não enviando
+1. Verificar se o número está no formato correto (5511999999999)
+2. Verificar se o template está aprovado
+3. Verificar logs do sistema
 
-#### Mensagens não enviando
-1. Verificar status da instância
-2. Verificar número de destino (formato: 5511999999999)
-3. Verificar logs da Evolution API
+#### Template rejeitado
+1. Revisar conteúdo do template
+2. Garantir que não viola políticas do WhatsApp
+3. Submeter novamente para aprovação
 
-### Endpoints Principais
-- `POST /message/sendText` - Enviar texto
-- `POST /message/sendMedia` - Enviar mídia
-- `GET /instance/connectionState` - Status conexão
-- `GET /instance/qrcode` - QR Code
-
-### Arquivo de Configuração
-- Backend: `config/services.php` > evolution
-- Controller: `app/Http/Controllers/Api/ChannelController.php`
+### Arquivos Principais
+- Backend: `config/services.php` > whatsapp
+- Controller: `app/Http/Controllers/Api/WhatsAppController.php`
+- Service: `app/Services/WhatsAppService.php`
 CONTENT,
             ],
 
