@@ -21,13 +21,46 @@ echo "✓ Zion encontrado (ID: {$zion->id})\n";
 echo "  - Tipo atual: {$zion->type}\n";
 echo "  - can_move_leads: " . ($zion->can_move_leads ? 'true' : 'false') . "\n";
 
-// 2. Buscar Pipeline Suporte Técnico
-$pipeline = Pipeline::where('name', 'Suporte Técnico')->first();
+// 2. Buscar ou criar Pipeline Suporte Técnico
+$pipeline = Pipeline::where('name', 'Suporte Técnico')
+    ->where('tenant_id', $zion->tenant_id)
+    ->first();
+
 if (!$pipeline) {
-    echo "ERRO: Pipeline 'Suporte Técnico' não encontrado!\n";
-    exit(1);
+    echo "Pipeline não encontrado. Criando...\n";
+
+    $pipeline = Pipeline::create([
+        'tenant_id' => $zion->tenant_id,
+        'name' => 'Suporte Técnico',
+        'description' => 'Atendimento de suporte e resolução de bugs',
+        'is_default' => false,
+    ]);
+
+    $stagesData = [
+        ['name' => 'Nova Solicitação', 'slug' => 'nova-solicitacao', 'order' => 0, 'color' => '#3B82F6', 'type' => 'open'],
+        ['name' => 'Em Análise', 'slug' => 'em-analise', 'order' => 1, 'color' => '#8B5CF6', 'type' => 'open'],
+        ['name' => 'Aguardando Correção', 'slug' => 'aguardando-correcao', 'order' => 2, 'color' => '#F59E0B', 'type' => 'open'],
+        ['name' => 'Aguardando Teste', 'slug' => 'aguardando-teste', 'order' => 3, 'color' => '#EC4899', 'type' => 'open'],
+        ['name' => 'Resolvido', 'slug' => 'resolvido', 'order' => 4, 'color' => '#10B981', 'type' => 'won'],
+        ['name' => 'Escalado', 'slug' => 'escalado', 'order' => 5, 'color' => '#EF4444', 'type' => 'open'],
+    ];
+
+    foreach ($stagesData as $stageData) {
+        PipelineStage::create([
+            'tenant_id' => $zion->tenant_id,
+            'pipeline_id' => $pipeline->id,
+            'name' => $stageData['name'],
+            'slug' => $stageData['slug'],
+            'order' => $stageData['order'],
+            'color' => $stageData['color'],
+            'type' => $stageData['type'],
+        ]);
+    }
+
+    echo "✓ Pipeline 'Suporte Técnico' criado com 6 estágios!\n";
+} else {
+    echo "✓ Pipeline encontrado (ID: {$pipeline->id})\n";
 }
-echo "✓ Pipeline encontrado (ID: {$pipeline->id})\n";
 
 // Mostrar estágios
 $stages = PipelineStage::where('pipeline_id', $pipeline->id)->orderBy('order')->get();
