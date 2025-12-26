@@ -690,9 +690,9 @@ class AgentService:
 
         try:
             # Loop para executar ferramentas de diagnóstico antes de responder
-            # Máximo de 5 iterações para evitar loops infinitos
+            # Máximo de 10 iterações para permitir diagnósticos completos
             total_tokens = {"input": 0, "output": 0, "total": 0}
-            max_iterations = 5
+            max_iterations = 10
 
             for iteration in range(max_iterations):
                 print(f"[AGENT] Iteration {iteration + 1}/{max_iterations}, calling OpenAI...", flush=True)
