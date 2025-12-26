@@ -126,28 +126,34 @@ class QueueWorker:
                 return
 
             print(f"[WORKER] Context fetched, running agent...", flush=True)
-            
+
             # Converte o dicionário para objeto AgentRunRequest
             request = AgentRunRequest(**context["request"])
-            
+
             # Executa o agente
             response = await agent_service.run(request)
-            
+            print(f"[WORKER] Agent response: action={response.action.value}, message={response.message[:100] if response.message else 'None'}", flush=True)
+
             # Envia resposta de volta ao Laravel
             # mode="json" converte datetime para ISO string automaticamente
+            print(f"[WORKER] Sending response back to Laravel...", flush=True)
             await self._send_response(
                 ticket_id=ticket_id,
                 lead_id=data["lead_id"],
                 channel_id=data["channel_id"],
                 response=response.model_dump(mode="json")
             )
-            
+            print(f"[WORKER] Response sent!", flush=True)
+
             logger.info("ticket_processed_successfully",
                 ticket_id=ticket_id,
                 action=response.action.value
             )
             
         except Exception as e:
+            print(f"[WORKER] EXCEPTION in agent processing: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
             logger.error("agent_processing_error",
                 ticket_id=ticket_id,
                 error=str(e)
