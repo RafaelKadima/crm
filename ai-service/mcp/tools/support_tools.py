@@ -685,10 +685,10 @@ async def deploy_production(run_migrations: bool = False, clear_cache: bool = Tr
 
         # Rebuild containers se necessario
         if rebuild:
-            commands.append("docker-compose build")
+            commands.append("docker compose build")
 
         # Restart containers
-        commands.append("docker-compose up -d")
+        commands.append("docker compose up -d")
 
         # Executa comandos dentro do container PHP
         if clear_cache:
