@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             ContactSeeder::class,
             LeadSeeder::class,
             GroupSeeder::class,
+            SupportAgentKnowledgeSeeder::class,
         ]);
     }
 }
