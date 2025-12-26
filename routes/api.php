@@ -1258,6 +1258,24 @@ Route::middleware(['auth:api', 'super_admin'])->prefix('super-admin')->group(fun
         Route::get('export', [\App\Http\Controllers\SuperAdminCostController::class, 'exportReport']);
         Route::get('pricing', [\App\Http\Controllers\SuperAdminCostController::class, 'getPlanPricing']);
     });
+
+    // =============================================================================
+    // AGENTE DE SUPORTE IA (Exclusivo para admin@demo.com)
+    // =============================================================================
+    Route::prefix('support')->group(function () {
+        // Sessoes de suporte
+        Route::get('sessions', [\App\Http\Controllers\SupportAgentController::class, 'sessions']);
+        Route::post('sessions', [\App\Http\Controllers\SupportAgentController::class, 'createSession']);
+        Route::get('sessions/{session}', [\App\Http\Controllers\SupportAgentController::class, 'showSession']);
+        Route::post('sessions/{session}/complete', [\App\Http\Controllers\SupportAgentController::class, 'completeSession']);
+
+        // Chat com o agente
+        Route::post('sessions/{session}/chat', [\App\Http\Controllers\SupportAgentController::class, 'chat']);
+
+        // Aprovacao de acoes
+        Route::post('actions/{action}/approve', [\App\Http\Controllers\SupportAgentController::class, 'approveAction']);
+        Route::post('actions/{action}/reject', [\App\Http\Controllers\SupportAgentController::class, 'rejectAction']);
+    });
 });
 
 

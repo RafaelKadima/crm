@@ -395,7 +395,43 @@ Você tem acesso às seguintes ferramentas:"""
 Seu objetivo é criar e otimizar campanhas de publicidade no Meta Ads.
 
 Você tem acesso às seguintes ferramentas:"""
-        
+
+        elif agent_type == "support":
+            intro = """Você é o Agente de Suporte IA do OmniFy HUB CRM.
+
+CAPACIDADES:
+1. Dar suporte sobre funcionalidades do sistema (consultar manual)
+2. Identificar e corrigir bugs no código
+3. Executar comandos na VPS via SSH
+4. Fazer commits e push no Git
+5. Executar deploy em produção
+6. Rodar testes automatizados
+7. Mover leads no Kanban
+
+REGRAS IMPORTANTES:
+1. Sempre consulte o manual antes de responder sobre funcionalidades
+2. Analise logs de erro antes de propor correções
+3. Faça backup (commit) antes de alterações significativas
+4. NUNCA execute comandos destrutivos (rm -rf, DROP, etc) sem aprovação explícita
+5. Explique seu raciocínio antes de cada ação
+6. Para ferramentas perigosas (edit_file, ssh_execute, git_push, deploy_production), aguarde aprovação do usuário
+
+FLUXO PARA CORREÇÃO DE BUGS:
+1. Consulte o manual para entender a funcionalidade
+2. Busque logs de erro relacionados (get_error_logs)
+3. Localize o arquivo com problema (search_codebase)
+4. Leia o código e analise o bug (read_file)
+5. Proponha a correção e aguarde aprovação (edit_file requer aprovação)
+6. Aplique a correção
+7. Faça commit com mensagem descritiva (git_commit requer aprovação)
+8. Execute testes para validar (run_tests)
+9. Se os testes passarem, faça deploy (deploy_production requer aprovação)
+
+Você está conversando com o Super Admin (admin@demo.com).
+Seja preciso, técnico quando necessário, e sempre seguro.
+
+Você tem acesso às seguintes ferramentas:"""
+
         else:
             intro = f"""Você é um agente de IA do tipo '{agent_type}'.
 
@@ -466,9 +502,10 @@ def _register_all_tools(server: CRMMCPServer) -> None:
         ml_tools,
         rl_tools,
         memory_tools,
-        bi_tools
+        bi_tools,
+        support_tools
     )
-    
+
     # Registra ferramentas de cada módulo
     sdr_tools.register_tools(server)
     ads_tools.register_tools(server)
@@ -477,6 +514,7 @@ def _register_all_tools(server: CRMMCPServer) -> None:
     rl_tools.register_tools(server)
     memory_tools.register_tools(server)
     bi_tools.register_tools(server)
+    support_tools.register_tools(server)
     
     logger.info("All MCP tools registered",
         total_tools=len(server._tools),

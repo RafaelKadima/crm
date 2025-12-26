@@ -578,6 +578,144 @@ Passos:
         )
 
 
+class SupportAgent:
+    """
+    Agente de Suporte IA para o Super Admin.
+
+    O agente pode:
+    - Dar suporte sobre funcionalidades (consultar manual)
+    - Identificar e corrigir bugs no código
+    - Executar comandos SSH na VPS
+    - Fazer commits e push no Git
+    - Executar deploy em produção
+    - Mover leads no Kanban
+    """
+
+    def __init__(self):
+        self.integration = MCPLLMIntegration(LLMProvider.ANTHROPIC)
+        self.conversation_history: List[Message] = []
+
+    async def process_message(self, message: str) -> Dict[str, Any]:
+        """
+        Processa uma mensagem do super admin.
+
+        Args:
+            message: Mensagem do usuário
+
+        Returns:
+            Resposta do agente e ações tomadas
+        """
+        config = AgentConfig(
+            agent_type="support",
+            tenant_id="super_admin",
+            model="claude-sonnet-4-20250514",
+            temperature=0.3,  # Mais preciso para tarefas técnicas
+            max_tool_calls=20  # Permite mais iterações para tarefas complexas
+        )
+
+        result = await self.integration.run_agent(
+            config=config,
+            user_message=message,
+            conversation_history=self.conversation_history
+        )
+
+        # Atualiza histórico
+        self.conversation_history.append(Message(
+            role="user",
+            content=message
+        ))
+
+        self.conversation_history.append(Message(
+            role="assistant",
+            content=result.get("response", "")
+        ))
+
+        return result
+
+    async def search_manual(self, query: str) -> Dict[str, Any]:
+        """Busca no manual de usabilidade."""
+        config = AgentConfig(
+            agent_type="support",
+            tenant_id="super_admin",
+            max_tool_calls=3
+        )
+
+        user_message = f"""
+Busque no manual de usabilidade informações sobre: {query}
+
+Use a ferramenta search_manual para encontrar a resposta.
+Retorne um resumo claro e objetivo.
+"""
+
+        return await self.integration.run_agent(
+            config=config,
+            user_message=user_message
+        )
+
+    async def diagnose_bug(self, description: str) -> Dict[str, Any]:
+        """Diagnostica um bug baseado na descrição."""
+        config = AgentConfig(
+            agent_type="support",
+            tenant_id="super_admin",
+            max_tool_calls=10
+        )
+
+        user_message = f"""
+Diagnostique o seguinte problema:
+{description}
+
+Passos:
+1. Busque no manual para entender a funcionalidade esperada
+2. Busque logs de erro relacionados
+3. Localize os arquivos relevantes no código
+4. Analise o código e identifique a causa provável
+5. Sugira uma correção (NÃO aplique ainda, apenas sugira)
+"""
+
+        return await self.integration.run_agent(
+            config=config,
+            user_message=user_message
+        )
+
+    async def fix_bug(self, file_path: str, old_text: str, new_text: str) -> Dict[str, Any]:
+        """Aplica uma correção de bug (requer aprovação)."""
+        config = AgentConfig(
+            agent_type="support",
+            tenant_id="super_admin",
+            max_tool_calls=5
+        )
+
+        user_message = f"""
+Aplique a seguinte correção:
+
+Arquivo: {file_path}
+
+Texto antigo:
+```
+{old_text}
+```
+
+Novo texto:
+```
+{new_text}
+```
+
+Passos:
+1. Leia o arquivo para confirmar que o texto antigo existe
+2. Aplique a correção usando edit_file
+3. Verifique se a edição foi bem sucedida
+"""
+
+        return await self.integration.run_agent(
+            config=config,
+            user_message=user_message
+        )
+
+    def clear_history(self):
+        """Limpa histórico de conversa."""
+        self.conversation_history = []
+
+
 # ==============================================
 # FastAPI Router para MCP
 # ==============================================

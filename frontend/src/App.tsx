@@ -24,7 +24,7 @@ import { QueuesPage } from '@/pages/queues'
 import { SdrHubPage, SdrAgentConfig } from '@/pages/sdr'
 import { AppointmentsPage, ScheduleConfigPage } from '@/pages/appointments'
 import { DetectedQuestionsPage, AgentLearningDashboard } from '@/pages/learning'
-import { SuperAdminDashboard, TenantsPage, CreateTenantPage, TenantDetailsPage, GroupsPage as SuperAdminGroupsPage, GroupDetailsPage } from '@/pages/super-admin'
+import { SuperAdminDashboard, TenantsPage, CreateTenantPage, TenantDetailsPage, GroupsPage as SuperAdminGroupsPage, GroupDetailsPage, SupportAgentPage } from '@/pages/super-admin'
 import { WhatsAppTemplatesPage } from '@/pages/whatsapp-templates'
 import { GtmSettingsPage } from '@/pages/settings/GtmSettingsPage'
 import { GtmScript } from '@/components/GtmScript'
@@ -125,6 +125,14 @@ function AppRoutes() {
         element={
           <SuperAdminRoute>
             <GroupDetailsPage />
+          </SuperAdminRoute>
+        }
+      />
+      <Route
+        path="/super-admin/support"
+        element={
+          <SuperAdminRoute>
+            <SupportAgentPage />
           </SuperAdminRoute>
         }
       />

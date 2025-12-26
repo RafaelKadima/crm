@@ -64,6 +64,37 @@ class Settings(BaseSettings):
     
     # ML Settings
     lead_classification_threshold: float = 0.7
+
+    # =============================================================================
+    # Support Agent Settings (SSH, Git, Deploy)
+    # =============================================================================
+
+    # VPS SSH Config
+    vps_ssh_host: str = ""           # IP ou hostname da VPS (ex: 212.85.20.129)
+    vps_ssh_port: int = 22
+    vps_ssh_user: str = "root"       # Usuario SSH
+    vps_ssh_password: str = ""       # Senha SSH (alternativa a chave)
+    vps_ssh_key_path: str = ""       # Caminho para chave privada SSH
+    vps_project_path: str = "/var/www/crm"  # Caminho do projeto na VPS
+
+    # Git Config
+    git_repo_path: str = ""          # Caminho local do repositorio
+    git_remote_name: str = "origin"  # Nome do remote
+    git_main_branch: str = "main"    # Branch principal
+
+    # Deploy Config
+    deploy_command: str = "git pull && npm run build"  # Comando de deploy
+    deploy_pm2_name: str = "crm"     # Nome do processo PM2
+
+    # Support Agent Security
+    support_max_ssh_commands_per_hour: int = 50
+    support_max_git_pushes_per_hour: int = 10
+    support_max_deploys_per_day: int = 5
+    support_allowed_ssh_commands: str = "ls,cat,tail,head,grep,npm,git,php,composer,docker,docker-compose"
+
+    # Support RAG (Manual de Usabilidade)
+    support_manual_path: str = "docs/MANUAL_USABILIDADE.md"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
