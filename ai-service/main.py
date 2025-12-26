@@ -103,26 +103,37 @@ app.include_router(create_mcp_router())
 @app.on_event("startup")
 async def startup_event():
     """Executado ao iniciar o serviço"""
+    import sys
+    print("[STARTUP] Iniciando serviço...", flush=True)
+
     logger.info(
         "service_started",
         app_name=settings.app_name,
         debug=settings.debug
     )
-    
+
     # Conecta ao Redis e inicia o worker de fila
     try:
+        print("[STARTUP] Conectando ao Redis...", flush=True)
         await message_queue.connect()
+        print("[STARTUP] Redis conectado! Iniciando worker...", flush=True)
         await queue_worker.start()
+        print(f"[STARTUP] Worker iniciado! Running: {queue_worker._running}", flush=True)
         logger.info("queue_worker_initialized")
     except Exception as e:
+        print(f"[STARTUP] ERRO no worker: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
         logger.warning("queue_worker_init_failed", error=str(e))
-    
+
     # Inicia o scheduler do BI Agent
     try:
         await bi_scheduler.start()
         logger.info("bi_scheduler_started")
     except Exception as e:
         logger.warning("bi_scheduler_init_failed", error=str(e))
+
+    print("[STARTUP] Serviço pronto!", flush=True)
 
 
 @app.on_event("shutdown")
