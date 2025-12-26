@@ -98,11 +98,16 @@ class QueueWorker:
     
     async def _process_ticket(self, ticket_id: str):
         """Processa as mensagens de um ticket"""
+        print(f"[WORKER] Processing ticket {ticket_id}...", flush=True)
+
         # Busca as mensagens pendentes
         data = await message_queue.get_pending_messages(ticket_id)
-        
+
         if not data:
+            print(f"[WORKER] No data for ticket {ticket_id}, skipping", flush=True)
             return
+
+        print(f"[WORKER] Got data for ticket: {data.get('message_count', 0)} messages", flush=True)
         
         logger.info("processing_ticket_messages",
             ticket_id=ticket_id,
@@ -112,11 +117,15 @@ class QueueWorker:
         
         try:
             # Busca dados completos do lead/agent via Laravel API
+            print(f"[WORKER] Fetching context from Laravel...", flush=True)
             context = await self._fetch_context(data)
-            
+
             if not context:
+                print(f"[WORKER] Failed to fetch context for {ticket_id}", flush=True)
                 logger.error("failed_to_fetch_context", ticket_id=ticket_id)
                 return
+
+            print(f"[WORKER] Context fetched, running agent...", flush=True)
             
             # Converte o dicionário para objeto AgentRunRequest
             request = AgentRunRequest(**context["request"])
