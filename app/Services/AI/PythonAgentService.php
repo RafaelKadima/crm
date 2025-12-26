@@ -159,6 +159,7 @@ class PythonAgentService
             'agent' => [
                 'id' => $agent->id,
                 'name' => $agent->name,
+                'type' => $agent->type ?? 'sdr',
                 'prompt' => $agent->system_prompt ?? $agent->prompt ?? 'Você é um assistente de vendas profissional.',
                 'temperature' => $agent->temperature ?? 0.7,
                 'ai_model' => $agent->ai_model ?? 'gpt-4o-mini',
@@ -274,6 +275,7 @@ class PythonAgentService
             'agent' => [
                 'id' => $agent->id,
                 'name' => $agent->name,
+                'type' => $agent->type ?? 'sdr',
                 'prompt' => $agent->system_prompt ?? $agent->prompt ?? 'Você é um assistente de vendas profissional.',
                 'temperature' => $agent->temperature ?? 0.7,
                 'ai_model' => $agent->ai_model ?? 'gpt-4o-mini',
