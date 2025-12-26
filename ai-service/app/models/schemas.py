@@ -216,6 +216,9 @@ class AgentRunResponse(BaseModel):
     sdr_outcome: Optional[str] = None  # Resultado do SDR: scheduled, not_interested, qualified, need_nurturing
     sdr_notes: Optional[str] = None  # Observações do SDR
 
+    # MCP Tool Call (para agentes de suporte executarem ferramentas técnicas)
+    mcp_tool_call: Optional[Dict[str, Any]] = None  # {"tool": "get_error_logs", "params": {...}}
+
 
 # ==================== MEMORY MODELS ====================
 
