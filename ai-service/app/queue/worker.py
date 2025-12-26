@@ -59,29 +59,41 @@ class QueueWorker:
     
     async def _run_loop(self):
         """Loop principal do worker"""
+        loop_count = 0
         while self._running:
             try:
+                loop_count += 1
+                if loop_count % 30 == 1:  # Log a cada 30 segundos
+                    print(f"[WORKER] Loop #{loop_count}, checking queue...", flush=True)
                 await self._process_pending()
             except Exception as e:
+                print(f"[WORKER] Loop error: {e}", flush=True)
                 logger.error("worker_loop_error", error=str(e))
-            
+
             await asyncio.sleep(CHECK_INTERVAL)
     
     async def _process_pending(self):
         """Processa todos os tickets pendentes que estão prontos"""
         try:
             ticket_ids = await message_queue.get_all_pending_tickets()
-            
+
+            if ticket_ids:
+                print(f"[WORKER] Found {len(ticket_ids)} pending tickets: {ticket_ids}", flush=True)
+
             for ticket_id in ticket_ids:
                 try:
-                    if await message_queue.should_process(ticket_id):
+                    should = await message_queue.should_process(ticket_id)
+                    print(f"[WORKER] Ticket {ticket_id} should_process={should}", flush=True)
+                    if should:
                         await self._process_ticket(ticket_id)
                 except Exception as e:
-                    logger.error("process_ticket_error", 
-                        ticket_id=ticket_id, 
+                    print(f"[WORKER] Error processing ticket {ticket_id}: {e}", flush=True)
+                    logger.error("process_ticket_error",
+                        ticket_id=ticket_id,
                         error=str(e)
                     )
         except Exception as e:
+            print(f"[WORKER] Error getting pending tickets: {e}", flush=True)
             logger.error("get_pending_tickets_error", error=str(e))
     
     async def _process_ticket(self, ticket_id: str):
