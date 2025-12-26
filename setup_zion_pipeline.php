@@ -73,9 +73,15 @@ foreach ($stages as $stage) {
 if ($zion->pipelines()->where('pipeline_id', $pipeline->id)->exists()) {
     echo "\n! Zion já está associado ao pipeline.\n";
 } else {
-    $zion->pipelines()->attach($pipeline->id, [
-        'is_primary' => true,
+    // Inserir manualmente com UUID
+    \Illuminate\Support\Facades\DB::table('sdr_agent_pipeline')->insert([
+        'id' => \Illuminate\Support\Str::uuid()->toString(),
+        'sdr_agent_id' => $zion->id,
+        'pipeline_id' => $pipeline->id,
         'tenant_id' => $zion->tenant_id,
+        'is_primary' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
     echo "\n✓ Zion associado ao Pipeline Suporte Técnico (is_primary: true)\n";
 }
