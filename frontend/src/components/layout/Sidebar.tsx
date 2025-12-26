@@ -46,6 +46,7 @@ import {
   PlayCircle,
   Trophy,
   Award,
+  History,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -224,6 +225,7 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Building2, label: 'Grupos', path: '/groups', feature: 'groups', featureFunction: 'groups.view' },
       { icon: Shield, label: 'Super Admin', path: '/super-admin', superAdminOnly: true },
+      { icon: History, label: 'Histórico Suporte', path: '/super-admin/support-history', superAdminOnly: true },
     ],
   },
 ]
