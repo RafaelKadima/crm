@@ -687,7 +687,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="2xl" className="p-0 flex h-[85vh] max-h-[800px] relative overflow-hidden">
+      <DialogContent size="2xl" className="p-0 flex h-[85vh] max-h-[800px] relative overflow-hidden chat-container-premium">
         {/* 🔥 Efeito visual de transferência em tempo real */}
         <AnimatePresence>
           {transferEffect.show && (

@@ -19,12 +19,13 @@ export function MainLayout() {
         transition={{ duration: 0.2, ease: 'easeInOut' }}
         className={cn("pt-16 flex-1 flex flex-col overflow-hidden")}
       >
-        <div className="flex-1 p-6 overflow-y-auto">
+        {/* Content wrapper with safe-area padding */}
+        <div className="flex-1 flex items-start justify-center p-4 md:p-6 overflow-hidden box-border">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="h-full"
+            className="w-full max-w-[1600px] h-full overflow-y-auto"
           >
             <Outlet />
           </motion.div>
