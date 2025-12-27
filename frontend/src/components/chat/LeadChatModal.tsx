@@ -1599,6 +1599,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           onClose={() => setIsTemplateModalOpen(false)}
           onSent={() => {
             // Refresh messages after sending template
+            loadMessages(1, false)
+            scrollToBottom()
             queryClient.invalidateQueries({ queryKey: ['leads'] })
           }}
         />
@@ -1610,6 +1612,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           onClose={() => setIsProductSelectorOpen(false)}
           onSent={() => {
             // Refresh messages after sending product
+            loadMessages(1, false)
+            scrollToBottom()
             queryClient.invalidateQueries({ queryKey: ['leads'] })
           }}
         />
