@@ -48,7 +48,7 @@ $newSettings = array_merge($currentSettings, [
     'autonomous_mode' => true,
     'approver_phones' => $currentSettings['approver_phones'] ?? [],
     'max_retries' => 3,
-    'health_check_url' => 'https://hub.culturabuilder.com',
+    'health_check_url' => 'https://crm.ominfy.center',
     'rollback_on_error' => true,
 ]);
 

@@ -290,7 +290,7 @@ foreach ($tenantIds as $tenantId) {
         'enabled' => true,
         'autonomous_mode' => true,
         'max_retries' => 3,
-        'health_check_url' => 'https://hub.culturabuilder.com',
+        'health_check_url' => 'https://crm.ominfy.center',
         'rollback_on_error' => true,
     ]);
 
