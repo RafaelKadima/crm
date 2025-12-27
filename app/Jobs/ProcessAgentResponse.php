@@ -148,6 +148,10 @@ class ProcessAgentResponse implements ShouldQueue
                     $this->handleRequestFixApproval($result, $whatsAppService);
                     break;
 
+                case 'apply_fix_autonomous':
+                    $this->handleApplyFixAutonomous($result, $whatsAppService);
+                    break;
+
                 default:
                     Log::info('No action taken', ['action' => $action]);
             }
@@ -638,6 +642,201 @@ class ProcessAgentResponse implements ShouldQueue
                 'message' => 'Identifiquei o problema mas preciso de ajuda humana para aplicar a correção: ' . ($result['diagnosis_summary'] ?? ''),
                 'priority' => 'high',
             ], $whatsAppService);
+        }
+    }
+
+    /**
+     * Aplica correção de forma autônoma com backup/rollback automático.
+     */
+    protected function handleApplyFixAutonomous(array $result, WhatsAppService $whatsAppService): void
+    {
+        try {
+            // Busca as configurações do tenant
+            $tenant = $this->channel->tenant;
+            $fixSettings = $tenant->fix_agent_settings ?? [];
+
+            if (!($fixSettings['enabled'] ?? false) || !($fixSettings['autonomous_mode'] ?? false)) {
+                Log::warning('Autonomous fix not enabled for tenant', [
+                    'tenant_id' => $tenant->id,
+                ]);
+                // Fallback para modo com aprovação
+                $this->handleRequestFixApproval($result, $whatsAppService);
+                return;
+            }
+
+            // Valida o path
+            if (!AgentFixRequest::isPathAllowed($result['file_path'])) {
+                Log::warning('Path not allowed for autonomous fix', [
+                    'file_path' => $result['file_path'],
+                ]);
+                $this->handleTransferToHuman([
+                    'message' => 'Arquivo não pode ser modificado automaticamente por segurança: ' . $result['file_path'],
+                    'priority' => 'high',
+                ], $whatsAppService);
+                return;
+            }
+
+            // Cria registro do fix request
+            $fixRequest = AgentFixRequest::create([
+                'tenant_id' => $tenant->id,
+                'ticket_id' => $this->ticket->id,
+                'sdr_agent_id' => $this->agent->id,
+                'problem_description' => $result['problem_description'] ?? 'Problema reportado pelo cliente',
+                'diagnosis_summary' => $result['diagnosis_summary'] ?? 'Diagnóstico feito pelo agente',
+                'diagnostic_data' => $result['diagnostic_data'] ?? null,
+                'file_path' => $result['file_path'],
+                'old_code' => $result['old_code'],
+                'new_code' => $result['new_code'],
+                'fix_explanation' => $result['fix_explanation'] ?? '',
+                'commit_message' => $result['commit_message'] ?? "fix: correção automática via Zion",
+                'status' => AgentFixRequest::STATUS_AUTO_EXECUTING,
+            ]);
+
+            // Avisa o cliente que está aplicando
+            $whatsAppService->loadFromChannel($this->channel);
+            $phone = $this->lead->contact->phone;
+
+            $message = "Encontrei o problema e estou aplicando a correção agora mesmo!\n\n";
+            $message .= "Aguarde alguns segundos enquanto faço o deploy...\n";
+            $message .= "Vou avisar assim que terminar para você testar.";
+
+            $whatsAppService->sendTextMessage($phone, $message);
+
+            // Executa o fix de forma autônoma
+            $aiServiceUrl = config('services.ai_agent.url', 'http://localhost:8001');
+            $internalKey = config('services.ai_agent.internal_key', '');
+
+            $response = \Http::timeout(180)
+                ->withHeaders([
+                    'X-Internal-Key' => $internalKey,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("{$aiServiceUrl}/support/execute-fix-autonomous", [
+                    'file_path' => $result['file_path'],
+                    'old_code' => $result['old_code'],
+                    'new_code' => $result['new_code'],
+                    'commit_message' => $result['commit_message'] ?? "fix: correção automática via Zion",
+                    'run_migrations' => false,
+                    'clear_cache' => true,
+                ]);
+
+            $executeResult = $response->json();
+
+            if ($executeResult['success'] ?? false) {
+                // SUCESSO! Atualiza o fix request
+                $fixRequest->update([
+                    'status' => AgentFixRequest::STATUS_DEPLOYED,
+                    'deployed_at' => now(),
+                    'backup_tag' => $executeResult['backup_tag'] ?? null,
+                    'execution_result' => $executeResult,
+                ]);
+
+                // Avisa o cliente para testar
+                $successMessage = "Correção aplicada com sucesso!\n\n";
+                $successMessage .= "Por favor, teste a funcionalidade agora e me diga:\n";
+                $successMessage .= "• FUNCIONOU - se o problema foi resolvido\n";
+                $successMessage .= "• NÃO FUNCIONOU - se ainda está com problemas\n\n";
+                $successMessage .= "Seu feedback é muito importante!";
+
+                $whatsAppService->sendTextMessage($phone, $successMessage);
+
+                $this->createOutboundMessage($successMessage, [
+                    'action' => 'apply_fix_autonomous',
+                    'fix_request_id' => $fixRequest->id,
+                    'status' => 'deployed',
+                ]);
+
+                Log::info('Autonomous fix deployed successfully', [
+                    'fix_request_id' => $fixRequest->id,
+                    'file_path' => $result['file_path'],
+                    'backup_tag' => $executeResult['backup_tag'] ?? null,
+                ]);
+
+            } else {
+                // FALHOU - foi feito rollback automático
+                $wasRolledBack = $executeResult['rolled_back'] ?? false;
+
+                $fixRequest->update([
+                    'status' => $wasRolledBack ? AgentFixRequest::STATUS_ROLLED_BACK : AgentFixRequest::STATUS_ESCALATED,
+                    'rolled_back_at' => $wasRolledBack ? now() : null,
+                    'rollback_reason' => $executeResult['error'] ?? 'Erro desconhecido',
+                    'execution_result' => $executeResult,
+                ]);
+
+                // Avisa o cliente
+                $failMessage = "Encontrei uma dificuldade técnica ao aplicar a correção.\n\n";
+                if ($wasRolledBack) {
+                    $failMessage .= "Não se preocupe - o sistema voltou ao estado anterior automaticamente.\n\n";
+                }
+                $failMessage .= "Estou transferindo para um desenvolvedor humano que vai resolver o mais rápido possível.";
+
+                $whatsAppService->sendTextMessage($phone, $failMessage);
+
+                // Notifica desenvolvedor
+                $this->notifyDeveloperAboutFailedFix($fixRequest, $executeResult, $whatsAppService);
+
+                Log::error('Autonomous fix failed', [
+                    'fix_request_id' => $fixRequest->id,
+                    'error' => $executeResult['error'] ?? 'Unknown',
+                    'rolled_back' => $wasRolledBack,
+                ]);
+            }
+
+            // Atualiza ticket metadata
+            $this->ticket->update([
+                'metadata' => array_merge($this->ticket->metadata ?? [], [
+                    'autonomous_fix_attempted' => true,
+                    'fix_request_id' => $fixRequest->id,
+                    'fix_attempted_at' => now()->toISOString(),
+                ]),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in autonomous fix', [
+                'error' => $e->getMessage(),
+                'lead_id' => $this->lead->id,
+            ]);
+
+            // Fallback: transfere para humano
+            $this->handleTransferToHuman([
+                'message' => 'Erro ao tentar aplicar correção automática: ' . $e->getMessage(),
+                'priority' => 'high',
+            ], $whatsAppService);
+        }
+    }
+
+    /**
+     * Notifica desenvolvedor sobre fix que falhou.
+     */
+    protected function notifyDeveloperAboutFailedFix(
+        AgentFixRequest $fixRequest,
+        array $executeResult,
+        WhatsAppService $whatsAppService
+    ): void {
+        $tenant = $fixRequest->tenant;
+        $fixSettings = $tenant->fix_agent_settings ?? [];
+        $approverPhones = $fixSettings['approver_phones'] ?? [];
+
+        if (empty($approverPhones)) {
+            return;
+        }
+
+        $message = "⚠️ FALHA EM CORREÇÃO AUTÔNOMA - ZION\n\n";
+        $message .= "📁 Arquivo: {$fixRequest->file_path}\n";
+        $message .= "❌ Erro: " . ($executeResult['error'] ?? 'Desconhecido') . "\n";
+        $message .= "🔄 Rollback: " . (($executeResult['rolled_back'] ?? false) ? 'Sim' : 'Não') . "\n\n";
+        $message .= "🔧 Diagnóstico:\n{$fixRequest->diagnosis_summary}\n\n";
+        $message .= "A correção foi escalada para intervenção manual.";
+
+        foreach ($approverPhones as $phone) {
+            try {
+                $whatsAppService->sendTextMessage($phone, $message);
+            } catch (\Exception $e) {
+                Log::warning('Failed to notify developer about failed fix', [
+                    'phone' => $phone,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 

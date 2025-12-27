@@ -786,3 +786,181 @@ async def support_move_lead_stage(lead_id: str, stage_id: str, reason: Optional[
     except Exception as e:
         logger.error("Error moving lead stage", error=str(e))
         return {"success": False, "error": str(e)}
+
+
+# =============================================================================
+# AUTONOMOUS FIX FUNCTIONS (Backup/Rollback)
+# =============================================================================
+
+async def git_create_backup(tag_name: str, **kwargs) -> Dict[str, Any]:
+    """Cria tag de backup no Git antes de modificacoes."""
+    try:
+        repo_path = settings.git_repo_path or os.getcwd()
+
+        # Cria tag anotada com timestamp
+        tag_message = f"Backup antes de fix autonomo - {datetime.now().isoformat()}"
+        result = subprocess.run(
+            f'git tag -a "{tag_name}" -m "{tag_message}"',
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd=repo_path
+        )
+
+        if result.returncode != 0:
+            return {
+                "success": False,
+                "error": f"Falha ao criar tag: {result.stderr}",
+                "tag_name": tag_name
+            }
+
+        # Push da tag para o remoto
+        remote = settings.git_remote_name
+        push_result = subprocess.run(
+            f"git push {remote} {tag_name}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd=repo_path
+        )
+
+        return {
+            "success": True,
+            "tag_name": tag_name,
+            "message": tag_message,
+            "pushed": push_result.returncode == 0
+        }
+
+    except Exception as e:
+        logger.error("Error creating backup tag", error=str(e))
+        return {"success": False, "error": str(e)}
+
+
+async def git_rollback(tag_name: str, **kwargs) -> Dict[str, Any]:
+    """Reverte para uma tag de backup."""
+    try:
+        repo_path = settings.git_repo_path or os.getcwd()
+        remote = settings.git_remote_name
+
+        # Verifica se a tag existe
+        check = subprocess.run(
+            f"git tag -l {tag_name}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd=repo_path
+        )
+
+        if not check.stdout.strip():
+            return {
+                "success": False,
+                "error": f"Tag {tag_name} nao encontrada",
+                "tag_name": tag_name
+            }
+
+        # Reset para a tag
+        reset_result = subprocess.run(
+            f"git reset --hard {tag_name}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd=repo_path
+        )
+
+        if reset_result.returncode != 0:
+            return {
+                "success": False,
+                "error": f"Falha ao fazer reset: {reset_result.stderr}",
+                "tag_name": tag_name
+            }
+
+        # Force push para o remoto (CUIDADO!)
+        push_result = subprocess.run(
+            f"git push --force {remote} main",
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd=repo_path
+        )
+
+        return {
+            "success": True,
+            "tag_name": tag_name,
+            "reset": True,
+            "pushed": push_result.returncode == 0,
+            "message": f"Rollback para {tag_name} executado com sucesso"
+        }
+
+    except Exception as e:
+        logger.error("Error doing rollback", error=str(e))
+        return {"success": False, "error": str(e)}
+
+
+async def verify_health(health_check_url: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    """Verifica saude do sistema apos deploy."""
+    try:
+        import httpx
+
+        # URL padrao ou custom
+        base_url = health_check_url or settings.vps_app_url or "https://hub.culturabuilder.com"
+
+        checks = {
+            "app_responding": False,
+            "api_responding": False,
+            "no_recent_errors": True
+        }
+
+        details = {}
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            # 1. Verifica se a aplicacao responde
+            try:
+                response = await client.get(f"{base_url}/health")
+                checks["app_responding"] = response.status_code == 200
+                details["app_status"] = response.status_code
+            except Exception as e:
+                details["app_error"] = str(e)
+
+            # 2. Verifica se a API responde
+            try:
+                response = await client.get(f"{base_url}/api/ping")
+                checks["api_responding"] = response.status_code == 200
+                details["api_status"] = response.status_code
+            except Exception as e:
+                # Tenta endpoint alternativo
+                try:
+                    response = await client.get(f"{base_url}/sanctum/csrf-cookie")
+                    checks["api_responding"] = response.status_code in [200, 204]
+                    details["api_status"] = response.status_code
+                except:
+                    details["api_error"] = str(e)
+
+        # 3. Verifica logs de erro recentes (via SSH)
+        try:
+            log_result = await get_error_logs(log_type="laravel", lines=20, filter="ERROR")
+            if log_result.get("success") and log_result.get("output"):
+                # Se tem erros nos ultimos 2 minutos
+                recent_errors = log_result.get("output", "").count("ERROR")
+                checks["no_recent_errors"] = recent_errors < 3
+                details["recent_errors_count"] = recent_errors
+        except:
+            pass
+
+        # Resultado final
+        healthy = all(checks.values())
+
+        return {
+            "success": True,
+            "healthy": healthy,
+            "checks": checks,
+            "details": details,
+            "message": "Sistema saudavel" if healthy else "Problemas detectados"
+        }
+
+    except Exception as e:
+        logger.error("Error verifying health", error=str(e))
+        return {
+            "success": False,
+            "healthy": False,
+            "error": str(e)
+        }

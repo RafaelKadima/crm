@@ -20,6 +20,9 @@ class AgentFixRequest extends Model
     const STATUS_CONFIRMED_FIXED = 'confirmed_fixed';
     const STATUS_CONFIRMED_BROKEN = 'confirmed_broken';
     const STATUS_ESCALATED = 'escalated';
+    const STATUS_AUTO_EXECUTING = 'auto_executing';
+    const STATUS_HEALTH_CHECK = 'health_check';
+    const STATUS_ROLLED_BACK = 'rolled_back';
 
     // Allowed paths for fixes (security)
     const ALLOWED_PATHS = [
@@ -62,6 +65,9 @@ class AgentFixRequest extends Model
         'customer_confirmed_fixed',
         'customer_feedback',
         'retry_count',
+        'backup_tag',
+        'rolled_back_at',
+        'rollback_reason',
     ];
 
     protected $casts = [
@@ -70,6 +76,7 @@ class AgentFixRequest extends Model
         'customer_confirmed_fixed' => 'boolean',
         'approved_at' => 'datetime',
         'deployed_at' => 'datetime',
+        'rolled_back_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -185,6 +192,38 @@ class AgentFixRequest extends Model
     public function incrementRetry(): void
     {
         $this->increment('retry_count');
+    }
+
+    public function markAutoExecuting(string $backupTag): void
+    {
+        $this->update([
+            'status' => self::STATUS_AUTO_EXECUTING,
+            'backup_tag' => $backupTag,
+        ]);
+    }
+
+    public function markHealthCheck(): void
+    {
+        $this->update(['status' => self::STATUS_HEALTH_CHECK]);
+    }
+
+    public function markRolledBack(string $reason): void
+    {
+        $this->update([
+            'status' => self::STATUS_ROLLED_BACK,
+            'rolled_back_at' => now(),
+            'rollback_reason' => $reason,
+        ]);
+    }
+
+    public function isAutoExecuting(): bool
+    {
+        return $this->status === self::STATUS_AUTO_EXECUTING;
+    }
+
+    public function wasRolledBack(): bool
+    {
+        return $this->status === self::STATUS_ROLLED_BACK;
     }
 
     // Scopes

@@ -371,6 +371,44 @@ SUPPORT_FUNCTIONS = [
             },
             "required": ["file_path", "old_code", "new_code", "problem_description", "diagnosis_summary", "fix_explanation"]
         }
+    },
+    {
+        "name": "apply_fix_autonomous",
+        "description": "Aplica uma correção de código de forma AUTÔNOMA, sem precisar de aprovação. O sistema faz backup automático e, se algo quebrar, reverte automaticamente. Use quando você tem certeza do diagnóstico e da correção.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Caminho do arquivo a ser corrigido (ex: 'app/Http/Controllers/TicketController.php')"
+                },
+                "old_code": {
+                    "type": "string",
+                    "description": "Código atual que contém o bug (deve ser EXATAMENTE como está no arquivo)"
+                },
+                "new_code": {
+                    "type": "string",
+                    "description": "Código corrigido que vai substituir o código antigo"
+                },
+                "problem_description": {
+                    "type": "string",
+                    "description": "Descrição do problema que o cliente está enfrentando"
+                },
+                "diagnosis_summary": {
+                    "type": "string",
+                    "description": "Resumo do diagnóstico: o que você encontrou nos logs/código"
+                },
+                "fix_explanation": {
+                    "type": "string",
+                    "description": "Explicação técnica de por que esta correção resolve o problema"
+                },
+                "commit_message": {
+                    "type": "string",
+                    "description": "Mensagem do commit (ex: 'fix: corrige validação de upload de imagem')"
+                }
+            },
+            "required": ["file_path", "old_code", "new_code", "problem_description", "diagnosis_summary", "fix_explanation", "commit_message"]
+        }
     }
 ]
 
