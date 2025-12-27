@@ -35,6 +35,11 @@ export interface Tenant {
   plan: 'basic' | 'ia_sdr' | 'enterprise'
   settings?: Record<string, unknown>
   created_at: string
+  // Campos Linx
+  linx_enabled?: boolean
+  linx_empresa_id?: string
+  linx_revenda_id?: string
+  linx_api_url?: string
 }
 
 // Pipeline Types

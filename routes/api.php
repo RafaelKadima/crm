@@ -191,6 +191,12 @@ Route::middleware('auth:api')->group(function () {
             Route::post('{lead}/stage-activities/{activity}/complete', [DealStageActivityController::class, 'complete']);
             Route::post('{lead}/stage-activities/{activity}/skip', [DealStageActivityController::class, 'skip']);
 
+            // Integração Linx - Envio de lead
+            Route::post('{lead}/send-to-linx', [\App\Http\Controllers\LinxController::class, 'sendLeadToLinx']);
+
+            // Atualizar contato do lead
+            Route::put('{lead}/contact', [ContactController::class, 'updateByLead']);
+
             // Importação de Leads
             Route::prefix('imports')->group(function () {
                 Route::get('/', [LeadImportController::class, 'index']);

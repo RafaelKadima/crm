@@ -33,6 +33,7 @@ import {
   Sparkles,
   UserCheck,
   Package,
+  ExternalLink,
 } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
@@ -51,6 +52,8 @@ import { ProductSelector, type ProductSentData } from '@/components/chat/Product
 import { FileUploadButton } from '@/components/chat/FileUploadButton'
 import { AudioRecorder } from '@/components/chat/AudioRecorder'
 import { MessageAttachment } from '@/components/chat/MessageAttachment'
+import { MessageContextMenu } from '@/components/chat/MessageContextMenu'
+import { extractDataFromText } from '@/lib/dataExtractor'
 import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import { useLeadMessages } from '@/hooks/useWebSocket'
 import { useReopenTicket } from '@/hooks/useTicketActions'
@@ -102,8 +105,10 @@ const channelIcons: Record<string, typeof MessageSquare> = {
 
 export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageChange, forceClosingForm = false, onLeadDeleted }: LeadChatModalProps) {
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const { user, tenant } = useAuth()
   const { hasAccess: hasIaFeature } = useHasFeature('sdr_ia')
+  // Verificar se tenant tem Linx habilitado
+  const hasLinxIntegration = tenant?.linx_enabled === true
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [ticketId, setTicketId] = useState<string | null>(null)
@@ -126,6 +131,14 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [showQuickReplies, setShowQuickReplies] = useState(false)
+  // Estado para menu contextual de extração de dados
+  const [contextMenu, setContextMenu] = useState<{
+    show: boolean
+    messageContent: string
+    position: { x: number; y: number }
+  } | null>(null)
+  // Estado para envio ao Linx
+  const [isSendingToLinx, setIsSendingToLinx] = useState(false)
   const [suggestion, setSuggestion] = useState<{
     action: string
     explanation: string
@@ -520,6 +533,43 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       console.error('Error toggling IA:', error)
     } finally {
       setIsTogglingIa(false)
+    }
+  }
+
+  // Enviar lead para o Linx
+  const handleSendToLinx = async () => {
+    if (!lead) return
+
+    setIsSendingToLinx(true)
+    try {
+      const response = await api.post(`/leads/${lead.id}/send-to-linx`)
+
+      if (response.data.success) {
+        notify('success', {
+          title: 'Enviado para o Linx!',
+          description: response.data.linx_codigo_cliente
+            ? `Código do cliente: ${response.data.linx_codigo_cliente}`
+            : 'Lead enviado com sucesso',
+          duration: 5000,
+        })
+        // Atualiza o lead no cache
+        queryClient.invalidateQueries({ queryKey: ['leads'] })
+      } else {
+        notify('error', {
+          title: 'Erro ao enviar',
+          description: response.data.message || 'Tente novamente',
+          duration: 5000,
+        })
+      }
+    } catch (error: any) {
+      console.error('Error sending to Linx:', error)
+      notify('error', {
+        title: 'Erro ao enviar para o Linx',
+        description: error?.response?.data?.message || 'Tente novamente',
+        duration: 5000,
+      })
+    } finally {
+      setIsSendingToLinx(false)
     }
   }
 
@@ -1062,63 +1112,9 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
         {/* Right Panel - Chat / Closing */}
         <div className="flex-1 flex flex-col">
-          {/* Header with Tabs */}
+          {/* Header - Simplified */}
           <div className="px-6 py-4 border-b bg-background">
-            {/* Tabs Navigation */}
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setActiveView('chat')}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                  activeView === 'chat'
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                )}
-              >
-                <MessageSquare className="h-4 w-4" />
-                Chat
-              </button>
-              <button
-                onClick={() => setActiveView('edit')}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                  activeView === 'edit'
-                    ? "bg-blue-600 text-white"
-                    : "hover:bg-muted"
-                )}
-              >
-                <Edit className="h-4 w-4" />
-                Editar
-              </button>
-              <button
-                onClick={() => setActiveView('activities')}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                  activeView === 'activities'
-                    ? "bg-amber-600 text-white"
-                    : "hover:bg-muted"
-                )}
-              >
-                <ListChecks className="h-4 w-4" />
-                Atividades
-              </button>
-              {isInClosingStage && (
-                <button
-                  onClick={() => setActiveView('closing')}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                    activeView === 'closing'
-                      ? "bg-green-600 text-white"
-                      : "hover:bg-muted border-2 border-green-500/30"
-                  )}
-                >
-                  <FileText className="h-4 w-4" />
-                  Fechamento
-                </button>
-              )}
-            </div>
-
-            {/* Channel Info (only in chat view) */}
+            {/* Channel Info and Actions */}
             {activeView === 'chat' && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1130,37 +1126,64 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                   )}>
                     <ChannelIcon className="h-5 w-5" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Conversa via {lead.channel?.name || 'Chat'}</h4>
-                      {/* Lead Score Badge - só aparece se tenant tem feature de IA */}
-                      {hasIaFeature && leadScore && (
-                        <div className={cn(
-                          "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
-                          leadScore.score >= 70 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                          leadScore.score >= 40 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
-                          "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                        )}>
-                          <Sparkles className="h-3 w-3" />
-                          {Math.round(leadScore.score)}% conversão
-                        </div>
-                      )}
-                      {hasIaFeature && isLoadingScore && (
-                        <div className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground flex items-center gap-1">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Analisando...
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {messages.length} mensagens
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-medium">{lead.contact?.name || 'Lead'}</h4>
+                    {/* Lead Score Badge - só aparece se tenant tem feature de IA */}
+                    {hasIaFeature && leadScore && (
+                      <div className={cn(
+                        "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
+                        leadScore.score >= 70 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                        leadScore.score >= 40 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      )}>
+                        <Sparkles className="h-3 w-3" />
+                        {Math.round(leadScore.score)}% conversão
+                      </div>
+                    )}
+                    {hasIaFeature && isLoadingScore && (
+                      <div className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Analisando...
+                      </div>
+                    )}
                   </div>
                 </div>
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
                   {ticketStatus === 'open' ? (
                     <>
+                      {/* Atividades Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActiveView('activities')}
+                        className={cn(
+                          activeView === 'activities'
+                            ? "bg-amber-600 text-white border-amber-600"
+                            : "text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
+                        )}
+                      >
+                        <ListChecks className="h-4 w-4 mr-1" />
+                        Atividades
+                      </Button>
+                      {/* Botão Enviar para Linx - só aparece se tenant tem integração */}
+                      {hasLinxIntegration && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSendToLinx}
+                          disabled={isSendingToLinx}
+                          className="text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
+                          title="Enviar lead para o Linx Smart"
+                        >
+                          {isSendingToLinx ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                          )}
+                          Linx
+                        </Button>
+                      )}
                       {/* Toggle IA Button - só aparece se tenant tem feature de IA */}
                       {hasIaFeature && (
                         <Button
@@ -1185,8 +1208,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                           {iaEnabled ? 'IA Ativa' : 'Você'}
                         </Button>
                       )}
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => setIsTransferModalOpen(true)}
                         className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10"
@@ -1194,8 +1217,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                         <ArrowRightLeft className="h-4 w-4 mr-1" />
                         Transferir
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => setIsCloseModalOpen(true)}
                         className="text-red-400 border-red-400/30 hover:bg-red-400/10"
@@ -1233,18 +1256,81 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
               </div>
             )}
 
+            {/* Activities Header */}
+            {activeView === 'activities' && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600">
+                    <ListChecks className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Atividades da Etapa</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Complete as atividades para avançar o lead
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveView('chat')}
+                  className="text-muted-foreground"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Voltar ao Chat
+                </Button>
+              </div>
+            )}
+
+            {/* Edit Header */}
+            {activeView === 'edit' && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600">
+                    <Edit className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Editar Lead</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Atualize os dados do lead
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveView('chat')}
+                  className="text-muted-foreground"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Voltar ao Chat
+                </Button>
+              </div>
+            )}
+
             {/* Closing Header */}
             {activeView === 'closing' && (
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-500/10 text-green-600">
-                  <FileText className="h-5 w-5" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-500/10 text-green-600">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Dados para Fechamento</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Preencha os dados do cliente para finalizar a venda
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium">Dados para Fechamento</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Preencha os dados do cliente para finalizar a venda
-                  </p>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveView('chat')}
+                  className="text-muted-foreground"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Voltar ao Chat
+                </Button>
               </div>
             )}
           </div>
@@ -1353,11 +1439,29 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       >
                         <div className="group flex flex-col gap-1">
                           <div
+                            onClick={(e) => {
+                              // Só abre menu contextual para mensagens inbound (do contato)
+                              if (msg.direction === 'inbound') {
+                                const extractedData = extractDataFromText(msg.content)
+                                if (extractedData.length > 0) {
+                                  // Calcula posição do menu
+                                  const rect = (e.target as HTMLElement).getBoundingClientRect()
+                                  setContextMenu({
+                                    show: true,
+                                    messageContent: msg.content,
+                                    position: {
+                                      x: Math.min(rect.left, window.innerWidth - 320),
+                                      y: Math.min(rect.bottom + 8, window.innerHeight - 350),
+                                    },
+                                  })
+                                }
+                              }
+                            }}
                             className={cn(
                               'max-w-[80%] rounded-2xl px-4 py-3 shadow-sm',
                               msg.direction === 'outbound'
                                 ? 'bg-primary text-primary-foreground rounded-br-md'
-                                : 'bg-background border rounded-bl-md'
+                                : 'bg-background border rounded-bl-md cursor-pointer hover:bg-muted/50 transition-colors'
                             )}
                           >
                             {/* Media attachment if present */}
@@ -1667,6 +1771,20 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
             queryClient.invalidateQueries({ queryKey: ['leads'] })
           }}
         />
+
+        {/* Message Context Menu for Data Extraction */}
+        {contextMenu?.show && lead && (
+          <MessageContextMenu
+            messageContent={contextMenu.messageContent}
+            leadId={lead.id}
+            position={contextMenu.position}
+            onClose={() => setContextMenu(null)}
+            onDataAdded={() => {
+              // Invalida cache para atualizar dados do lead
+              queryClient.invalidateQueries({ queryKey: ['leads'] })
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )

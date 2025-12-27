@@ -32,6 +32,11 @@ class Tenant extends Model
         'logo_dark_url',
         'favicon_url',
         'branding',
+        // Campos de integracao Linx
+        'linx_enabled',
+        'linx_empresa_id',
+        'linx_revenda_id',
+        'linx_api_url',
     ];
 
     /**
@@ -48,6 +53,7 @@ class Tenant extends Model
             'fix_agent_settings' => 'array',
             'branding' => 'array',
             'is_active' => 'boolean',
+            'linx_enabled' => 'boolean',
         ];
     }
 
@@ -177,6 +183,14 @@ class Tenant extends Model
     public function isEnterprise(): bool
     {
         return $this->plan === PlanEnum::ENTERPRISE;
+    }
+
+    /**
+     * Verifica se o tenant tem integracao Linx habilitada.
+     */
+    public function hasLinxIntegration(): bool
+    {
+        return $this->linx_enabled && !empty($this->linx_empresa_id) && !empty($this->linx_revenda_id);
     }
 
     /**

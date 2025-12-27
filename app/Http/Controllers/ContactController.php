@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contact;
+use App\Models\Lead;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -104,6 +105,50 @@ class ContactController extends Controller
 
         return response()->json([
             'message' => 'Contato removido com sucesso.',
+        ]);
+    }
+
+    /**
+     * Atualiza contato a partir de um lead (via extração de dados do chat).
+     */
+    public function updateByLead(Request $request, string $leadId): JsonResponse
+    {
+        $user = $request->user();
+
+        // Busca o lead
+        $lead = Lead::where('tenant_id', $user->tenant_id)
+            ->with('contact')
+            ->find($leadId);
+
+        if (!$lead) {
+            return response()->json([
+                'message' => 'Lead não encontrado.',
+            ], 404);
+        }
+
+        if (!$lead->contact) {
+            return response()->json([
+                'message' => 'Lead não possui contato associado.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'cpf' => 'nullable|string|max:14',
+            'address' => 'nullable|string|max:500',
+        ]);
+
+        // Só atualiza campos que foram enviados
+        $validated = array_filter($validated, fn($value) => $value !== null);
+
+        $lead->contact->update($validated);
+        $lead->load('contact');
+
+        return response()->json([
+            'message' => 'Contato atualizado com sucesso.',
+            'contact' => $lead->contact,
         ]);
     }
 }

@@ -43,6 +43,8 @@ export function TeamSettingsPage() {
     phone: '',
     role: 'vendedor',
     password: '',
+    // Campos Linx
+    linx_vendedor_id: '',
   })
 
   const filteredUsers = users?.filter((user: any) =>
@@ -59,6 +61,7 @@ export function TeamSettingsPage() {
         phone: user.phone || '',
         role: user.role,
         password: '',
+        linx_vendedor_id: user.linx_vendedor_id || '',
       })
     } else {
       setEditingUser(null)
@@ -68,6 +71,7 @@ export function TeamSettingsPage() {
         phone: '',
         role: 'vendedor',
         password: '',
+        linx_vendedor_id: '',
       })
     }
     setShowModal(true)
@@ -347,6 +351,17 @@ export function TeamSettingsPage() {
                   <option value="marketing">Marketing</option>
                   <option value="admin">Administrador</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Código Linx (Vendedor)</label>
+                <input
+                  type="text"
+                  value={formData.linx_vendedor_id}
+                  onChange={(e) => setFormData({ ...formData, linx_vendedor_id: e.target.value })}
+                  placeholder="Ex: 123"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">ID do vendedor no Linx Smart</p>
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">

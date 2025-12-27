@@ -10,6 +10,9 @@ import {
   Globe,
   MapPin,
   Mail,
+  Link2,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/api/axios'
@@ -30,6 +33,11 @@ export function CompanySettingsPage() {
     city: '',
     state: '',
     website: '',
+    // Campos Linx
+    linx_enabled: false,
+    linx_empresa_id: '',
+    linx_revenda_id: '',
+    linx_api_url: '',
   })
 
   useEffect(() => {
@@ -44,6 +52,11 @@ export function CompanySettingsPage() {
         city: tenant.settings?.city || '',
         state: tenant.settings?.state || '',
         website: tenant.settings?.website || '',
+        // Campos Linx
+        linx_enabled: tenant.linx_enabled || false,
+        linx_empresa_id: tenant.linx_empresa_id || '',
+        linx_revenda_id: tenant.linx_revenda_id || '',
+        linx_api_url: tenant.linx_api_url || '',
       })
     }
   }, [tenant])
@@ -221,6 +234,69 @@ export function CompanySettingsPage() {
                   <option key={uf} value={uf}>{uf}</option>
                 ))}
               </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Integração Linx */}
+        <div>
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Link2 className="w-5 h-5 text-orange-400" />
+            Integração Linx
+          </h3>
+
+          {/* Toggle de ativação */}
+          <div className="flex items-center justify-between mb-4 p-4 bg-gray-700/30 rounded-lg">
+            <div>
+              <p className="font-medium">Integração Ativa</p>
+              <p className="text-sm text-gray-400">Habilitar envio de leads para o Linx Smart</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, linx_enabled: !formData.linx_enabled })}
+              className="p-1"
+            >
+              {formData.linx_enabled ? (
+                <ToggleRight className="w-10 h-10 text-green-400" />
+              ) : (
+                <ToggleLeft className="w-10 h-10 text-gray-500" />
+              )}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Código da Empresa</label>
+              <input
+                type="text"
+                value={formData.linx_empresa_id}
+                onChange={(e) => setFormData({ ...formData, linx_empresa_id: e.target.value })}
+                placeholder="Ex: 1"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">ID da empresa no Linx Smart</p>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Código da Revenda</label>
+              <input
+                type="text"
+                value={formData.linx_revenda_id}
+                onChange={(e) => setFormData({ ...formData, linx_revenda_id: e.target.value })}
+                placeholder="Ex: 1"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">ID da revenda no Linx Smart</p>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">URL da API (opcional)</label>
+              <input
+                type="url"
+                value={formData.linx_api_url}
+                onChange={(e) => setFormData({ ...formData, linx_api_url: e.target.value })}
+                placeholder="https://api.linx.com.br"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">Deixe em branco para usar padrão</p>
             </div>
           </div>
         </div>
