@@ -356,16 +356,18 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   // Scroll to bottom after initial messages load (instant, no animation)
   useEffect(() => {
     if (!isLoading && messages.length > 0 && currentPage === 1) {
-      // Use multiple attempts to ensure scroll happens after DOM render
-      const container = messagesContainerRef.current
-      if (container) {
-        // Instant scroll - no animation
-        container.scrollTop = container.scrollHeight
-        // Backup scroll after a microtask
-        queueMicrotask(() => {
+      const scrollToEnd = () => {
+        const container = messagesContainerRef.current
+        if (container) {
           container.scrollTop = container.scrollHeight
-        })
+        }
       }
+      // Multiple attempts to ensure scroll happens after DOM is fully ready
+      scrollToEnd()
+      requestAnimationFrame(scrollToEnd)
+      // Extra delay for any animations/layout shifts
+      setTimeout(scrollToEnd, 50)
+      setTimeout(scrollToEnd, 150)
     }
   }, [isLoading, messages.length, currentPage])
 
@@ -1303,9 +1305,10 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           ) : (
             <>
               {/* Messages Area - com lazy load */}
-              <div 
+              <div
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20"
+                style={{ scrollBehavior: 'auto' }}
                 onScroll={handleScroll}
               >
                 {isLoading ? (
