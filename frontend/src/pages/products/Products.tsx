@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -269,6 +269,7 @@ export function ProductsPage() {
 
       {/* Product Modal */}
       <ProductModal
+        key={selectedProduct?.id || 'new'}
         product={selectedProduct}
         categories={categories || []}
         open={isModalOpen}
@@ -334,64 +335,43 @@ interface ProductModalProps {
 }
 
 function ProductModal({ product, categories, open, onOpenChange, onSave, isLoading }: ProductModalProps) {
-  const [formData, setFormData] = useState<Partial<Product>>({
-    name: '',
-    sku: '',
-    description: '',
-    short_description: '',
-    price: 0,
-    promotional_price: undefined,
-    category_id: undefined,
-    is_active: true,
-    show_on_landing_page: true,
-    track_stock: false,
-    stock: 0,
-    specifications: {},
-  })
-  const [images, setImages] = useState<ProductImage[]>([])
+  // Initialize state with product data (key prop forces remount when product changes)
+  const [formData, setFormData] = useState<Partial<Product>>(() =>
+    product ? {
+      name: product.name || '',
+      sku: product.sku || '',
+      description: product.description || '',
+      short_description: product.short_description || '',
+      price: product.price || 0,
+      promotional_price: product.promotional_price,
+      category_id: product.category_id,
+      is_active: product.is_active ?? true,
+      show_on_landing_page: product.show_on_landing_page ?? true,
+      track_stock: product.track_stock ?? false,
+      stock: product.stock || 0,
+      specifications: product.specifications || {},
+    } : {
+      name: '',
+      sku: '',
+      description: '',
+      short_description: '',
+      price: 0,
+      promotional_price: undefined,
+      category_id: undefined,
+      is_active: true,
+      show_on_landing_page: true,
+      track_stock: false,
+      stock: 0,
+      specifications: {},
+    }
+  )
+  const [images, setImages] = useState<ProductImage[]>(product?.images || [])
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const uploadMutation = useUploadProductImage()
   const deleteMutation = useDeleteProductImage()
   const setPrimaryMutation = useSetPrimaryImage()
-
-  // Load product data when editing
-  useEffect(() => {
-    if (product) {
-      setFormData({
-        name: product.name,
-        sku: product.sku || '',
-        description: product.description || '',
-        short_description: product.short_description || '',
-        price: product.price,
-        promotional_price: product.promotional_price,
-        category_id: product.category_id,
-        is_active: product.is_active,
-        show_on_landing_page: product.show_on_landing_page,
-        track_stock: product.track_stock,
-        stock: product.stock,
-        specifications: product.specifications || {},
-      })
-      setImages(product.images || [])
-    } else {
-      setFormData({
-        name: '',
-        sku: '',
-        description: '',
-        short_description: '',
-        price: 0,
-        promotional_price: undefined,
-        category_id: undefined,
-        is_active: true,
-        show_on_landing_page: true,
-        track_stock: false,
-        stock: 0,
-        specifications: {},
-      })
-      setImages([])
-    }
-  }, [product, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
