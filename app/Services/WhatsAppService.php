@@ -543,6 +543,20 @@ class WhatsAppService
 
         // Extract message content and media metadata
         $content = $this->extractMessageContent($message);
+
+        // =====================
+        // 🛠️ VERIFICAR APROVAÇÃO DE FIX
+        // Intercepta mensagens de desenvolvedores aprovadores
+        // =====================
+        $fixApprovalResult = $this->checkFixApprovalMessage($content, $phoneNumber, $channel);
+        if ($fixApprovalResult) {
+            Log::info('Fix approval message processed', [
+                'phone' => $phoneNumber,
+                'action' => $fixApprovalResult['action'],
+            ]);
+            // Não cria ticket normal, apenas retorna
+            return null;
+        }
         $metadata = $this->extractMediaMetadata($message, $channel);
 
         // Create ticket message
@@ -563,8 +577,28 @@ class WhatsAppService
         // 🔥 Disparar evento broadcast para notificar o frontend em tempo real
         event(new TicketMessageCreated($ticketMessage, $ticket));
 
-        // 🤖 Processar resposta do SDR IA se configurado
-        // Verifica: canal tem IA + ticket tem lead + IA está habilitada no ticket
+        // =====================
+        // 🔀 ROTEAMENTO DE FILAS (INDEPENDENTE DA IA)
+        // O menu de filas é uma funcionalidade de ROTEAMENTO, não de IA.
+        // Deve aparecer mesmo com IA desabilitada para o ticket.
+        // =====================
+        if ($ticket->lead && $channel->hasQueueMenu()) {
+            $routingService = app(\App\Services\QueueRoutingService::class);
+
+            if ($routingService->needsQueueMenu($ticket->lead, $channel)) {
+                // Lead precisa escolher fila - processa menu (independente da IA)
+                $this->handleQueueMenuRouting($ticketMessage, $ticket, $ticket->lead, $channel, $routingService);
+
+                // Mark as read e retorna (menu foi processado)
+                $this->loadFromChannel($channel);
+                $this->markAsRead($messageId);
+                return $ticketMessage;
+            }
+        }
+
+        // =====================
+        // 🤖 RESPOSTA DA IA (após roteamento de filas)
+        // =====================
         if ($channel->hasIa() && $ticket->lead) {
             if ($ticket->hasIaEnabled()) {
                 // IA habilitada: responde automaticamente
@@ -1477,101 +1511,92 @@ class WhatsAppService
     }
 
     /**
+     * Processa o menu de roteamento de filas.
+     *
+     * IMPORTANTE: Esta lógica é INDEPENDENTE da IA estar habilitada.
+     * O menu de filas é uma funcionalidade de ROTEAMENTO, não de resposta automática.
+     */
+    protected function handleQueueMenuRouting(
+        TicketMessage $message,
+        Ticket $ticket,
+        Lead $lead,
+        Channel $channel,
+        \App\Services\QueueRoutingService $routingService
+    ): void {
+        $messageContent = $message->message;
+        $phone = $lead->contact->phone;
+        $this->loadFromChannel($channel);
+
+        // Verifica se a mensagem é uma resposta válida do menu
+        if ($routingService->isValidMenuResponse($channel, $messageContent)) {
+            // Processa a escolha da fila
+            $queue = $routingService->processMenuResponse($lead, $channel, $messageContent);
+
+            if ($queue) {
+                Log::info('Lead routed to queue from menu response', [
+                    'lead_id' => $lead->id,
+                    'queue_id' => $queue->id,
+                    'queue_name' => $queue->name,
+                ]);
+
+                // Envia mensagem de boas-vindas da fila se configurada
+                if (!empty($queue->welcome_message)) {
+                    $welcomeMsg = $queue->welcome_message;
+                } else {
+                    // Mensagem padrão de confirmação
+                    $welcomeMsg = "Perfeito! Você selecionou *{$queue->menu_label}*. Em que posso ajudá-lo?";
+                }
+
+                $this->sendTextMessage($phone, $welcomeMsg);
+
+                // Salva a mensagem no ticket para aparecer na conversa
+                $this->saveOutboundMessage($ticket, $welcomeMsg, [
+                    'type' => 'queue_welcome',
+                    'queue_id' => $queue->id,
+                    'queue_name' => $queue->name,
+                ]);
+            } else {
+                // Resposta inválida, reenvia o menu com mensagem de erro
+                $invalidMsg = $routingService->getInvalidResponseText($channel);
+                $menuText = $routingService->getFormattedMenuText($channel, $invalidMsg);
+                $this->sendTextMessage($phone, $menuText);
+
+                // Salva a mensagem no ticket para aparecer na conversa
+                $this->saveOutboundMessage($ticket, $menuText, [
+                    'type' => 'queue_menu_retry',
+                    'reason' => 'invalid_response',
+                ]);
+            }
+        } else {
+            // Primeira interação - envia menu configurado no canal
+            $menuText = $routingService->getFormattedMenuText($channel);
+            $this->sendTextMessage($phone, $menuText);
+
+            // Salva a mensagem no ticket para aparecer na conversa
+            $this->saveOutboundMessage($ticket, $menuText, [
+                'type' => 'queue_menu',
+                'channel_id' => $channel->id,
+            ]);
+
+            Log::info('Queue menu sent to lead', [
+                'lead_id' => $lead->id,
+                'channel_id' => $channel->id,
+            ]);
+        }
+    }
+
+    /**
      * Dispara processamento do SDR IA para responder automaticamente.
-     * 
+     *
      * Arquitetura consolidada: sempre usa Python Agent (ai-service)
      * com fallback básico embutido no ProcessAgentResponse.
-     * 
-     * Inclui suporte a filas/setores: se o canal tem filas configuradas
-     * e o lead ainda não escolheu, envia o menu de opções.
      */
     protected function triggerSdrResponse(TicketMessage $message, Ticket $ticket, Lead $lead, Channel $channel): void
     {
-        // =====================
-        // ROTEAMENTO DE FILAS
-        // =====================
-        $routingService = app(\App\Services\QueueRoutingService::class);
-        
-        // Verifica se o canal tem filas e o lead precisa escolher
-        if ($routingService->needsQueueMenu($lead, $channel)) {
-            // Verifica se a mensagem é uma resposta válida do menu
-            $messageContent = $message->message;
-            
-            if ($routingService->isValidMenuResponse($channel, $messageContent)) {
-                // Processa a escolha da fila
-                $queue = $routingService->processMenuResponse($lead, $channel, $messageContent);
-                
-                if ($queue) {
-                    Log::info('Lead routed to queue from menu response', [
-                        'lead_id' => $lead->id,
-                        'queue_id' => $queue->id,
-                        'queue_name' => $queue->name,
-                    ]);
-                    
-                    $this->loadFromChannel($channel);
-                    $phone = $lead->contact->phone;
-                    
-                    // Envia mensagem de boas-vindas da fila se configurada
-                    if (!empty($queue->welcome_message)) {
-                        $welcomeMsg = $queue->welcome_message;
-                    } else {
-                        // Mensagem padrão de confirmação
-                        $welcomeMsg = "Perfeito! Você selecionou *{$queue->menu_label}*. Em que posso ajudá-lo?";
-                    }
-                    
-                    $this->sendTextMessage($phone, $welcomeMsg);
-                    
-                    // Salva a mensagem no ticket para aparecer na conversa
-                    $this->saveOutboundMessage($ticket, $welcomeMsg, [
-                        'type' => 'queue_welcome',
-                        'queue_id' => $queue->id,
-                        'queue_name' => $queue->name,
-                    ]);
-                    
-                    // IMPORTANTE: Após escolher a fila, para aqui.
-                    // A próxima mensagem do lead será processada normalmente pela IA.
-                    return;
-                } else {
-                    // Resposta inválida, reenvia o menu com mensagem de erro
-                    $invalidMsg = $routingService->getInvalidResponseText($channel);
-                    $menuText = $routingService->getFormattedMenuText($channel, $invalidMsg);
-                    $this->loadFromChannel($channel);
-                    $phone = $lead->contact->phone;
-                    $this->sendTextMessage($phone, $menuText);
-                    
-                    // Salva a mensagem no ticket para aparecer na conversa
-                    $this->saveOutboundMessage($ticket, $menuText, [
-                        'type' => 'queue_menu_retry',
-                        'reason' => 'invalid_response',
-                    ]);
-                    return;
-                }
-            } else {
-                // Primeira interação - envia menu configurado no canal
-                $menuText = $routingService->getFormattedMenuText($channel);
-                $this->loadFromChannel($channel);
-                $phone = $lead->contact->phone;
-                $this->sendTextMessage($phone, $menuText);
-                
-                // Salva a mensagem no ticket para aparecer na conversa
-                $this->saveOutboundMessage($ticket, $menuText, [
-                    'type' => 'queue_menu',
-                    'channel_id' => $channel->id,
-                ]);
-                
-                Log::info('Queue menu sent to lead', [
-                    'lead_id' => $lead->id,
-                    'channel_id' => $channel->id,
-                ]);
-                return;
-            }
-        }
-        
-        // Se é um lead de retorno (já teve interação), trata especialmente
-        if ($lead->owner_id && !$lead->queue_id && $channel->hasQueues()) {
-            $routingService->handleReturningLead($lead, $channel);
-        }
-        
+        // NOTA: O roteamento de filas agora é feito no nível superior (handleIncomingMessage)
+        // antes de chamar este método. Isso permite que o menu de filas apareça
+        // mesmo com a IA desabilitada para o ticket.
+
         // =====================
         // SELEÇÃO DO SDR AGENT
         // =====================
@@ -1796,6 +1821,109 @@ class WhatsAppService
         ]);
 
         return $message;
+    }
+
+    /**
+     * Verifica se a mensagem é uma aprovação/rejeição de fix de um desenvolvedor.
+     * Retorna array com informações se for, null caso contrário.
+     */
+    protected function checkFixApprovalMessage(string $content, string $phone, Channel $channel): ?array
+    {
+        $upperContent = mb_strtoupper(trim($content));
+
+        // Verifica se começa com APROVAR ou REJEITAR
+        if (!str_starts_with($upperContent, 'APROVAR') && !str_starts_with($upperContent, 'REJEITAR')) {
+            return null;
+        }
+
+        // Busca tenant e verifica se tem configuração de fix
+        $tenant = $channel->tenant;
+        $fixSettings = $tenant->fix_agent_settings ?? [];
+
+        if (!($fixSettings['enabled'] ?? false)) {
+            return null;
+        }
+
+        // Verifica se o telefone está na lista de aprovadores
+        $approverPhones = $fixSettings['approver_phones'] ?? [];
+        $formattedPhone = $this->formatPhoneNumber($phone);
+
+        $isApprover = false;
+        foreach ($approverPhones as $approverPhone) {
+            if ($this->formatPhoneNumber($approverPhone) === $formattedPhone) {
+                $isApprover = true;
+                break;
+            }
+        }
+
+        if (!$isApprover) {
+            return null;
+        }
+
+        // Busca fix request pendente
+        $fixRequest = \App\Models\AgentFixRequest::where('tenant_id', $tenant->id)
+            ->pending()
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$fixRequest) {
+            // Envia mensagem informando que não há fix pendente
+            $this->loadFromChannel($channel);
+            $this->sendTextMessage($phone, "Não há solicitações de correção pendentes no momento.");
+            return ['action' => 'no_pending_fix'];
+        }
+
+        try {
+            if (str_starts_with($upperContent, 'APROVAR')) {
+                // Aprovar
+                $fixRequest->approve($formattedPhone);
+
+                // Disparar job para executar a correção
+                \App\Jobs\ProcessApprovedFix::dispatch($fixRequest);
+
+                // Confirma para o desenvolvedor
+                $this->loadFromChannel($channel);
+                $this->sendTextMessage($phone, "Correção aprovada e em execução! Você será notificado quando o deploy for concluído.");
+
+                Log::info('Fix approved via WhatsApp', [
+                    'fix_request_id' => $fixRequest->id,
+                    'approver' => $formattedPhone,
+                ]);
+
+                return ['action' => 'approved', 'fix_request_id' => $fixRequest->id];
+
+            } else {
+                // Rejeitar - extrai motivo
+                $reason = trim(str_replace('REJEITAR', '', $upperContent)) ?: 'Sem motivo especificado';
+                $fixRequest->reject($reason, $formattedPhone);
+
+                // Confirma para o desenvolvedor
+                $this->loadFromChannel($channel);
+                $this->sendTextMessage($phone, "Correção rejeitada. O ticket será escalado para atendimento humano.");
+
+                // Notifica o cliente que foi escalado
+                $ticket = $fixRequest->ticket()->with('lead.contact')->first();
+                if ($ticket && $ticket->lead && $ticket->lead->contact) {
+                    $customerMessage = "A correção identificada precisa de revisão adicional. ";
+                    $customerMessage .= "Um desenvolvedor humano vai analisar o problema e resolver o mais rápido possível.";
+                    $this->sendTextMessage($ticket->lead->contact->phone, $customerMessage);
+                }
+
+                Log::info('Fix rejected via WhatsApp', [
+                    'fix_request_id' => $fixRequest->id,
+                    'reason' => $reason,
+                    'approver' => $formattedPhone,
+                ]);
+
+                return ['action' => 'rejected', 'fix_request_id' => $fixRequest->id, 'reason' => $reason];
+            }
+        } catch (\Exception $e) {
+            Log::error('Error processing fix approval', [
+                'error' => $e->getMessage(),
+                'phone' => $phone,
+            ]);
+            return null;
+        }
     }
 }
 

@@ -22,6 +22,7 @@ from app.queue.worker import queue_worker
 from app.queue.message_queue import message_queue
 from app.routers import bi as bi_router
 from app.routers import content as content_router
+from app.routers import support as support_router
 from bi_agent.scheduler import bi_scheduler
 
 # Configuração de logging estruturado
@@ -97,6 +98,7 @@ app.include_router(rl_router.router)
 app.include_router(ml_router.router)
 app.include_router(bi_router.router)
 app.include_router(content_router.router)
+app.include_router(support_router.router)
 app.include_router(create_mcp_router())
 
 

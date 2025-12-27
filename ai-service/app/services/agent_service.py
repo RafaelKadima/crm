@@ -313,7 +313,7 @@ SUPPORT_FUNCTIONS = [
     },
     {
         "name": "transfer_to_human",
-        "description": "Transfere a conversa para um desenvolvedor humano. Use quando o problema requer correção de código ou acesso que você não tem.",
+        "description": "Transfere a conversa para um desenvolvedor humano. Use SOMENTE quando não conseguir resolver sozinho após várias tentativas.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -332,6 +332,44 @@ SUPPORT_FUNCTIONS = [
                 }
             },
             "required": ["reason", "priority"]
+        }
+    },
+    {
+        "name": "request_fix_approval",
+        "description": "Solicita aprovação para aplicar uma correção de código. Use quando você identificou o bug e sabe como corrigi-lo. A correção será enviada para um desenvolvedor aprovar via WhatsApp.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Caminho do arquivo a ser corrigido (ex: 'app/Http/Controllers/TicketController.php')"
+                },
+                "old_code": {
+                    "type": "string",
+                    "description": "Código atual que contém o bug (deve ser EXATAMENTE como está no arquivo)"
+                },
+                "new_code": {
+                    "type": "string",
+                    "description": "Código corrigido que vai substituir o código antigo"
+                },
+                "problem_description": {
+                    "type": "string",
+                    "description": "Descrição do problema que o cliente está enfrentando"
+                },
+                "diagnosis_summary": {
+                    "type": "string",
+                    "description": "Resumo do diagnóstico: o que você encontrou nos logs/código"
+                },
+                "fix_explanation": {
+                    "type": "string",
+                    "description": "Explicação técnica de por que esta correção resolve o problema"
+                },
+                "commit_message": {
+                    "type": "string",
+                    "description": "Mensagem do commit (ex: 'fix: corrige validação de upload de imagem')"
+                }
+            },
+            "required": ["file_path", "old_code", "new_code", "problem_description", "diagnosis_summary", "fix_explanation"]
         }
     }
 ]

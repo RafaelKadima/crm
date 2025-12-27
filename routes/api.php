@@ -1290,6 +1290,13 @@ Route::middleware(['auth:api', 'super_admin'])->prefix('super-admin')->group(fun
         // Aprovacao de acoes
         Route::post('actions/{action}/approve', [\App\Http\Controllers\SupportAgentController::class, 'approveAction']);
         Route::post('actions/{action}/reject', [\App\Http\Controllers\SupportAgentController::class, 'rejectAction']);
+
+        // Solicitações de correção (fix requests)
+        Route::get('fix-requests', [\App\Http\Controllers\AgentFixApprovalController::class, 'index']);
+        Route::get('fix-requests/{id}', [\App\Http\Controllers\AgentFixApprovalController::class, 'show']);
+        Route::post('fix-requests/{id}/approve', [\App\Http\Controllers\AgentFixApprovalController::class, 'approve']);
+        Route::post('fix-requests/{id}/reject', [\App\Http\Controllers\AgentFixApprovalController::class, 'reject']);
+        Route::post('fix-requests/{id}/feedback', [\App\Http\Controllers\AgentFixApprovalController::class, 'customerFeedback']);
     });
 });
 
@@ -1350,5 +1357,11 @@ Route::middleware([\App\Http\Middleware\EnsureInternalRequest::class])->prefix('
         Route::post('actions/generic', [\App\Http\Controllers\Internal\SdrInternalController::class, 'genericAction']);
     });
 
+    // Agent Fix Requests (correções semi-autônomas)
+    Route::prefix('agent-fix')->group(function () {
+        Route::post('/', [\App\Http\Controllers\AgentFixApprovalController::class, 'store']);
+        Route::get('{id}', [\App\Http\Controllers\AgentFixApprovalController::class, 'show']);
+        Route::post('whatsapp-response', [\App\Http\Controllers\AgentFixApprovalController::class, 'processWhatsAppResponse']);
+    });
 
 });

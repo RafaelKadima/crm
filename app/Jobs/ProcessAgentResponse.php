@@ -144,6 +144,10 @@ class ProcessAgentResponse implements ShouldQueue
                     $this->handleFollowUp($result);
                     break;
 
+                case 'request_fix_approval':
+                    $this->handleRequestFixApproval($result, $whatsAppService);
+                    break;
+
                 default:
                     Log::info('No action taken', ['action' => $action]);
             }
@@ -531,6 +535,109 @@ class ProcessAgentResponse implements ShouldQueue
 
         } catch (\Exception $e) {
             Log::warning('Failed to schedule follow-up', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Solicita aprovação para correção de código.
+     */
+    protected function handleRequestFixApproval(array $result, WhatsAppService $whatsAppService): void
+    {
+        try {
+            // Busca as configurações do tenant
+            $tenant = $this->channel->tenant;
+            $fixSettings = $tenant->fix_agent_settings ?? [];
+
+            if (!($fixSettings['enabled'] ?? false)) {
+                Log::warning('Fix agent not enabled for tenant', [
+                    'tenant_id' => $tenant->id,
+                ]);
+                // Transfere para humano se fix não está habilitado
+                $this->handleTransferToHuman([
+                    'message' => 'Correção identificada, mas preciso de aprovação humana para aplicá-la.',
+                    'priority' => 'high',
+                ], $whatsAppService);
+                return;
+            }
+
+            // Cria a solicitação de fix via API interna
+            $aiServiceUrl = config('services.ai_agent.url', 'http://localhost:8001');
+            $internalKey = config('services.ai_agent.internal_key', '');
+
+            $response = \Http::timeout(30)
+                ->withHeaders([
+                    'X-Internal-Key' => $internalKey,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post(config('app.url') . '/api/internal/agent-fix', [
+                    'tenant_id' => $tenant->id,
+                    'ticket_id' => $this->ticket->id,
+                    'agent_id' => $this->agent->id,
+                    'problem_description' => $result['problem_description'] ?? 'Problema reportado pelo cliente',
+                    'diagnosis_summary' => $result['diagnosis_summary'] ?? 'Diagnóstico feito pelo agente',
+                    'diagnostic_data' => $result['diagnostic_data'] ?? null,
+                    'file_path' => $result['file_path'],
+                    'old_code' => $result['old_code'],
+                    'new_code' => $result['new_code'],
+                    'fix_explanation' => $result['fix_explanation'] ?? '',
+                    'commit_message' => $result['commit_message'] ?? "fix: correção automática via Zion",
+                ]);
+
+            if (!$response->successful()) {
+                Log::error('Failed to create fix request', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                throw new \Exception('Falha ao criar solicitação de correção');
+            }
+
+            $fixData = $response->json();
+
+            // Envia mensagem para o cliente informando que a correção está sendo processada
+            $whatsAppService->loadFromChannel($this->channel);
+            $phone = $this->lead->contact->phone;
+
+            $message = "Encontrei o problema e já identifiquei a correção necessária!\n\n";
+            $message .= "Estou enviando a correção para aprovação do nosso time de desenvolvimento. ";
+            $message .= "Assim que for aprovada, vou aplicar automaticamente e avisar você para testar.\n\n";
+            $message .= "Aguarde alguns minutos, por favor.";
+
+            $whatsAppService->sendTextMessage($phone, $message);
+
+            // Registra no ticket
+            $this->createOutboundMessage($message, [
+                'action' => 'request_fix_approval',
+                'fix_request_id' => $fixData['id'] ?? null,
+                'file_path' => $result['file_path'],
+            ]);
+
+            // Atualiza ticket metadata
+            $this->ticket->update([
+                'metadata' => array_merge($this->ticket->metadata ?? [], [
+                    'pending_fix' => true,
+                    'fix_request_id' => $fixData['id'] ?? null,
+                    'fix_requested_at' => now()->toISOString(),
+                ]),
+            ]);
+
+            Log::info('Fix approval requested', [
+                'lead_id' => $this->lead->id,
+                'ticket_id' => $this->ticket->id,
+                'fix_request_id' => $fixData['id'] ?? null,
+                'file_path' => $result['file_path'],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error requesting fix approval', [
+                'error' => $e->getMessage(),
+                'lead_id' => $this->lead->id,
+            ]);
+
+            // Fallback: transfere para humano
+            $this->handleTransferToHuman([
+                'message' => 'Identifiquei o problema mas preciso de ajuda humana para aplicar a correção: ' . ($result['diagnosis_summary'] ?? ''),
+                'priority' => 'high',
+            ], $whatsAppService);
         }
     }
 

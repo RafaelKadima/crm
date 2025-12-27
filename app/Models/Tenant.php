@@ -26,6 +26,7 @@ class Tenant extends Model
         'ia_enabled',
         'ia_workflow_id',
         'settings',
+        'fix_agent_settings',
         'is_active',
         'logo_url',
         'logo_dark_url',
@@ -44,6 +45,7 @@ class Tenant extends Model
             'plan' => PlanEnum::class,
             'ia_enabled' => 'boolean',
             'settings' => 'array',
+            'fix_agent_settings' => 'array',
             'branding' => 'array',
             'is_active' => 'boolean',
         ];
