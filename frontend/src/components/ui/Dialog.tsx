@@ -104,7 +104,7 @@ export function DialogContent({ children, className, size = 'md' }: DialogConten
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className={cn(
               'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
-              'w-full rounded-xl bg-background shadow-2xl border',
+              'w-[calc(100%-48px)] max-h-[calc(100vh-48px)] rounded-xl bg-background shadow-2xl border',
               sizeClasses[size],
               className
             )}
