@@ -902,7 +902,7 @@ async def verify_health(health_check_url: Optional[str] = None, **kwargs) -> Dic
         import httpx
 
         # URL padrao ou custom
-        base_url = health_check_url or settings.vps_app_url or "https://crm.ominfy.center"
+        base_url = health_check_url or settings.vps_app_url or "https://crm.omnify.center"
 
         checks = {
             "app_responding": False,

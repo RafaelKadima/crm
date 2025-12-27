@@ -48,7 +48,7 @@ $newSettings = array_merge($currentSettings, [
     'autonomous_mode' => true,
     'approver_phones' => $currentSettings['approver_phones'] ?? [],
     'max_retries' => 3,
-    'health_check_url' => 'https://crm.ominfy.center',
+    'health_check_url' => 'https://crm.omnify.center',
     'rollback_on_error' => true,
 ]);
 

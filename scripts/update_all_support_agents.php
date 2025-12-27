@@ -290,7 +290,7 @@ foreach ($tenantIds as $tenantId) {
         'enabled' => true,
         'autonomous_mode' => true,
         'max_retries' => 3,
-        'health_check_url' => 'https://crm.ominfy.center',
+        'health_check_url' => 'https://crm.omnify.center',
         'rollback_on_error' => true,
     ]);
 
