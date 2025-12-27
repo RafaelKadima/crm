@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Building2, Users, Bell, Palette, Paintbrush, Trophy, CalendarClock, MessageSquare, Bot } from 'lucide-react'
+import { User, Building2, Users, Bell, Palette, Paintbrush, Trophy, CalendarClock, MessageSquare, Bot, BarChart3 } from 'lucide-react'
 import { CompanySettingsPage } from './CompanySettingsPage'
 import { TeamSettingsPage } from './TeamSettingsPage'
 import { NotificationsSettingsPage } from './NotificationsSettingsPage'
@@ -11,8 +11,9 @@ import { ActivitiesDashboard } from './ActivitiesDashboard'
 import { ChannelsIntegrationsPage } from './ChannelsIntegrationsPage'
 import { AiAutomationPage } from './AiAutomationPage'
 import { GamificationAdminPage } from '@/pages/gamification'
+import { GtmSettingsPage } from './GtmSettingsPage'
 
-type SettingsTab = 'profile' | 'company' | 'team' | 'notifications' | 'appearance' | 'branding' | 'gamification' | 'activities' | 'channels' | 'ai-automation'
+type SettingsTab = 'profile' | 'company' | 'team' | 'notifications' | 'appearance' | 'branding' | 'gamification' | 'activities' | 'channels' | 'ai-automation' | 'gtm'
 
 const settingsSections = [
   { icon: User, title: 'Perfil', description: 'Suas informacoes pessoais', tab: 'profile' as SettingsTab },
@@ -20,6 +21,7 @@ const settingsSections = [
   { icon: Paintbrush, title: 'Identidade Visual', description: 'Logo, cores e marca', tab: 'branding' as SettingsTab },
   { icon: MessageSquare, title: 'Canais & Integracoes', description: 'WhatsApp, Instagram, Filas', tab: 'channels' as SettingsTab },
   { icon: Bot, title: 'IA & Automacao', description: 'Uso de IA e configs', tab: 'ai-automation' as SettingsTab },
+  { icon: BarChart3, title: 'Google Tag Manager', description: 'Rastreamento e eventos GTM', tab: 'gtm' as SettingsTab },
   { icon: CalendarClock, title: 'Atividades', description: 'Prazos e atrasos', tab: 'activities' as SettingsTab },
   { icon: Trophy, title: 'Gamificacao', description: 'Pontos, tiers e recompensas', tab: 'gamification' as SettingsTab },
   { icon: Users, title: 'Equipe', description: 'Gerenciar usuarios', tab: 'team' as SettingsTab },
@@ -82,6 +84,7 @@ export function SettingsPage() {
           {activeTab === 'branding' && <BrandingSettingsPage />}
           {activeTab === 'channels' && <ChannelsIntegrationsPage />}
           {activeTab === 'ai-automation' && <AiAutomationPage />}
+          {activeTab === 'gtm' && <GtmSettingsPage />}
           {activeTab === 'activities' && <ActivitiesDashboard />}
           {activeTab === 'gamification' && <GamificationAdminPage />}
           {activeTab === 'team' && <TeamSettingsPage />}
