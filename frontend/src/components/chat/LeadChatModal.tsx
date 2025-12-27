@@ -353,6 +353,16 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
     }
   }, [])
 
+  // Scroll to bottom after initial messages load
+  useEffect(() => {
+    if (!isLoading && messages.length > 0 && currentPage === 1) {
+      // Small delay to ensure DOM has rendered
+      requestAnimationFrame(() => {
+        scrollToBottom()
+      })
+    }
+  }, [isLoading, messages.length, currentPage, scrollToBottom])
+
   // Focus input when modal opens
   useEffect(() => {
     if (open) {
