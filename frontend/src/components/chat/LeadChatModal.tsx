@@ -353,15 +353,21 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
     }
   }, [])
 
-  // Scroll to bottom after initial messages load
+  // Scroll to bottom after initial messages load (instant, no animation)
   useEffect(() => {
     if (!isLoading && messages.length > 0 && currentPage === 1) {
-      // Small delay to ensure DOM has rendered
-      requestAnimationFrame(() => {
-        scrollToBottom()
-      })
+      // Use multiple attempts to ensure scroll happens after DOM render
+      const container = messagesContainerRef.current
+      if (container) {
+        // Instant scroll - no animation
+        container.scrollTop = container.scrollHeight
+        // Backup scroll after a microtask
+        queueMicrotask(() => {
+          container.scrollTop = container.scrollHeight
+        })
+      }
     }
-  }, [isLoading, messages.length, currentPage, scrollToBottom])
+  }, [isLoading, messages.length, currentPage])
 
   // Focus input when modal opens
   useEffect(() => {
