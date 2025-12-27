@@ -47,7 +47,7 @@ import { TransferModal } from '@/components/chat/TransferModal'
 import { CloseConversationModal } from '@/components/chat/CloseConversationModal'
 import { TemplateSelector } from '@/components/chat/TemplateSelector'
 import { QuickReplySelector } from '@/components/chat/QuickReplySelector'
-import { ProductSelector } from '@/components/chat/ProductSelector'
+import { ProductSelector, type ProductSentData } from '@/components/chat/ProductSelector'
 import { FileUploadButton } from '@/components/chat/FileUploadButton'
 import { AudioRecorder } from '@/components/chat/AudioRecorder'
 import { MessageAttachment } from '@/components/chat/MessageAttachment'
@@ -1610,10 +1610,41 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           ticketId={ticketId}
           isOpen={isProductSelectorOpen}
           onClose={() => setIsProductSelectorOpen(false)}
-          onSent={() => {
-            // Refresh messages after sending product
-            loadMessages(1, false)
-            scrollToBottom()
+          onSent={(data: ProductSentData) => {
+            // Adiciona mensagem do produto ao estado local (sem recarregar tudo)
+            const productMessage: Message = {
+              id: data.message.id,
+              content: data.message.content,
+              sender_type: 'user',
+              direction: 'outbound',
+              created_at: data.message.sent_at,
+              status: 'delivered',
+              metadata: {
+                media_type: 'product_catalog',
+              },
+            }
+            setMessages(prev => [...prev, productMessage])
+
+            // Adiciona cada imagem como mensagem separada
+            data.images.forEach((img, index) => {
+              const imageMessage: Message = {
+                id: `${data.message.id}-img-${index}`,
+                content: index === 0 ? `📷 ${data.product.name}` : '',
+                sender_type: 'user',
+                direction: 'outbound',
+                created_at: data.message.sent_at,
+                status: 'delivered',
+                metadata: {
+                  media_type: 'image',
+                  image_url: img.url,
+                  media_url: img.url,
+                },
+              }
+              setMessages(prev => [...prev, imageMessage])
+            })
+
+            // Scroll para o final após adicionar mensagens
+            setTimeout(() => scrollToBottom(), 100)
             queryClient.invalidateQueries({ queryKey: ['leads'] })
           }}
         />

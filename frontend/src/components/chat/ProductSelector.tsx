@@ -19,11 +19,27 @@ import { cn } from '@/lib/utils'
 import { useChatProducts, useSendProductToChat, type ChatProduct } from '@/hooks/useChatProducts'
 import { toast } from 'sonner'
 
+export interface ProductSentData {
+  message: {
+    id: string
+    content: string
+    sent_at: string
+  }
+  images: {
+    id: string
+    url: string
+  }[]
+  product: {
+    id: string
+    name: string
+  }
+}
+
 interface ProductSelectorProps {
   ticketId: string | null
   isOpen: boolean
   onClose: () => void
-  onSent: () => void
+  onSent: (data: ProductSentData) => void
 }
 
 export function ProductSelector({ ticketId, isOpen, onClose, onSent }: ProductSelectorProps) {
@@ -96,7 +112,7 @@ export function ProductSelector({ ticketId, isOpen, onClose, onSent }: ProductSe
     if (!ticketId || !selectedProduct) return
 
     try {
-      await sendMutation.mutateAsync({
+      const response = await sendMutation.mutateAsync({
         ticketId,
         productId: selectedProduct.id,
         includeDescription,
@@ -105,7 +121,18 @@ export function ProductSelector({ ticketId, isOpen, onClose, onSent }: ProductSe
       })
 
       toast.success('Produto enviado com sucesso!')
-      onSent()
+
+      // Passa os dados da mensagem criada para o callback
+      onSent({
+        message: {
+          id: response.ticket_message.id,
+          content: response.ticket_message.message,
+          sent_at: response.ticket_message.sent_at,
+        },
+        images: response.images_sent,
+        product: response.product,
+      })
+
       handleClose()
     } catch (error: any) {
       console.error('Error sending product:', error)
