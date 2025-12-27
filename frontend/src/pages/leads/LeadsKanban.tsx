@@ -305,9 +305,9 @@ export function LeadsKanbanPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col gap-4 overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold">Leads</h1>
@@ -433,7 +433,7 @@ export function LeadsKanbanPage() {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row gap-4"
+        className="flex flex-col sm:flex-row gap-4 shrink-0"
       >
         {/* Status Tabs - Filtro por status do ticket */}
         <div className="flex bg-gray-800/50 rounded-lg p-1 gap-1">
@@ -477,18 +477,20 @@ export function LeadsKanbanPage() {
       </motion.div>
 
       {/* Kanban Board */}
-      {stages.length > 0 ? (
-        <KanbanBoard
-          stages={stages}
-          leads={filteredLeads}
-          onLeadMove={handleLeadMove}
-          onLeadClick={handleLeadClick}
-        />
-      ) : (
-        <div className="text-center py-12 text-muted-foreground">
-          Nenhum estágio configurado no pipeline
-        </div>
-      )}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {stages.length > 0 ? (
+          <KanbanBoard
+            stages={stages}
+            leads={filteredLeads}
+            onLeadMove={handleLeadMove}
+            onLeadClick={handleLeadClick}
+          />
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            Nenhum estágio configurado no pipeline
+          </div>
+        )}
+      </div>
 
       {/* Lead Chat Modal */}
       <LeadChatModal

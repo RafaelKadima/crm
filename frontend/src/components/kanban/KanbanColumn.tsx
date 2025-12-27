@@ -28,7 +28,7 @@ export function KanbanColumn({ stage, leads, onLeadClick, isOver }: KanbanColumn
       <div
         ref={setNodeRef}
         className={cn(
-          "bg-muted/30 rounded-xl p-3 h-[calc(100vh-220px)] flex flex-col transition-all duration-200",
+          "bg-muted/30 rounded-xl p-3 h-full flex flex-col transition-all duration-200",
           isOver && "bg-primary/10 ring-2 ring-primary/30 scale-[1.02]"
         )}
       >
