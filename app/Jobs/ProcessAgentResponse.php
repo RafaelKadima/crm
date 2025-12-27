@@ -468,6 +468,22 @@ class ProcessAgentResponse implements ShouldQueue
             ]),
         ]);
 
+        // Envia mensagem informando sobre a transferência
+        $transferMessage = $result['message'] ?? 'Estou transferindo você para um atendente humano que poderá ajudá-lo melhor.';
+
+        // Prepara mensagem amigável
+        $friendlyMessage = "🔄 *Transferindo para atendimento humano*\n\n" . $transferMessage . "\n\nUm momento, por favor.";
+
+        $whatsAppService->loadFromChannel($this->channel);
+        $phone = $this->lead->contact->phone;
+        $whatsAppService->sendTextMessage($phone, $friendlyMessage);
+
+        // Registra no ticket
+        $this->createOutboundMessage($friendlyMessage, [
+            'action' => 'transfer_to_human',
+            'transfer_reason' => $result['message'] ?? '',
+        ]);
+
         // Notifica (poderia disparar evento para notificar vendedores)
         Log::info('Lead transferred to human', [
             'lead_id' => $this->lead->id,
