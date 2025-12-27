@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -357,7 +357,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
   const setPrimaryMutation = useSetPrimaryImage()
 
   // Load product data when editing
-  useState(() => {
+  useEffect(() => {
     if (product) {
       setFormData({
         name: product.name,
@@ -391,7 +391,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
       })
       setImages([])
     }
-  })
+  }, [product, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -597,8 +597,18 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
               </label>
             </div>
 
-            {/* Images (only when editing) */}
-            {product && (
+            {/* Images */}
+            {!product ? (
+              <div className="p-4 bg-muted/50 rounded-lg border border-dashed">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <ImageIcon className="h-5 w-5" />
+                  <div>
+                    <p className="text-sm font-medium">Imagens do produto</p>
+                    <p className="text-xs">Salve o produto primeiro para adicionar imagens</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">Imagens</label>
