@@ -35,6 +35,7 @@ import { BIDashboard, ActionApprovalQueue, AIAnalystChat, ReportsPage as BIRepor
 import { ContentDashboard, ContentAgentChat, ContentCreators, ViralVideoSearch, BrandSettings, AnalyzeVideo, GenerateScript, AutoDiscover } from '@/pages/content'
 import { GoalsDashboard, GoalForm } from '@/pages/goals'
 import { QuickRepliesPage } from '@/pages/quick-replies/QuickRepliesPage'
+import { ConversasPage } from '@/pages/conversas/ConversasPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -156,6 +157,7 @@ function AppRoutes() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="leads" element={<LeadsKanbanPage />} />
+        <Route path="conversas" element={<ConversasPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="tickets" element={<TicketsPage />} />
         <Route path="tasks" element={<TasksPage />} />

@@ -1,0 +1,650 @@
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Send,
+  Phone,
+  Mail,
+  MessageSquare,
+  Instagram,
+  Loader2,
+  Bot,
+  UserRound,
+  ArrowRightLeft,
+  MessageSquareOff,
+  RotateCcw,
+  ListChecks,
+  Sparkles,
+  ExternalLink,
+  PanelRightOpen,
+  PanelRightClose,
+  CheckCheck,
+  Check,
+} from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { Avatar } from '@/components/ui/Avatar'
+import { TransferModal } from '@/components/chat/TransferModal'
+import { CloseConversationModal } from '@/components/chat/CloseConversationModal'
+import { TemplateSelector } from '@/components/chat/TemplateSelector'
+import { QuickReplySelector } from '@/components/chat/QuickReplySelector'
+import { ProductSelector } from '@/components/chat/ProductSelector'
+import { FileUploadButton } from '@/components/chat/FileUploadButton'
+import { AudioRecorder } from '@/components/chat/AudioRecorder'
+import { MessageAttachment } from '@/components/chat/MessageAttachment'
+import { MessageContextMenu } from '@/components/chat/MessageContextMenu'
+import { extractDataFromText } from '@/lib/dataExtractor'
+import { cn, formatPhone } from '@/lib/utils'
+import { useLeadMessages } from '@/hooks/useWebSocket'
+import { useReopenTicket } from '@/hooks/useTicketActions'
+import { notify } from '@/components/ui/FuturisticNotification'
+import { useAuth } from '@/hooks/useAuth'
+import { useHasFeature } from '@/hooks/useFeatures'
+import type { Lead } from '@/types'
+import api from '@/api/axios'
+
+interface ChatPanelProps {
+  lead: Lead
+  onToggleInfo: () => void
+  isInfoOpen: boolean
+}
+
+interface MessageMetadata {
+  attachment_id?: string
+  media_type?: string
+  media_url?: string
+  file_name?: string
+  file_size?: number
+  mime_type?: string
+  image_url?: string
+  audio_url?: string
+  video_url?: string
+  document_url?: string
+}
+
+interface Message {
+  id: string
+  content: string
+  sender_type: 'user' | 'contact' | 'ia'
+  direction: 'inbound' | 'outbound'
+  created_at: string
+  status?: 'sending' | 'sent' | 'delivered' | 'read'
+  metadata?: MessageMetadata
+}
+
+const channelIcons: Record<string, typeof MessageSquare> = {
+  whatsapp: MessageSquare,
+  instagram: Instagram,
+  telefone: Phone,
+  email: Mail,
+}
+
+export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
+  const queryClient = useQueryClient()
+  const { user, tenant } = useAuth()
+  const { hasAccess: hasIaFeature } = useHasFeature('sdr_ia')
+  const hasLinxIntegration = tenant?.linx_enabled === true
+
+  const [message, setMessage] = useState('')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [ticketId, setTicketId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const [ticketStatus, setTicketStatus] = useState<'open' | 'closed'>('open')
+  const [iaEnabled, setIaEnabled] = useState(true)
+  const [isTogglingIa, setIsTogglingIa] = useState(false)
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false)
+  const [showQuickReplies, setShowQuickReplies] = useState(false)
+  const [isSendingToLinx, setIsSendingToLinx] = useState(false)
+  const [contextMenu, setContextMenu] = useState<{
+    show: boolean
+    messageContent: string
+    position: { x: number; y: number }
+  } | null>(null)
+
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const processedMessageIds = useRef<Set<string>>(new Set())
+
+  const reopenTicket = useReopenTicket()
+  const ChannelIcon = channelIcons[lead.channel?.type || ''] || MessageSquare
+
+  // Query para Lead Score
+  const { data: leadScore, isLoading: isLoadingScore } = useQuery({
+    queryKey: ['lead-score', lead.id],
+    queryFn: async () => {
+      const response = await api.get(`/leads/${lead.id}/score`)
+      return response.data
+    },
+    enabled: !!lead.id && hasIaFeature,
+    staleTime: 60000,
+    retry: 1,
+  })
+
+  // Carrega mensagens quando lead muda
+  useEffect(() => {
+    if (lead?.id) {
+      loadMessages()
+    }
+  }, [lead?.id])
+
+  const loadMessages = async () => {
+    setIsLoading(true)
+    try {
+      const response = await api.get(`/leads/${lead.id}`)
+      const leadData = response.data
+
+      const ticket = leadData.tickets?.find((t: any) => t.status !== 'closed') || leadData.tickets?.[0]
+
+      if (ticket) {
+        setTicketId(ticket.id)
+        setTicketStatus(ticket.status === 'closed' ? 'closed' : 'open')
+        setIaEnabled(ticket.ia_enabled !== false)
+
+        const messagesResponse = await api.get(`/tickets/${ticket.id}/messages?page=1`)
+        const loadedMessages = messagesResponse.data.data || []
+        setMessages(loadedMessages.reverse())
+        processedMessageIds.current = new Set(loadedMessages.map((m: Message) => m.id))
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, scrollToBottom])
+
+  // WebSocket para mensagens em tempo real
+  const handleNewMessage = useCallback((newMessage: Message) => {
+    if (processedMessageIds.current.has(newMessage.id)) return
+    processedMessageIds.current.add(newMessage.id)
+    setMessages((prev) => [...prev, newMessage])
+    scrollToBottom()
+  }, [scrollToBottom])
+
+  useLeadMessages(lead.id, handleNewMessage)
+
+  // Enviar mensagem
+  const handleSend = async () => {
+    if (!message.trim() || !ticketId) return
+
+    const tempId = `temp-${Date.now()}`
+    const newMessage: Message = {
+      id: tempId,
+      content: message,
+      sender_type: 'user',
+      direction: 'outbound',
+      created_at: new Date().toISOString(),
+      status: 'sending',
+    }
+
+    setMessages((prev) => [...prev, newMessage])
+    setMessage('')
+    setIsSending(true)
+
+    try {
+      const response = await api.post(`/tickets/${ticketId}/messages`, { message: message.trim() })
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...response.data, status: 'sent' } : m))
+      )
+      processedMessageIds.current.add(response.data.id)
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
+    } catch (error) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId))
+      notify('error', { title: 'Erro ao enviar mensagem' })
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  // Toggle IA
+  const handleToggleIa = async () => {
+    if (!ticketId) return
+    setIsTogglingIa(true)
+    try {
+      const response = await api.put(`/tickets/${ticketId}/toggle-ia`)
+      setIaEnabled(response.data.ia_enabled)
+    } catch (error) {
+      console.error('Error toggling IA:', error)
+    } finally {
+      setIsTogglingIa(false)
+    }
+  }
+
+  // Enviar para Linx
+  const handleSendToLinx = async () => {
+    setIsSendingToLinx(true)
+    try {
+      const response = await api.post(`/leads/${lead.id}/send-to-linx`)
+      if (response.data.success) {
+        notify('success', {
+          title: 'Enviado para o Linx!',
+          description: response.data.linx_codigo_cliente
+            ? `Código do cliente: ${response.data.linx_codigo_cliente}`
+            : 'Lead enviado com sucesso',
+        })
+        queryClient.invalidateQueries({ queryKey: ['leads'] })
+      } else {
+        notify('error', {
+          title: 'Erro ao enviar',
+          description: response.data.message || 'Tente novamente',
+        })
+      }
+    } catch (error: any) {
+      notify('error', {
+        title: 'Erro ao enviar para o Linx',
+        description: error?.response?.data?.message || 'Tente novamente',
+      })
+    } finally {
+      setIsSendingToLinx(false)
+    }
+  }
+
+  // Reabrir ticket
+  const handleReopenTicket = async () => {
+    if (!ticketId) return
+    try {
+      await reopenTicket.mutateAsync(ticketId)
+      setTicketStatus('open')
+      notify('success', { title: 'Conversa reaberta!' })
+    } catch (error) {
+      notify('error', { title: 'Erro ao reabrir conversa' })
+    }
+  }
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="px-4 py-3 border-b bg-background flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "p-2 rounded-lg",
+            lead.channel?.type === 'whatsapp' ? 'bg-green-500/10 text-green-600' :
+            lead.channel?.type === 'instagram' ? 'bg-pink-500/10 text-pink-600' :
+            'bg-blue-500/10 text-blue-600'
+          )}>
+            <ChannelIcon className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="font-medium">{lead.contact?.name || 'Lead'}</h4>
+            <p className="text-xs text-muted-foreground">
+              {lead.contact?.phone ? formatPhone(lead.contact.phone) : 'Sem telefone'}
+            </p>
+          </div>
+          {/* Lead Score */}
+          {hasIaFeature && leadScore && (
+            <div className={cn(
+              "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
+              leadScore.score >= 70 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+              leadScore.score >= 40 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
+              "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+            )}>
+              <Sparkles className="h-3 w-3" />
+              {Math.round(leadScore.score)}% conversão
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {ticketStatus === 'open' ? (
+            <>
+              {hasLinxIntegration && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSendToLinx}
+                  disabled={isSendingToLinx}
+                  className="text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
+                >
+                  {isSendingToLinx ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4" />
+                  )}
+                  <span className="ml-1.5 hidden sm:inline">Linx</span>
+                </Button>
+              )}
+
+              {hasIaFeature && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToggleIa}
+                  disabled={isTogglingIa}
+                  className={cn(
+                    iaEnabled
+                      ? "bg-green-600/20 text-green-400 border-green-500/30"
+                      : "text-muted-foreground border-muted-foreground/30"
+                  )}
+                >
+                  {isTogglingIa ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : iaEnabled ? (
+                    <Bot className="h-4 w-4" />
+                  ) : (
+                    <UserRound className="h-4 w-4" />
+                  )}
+                  <span className="ml-1.5 hidden sm:inline">{iaEnabled ? 'IA Ativa' : 'Você'}</span>
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTransferModalOpen(true)}
+                className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">Transferir</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCloseModalOpen(true)}
+                className="text-red-400 border-red-400/30 hover:bg-red-400/10"
+              >
+                <MessageSquareOff className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">Encerrar</span>
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReopenTicket}
+              disabled={reopenTicket.isPending}
+            >
+              {reopenTicket.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4" />
+              )}
+              <span className="ml-1.5">Reabrir</span>
+            </Button>
+          )}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleInfo}
+            className="text-muted-foreground"
+          >
+            {isInfoOpen ? (
+              <PanelRightClose className="h-4 w-4" />
+            ) : (
+              <PanelRightOpen className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Ticket Closed Warning */}
+      {ticketStatus === 'closed' && (
+        <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/30">
+          <p className="text-xs text-amber-400 text-center">
+            Conversa encerrada. O lead passará pelo menu de filas se enviar nova mensagem.
+          </p>
+        </div>
+      )}
+
+      {/* Messages Area */}
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-3"
+      >
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            <p>Nenhuma mensagem ainda</p>
+          </div>
+        ) : (
+          messages.map((msg, index) => (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.02 }}
+              className={cn(
+                'flex',
+                msg.direction === 'outbound' ? 'justify-end' : 'justify-start'
+              )}
+            >
+              <div
+                onClick={(e) => {
+                  if (msg.direction === 'inbound') {
+                    const extractedData = extractDataFromText(msg.content)
+                    if (extractedData.length > 0) {
+                      const rect = (e.target as HTMLElement).getBoundingClientRect()
+                      setContextMenu({
+                        show: true,
+                        messageContent: msg.content,
+                        position: {
+                          x: Math.min(rect.left, window.innerWidth - 320),
+                          y: Math.min(rect.bottom + 8, window.innerHeight - 350),
+                        },
+                      })
+                    }
+                  }
+                }}
+                className={cn(
+                  'max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm',
+                  msg.direction === 'outbound'
+                    ? 'bg-primary text-primary-foreground rounded-br-md'
+                    : 'bg-muted rounded-bl-md cursor-pointer hover:bg-muted/80 transition-colors'
+                )}
+              >
+                {/* Attachment */}
+                {msg.metadata && (msg.metadata.media_url || msg.metadata.image_url || msg.metadata.audio_url) && (
+                  <MessageAttachment
+                    metadata={msg.metadata}
+                    direction={msg.direction}
+                    ticketId={ticketId}
+                  />
+                )}
+
+                {/* Text */}
+                {msg.content && (
+                  <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                )}
+
+                {/* Time & Status */}
+                <div className={cn(
+                  "flex items-center gap-1 mt-1",
+                  msg.direction === 'outbound' ? 'justify-end' : 'justify-start'
+                )}>
+                  <span className="text-[10px] opacity-60">{formatTime(msg.created_at)}</span>
+                  {msg.direction === 'outbound' && (
+                    <span className="opacity-60">
+                      {msg.status === 'read' ? (
+                        <CheckCheck className="h-3 w-3 text-blue-400" />
+                      ) : msg.status === 'delivered' ? (
+                        <CheckCheck className="h-3 w-3" />
+                      ) : (
+                        <Check className="h-3 w-3" />
+                      )}
+                    </span>
+                  )}
+                  {msg.sender_type === 'ia' && (
+                    <Bot className="h-3 w-3 opacity-60" />
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area */}
+      {ticketStatus === 'open' && (
+        <div className="p-4 border-t bg-background">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              <FileUploadButton
+                ticketId={ticketId}
+                onUploadComplete={(attachment) => {
+                  const newMessage: Message = {
+                    id: `attachment-${Date.now()}`,
+                    content: '',
+                    sender_type: 'user',
+                    direction: 'outbound',
+                    created_at: new Date().toISOString(),
+                    status: 'sent',
+                    metadata: {
+                      media_url: attachment.url,
+                      media_type: attachment.type,
+                      file_name: attachment.name,
+                    },
+                  }
+                  setMessages((prev) => [...prev, newMessage])
+                }}
+              />
+              <AudioRecorder
+                ticketId={ticketId}
+                onRecordingComplete={(audioUrl) => {
+                  const newMessage: Message = {
+                    id: `audio-${Date.now()}`,
+                    content: '',
+                    sender_type: 'user',
+                    direction: 'outbound',
+                    created_at: new Date().toISOString(),
+                    status: 'sent',
+                    metadata: { audio_url: audioUrl, media_type: 'audio' },
+                  }
+                  setMessages((prev) => [...prev, newMessage])
+                }}
+              />
+            </div>
+
+            <div className="relative flex-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSend()
+                  }
+                }}
+                placeholder="Digite sua mensagem..."
+                className={cn(
+                  "w-full px-4 py-2.5 rounded-full",
+                  "bg-muted border border-transparent",
+                  "focus:border-primary focus:outline-none",
+                  "placeholder:text-muted-foreground text-sm"
+                )}
+              />
+
+              {/* Quick Replies */}
+              <AnimatePresence>
+                {showQuickReplies && (
+                  <QuickReplySelector
+                    onSelect={(reply) => {
+                      setMessage(reply)
+                      setShowQuickReplies(false)
+                      inputRef.current?.focus()
+                    }}
+                    onClose={() => setShowQuickReplies(false)}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+
+            <Button
+              onClick={handleSend}
+              disabled={!message.trim() || isSending}
+              size="icon"
+              className="rounded-full"
+            >
+              {isSending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Modals */}
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        ticketId={ticketId}
+        leadId={lead.id}
+        onTransferSuccess={() => {
+          setIsTransferModalOpen(false)
+          queryClient.invalidateQueries({ queryKey: ['leads'] })
+        }}
+      />
+
+      <CloseConversationModal
+        isOpen={isCloseModalOpen}
+        onClose={() => setIsCloseModalOpen(false)}
+        ticketId={ticketId}
+        onSuccess={() => {
+          setIsCloseModalOpen(false)
+          setTicketStatus('closed')
+          queryClient.invalidateQueries({ queryKey: ['leads'] })
+        }}
+      />
+
+      <TemplateSelector
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        onSelect={(template) => {
+          setMessage(template.content)
+          setIsTemplateModalOpen(false)
+          inputRef.current?.focus()
+        }}
+      />
+
+      <ProductSelector
+        isOpen={isProductSelectorOpen}
+        onClose={() => setIsProductSelectorOpen(false)}
+        ticketId={ticketId}
+        onProductSent={() => {
+          setIsProductSelectorOpen(false)
+          queryClient.invalidateQueries({ queryKey: ['leads'] })
+        }}
+      />
+
+      {/* Context Menu for Data Extraction */}
+      {contextMenu?.show && (
+        <MessageContextMenu
+          messageContent={contextMenu.messageContent}
+          leadId={lead.id}
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          onDataAdded={() => {
+            queryClient.invalidateQueries({ queryKey: ['leads'] })
+          }}
+        />
+      )}
+    </div>
+  )
+}

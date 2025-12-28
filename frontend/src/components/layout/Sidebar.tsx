@@ -101,6 +101,7 @@ const navGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { icon: Kanban, label: 'Leads', path: '/leads', permissions: ['leads.view_own', 'leads.view_all'] },
+      { icon: MessageSquareText, label: 'Conversas', path: '/conversas', permissions: ['leads.view_own', 'leads.view_all'] },
       { icon: MessageSquare, label: 'Tickets', path: '/tickets', permissions: ['tickets.view_own', 'tickets.view_all'] },
       { icon: Users, label: 'Contatos', path: '/contacts', permission: 'contacts.view' },
       { icon: CheckSquare, label: 'Tarefas', path: '/tasks', permissions: ['tasks.view_own', 'tasks.view_all'] },

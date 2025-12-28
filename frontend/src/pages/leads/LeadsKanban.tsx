@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Plus, Search, Loader2, Bell, Settings2, ChevronDown, Upload, MessageCircle, CheckCircle2, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -28,6 +29,7 @@ const ticketFilterTabs: { key: TicketFilterType; label: string; icon: any; color
 ]
 
 export function LeadsKanbanPage() {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -244,17 +246,9 @@ export function LeadsKanbanPage() {
   const handleLeadClick = (lead: Lead) => {
     // Mark as read when opening
     markAsRead(lead.id)
-    
-    // Enrich lead with stage info if not present
-    const enrichedLead = {
-      ...lead,
-      stage: lead.stage || stages.find(s => s.id === lead.stage_id),
-      unread_messages: 0,
-      has_new_message: false,
-    }
-    setSelectedLead(enrichedLead)
-    setForceClosingForm(false) // Ao clicar normalmente, abre o chat
-    setIsModalOpen(true)
+
+    // Navega para a página de conversas com o lead selecionado
+    navigate(`/conversas?lead=${lead.id}`)
   }
 
   const handleModalClose = (open: boolean) => {
