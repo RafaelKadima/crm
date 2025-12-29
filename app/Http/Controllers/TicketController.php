@@ -221,12 +221,29 @@ class TicketController extends Controller
         try {
             // Envia via canal apropriado
             $channelResponse = null;
+
+            Log::info('[SEND MESSAGE DEBUG] Starting send', [
+                'ticket_id' => $ticket->id,
+                'has_channel' => $channel !== null,
+                'channel_type' => $channel?->type?->value ?? 'null',
+                'channel_type_raw' => $channel?->type ?? 'null',
+                'expected_type' => ChannelTypeEnum::WHATSAPP->value,
+                'contact_phone' => $contact->phone ?? 'null',
+            ]);
+
             if ($channel && $channel->type === ChannelTypeEnum::WHATSAPP) {
                 if (!$contact->phone) {
                     return response()->json(['error' => 'Contato não possui telefone cadastrado.'], 400);
                 }
+                Log::info('[SEND MESSAGE DEBUG] Calling WhatsAppService', [
+                    'phone' => $contact->phone,
+                    'message_length' => strlen($validated['message']),
+                ]);
                 $whatsAppService = new WhatsAppService($channel);
                 $channelResponse = $whatsAppService->sendTextMessage($contact->phone, $validated['message']);
+                Log::info('[SEND MESSAGE DEBUG] WhatsApp response', [
+                    'response' => $channelResponse,
+                ]);
             } elseif ($channel && $channel->type === ChannelTypeEnum::INSTAGRAM) {
                 $igUserId = $contact->extra_data['instagram_user_id'] ?? null;
                 if ($igUserId) {
