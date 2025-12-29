@@ -315,6 +315,10 @@ Route::middleware('auth:api')->group(function () {
             Route::get('{contact}', [ContactController::class, 'show']);
             Route::put('{contact}', [ContactController::class, 'update']);
             Route::delete('{contact}', [ContactController::class, 'destroy']);
+            // Profile picture
+            Route::post('{contact}/profile-picture', [ContactController::class, 'uploadProfilePicture']);
+            Route::put('{contact}/profile-picture-url', [ContactController::class, 'setProfilePictureUrl']);
+            Route::delete('{contact}/profile-picture', [ContactController::class, 'removeProfilePicture']);
         });
 
         // Dashboard

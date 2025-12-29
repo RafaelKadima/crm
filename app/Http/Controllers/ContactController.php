@@ -6,6 +6,7 @@ use App\Models\Contact;
 use App\Models\Lead;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ContactController extends Controller
 {
@@ -105,6 +106,68 @@ class ContactController extends Controller
 
         return response()->json([
             'message' => 'Contato removido com sucesso.',
+        ]);
+    }
+
+    /**
+     * Upload/atualiza foto de perfil do contato.
+     */
+    public function uploadProfilePicture(Request $request, Contact $contact): JsonResponse
+    {
+        $request->validate([
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max
+        ]);
+
+        // Deleta foto anterior se existir
+        if ($contact->profile_picture_url) {
+            $oldPath = str_replace('/storage/', '', parse_url($contact->profile_picture_url, PHP_URL_PATH));
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        // Salva nova foto
+        $path = $request->file('profile_picture')->store('contacts/profile-pictures', 'public');
+        $url = Storage::disk('public')->url($path);
+
+        $contact->update(['profile_picture_url' => $url]);
+
+        return response()->json([
+            'message' => 'Foto de perfil atualizada com sucesso.',
+            'profile_picture_url' => $url,
+        ]);
+    }
+
+    /**
+     * Define foto de perfil via URL externa.
+     */
+    public function setProfilePictureUrl(Request $request, Contact $contact): JsonResponse
+    {
+        $request->validate([
+            'profile_picture_url' => 'required|url|max:2048',
+        ]);
+
+        $contact->update(['profile_picture_url' => $request->profile_picture_url]);
+
+        return response()->json([
+            'message' => 'Foto de perfil atualizada com sucesso.',
+            'profile_picture_url' => $contact->profile_picture_url,
+        ]);
+    }
+
+    /**
+     * Remove foto de perfil do contato.
+     */
+    public function removeProfilePicture(Contact $contact): JsonResponse
+    {
+        if ($contact->profile_picture_url) {
+            // Tenta deletar do storage se for local
+            $path = str_replace('/storage/', '', parse_url($contact->profile_picture_url, PHP_URL_PATH));
+            Storage::disk('public')->delete($path);
+        }
+
+        $contact->update(['profile_picture_url' => null]);
+
+        return response()->json([
+            'message' => 'Foto de perfil removida com sucesso.',
         ]);
     }
 

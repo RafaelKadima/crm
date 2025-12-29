@@ -99,6 +99,7 @@ export interface Contact {
   name: string
   email?: string
   phone?: string
+  profile_picture_url?: string
   cpf?: string
   cpf_cnpj?: string
   company?: string

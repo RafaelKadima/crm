@@ -106,7 +106,7 @@ export function LeadInfoSidebar({ lead, onClose }: LeadInfoSidebarProps) {
             >
               <div className="flex items-center gap-3 mb-4">
                 <Avatar
-                  src={undefined}
+                  src={contact?.profile_picture_url}
                   name={contact?.name || 'Lead'}
                   size="lg"
                 />

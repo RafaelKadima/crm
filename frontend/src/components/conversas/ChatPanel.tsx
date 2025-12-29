@@ -331,7 +331,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
           {/* Avatar com ícone do canal */}
           <div className="relative">
             <Avatar
-              src={undefined}
+              src={lead.contact?.profile_picture_url}
               name={lead.contact?.name || 'Lead'}
               size="md"
             />

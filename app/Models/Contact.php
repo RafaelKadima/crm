@@ -23,6 +23,7 @@ class Contact extends Model
         'name',
         'phone',
         'email',
+        'profile_picture_url',
         'cpf',
         'address',
         'source',

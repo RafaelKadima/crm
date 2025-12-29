@@ -60,7 +60,7 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
       {/* Avatar */}
       <div className="relative flex-shrink-0">
         <Avatar
-          src={undefined}
+          src={lead.contact?.profile_picture_url}
           name={contactName}
           size="md"
         />
