@@ -222,7 +222,7 @@ class TicketController extends Controller
             // Envia via canal apropriado
             $channelResponse = null;
 
-            Log::info('[SEND MESSAGE DEBUG] Starting send', [
+            Log::error('[SEND MESSAGE DEBUG] Starting send', [
                 'ticket_id' => $ticket->id,
                 'has_channel' => $channel !== null,
                 'channel_type' => $channel?->type?->value ?? 'null',
@@ -235,13 +235,13 @@ class TicketController extends Controller
                 if (!$contact->phone) {
                     return response()->json(['error' => 'Contato não possui telefone cadastrado.'], 400);
                 }
-                Log::info('[SEND MESSAGE DEBUG] Calling WhatsAppService', [
+                Log::error('[SEND MESSAGE DEBUG] Calling WhatsAppService', [
                     'phone' => $contact->phone,
                     'message_length' => strlen($validated['message']),
                 ]);
                 $whatsAppService = new WhatsAppService($channel);
                 $channelResponse = $whatsAppService->sendTextMessage($contact->phone, $validated['message']);
-                Log::info('[SEND MESSAGE DEBUG] WhatsApp response', [
+                Log::error('[SEND MESSAGE DEBUG] WhatsApp response', [
                     'response' => $channelResponse,
                 ]);
             } elseif ($channel && $channel->type === ChannelTypeEnum::INSTAGRAM) {
