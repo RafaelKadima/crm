@@ -154,10 +154,15 @@ export function TemplateSelector({ channelId, ticketId, isOpen, onClose, onSent 
         })
       }
 
-      await api.post(`/whatsapp/tickets/${ticketId}/template`, {
-        template_name: selectedTemplate.name,
-        language_code: selectedTemplate.language || 'pt_BR',
-        components,
+      // Monta o objeto de variáveis indexado
+      const variablesObj: Record<number, string> = {}
+      variables.forEach(v => {
+        variablesObj[v.index] = v.value
+      })
+
+      await api.post(`/tickets/${ticketId}/template`, {
+        template_id: selectedTemplate.id,
+        variables: variablesObj,
       })
 
       toast.success('Template enviado com sucesso!')

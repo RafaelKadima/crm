@@ -222,28 +222,12 @@ class TicketController extends Controller
             // Envia via canal apropriado
             $channelResponse = null;
 
-            Log::error('[SEND MESSAGE DEBUG] Starting send', [
-                'ticket_id' => $ticket->id,
-                'has_channel' => $channel !== null,
-                'channel_type' => $channel?->type?->value ?? 'null',
-                'channel_type_raw' => $channel?->type ?? 'null',
-                'expected_type' => ChannelTypeEnum::WHATSAPP->value,
-                'contact_phone' => $contact->phone ?? 'null',
-            ]);
-
             if ($channel && $channel->type === ChannelTypeEnum::WHATSAPP) {
                 if (!$contact->phone) {
                     return response()->json(['error' => 'Contato não possui telefone cadastrado.'], 400);
                 }
-                Log::error('[SEND MESSAGE DEBUG] Calling WhatsAppService', [
-                    'phone' => $contact->phone,
-                    'message_length' => strlen($validated['message']),
-                ]);
                 $whatsAppService = new WhatsAppService($channel);
                 $channelResponse = $whatsAppService->sendTextMessage($contact->phone, $validated['message']);
-                Log::error('[SEND MESSAGE DEBUG] WhatsApp response', [
-                    'response' => $channelResponse,
-                ]);
             } elseif ($channel && $channel->type === ChannelTypeEnum::INSTAGRAM) {
                 $igUserId = $contact->extra_data['instagram_user_id'] ?? null;
                 if ($igUserId) {
@@ -284,6 +268,120 @@ class TicketController extends Controller
 
             return response()->json([
                 'error' => 'Erro ao enviar mensagem: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Envia uma mensagem de template do WhatsApp.
+     *
+     * POST /api/tickets/{ticket}/template
+     */
+    public function sendTemplate(Request $request, Ticket $ticket): JsonResponse
+    {
+        $validated = $request->validate([
+            'template_id' => 'required|uuid|exists:whatsapp_templates,id',
+            'variables' => 'nullable|array',
+        ]);
+
+        $ticket->load(['channel', 'contact', 'lead']);
+        $channel = $ticket->channel;
+        $contact = $ticket->contact;
+
+        if (!$contact) {
+            return response()->json(['error' => 'Ticket não possui contato associado.'], 400);
+        }
+
+        if (!$contact->phone) {
+            return response()->json(['error' => 'Contato não possui telefone cadastrado.'], 400);
+        }
+
+        if (!$channel || $channel->type !== ChannelTypeEnum::WHATSAPP) {
+            return response()->json(['error' => 'Este ticket não é do canal WhatsApp.'], 400);
+        }
+
+        // Busca o template
+        $template = \App\Models\WhatsAppTemplate::find($validated['template_id']);
+
+        if (!$template || !$template->canSend()) {
+            return response()->json(['error' => 'Template não encontrado ou não aprovado.'], 400);
+        }
+
+        try {
+            // Prepara os componentes do template
+            $components = [];
+            $variables = $validated['variables'] ?? [];
+
+            // Body variables
+            if (!empty($variables)) {
+                $bodyParameters = array_map(fn($value) => [
+                    'type' => 'text',
+                    'text' => (string) $value,
+                ], array_values($variables));
+
+                $components[] = [
+                    'type' => 'body',
+                    'parameters' => $bodyParameters,
+                ];
+            }
+
+            // Envia via WhatsApp API
+            $whatsAppService = new WhatsAppService($channel);
+            $channelResponse = $whatsAppService->sendTemplateMessage(
+                $contact->phone,
+                $template->name,
+                $template->language ?? 'pt_BR',
+                $components
+            );
+
+            Log::info('[SEND TEMPLATE] WhatsApp response', [
+                'ticket_id' => $ticket->id,
+                'template_name' => $template->name,
+                'response' => $channelResponse,
+            ]);
+
+            // Renderiza o body do template para salvar no banco
+            $renderedBody = $template->renderBody($variables);
+
+            // Salva mensagem no banco
+            $ticketMessage = TicketMessage::create([
+                'tenant_id' => $ticket->tenant_id,
+                'ticket_id' => $ticket->id,
+                'sender_type' => SenderTypeEnum::USER,
+                'sender_id' => auth()->id(),
+                'message' => $renderedBody,
+                'direction' => MessageDirectionEnum::OUTBOUND,
+                'sent_at' => now(),
+                'metadata' => [
+                    'type' => 'template',
+                    'template_id' => $template->id,
+                    'template_name' => $template->name,
+                    'whatsapp_message_id' => $channelResponse['messages'][0]['id'] ?? null,
+                ],
+            ]);
+
+            // Atualiza último contato do lead
+            if ($ticket->lead) {
+                $ticket->lead->updateLastInteraction(\App\Enums\InteractionSourceEnum::HUMAN);
+            }
+
+            // Broadcast para atualização em tempo real
+            event(new TicketMessageCreated($ticketMessage, $ticket));
+
+            // Invalida cache de mensagens
+            self::invalidateMessagesCache($ticket->id);
+
+            return response()->json($ticketMessage, 201);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send template', [
+                'ticket_id' => $ticket->id,
+                'template_id' => $template->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Erro ao enviar template: ' . $e->getMessage(),
             ], 500);
         }
     }

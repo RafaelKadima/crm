@@ -22,6 +22,7 @@ import {
   Check,
   ChevronDown,
   Layers,
+  FileText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
@@ -760,6 +761,19 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
               >
                 <Sparkles className="h-4 w-4" />
               </Button>
+
+              {/* Botão de Templates WhatsApp - só aparece para canais WhatsApp */}
+              {channelType === 'whatsapp' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsTemplateModalOpen(true)}
+                  className="text-muted-foreground hover:text-foreground h-9 w-9"
+                  title="Enviar template WhatsApp"
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              )}
             </div>
 
             <div className="relative flex-1">
@@ -838,12 +852,13 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
       />
 
       <TemplateSelector
+        channelId={lead.channel?.id}
+        ticketId={ticketId}
         isOpen={isTemplateModalOpen}
         onClose={() => setIsTemplateModalOpen(false)}
-        onSelect={(template) => {
-          setMessage(template.content)
-          setIsTemplateModalOpen(false)
-          inputRef.current?.focus()
+        onSent={() => {
+          // Recarrega mensagens após enviar template
+          queryClient.invalidateQueries({ queryKey: ['leads'] })
         }}
       />
 

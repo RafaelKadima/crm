@@ -333,6 +333,7 @@ Route::middleware('auth:api')->group(function () {
             Route::delete('{ticket}', [TicketController::class, 'destroy']);
             Route::get('{ticket}/messages', [TicketController::class, 'messages']); // Paginado para lazy load
             Route::post('{ticket}/messages', [TicketController::class, 'sendMessage']);
+            Route::post('{ticket}/template', [TicketController::class, 'sendTemplate']); // Enviar template WhatsApp
             Route::put('{ticket}/messages/{message}', [TicketController::class, 'updateMessage']); // Editar mensagem
             Route::delete('{ticket}/messages/{message}', [TicketController::class, 'deleteMessage']); // Excluir mensagem
             // Transferência e encerramento
