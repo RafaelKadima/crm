@@ -199,9 +199,21 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
         setIaEnabled(ticket.ia_enabled !== false)
 
         const messagesResponse = await api.get(`/tickets/${ticket.id}/messages?page=1`)
-        const loadedMessages = messagesResponse.data.data || []
-        setMessages(loadedMessages.reverse())
-        processedMessageIds.current = new Set(loadedMessages.map((m: Message) => m.id))
+        const rawMessages = messagesResponse.data.data || []
+
+        // Mapeia campos da API para o formato do frontend
+        const mappedMessages: Message[] = rawMessages.map((m: any) => ({
+          id: m.id,
+          content: m.message || m.content || '',
+          sender_type: m.sender_type,
+          direction: m.direction,
+          created_at: m.sent_at || m.created_at,
+          status: m.status,
+          metadata: m.metadata,
+        }))
+
+        setMessages(mappedMessages.reverse())
+        processedMessageIds.current = new Set(mappedMessages.map((m) => m.id))
       }
     } catch (error) {
       console.error('Error loading messages:', error)
@@ -219,10 +231,24 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
   }, [messages, scrollToBottom])
 
   // WebSocket para mensagens em tempo real
-  const handleNewMessage = useCallback((newMessage: Message) => {
-    if (processedMessageIds.current.has(newMessage.id)) return
-    processedMessageIds.current.add(newMessage.id)
-    setMessages((prev) => [...prev, newMessage])
+  const handleNewMessage = useCallback((event: any) => {
+    // O evento pode vir como MessageEvent (com .message) ou como Message direta
+    const rawMessage = event.message || event
+
+    // Mapeia campos da API para o formato do frontend
+    const mappedMessage: Message = {
+      id: rawMessage.id,
+      content: rawMessage.content || rawMessage.message || '',
+      sender_type: rawMessage.sender_type as 'user' | 'contact' | 'ia',
+      direction: rawMessage.direction as 'inbound' | 'outbound',
+      created_at: rawMessage.sent_at || rawMessage.created_at,
+      status: rawMessage.status,
+      metadata: rawMessage.metadata,
+    }
+
+    if (processedMessageIds.current.has(mappedMessage.id)) return
+    processedMessageIds.current.add(mappedMessage.id)
+    setMessages((prev) => [...prev, mappedMessage])
     scrollToBottom()
   }, [scrollToBottom])
 
@@ -248,10 +274,23 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
 
     try {
       const response = await api.post(`/tickets/${ticketId}/messages`, { message: message.trim() })
+      const sentMessage = response.data
+
+      // Mapeia a resposta para o formato do frontend
+      const mappedMessage: Message = {
+        id: sentMessage.id,
+        content: sentMessage.message || sentMessage.content || message.trim(),
+        sender_type: 'user',
+        direction: 'outbound',
+        created_at: sentMessage.sent_at || sentMessage.created_at || new Date().toISOString(),
+        status: 'sent',
+        metadata: sentMessage.metadata,
+      }
+
       setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? { ...response.data, status: 'sent' } : m))
+        prev.map((m) => (m.id === tempId ? mappedMessage : m))
       )
-      processedMessageIds.current.add(response.data.id)
+      processedMessageIds.current.add(mappedMessage.id)
       queryClient.invalidateQueries({ queryKey: ['leads'] })
     } catch (error) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId))
@@ -770,7 +809,17 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
         isOpen={isProductSelectorOpen}
         onClose={() => setIsProductSelectorOpen(false)}
         ticketId={ticketId}
-        onProductSent={() => {
+        onSent={(data) => {
+          // Adiciona a mensagem do produto ao chat
+          const newMessage: Message = {
+            id: data.message.id,
+            content: data.message.content,
+            sender_type: 'user',
+            direction: 'outbound',
+            created_at: data.message.sent_at,
+            status: 'sent',
+          }
+          setMessages((prev) => [...prev, newMessage])
           setIsProductSelectorOpen(false)
           queryClient.invalidateQueries({ queryKey: ['leads'] })
         }}
