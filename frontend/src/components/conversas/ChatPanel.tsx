@@ -317,11 +317,17 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
   }
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('pt-BR', {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return ''
+    return date.toLocaleTimeString('pt-BR', {
       hour: '2-digit',
       minute: '2-digit',
     })
   }
+
+  // Channel type for file upload and audio
+  const channelType = lead.channel?.type || 'whatsapp'
 
   return (
     <div className="flex flex-col h-full">
@@ -628,6 +634,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
             <div className="flex gap-1">
               <FileUploadButton
                 ticketId={ticketId}
+                channelType={channelType}
                 onUploadComplete={(attachment) => {
                   const newMessage: Message = {
                     id: `attachment-${Date.now()}`,
@@ -644,22 +651,34 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
                   }
                   setMessages((prev) => [...prev, newMessage])
                 }}
+                onMediaSent={() => {
+                  queryClient.invalidateQueries({ queryKey: ['leads'] })
+                }}
               />
               <AudioRecorder
                 ticketId={ticketId}
-                onRecordingComplete={(audioUrl) => {
-                  const newMessage: Message = {
-                    id: `audio-${Date.now()}`,
-                    content: '',
-                    sender_type: 'user',
-                    direction: 'outbound',
-                    created_at: new Date().toISOString(),
-                    status: 'sent',
-                    metadata: { audio_url: audioUrl, media_type: 'audio' },
-                  }
-                  setMessages((prev) => [...prev, newMessage])
+                channelType={channelType}
+                onAudioSent={(msg) => {
+                  setMessages((prev) => [...prev, {
+                    id: msg.id,
+                    content: msg.content,
+                    sender_type: msg.sender_type as 'user' | 'contact' | 'ia',
+                    direction: msg.direction as 'inbound' | 'outbound',
+                    created_at: msg.created_at,
+                    status: msg.status,
+                    metadata: msg.metadata,
+                  }])
                 }}
               />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsProductSelectorOpen(true)}
+                className="text-muted-foreground hover:text-foreground h-9 w-9"
+                title="Enviar produto do catálogo"
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
             </div>
 
             <div className="relative flex-1">
