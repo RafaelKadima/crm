@@ -242,13 +242,45 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
       sender_type: rawMessage.sender_type as 'user' | 'contact' | 'ia',
       direction: rawMessage.direction as 'inbound' | 'outbound',
       created_at: rawMessage.sent_at || rawMessage.created_at,
-      status: rawMessage.status,
+      status: rawMessage.status || 'sent',
       metadata: rawMessage.metadata,
     }
 
+    // Verifica se já processamos essa mensagem
     if (processedMessageIds.current.has(mappedMessage.id)) return
-    processedMessageIds.current.add(mappedMessage.id)
-    setMessages((prev) => [...prev, mappedMessage])
+
+    // Para mensagens outbound, verifica se há uma mensagem temp pendente com mesmo conteúdo
+    // Isso evita duplicatas quando o WebSocket chega antes da resposta da API
+    if (mappedMessage.direction === 'outbound') {
+      setMessages((prev) => {
+        // Procura uma mensagem temp com mesmo conteúdo
+        const tempIndex = prev.findIndex(
+          (m) => m.id.startsWith('temp-') && m.content === mappedMessage.content && m.direction === 'outbound'
+        )
+
+        if (tempIndex !== -1) {
+          // Substitui a mensagem temp pela real
+          processedMessageIds.current.add(mappedMessage.id)
+          const updated = [...prev]
+          updated[tempIndex] = mappedMessage
+          return updated
+        }
+
+        // Se não há temp, verifica se já existe uma mensagem com esse ID
+        if (prev.some((m) => m.id === mappedMessage.id)) {
+          return prev
+        }
+
+        // Nova mensagem outbound (provavelmente de outro usuário/IA)
+        processedMessageIds.current.add(mappedMessage.id)
+        return [...prev, mappedMessage]
+      })
+    } else {
+      // Mensagem inbound - adiciona normalmente
+      processedMessageIds.current.add(mappedMessage.id)
+      setMessages((prev) => [...prev, mappedMessage])
+    }
+
     scrollToBottom()
   }, [scrollToBottom])
 
@@ -287,10 +319,20 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
         metadata: sentMessage.metadata,
       }
 
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? mappedMessage : m))
-      )
+      // Adiciona o ID ao set ANTES de atualizar o estado
+      // Isso previne o WebSocket de adicionar duplicata
       processedMessageIds.current.add(mappedMessage.id)
+
+      setMessages((prev) => {
+        // Verifica se a mensagem já foi substituída pelo WebSocket
+        const existingIndex = prev.findIndex((m) => m.id === mappedMessage.id)
+        if (existingIndex !== -1) {
+          // WebSocket já substituiu, mantém como está
+          return prev.filter((m) => m.id !== tempId)
+        }
+        // Substitui a temp pela real
+        return prev.map((m) => (m.id === tempId ? mappedMessage : m))
+      })
       queryClient.invalidateQueries({ queryKey: ['leads'] })
     } catch (error) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId))

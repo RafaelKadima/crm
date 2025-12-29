@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ChannelTypeEnum;
 use App\Enums\MessageDirectionEnum;
 use App\Enums\SenderTypeEnum;
 use App\Enums\TicketStatusEnum;
+use App\Events\TicketMessageCreated;
 use App\Models\Queue;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
 use App\Services\LeadTransferService;
+use App\Services\WhatsAppService;
+use App\Services\InstagramService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class TicketController extends Controller
 {
@@ -187,6 +192,7 @@ class TicketController extends Controller
 
     /**
      * Envia uma mensagem no ticket.
+     * Envia via WhatsApp/Instagram se o canal suportar.
      */
     public function sendMessage(Request $request, Ticket $ticket): JsonResponse
     {
@@ -195,7 +201,16 @@ class TicketController extends Controller
             'direction' => 'nullable|string|in:inbound,outbound',
         ]);
 
-        // Reabre o ticket se estiver fechado (quando atendente envia mensagem)
+        $ticket->load(['channel', 'contact', 'lead']);
+        $channel = $ticket->channel;
+        $contact = $ticket->contact;
+
+        // Verifica se tem contato e telefone para WhatsApp
+        if (!$contact) {
+            return response()->json(['error' => 'Ticket não possui contato associado.'], 400);
+        }
+
+        // Reabre o ticket se estiver fechado
         if ($ticket->status === TicketStatusEnum::CLOSED) {
             $ticket->update([
                 'status' => TicketStatusEnum::OPEN,
@@ -203,26 +218,57 @@ class TicketController extends Controller
             ]);
         }
 
-        $message = TicketMessage::create([
-            'tenant_id' => $ticket->tenant_id,
-            'ticket_id' => $ticket->id,
-            'sender_type' => SenderTypeEnum::USER,
-            'sender_id' => auth()->id(),
-            'message' => $validated['message'],
-            'direction' => $validated['direction'] ?? MessageDirectionEnum::OUTBOUND,
-            'sent_at' => now(),
-        ]);
+        try {
+            // Envia via canal apropriado
+            $channelResponse = null;
+            if ($channel && $channel->type === ChannelTypeEnum::WHATSAPP) {
+                if (!$contact->phone) {
+                    return response()->json(['error' => 'Contato não possui telefone cadastrado.'], 400);
+                }
+                $whatsAppService = new WhatsAppService($channel);
+                $channelResponse = $whatsAppService->sendTextMessage($contact->phone, $validated['message']);
+            } elseif ($channel && $channel->type === ChannelTypeEnum::INSTAGRAM) {
+                $igUserId = $contact->extra_data['instagram_user_id'] ?? null;
+                if ($igUserId) {
+                    $instagramService = new InstagramService($channel);
+                    $channelResponse = $instagramService->sendTextMessage($igUserId, $validated['message']);
+                }
+            }
 
-        // Atualiza último contato do lead
-        if ($ticket->lead) {
-            $ticket->lead->updateLastInteraction(\App\Enums\InteractionSourceEnum::HUMAN);
+            // Salva mensagem no banco
+            $ticketMessage = TicketMessage::create([
+                'tenant_id' => $ticket->tenant_id,
+                'ticket_id' => $ticket->id,
+                'sender_type' => SenderTypeEnum::USER,
+                'sender_id' => auth()->id(),
+                'message' => $validated['message'],
+                'direction' => $validated['direction'] ?? MessageDirectionEnum::OUTBOUND,
+                'sent_at' => now(),
+            ]);
+
+            // Atualiza último contato do lead
+            if ($ticket->lead) {
+                $ticket->lead->updateLastInteraction(\App\Enums\InteractionSourceEnum::HUMAN);
+            }
+
+            // Broadcast para atualização em tempo real
+            event(new TicketMessageCreated($ticketMessage, $ticket));
+
+            // Invalida cache de mensagens
+            self::invalidateMessagesCache($ticket->id);
+
+            return response()->json($ticketMessage, 201);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send message', [
+                'ticket_id' => $ticket->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Erro ao enviar mensagem: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json([
-            'message' => 'Mensagem enviada com sucesso.',
-            'ticket_message' => $message,
-            'ticket_reopened' => $ticket->wasChanged('status'),
-        ], 201);
     }
 
     /**
