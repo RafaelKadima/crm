@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageSquare } from 'lucide-react'
@@ -15,9 +15,12 @@ import type { Lead } from '@/types'
 export function ConversasPage() {
   const [searchParams] = useSearchParams()
   const { user } = useAuthStore()
-  const { activeLeadId, setActiveLead, clearActiveLead } = useActiveConversation()
+  const { activeLeadId, setActiveLead } = useActiveConversation()
   const { isInfoSidebarOpen, toggleInfoSidebar } = useConversasStore()
   const markAsRead = useNotificationStore((state) => state.markAsRead)
+
+  // Ref para controlar se já processamos o lead da URL
+  const processedUrlLeadRef = useRef<string | null>(null)
 
   // WebSocket para notificações em tempo real
   useTenantMessages(user?.tenant_id || null)
@@ -28,10 +31,12 @@ export function ConversasPage() {
   // Notification store para enriquecer leads com unread count
   const unreadMessages = useNotificationStore((state) => state.unreadMessages)
 
-  // Extrai leads do response e enriquece com notificações
+  // Extrai leads do response (sem enriquecer aqui para evitar loops)
+  const rawLeads = leadsResponse?.data || []
+
+  // Enriquece leads com notificações para exibição
   const leadsData = useMemo(() => {
-    const leads = leadsResponse?.data || []
-    return leads.map((lead: Lead) => {
+    return rawLeads.map((lead: Lead) => {
       const notification = unreadMessages.get(lead.id)
       return {
         ...lead,
@@ -40,22 +45,25 @@ export function ConversasPage() {
         last_message_at: notification?.lastMessageAt,
       }
     })
-  }, [leadsResponse, unreadMessages])
+  }, [rawLeads, unreadMessages])
 
   // Lead ativo (se tiver um selecionado)
   const activeLead = leadsData?.find((lead: Lead) => lead.id === activeLeadId)
 
-  // Se veio da URL com ?lead=xxx, abre essa conversa
+  // Se veio da URL com ?lead=xxx, abre essa conversa (apenas uma vez)
   useEffect(() => {
     const leadIdFromUrl = searchParams.get('lead')
-    if (leadIdFromUrl && leadsData.length > 0) {
-      const lead = leadsData.find((l: Lead) => l.id === leadIdFromUrl)
+
+    // Só processa se tiver lead na URL, leads carregados, e ainda não processamos este lead
+    if (leadIdFromUrl && rawLeads.length > 0 && processedUrlLeadRef.current !== leadIdFromUrl) {
+      const lead = rawLeads.find((l: Lead) => l.id === leadIdFromUrl)
       if (lead) {
+        processedUrlLeadRef.current = leadIdFromUrl
         setActiveLead(lead.id, lead.tickets?.[0]?.id || null)
         markAsRead(lead.id)
       }
     }
-  }, [searchParams, leadsData, setActiveLead, markAsRead])
+  }, [searchParams, rawLeads, setActiveLead, markAsRead])
 
   // Quando seleciona um lead
   const handleSelectLead = (lead: Lead) => {
