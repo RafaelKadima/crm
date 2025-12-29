@@ -1,17 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageSquare, ChevronRight, ChevronLeft } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { MessageSquare } from 'lucide-react'
 import { useConversasStore, useActiveConversation } from '@/store/conversasStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { useAuthStore } from '@/store/authStore'
 import { useTenantMessages } from '@/hooks/useWebSocket'
+import { useLeads } from '@/hooks/useLeads'
 import { ConversationsList } from '@/components/conversas/ConversationsList'
 import { ChatPanel } from '@/components/conversas/ChatPanel'
 import { LeadInfoSidebar } from '@/components/conversas/LeadInfoSidebar'
-import { leadsApi } from '@/api/endpoints'
 import type { Lead } from '@/types'
 
 export function ConversasPage() {
@@ -24,23 +22,34 @@ export function ConversasPage() {
   // WebSocket para notificações em tempo real
   useTenantMessages(user?.tenant_id || null)
 
-  // Busca todos os leads com tickets ativos
-  const { data: leadsData, isLoading: isLoadingLeads } = useQuery({
-    queryKey: ['leads', 'with-tickets'],
-    queryFn: async () => {
-      const response = await leadsApi.getAll({ per_page: 100 })
-      return response.data.data as Lead[]
-    },
-  })
+  // Busca todos os leads (mesmo hook usado no Kanban)
+  const { data: leadsResponse, isLoading: isLoadingLeads } = useLeads()
+
+  // Notification store para enriquecer leads com unread count
+  const unreadMessages = useNotificationStore((state) => state.unreadMessages)
+
+  // Extrai leads do response e enriquece com notificações
+  const leadsData = useMemo(() => {
+    const leads = leadsResponse?.data || []
+    return leads.map((lead: Lead) => {
+      const notification = unreadMessages.get(lead.id)
+      return {
+        ...lead,
+        unread_messages: notification?.count || 0,
+        has_new_message: !!notification,
+        last_message_at: notification?.lastMessageAt,
+      }
+    })
+  }, [leadsResponse, unreadMessages])
 
   // Lead ativo (se tiver um selecionado)
-  const activeLead = leadsData?.find((lead) => lead.id === activeLeadId)
+  const activeLead = leadsData?.find((lead: Lead) => lead.id === activeLeadId)
 
   // Se veio da URL com ?lead=xxx, abre essa conversa
   useEffect(() => {
     const leadIdFromUrl = searchParams.get('lead')
-    if (leadIdFromUrl && leadsData) {
-      const lead = leadsData.find((l) => l.id === leadIdFromUrl)
+    if (leadIdFromUrl && leadsData.length > 0) {
+      const lead = leadsData.find((l: Lead) => l.id === leadIdFromUrl)
       if (lead) {
         setActiveLead(lead.id, lead.tickets?.[0]?.id || null)
         markAsRead(lead.id)
