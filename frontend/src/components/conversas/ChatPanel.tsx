@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -20,6 +20,8 @@ import {
   PanelRightClose,
   CheckCheck,
   Check,
+  ChevronDown,
+  Layers,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
@@ -36,6 +38,8 @@ import { extractDataFromText } from '@/lib/dataExtractor'
 import { cn, formatPhone } from '@/lib/utils'
 import { useLeadMessages } from '@/hooks/useWebSocket'
 import { useReopenTicket } from '@/hooks/useTicketActions'
+import { useUpdateLeadStage } from '@/hooks/useLeads'
+import { usePipelines, type PipelineStage } from '@/hooks/usePipelines'
 import { notify } from '@/components/ui/FuturisticNotification'
 import { useAuth } from '@/hooks/useAuth'
 import { useHasFeature } from '@/hooks/useFeatures'
@@ -98,6 +102,8 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false)
   const [showQuickReplies, setShowQuickReplies] = useState(false)
   const [isSendingToLinx, setIsSendingToLinx] = useState(false)
+  const [showStageSelector, setShowStageSelector] = useState(false)
+  const [currentStage, setCurrentStage] = useState<PipelineStage | null>(lead.stage || null)
   const [contextMenu, setContextMenu] = useState<{
     show: boolean
     messageContent: string
@@ -108,9 +114,57 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const processedMessageIds = useRef<Set<string>>(new Set())
+  const stageSelectorRef = useRef<HTMLDivElement>(null)
 
   const reopenTicket = useReopenTicket()
+  const updateStageMutation = useUpdateLeadStage()
+  const { data: pipelinesData } = usePipelines()
   const ChannelIcon = channelIcons[lead.channel?.type || ''] || MessageSquare
+
+  // Get stages from pipeline
+  const stages = useMemo(() => {
+    if (!pipelinesData || !lead.pipeline_id) return []
+    const pipelines = Array.isArray(pipelinesData) ? pipelinesData : (pipelinesData as any)?.data || []
+    const pipeline = pipelines.find((p: any) => p.id === lead.pipeline_id)
+    return pipeline?.stages?.sort((a: PipelineStage, b: PipelineStage) => a.order - b.order) || []
+  }, [pipelinesData, lead.pipeline_id])
+
+  // Update current stage when lead changes
+  useEffect(() => {
+    if (lead.stage) {
+      setCurrentStage(lead.stage)
+    } else if (stages.length > 0 && lead.stage_id) {
+      const stage = stages.find((s: PipelineStage) => s.id === lead.stage_id)
+      if (stage) setCurrentStage(stage)
+    }
+  }, [lead, stages])
+
+  // Close stage selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (stageSelectorRef.current && !stageSelectorRef.current.contains(e.target as Node)) {
+        setShowStageSelector(false)
+      }
+    }
+    if (showStageSelector) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showStageSelector])
+
+  // Handle stage change
+  const handleMoveToStage = async (stage: PipelineStage) => {
+    if (!lead) return
+    try {
+      await updateStageMutation.mutateAsync({ id: lead.id, stage_id: stage.id })
+      setCurrentStage(stage)
+      setShowStageSelector(false)
+      notify('success', { title: `Movido para ${stage.name}` })
+      queryClient.invalidateQueries({ queryKey: ['leads'] })
+    } catch (error) {
+      notify('error', { title: 'Erro ao mover lead' })
+    }
+  }
 
   // Query para Lead Score
   const { data: leadScore, isLoading: isLoadingScore } = useQuery({
@@ -274,13 +328,22 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
       {/* Header */}
       <div className="px-4 py-3 border-b bg-background flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={cn(
-            "p-2 rounded-lg",
-            lead.channel?.type === 'whatsapp' ? 'bg-green-500/10 text-green-600' :
-            lead.channel?.type === 'instagram' ? 'bg-pink-500/10 text-pink-600' :
-            'bg-blue-500/10 text-blue-600'
-          )}>
-            <ChannelIcon className="h-5 w-5" />
+          {/* Avatar com ícone do canal */}
+          <div className="relative">
+            <Avatar
+              src={undefined}
+              name={lead.contact?.name || 'Lead'}
+              size="md"
+            />
+            {/* Channel badge */}
+            <div className={cn(
+              "absolute -bottom-0.5 -right-0.5 p-1 rounded-full",
+              lead.channel?.type === 'whatsapp' ? 'bg-green-500 text-white' :
+              lead.channel?.type === 'instagram' ? 'bg-pink-500 text-white' :
+              'bg-blue-500 text-white'
+            )}>
+              <ChannelIcon className="h-2.5 w-2.5" />
+            </div>
           </div>
           <div>
             <h4 className="font-medium">{lead.contact?.name || 'Lead'}</h4>
@@ -288,6 +351,67 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
               {lead.contact?.phone ? formatPhone(lead.contact.phone) : 'Sem telefone'}
             </p>
           </div>
+
+          {/* Stage Selector */}
+          {currentStage && (
+            <div className="relative" ref={stageSelectorRef}>
+              <button
+                onClick={() => setShowStageSelector(!showStageSelector)}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all",
+                  "hover:opacity-80 cursor-pointer"
+                )}
+                style={{
+                  backgroundColor: `${currentStage.color}20`,
+                  color: currentStage.color,
+                }}
+              >
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: currentStage.color }}
+                />
+                {currentStage.name}
+                <ChevronDown className={cn(
+                  "h-3 w-3 transition-transform",
+                  showStageSelector && "rotate-180"
+                )} />
+              </button>
+
+              {/* Stage Dropdown */}
+              <AnimatePresence>
+                {showStageSelector && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="absolute top-full left-0 mt-1 bg-background border rounded-lg shadow-lg overflow-hidden z-50 min-w-[180px]"
+                  >
+                    {stages.map((stage: PipelineStage) => (
+                      <button
+                        key={stage.id}
+                        onClick={() => handleMoveToStage(stage)}
+                        disabled={stage.id === currentStage?.id || updateStageMutation.isPending}
+                        className={cn(
+                          "w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-muted transition-colors",
+                          stage.id === currentStage?.id && "bg-muted/50 opacity-60 cursor-not-allowed"
+                        )}
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: stage.color }}
+                        />
+                        <span>{stage.name}</span>
+                        {stage.id === currentStage?.id && (
+                          <Check className="h-3.5 w-3.5 ml-auto text-green-500" />
+                        )}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           {/* Lead Score */}
           {hasIaFeature && leadScore && (
             <div className={cn(
