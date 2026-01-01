@@ -247,8 +247,9 @@ export function LeadsKanbanPage() {
     // Mark as read when opening
     markAsRead(lead.id)
 
-    // Navega para a página de conversas com o lead selecionado
-    navigate(`/conversas?lead=${lead.id}`)
+    // Abre o modal de chat diretamente no Kanban (não navega para outra página)
+    setSelectedLead(lead)
+    setIsModalOpen(true)
   }
 
   const handleModalClose = (open: boolean) => {
