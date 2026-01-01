@@ -1111,128 +1111,100 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
         </motion.div>
 
         {/* Right Panel - Chat / Closing */}
-        <div className="flex-1 flex flex-col">
-          {/* Header - Futuristic */}
-          <div className="px-6 py-3 border-b border-primary/10 bg-gradient-to-r from-background via-background to-primary/5">
+        <div className="flex-1 flex flex-col bg-[#0A0C10]">
+          {/* Header - Futuristic Glass */}
+          <div className="px-4 py-2 border-b border-[#00D4FF]/10 glass relative overflow-hidden">
+            {/* Scan line effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00D4FF]/5 to-transparent opacity-50" />
+
             {/* Channel Info and Actions */}
             {activeView === 'chat' && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "p-2 rounded-lg",
-                    lead.channel?.type === 'whatsapp' ? 'bg-green-500/10 text-green-600' :
-                    lead.channel?.type === 'instagram' ? 'bg-pink-500/10 text-pink-600' :
-                    'bg-blue-500/10 text-blue-600'
-                  )}>
-                    <ChannelIcon className="h-5 w-5" />
-                  </div>
-                  {/* Lead Score Badge - só aparece se tenant tem feature de IA */}
-                  {hasIaFeature && leadScore && (
-                    <div className={cn(
-                      "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
-                      leadScore.score >= 70 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                      leadScore.score >= 40 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
-                      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                    )}>
-                      <Sparkles className="h-3 w-3" />
-                      {Math.round(leadScore.score)}% conversão
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-center justify-end relative z-10">
                 {/* Action Buttons */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {ticketStatus === 'open' ? (
                     <>
                       {/* Atividades Button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
+                      <button
                         onClick={() => setActiveView('activities')}
                         className={cn(
+                          "px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5",
+                          "border border-[#00D4FF]/20 hover:border-[#00D4FF]/40",
                           activeView === 'activities'
-                            ? "bg-amber-600 text-white border-amber-600"
-                            : "text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
+                            ? "bg-[#00D4FF]/20 text-[#00D4FF]"
+                            : "text-[#C0C8D4] hover:bg-[#00D4FF]/10 hover:text-[#00D4FF]"
                         )}
                       >
-                        <ListChecks className="h-4 w-4 mr-1" />
+                        <ListChecks className="h-3.5 w-3.5" />
                         Atividades
-                      </Button>
+                      </button>
                       {/* Botão Enviar para Linx - só aparece se tenant tem integração */}
                       {hasLinxIntegration && (
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={handleSendToLinx}
                           disabled={isSendingToLinx}
-                          className="text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
+                          className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-orange-500/20 text-[#C0C8D4] hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-500/40 disabled:opacity-50"
                           title="Enviar lead para o Linx Smart"
                         >
                           {isSendingToLinx ? (
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
-                            <ExternalLink className="h-4 w-4 mr-1" />
+                            <ExternalLink className="h-3.5 w-3.5" />
                           )}
                           Linx
-                        </Button>
+                        </button>
                       )}
                       {/* Toggle IA Button - só aparece se tenant tem feature de IA */}
                       {hasIaFeature && (
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={handleToggleIa}
                           disabled={isTogglingIa}
                           className={cn(
+                            "px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border disabled:opacity-50",
                             iaEnabled
-                              ? "text-purple-400 border-purple-400/30 hover:bg-purple-400/10"
-                              : "text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
+                              ? "border-purple-500/20 text-purple-400 hover:bg-purple-500/10 hover:border-purple-500/40"
+                              : "border-orange-500/20 text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/40"
                           )}
                           title={iaEnabled ? "Desativar IA e assumir atendimento" : "Reativar IA"}
                         >
                           {isTogglingIa ? (
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : iaEnabled ? (
-                            <Bot className="h-4 w-4 mr-1" />
+                            <Bot className="h-3.5 w-3.5" />
                           ) : (
-                            <UserRound className="h-4 w-4 mr-1" />
+                            <UserRound className="h-3.5 w-3.5" />
                           )}
-                          {iaEnabled ? 'IA Ativa' : 'Você'}
-                        </Button>
+                          {iaEnabled ? 'IA' : 'Você'}
+                        </button>
                       )}
-                      <Button
-                        variant="outline"
-                        size="sm"
+                      <button
                         onClick={() => setIsTransferModalOpen(true)}
-                        className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10"
+                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-blue-500/20 text-[#C0C8D4] hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/40"
                       >
-                        <ArrowRightLeft className="h-4 w-4 mr-1" />
+                        <ArrowRightLeft className="h-3.5 w-3.5" />
                         Transferir
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
+                      </button>
+                      <button
                         onClick={() => setIsCloseModalOpen(true)}
-                        className="text-red-400 border-red-400/30 hover:bg-red-400/10"
+                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-red-500/20 text-[#C0C8D4] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40"
                       >
-                        <MessageSquareOff className="h-4 w-4 mr-1" />
+                        <MessageSquareOff className="h-3.5 w-3.5" />
                         Encerrar
-                      </Button>
+                      </button>
                     </>
                   ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
+                    <button
                       onClick={handleReopenTicket}
                       disabled={reopenTicket.isPending}
-                      className="text-green-400 border-green-400/30 hover:bg-green-400/10"
+                      className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-[#10B981]/20 text-[#10B981] hover:bg-[#10B981]/10 hover:border-[#10B981]/40 disabled:opacity-50"
                     >
                       {reopenTicket.isPending ? (
-                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <RotateCcw className="h-4 w-4 mr-1" />
+                        <RotateCcw className="h-3.5 w-3.5" />
                       )}
                       Reabrir
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -1381,13 +1353,20 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
             </div>
           ) : (
             <>
-              {/* Messages Area - com lazy load */}
+              {/* Messages Area - Futuristic Grid Pattern */}
               <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-muted/10 via-background to-muted/20"
+                className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin relative"
                 style={{
                   scrollBehavior: 'auto',
-                  backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(34, 197, 94, 0.03) 0%, transparent 50%)'
+                  backgroundColor: '#0A0C10',
+                  backgroundImage: `
+                    linear-gradient(rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+                    radial-gradient(ellipse at 0% 100%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+                    radial-gradient(ellipse at 100% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 50%)
+                  `,
+                  backgroundSize: '40px 40px, 40px 40px, 100% 100%, 100% 100%'
                 }}
                 onScroll={handleScroll}
               >
@@ -1452,10 +1431,10 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                               }
                             }}
                             className={cn(
-                              'max-w-[80%] rounded-2xl px-4 py-3',
+                              'max-w-[75%] rounded-xl px-4 py-2.5 relative',
                               msg.direction === 'outbound'
-                                ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-br-md shadow-lg shadow-primary/20'
-                                : 'bg-card/80 backdrop-blur-sm border border-border/50 rounded-bl-md cursor-pointer hover:bg-muted/50 transition-all hover:border-primary/30'
+                                ? 'bg-gradient-to-br from-[#00D4FF]/20 to-[#00D4FF]/5 text-[#E8ECF2] rounded-br-sm border border-[#00D4FF]/30 shadow-lg shadow-[#00D4FF]/10'
+                                : 'bg-[#12151C] text-[#C0C8D4] rounded-bl-sm border border-[#1E2330] cursor-pointer hover:border-[#00D4FF]/30 transition-all'
                             )}
                           >
                             {/* Media attachment if present */}
@@ -1527,8 +1506,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                 )}
               </div>
 
-              {/* Message Input */}
-              <div className="p-4 border-t bg-background/80 backdrop-blur-sm relative">
+              {/* Message Input - Futuristic */}
+              <div className="p-3 border-t border-[#00D4FF]/10 bg-[#0D1117] relative">
                 <div className="flex items-center gap-2">
                   {/* File upload button */}
                   <FileUploadButton
