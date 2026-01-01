@@ -739,7 +739,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl" className="p-0 flex h-full max-h-[650px] relative overflow-hidden chat-container-premium">
+      <DialogContent size="xl" className="p-0 flex !h-[80vh] relative overflow-hidden chat-container-premium border-primary/20 shadow-2xl shadow-primary/10">
         {/* 🔥 Efeito visual de transferência em tempo real */}
         <AnimatePresence>
           {transferEffect.show && (
@@ -1112,8 +1112,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
         {/* Right Panel - Chat / Closing */}
         <div className="flex-1 flex flex-col">
-          {/* Header - Simplified */}
-          <div className="px-6 py-4 border-b bg-background">
+          {/* Header - Futuristic */}
+          <div className="px-6 py-3 border-b border-primary/10 bg-gradient-to-r from-background via-background to-primary/5">
             {/* Channel Info and Actions */}
             {activeView === 'chat' && (
               <div className="flex items-center justify-between">
@@ -1126,27 +1126,18 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                   )}>
                     <ChannelIcon className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center gap-3">
-                    <h4 className="font-medium">{lead.contact?.name || 'Lead'}</h4>
-                    {/* Lead Score Badge - só aparece se tenant tem feature de IA */}
-                    {hasIaFeature && leadScore && (
-                      <div className={cn(
-                        "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
-                        leadScore.score >= 70 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                        leadScore.score >= 40 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
-                        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                      )}>
-                        <Sparkles className="h-3 w-3" />
-                        {Math.round(leadScore.score)}% conversão
-                      </div>
-                    )}
-                    {hasIaFeature && isLoadingScore && (
-                      <div className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground flex items-center gap-1">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        Analisando...
-                      </div>
-                    )}
-                  </div>
+                  {/* Lead Score Badge - só aparece se tenant tem feature de IA */}
+                  {hasIaFeature && leadScore && (
+                    <div className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
+                      leadScore.score >= 70 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                      leadScore.score >= 40 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                    )}>
+                      <Sparkles className="h-3 w-3" />
+                      {Math.round(leadScore.score)}% conversão
+                    </div>
+                  )}
                 </div>
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
@@ -1393,8 +1384,11 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
               {/* Messages Area - com lazy load */}
               <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20"
-                style={{ scrollBehavior: 'auto' }}
+                className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-muted/10 via-background to-muted/20"
+                style={{
+                  scrollBehavior: 'auto',
+                  backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(34, 197, 94, 0.03) 0%, transparent 50%)'
+                }}
                 onScroll={handleScroll}
               >
                 {isLoading ? (
@@ -1458,10 +1452,10 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                               }
                             }}
                             className={cn(
-                              'max-w-[80%] rounded-2xl px-4 py-3 shadow-sm',
+                              'max-w-[80%] rounded-2xl px-4 py-3',
                               msg.direction === 'outbound'
-                                ? 'bg-primary text-primary-foreground rounded-br-md'
-                                : 'bg-background border rounded-bl-md cursor-pointer hover:bg-muted/50 transition-colors'
+                                ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-br-md shadow-lg shadow-primary/20'
+                                : 'bg-card/80 backdrop-blur-sm border border-border/50 rounded-bl-md cursor-pointer hover:bg-muted/50 transition-all hover:border-primary/30'
                             )}
                           >
                             {/* Media attachment if present */}
@@ -1534,58 +1528,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t bg-background relative">
-                {/* Sugestão da IA - acima do input - só aparece se tenant tem feature de IA */}
-                {hasIaFeature && suggestion && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-3 p-3 rounded-lg bg-purple-50 border border-purple-200 dark:bg-purple-900/20 dark:border-purple-800"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <Bot className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                          Sugestão: {formatAction(suggestion.action)}
-                        </span>
-                        {suggestion.confidence && (
-                          <span className="text-xs text-purple-500">
-                            ({Math.round(suggestion.confidence * 100)}% confiança)
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => setSuggestion(null)}
-                        className="text-purple-400 hover:text-purple-600 dark:hover:text-purple-300"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <p className="mt-1 text-sm text-purple-600 dark:text-purple-400">
-                      {suggestion.explanation}
-                    </p>
-                  </motion.div>
-                )}
-
+              <div className="p-4 border-t bg-background/80 backdrop-blur-sm relative">
                 <div className="flex items-center gap-2">
-                  {/* Botão Sugerir Ação via MCP - só aparece se tenant tem feature de IA */}
-                  {hasIaFeature && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      onClick={() => suggestActionMutation.mutate()}
-                      disabled={suggestActionMutation.isPending}
-                      title="Sugerir próxima ação (IA)"
-                    >
-                      {suggestActionMutation.isPending ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
-                      ) : (
-                        <Bot className="h-5 w-5 text-purple-500" />
-                      )}
-                    </Button>
-                  )}
-
                   {/* File upload button */}
                   <FileUploadButton
                     ticketId={ticketId}
