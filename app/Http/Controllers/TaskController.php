@@ -13,7 +13,21 @@ class TaskController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Task::with(['lead.contact', 'contact', 'assignedUser']);
+        $user = auth()->user();
+
+        // Se não tem tenant_id (super admin sem tenant), retorna vazio
+        if (!$user || !$user->tenant_id) {
+            return response()->json([
+                'data' => [],
+                'total' => 0,
+                'current_page' => 1,
+                'last_page' => 1,
+            ]);
+        }
+
+        // Filtro explícito por tenant_id para garantir isolamento
+        $query = Task::where('tenant_id', $user->tenant_id)
+            ->with(['lead.contact', 'contact', 'assignedUser']);
 
         if ($request->has('assigned_user_id')) {
             $query->where('assigned_user_id', $request->assigned_user_id);

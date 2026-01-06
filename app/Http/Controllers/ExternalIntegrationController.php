@@ -27,7 +27,17 @@ class ExternalIntegrationController extends Controller
      */
     public function index(): JsonResponse
     {
-        $integrations = ExternalIntegration::withCount('logs')
+        $user = auth()->user();
+
+        // Se não tem tenant_id (super admin sem tenant), retorna vazio
+        // Super admins devem usar rotas específicas de super-admin
+        if (!$user || !$user->tenant_id) {
+            return response()->json([]);
+        }
+
+        // Filtro explícito por tenant_id para garantir isolamento
+        $integrations = ExternalIntegration::where('tenant_id', $user->tenant_id)
+            ->withCount('logs')
             ->with('mappings')
             ->orderBy('name')
             ->get()

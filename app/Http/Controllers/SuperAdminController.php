@@ -51,6 +51,8 @@ class SuperAdminController extends Controller
      */
     public function listTenants(Request $request): JsonResponse
     {
+        \Log::error('[SuperAdmin] listTenants called by user: ' . auth()->id());
+
         $query = Tenant::withCount(['users', 'leads', 'channels']);
 
         // Filtros
@@ -72,6 +74,8 @@ class SuperAdminController extends Controller
 
         $tenants = $query->orderBy($request->get('sort_by', 'created_at'), $request->get('sort_dir', 'desc'))
             ->paginate($request->get('per_page', 20));
+
+        \Log::error('[SuperAdmin] listTenants total: ' . $tenants->total() . ', current_page: ' . $tenants->currentPage());
 
         return response()->json($tenants);
     }
@@ -286,6 +290,8 @@ class SuperAdminController extends Controller
      */
     public function listUsers(Request $request): JsonResponse
     {
+        \Log::error('[SuperAdmin] listUsers called by user: ' . auth()->id());
+
         $query = User::with('tenant:id,name')
             ->where('is_super_admin', false);
 
@@ -312,6 +318,8 @@ class SuperAdminController extends Controller
 
         $users = $query->orderBy($request->get('sort_by', 'created_at'), $request->get('sort_dir', 'desc'))
             ->paginate($request->get('per_page', 20));
+
+        \Log::error('[SuperAdmin] listUsers total: ' . $users->total() . ', current_page: ' . $users->currentPage());
 
         return response()->json($users);
     }
