@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PlanEnum;
+use App\Models\Contact;
 use App\Models\Group;
+use App\Models\Lead;
 use App\Models\Permission;
+use App\Models\Pipeline;
 use App\Models\SuperAdminLog;
 use App\Models\Tenant;
 use App\Models\TenantFeature;
@@ -51,9 +54,12 @@ class SuperAdminController extends Controller
      */
     public function listTenants(Request $request): JsonResponse
     {
-        \Log::error('[SuperAdmin] listTenants called by user: ' . auth()->id());
-
-        $query = Tenant::withCount(['users', 'leads', 'channels']);
+        // Usa withCount com closure para bypass do TenantScope
+        $query = Tenant::withCount([
+            'users' => fn($q) => $q->withoutGlobalScopes(),
+            'leads' => fn($q) => $q->withoutGlobalScopes(),
+            'channels',
+        ]);
 
         // Filtros
         if ($request->has('search')) {
@@ -74,8 +80,6 @@ class SuperAdminController extends Controller
 
         $tenants = $query->orderBy($request->get('sort_by', 'created_at'), $request->get('sort_dir', 'desc'))
             ->paginate($request->get('per_page', 20));
-
-        \Log::error('[SuperAdmin] listTenants total: ' . $tenants->total() . ', current_page: ' . $tenants->currentPage());
 
         return response()->json($tenants);
     }
@@ -158,29 +162,27 @@ class SuperAdminController extends Controller
     {
         // Carrega relacionamentos sem TenantScope para super admin ver todos os dados
         $users = User::withoutGlobalScopes()->where('tenant_id', $tenant->id)->get();
-        \Log::error('[SuperAdmin] showTenant ' . $tenant->id . ' - users found: ' . $users->count());
-
         $tenant->setRelation('users', $users);
         $tenant->load(['channels', 'sdrAgents']);
-        $tenant->loadCount(['leads', 'contacts', 'pipelines']);
+
+        // Conta leads, contacts e pipelines SEM TenantScope
+        $leadsCount = Lead::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
+        $contactsCount = Contact::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
+        $pipelinesCount = Pipeline::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
 
         // Carrega features
         $features = TenantFeature::getTenantFeatures($tenant->id);
 
-        $response = [
+        return response()->json([
             'tenant' => $tenant,
             'features' => $features,
             'stats' => [
-                'leads_count' => $tenant->leads_count,
-                'contacts_count' => $tenant->contacts_count,
-                'pipelines_count' => $tenant->pipelines_count,
-                'users_count' => $tenant->users->count(),
+                'leads_count' => $leadsCount,
+                'contacts_count' => $contactsCount,
+                'pipelines_count' => $pipelinesCount,
+                'users_count' => $users->count(),
             ],
-        ];
-
-        \Log::error('[SuperAdmin] showTenant response users_count: ' . $response['stats']['users_count']);
-
-        return response()->json($response);
+        ]);
     }
 
     /**
