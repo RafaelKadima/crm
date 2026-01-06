@@ -157,14 +157,17 @@ class SuperAdminController extends Controller
     public function showTenant(Tenant $tenant): JsonResponse
     {
         // Carrega relacionamentos sem TenantScope para super admin ver todos os dados
-        $tenant->setRelation('users', User::withoutGlobalScopes()->where('tenant_id', $tenant->id)->get());
+        $users = User::withoutGlobalScopes()->where('tenant_id', $tenant->id)->get();
+        \Log::error('[SuperAdmin] showTenant ' . $tenant->id . ' - users found: ' . $users->count());
+
+        $tenant->setRelation('users', $users);
         $tenant->load(['channels', 'sdrAgents']);
         $tenant->loadCount(['leads', 'contacts', 'pipelines']);
 
         // Carrega features
         $features = TenantFeature::getTenantFeatures($tenant->id);
 
-        return response()->json([
+        $response = [
             'tenant' => $tenant,
             'features' => $features,
             'stats' => [
@@ -173,7 +176,11 @@ class SuperAdminController extends Controller
                 'pipelines_count' => $tenant->pipelines_count,
                 'users_count' => $tenant->users->count(),
             ],
-        ]);
+        ];
+
+        \Log::error('[SuperAdmin] showTenant response users_count: ' . $response['stats']['users_count']);
+
+        return response()->json($response);
     }
 
     /**
