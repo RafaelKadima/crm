@@ -141,9 +141,12 @@ class SuperAdminController extends Controller
                 'admin_email' => $admin->email,
             ]);
 
+            // Carrega users sem TenantScope
+            $tenant->setRelation('users', User::withoutGlobalScopes()->where('tenant_id', $tenant->id)->get());
+
             return response()->json([
                 'message' => 'Empresa criada com sucesso!',
-                'tenant' => $tenant->load('users'),
+                'tenant' => $tenant,
             ], 201);
         });
     }
@@ -153,7 +156,9 @@ class SuperAdminController extends Controller
      */
     public function showTenant(Tenant $tenant): JsonResponse
     {
-        $tenant->load(['users', 'channels', 'sdrAgents']);
+        // Carrega relacionamentos sem TenantScope para super admin ver todos os dados
+        $tenant->setRelation('users', User::withoutGlobalScopes()->where('tenant_id', $tenant->id)->get());
+        $tenant->load(['channels', 'sdrAgents']);
         $tenant->loadCount(['leads', 'contacts', 'pipelines']);
 
         // Carrega features
@@ -292,7 +297,9 @@ class SuperAdminController extends Controller
     {
         \Log::error('[SuperAdmin] listUsers called by user: ' . auth()->id());
 
-        $query = User::with('tenant:id,name')
+        // Usa withoutGlobalScopes para super admin ver usuários de todos os tenants
+        $query = User::withoutGlobalScopes()
+            ->with('tenant:id,name')
             ->where('is_super_admin', false);
 
         // Filtros
