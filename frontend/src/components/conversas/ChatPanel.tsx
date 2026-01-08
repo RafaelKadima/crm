@@ -83,6 +83,44 @@ const channelIcons: Record<string, typeof MessageSquare> = {
   email: Mail,
 }
 
+/**
+ * Check if message content is just a media placeholder or filename that shouldn't be displayed
+ * This handles messages imported from Z-PRO where the body contains the filename
+ */
+function isMediaPlaceholder(content: string, metadata?: MessageMetadata): boolean {
+  if (!metadata) return false
+
+  // If there's no media_url or audio_url, show the content
+  const hasMedia = metadata.media_url || metadata.audio_url || metadata.image_url || metadata.video_url
+  if (!hasMedia) return false
+
+  // Standard placeholders from WhatsApp webhook processing
+  const placeholders = ['[Áudio]', '[Imagem]', '[Vídeo]', '[Documento]', '[Sticker]']
+  if (placeholders.some(p => content.startsWith(p))) {
+    // Show caption if there's more text after the placeholder
+    const placeholder = placeholders.find(p => content.startsWith(p))
+    if (placeholder && content.length > placeholder.length + 1) {
+      return false // Has caption, show it
+    }
+    return true // Just placeholder, hide it
+  }
+
+  // Check if content looks like a filename (for migrated Z-PRO messages)
+  // Pattern: ends with media extension
+  const mediaExtensions = /\.(ogg|mp3|mp4|m4a|wav|webm|opus|aac|amr|jpeg|jpg|png|gif|webp|pdf|doc|docx|xls|xlsx)$/i
+  if (mediaExtensions.test(content.trim())) {
+    return true
+  }
+
+  // Check if content is just a media ID (long alphanumeric string)
+  // Z-PRO sometimes stores media IDs as the body
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(content.trim())) {
+    return true
+  }
+
+  return false
+}
+
 export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
   const queryClient = useQueryClient()
   const { user, tenant } = useAuth()
@@ -676,8 +714,8 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
                   />
                 )}
 
-                {/* Text */}
-                {msg.content && (
+                {/* Text - hide if it's just a media filename or placeholder */}
+                {msg.content && !isMediaPlaceholder(msg.content, msg.metadata) && (
                   <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                 )}
 
