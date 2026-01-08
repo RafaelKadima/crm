@@ -4,6 +4,7 @@ import type { Lead } from '@/types'
 
 interface LeadsParams {
   page?: number
+  per_page?: number
   status?: string
   stage_id?: string
   owner_id?: string

@@ -39,7 +39,7 @@ export const authApi = {
 // LEADS ENDPOINTS
 // =====================
 export const leadsApi = {
-  list: (params?: { page?: number; status?: string; stage_id?: string; owner_id?: string }) =>
+  list: (params?: { page?: number; per_page?: number; status?: string; stage_id?: string; owner_id?: string }) =>
     api.get<PaginatedResponse<Lead>>('/leads', { params }),
 
   get: (id: string) =>
@@ -100,7 +100,7 @@ export const leadImportsApi = {
 // CONTACTS ENDPOINTS
 // =====================
 export const contactsApi = {
-  list: (params?: { page?: number; search?: string }) =>
+  list: (params?: { page?: number; per_page?: number; search?: string }) =>
     api.get<PaginatedResponse<Contact>>('/contacts', { params }),
 
   get: (id: string) =>

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Search, Phone, Mail, Building2, MoreHorizontal, Loader2, UserPlus } from 'lucide-react'
+import { Plus, Search, Phone, Mail, Building2, MoreHorizontal, Loader2, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -14,8 +14,18 @@ export function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
-  
-  const { data: contactsData, isLoading } = useContacts({ search: searchQuery || undefined })
+  const [page, setPage] = useState(1)
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery])
+
+  const { data: contactsData, isLoading } = useContacts({
+    search: searchQuery || undefined,
+    page,
+    per_page: 30
+  })
 
   const contacts = contactsData?.data || []
 
@@ -148,8 +158,8 @@ export function ContactsPage() {
             {searchQuery ? 'Nenhum contato encontrado' : 'Nenhum contato cadastrado'}
           </h3>
           <p className="text-gray-500 mb-6">
-            {searchQuery 
-              ? 'Tente buscar por outro termo' 
+            {searchQuery
+              ? 'Tente buscar por outro termo'
               : 'Comece adicionando seu primeiro contato'
             }
           </p>
@@ -160,6 +170,38 @@ export function ContactsPage() {
             </Button>
           )}
         </motion.div>
+      )}
+
+      {/* Pagination */}
+      {contactsData && contactsData.last_page > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-gray-700/50">
+          <p className="text-sm text-muted-foreground">
+            Mostrando {contactsData.from || 0} - {contactsData.to || 0} de {contactsData.total || 0} contatos
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground px-2">
+              Página {page} de {contactsData.last_page}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.min(contactsData.last_page, p + 1))}
+              disabled={page === contactsData.last_page}
+            >
+              Próxima
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Modal */}

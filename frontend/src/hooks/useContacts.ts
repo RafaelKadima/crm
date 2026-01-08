@@ -4,6 +4,7 @@ import type { Contact } from '@/types'
 
 interface ContactsParams {
   page?: number
+  per_page?: number
   search?: string
 }
 

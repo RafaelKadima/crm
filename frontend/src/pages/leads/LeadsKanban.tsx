@@ -44,8 +44,8 @@ export function LeadsKanbanPage() {
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false) // Modal de fechamento de venda
   const [pendingWonLead, setPendingWonLead] = useState<Lead | null>(null) // Lead aguardando fechamento
 
-  // Fetch data from API
-  const { data: leadsData, isLoading: leadsLoading } = useLeads()
+  // Fetch data from API - Kanban precisa de todos os leads, não paginados
+  const { data: leadsData, isLoading: leadsLoading } = useLeads({ per_page: 1000 })
   const { data: pipelines, isLoading: pipelinesLoading } = usePipelines()
   const updateStageMutation = useUpdateLeadStage()
 
