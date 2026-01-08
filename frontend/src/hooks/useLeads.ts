@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { leadsApi } from '@/api/endpoints'
 import type { Lead } from '@/types'
 
@@ -21,6 +21,35 @@ export function useLeads(params?: LeadsParams) {
     staleTime: 1000 * 30, // 30 segundos - dados são considerados "frescos"
     refetchInterval: 60000, // Polling a cada 60s (menos frequente, WebSocket cuida do tempo real)
     refetchIntervalInBackground: false, // Só atualiza quando a aba está ativa
+  })
+}
+
+/**
+ * Hook para carregar leads com paginação infinita (lazy loading)
+ * Carrega 10 por vez e permite "Carregar mais"
+ */
+export function useInfiniteLeads(params?: Omit<LeadsParams, 'page'>) {
+  return useInfiniteQuery({
+    queryKey: ['leads-infinite', params],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await leadsApi.list({
+        ...params,
+        page: pageParam,
+        per_page: params?.per_page || 10
+      })
+      return response.data
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      // Se há mais páginas, retorna o próximo número de página
+      if (lastPage.current_page < lastPage.last_page) {
+        return lastPage.current_page + 1
+      }
+      return undefined // Não há mais páginas
+    },
+    staleTime: 1000 * 30,
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
   })
 }
 

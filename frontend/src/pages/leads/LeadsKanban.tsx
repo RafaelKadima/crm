@@ -11,7 +11,7 @@ import { PipelineManagerModal } from '@/components/pipelines/PipelineManagerModa
 import { CreateLeadModal } from '@/components/leads/CreateLeadModal'
 import { ImportLeadsModal } from './ImportLeadsModal'
 import { SaleClosingModal } from '@/components/sales/SaleClosingModal'
-import { useLeads, useUpdateLeadStage } from '@/hooks/useLeads'
+import { useInfiniteLeads, useUpdateLeadStage } from '@/hooks/useLeads'
 import { usePipelines, type Pipeline } from '@/hooks/usePipelines'
 import { useNotificationStore } from '@/store/notificationStore'
 import { useTenantMessages } from '@/hooks/useWebSocket'
@@ -44,8 +44,14 @@ export function LeadsKanbanPage() {
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false) // Modal de fechamento de venda
   const [pendingWonLead, setPendingWonLead] = useState<Lead | null>(null) // Lead aguardando fechamento
 
-  // Fetch data from API - Kanban precisa de todos os leads, não paginados
-  const { data: leadsData, isLoading: leadsLoading } = useLeads({ per_page: 1000 })
+  // Fetch data from API - Carrega 10 leads por vez (lazy loading)
+  const {
+    data: leadsData,
+    isLoading: leadsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteLeads({ per_page: 10 })
   const { data: pipelines, isLoading: pipelinesLoading } = usePipelines()
   const updateStageMutation = useUpdateLeadStage()
 
@@ -64,12 +70,21 @@ export function LeadsKanbanPage() {
     markAllAsRead 
   } = useNotificationStore()
 
+  // Flatten all pages into a single array of leads
+  const allLeads = useMemo(() => {
+    if (!leadsData?.pages) return []
+    return leadsData.pages.flatMap(page => page.data || [])
+  }, [leadsData])
+
+  // Total count from first page
+  const totalLeads = leadsData?.pages?.[0]?.total || 0
+
   // Sync API data with local state
   useEffect(() => {
-    if (leadsData?.data) {
-      setLocalLeads(leadsData.data)
+    if (allLeads.length > 0) {
+      setLocalLeads(allLeads)
     }
-  }, [leadsData])
+  }, [allLeads])
 
   // Get pipelines array
   const pipelinesArray = useMemo(() => {
@@ -206,8 +221,8 @@ export function LeadsKanbanPage() {
       {
         onError: () => {
           // Revert on error - refetch from API
-          if (leadsData?.data) {
-            setLocalLeads(leadsData.data)
+          if (allLeads.length > 0) {
+            setLocalLeads(allLeads)
           }
         },
       }
@@ -486,6 +501,30 @@ export function LeadsKanbanPage() {
           </div>
         )}
       </div>
+
+      {/* Load More Button */}
+      {hasNextPage && (
+        <div className="shrink-0 flex items-center justify-center py-3 border-t border-gray-700/50">
+          <Button
+            variant="outline"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="min-w-[200px]"
+          >
+            {isFetchingNextPage ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Carregando...
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-2" />
+                Carregar mais ({localLeads.length} de {totalLeads})
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
       {/* Lead Chat Modal */}
       <LeadChatModal
