@@ -43,6 +43,10 @@ Route::prefix('api/meta')->group(function () {
             Route::get('connect', [MetaAuthController::class, 'connect'])
                 ->name('meta.connect');
 
+            // Embedded Signup Callback (recebe dados do popup)
+            Route::post('embedded-signup', [MetaAuthController::class, 'embeddedSignupCallback'])
+                ->name('meta.embedded-signup');
+
             // Integrations CRUD
             Route::prefix('integrations')->name('meta.integrations.')->group(function () {
 

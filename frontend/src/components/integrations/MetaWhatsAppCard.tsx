@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   MessageSquare,
@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Clock,
   Shield,
+  Plus,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -22,19 +23,40 @@ import {
   useRefreshMetaToken,
   type MetaIntegration,
 } from '@/hooks/useMetaIntegrations'
+import {
+  useFacebookSDK,
+  useMetaEmbeddedSignup,
+} from '@/hooks/useMetaEmbeddedSignup'
 import { Badge } from '@/components/ui/Badge'
 
 export function MetaWhatsAppCard() {
   const { data: status, isLoading: loadingStatus } = useMetaStatus()
-  const { data: integrations, isLoading: loadingIntegrations, refetch } = useMetaIntegrations()
+  const { data: integrations, isLoading: loadingIntegrations } = useMetaIntegrations()
   const connectMutation = useConnectMeta()
   const disconnectMutation = useDisconnectMeta()
   const refreshTokenMutation = useRefreshMetaToken()
 
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null)
 
+  // Embedded Signup - carrega SDK se configurado
+  const appId = status?.app_id || ''
+  const configId = status?.config_id || ''
+  const isEmbeddedSignupConfigured = status?.embedded_signup_configured || false
+
+  const { isLoaded: isSDKLoaded } = useFacebookSDK(appId)
+  const { startEmbeddedSignup, isProcessing: isEmbeddedProcessing } = useMetaEmbeddedSignup()
+
   const handleConnect = () => {
-    connectMutation.mutate()
+    // Se Embedded Signup está configurado e SDK carregado, usa ele
+    if (isEmbeddedSignupConfigured && isSDKLoaded && configId) {
+      startEmbeddedSignup({
+        appId,
+        configId,
+      })
+    } else {
+      // Fallback para OAuth redirect
+      connectMutation.mutate()
+    }
   }
 
   const handleDisconnect = async (id: string) => {
@@ -98,6 +120,7 @@ export function MetaWhatsAppCard() {
   const isLoading = loadingStatus || loadingIntegrations
   const hasIntegrations = integrations && integrations.length > 0
   const isConfigured = status?.oauth_configured
+  const isConnecting = connectMutation.isPending || isEmbeddedProcessing
 
   return (
     <motion.div
@@ -152,7 +175,7 @@ export function MetaWhatsAppCard() {
           </div>
         ) : (
           <>
-            {/* Lista de integrações */}
+            {/* Lista de integracoes */}
             {hasIntegrations && (
               <div className="space-y-3 mb-6">
                 {integrations.map((integration) => (
@@ -181,7 +204,7 @@ export function MetaWhatsAppCard() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {/* Botão de renovar token */}
+                      {/* Botao de renovar token */}
                       {(integration.is_expiring_soon || integration.needs_reauth) && (
                         <button
                           onClick={() => handleRefreshToken(integration.id)}
@@ -197,7 +220,7 @@ export function MetaWhatsAppCard() {
                         </button>
                       )}
 
-                      {/* Botão de desconectar */}
+                      {/* Botao de desconectar */}
                       {confirmDisconnect === integration.id ? (
                         <div className="flex items-center gap-2">
                           <button
@@ -233,28 +256,39 @@ export function MetaWhatsAppCard() {
               </div>
             )}
 
-            {/* Botão conectar */}
+            {/* Botao conectar */}
             <button
               onClick={handleConnect}
-              disabled={connectMutation.isPending}
+              disabled={isConnecting}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {connectMutation.isPending ? (
+              {isConnecting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Redirecionando...
+                  {isEmbeddedProcessing ? 'Processando...' : 'Conectando...'}
                 </>
               ) : (
                 <>
-                  <MessageSquare className="w-5 h-5" />
-                  {hasIntegrations ? 'Conectar outro numero' : 'Conectar WhatsApp'}
+                  {hasIntegrations ? (
+                    <>
+                      <Plus className="w-5 h-5" />
+                      Adicionar outro numero
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare className="w-5 h-5" />
+                      Conectar WhatsApp
+                    </>
+                  )}
                 </>
               )}
             </button>
 
             {/* Info */}
             <p className="text-xs text-gray-500 text-center mt-4">
-              Voce sera redirecionado para o Facebook para autorizar o acesso ao WhatsApp Business
+              {isEmbeddedSignupConfigured
+                ? 'Um popup sera aberto para voce conectar sua conta WhatsApp Business'
+                : 'Voce sera redirecionado para o Facebook para autorizar o acesso ao WhatsApp Business'}
             </p>
           </>
         )}

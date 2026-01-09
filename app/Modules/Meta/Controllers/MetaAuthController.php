@@ -305,8 +305,67 @@ class MetaAuthController extends Controller
             'success' => true,
             'data' => [
                 'oauth_configured' => $this->oauthService->isConfigured(),
+                'embedded_signup_configured' => $this->oauthService->isEmbeddedSignupConfigured(),
+                'config_id' => $this->oauthService->getConfigId(),
+                'app_id' => config('services.meta.app_id'),
                 'token_service_configured' => $this->tokenService->isConfigured(),
             ],
         ]);
+    }
+
+    /**
+     * Callback do Embedded Signup.
+     * Recebe os dados do frontend após o usuário completar o fluxo no popup.
+     * POST /api/meta/embedded-signup
+     */
+    public function embeddedSignupCallback(Request $request): JsonResponse
+    {
+        $request->validate([
+            'code' => 'required|string',
+            'waba_id' => 'nullable|string',
+            'phone_number_id' => 'nullable|string',
+        ]);
+
+        if (!$this->oauthService->isEmbeddedSignupConfigured()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Embedded Signup is not configured. Please set META_CONFIG_ID.',
+            ], 500);
+        }
+
+        try {
+            $tenantId = auth()->user()->tenant_id;
+
+            $integration = $this->oauthService->processEmbeddedSignup(
+                tenantId: $tenantId,
+                code: $request->get('code'),
+                wabaId: $request->get('waba_id'),
+                phoneNumberId: $request->get('phone_number_id')
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'WhatsApp connected successfully via Embedded Signup',
+                'data' => [
+                    'id' => $integration->id,
+                    'phone_number_id' => $integration->phone_number_id,
+                    'display_phone_number' => $integration->display_phone_number,
+                    'verified_name' => $integration->verified_name,
+                    'status' => $integration->status->value,
+                    'expires_at' => $integration->expires_at?->toIso8601String(),
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Meta Embedded Signup callback failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
 }

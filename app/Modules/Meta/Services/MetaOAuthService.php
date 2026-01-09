@@ -319,4 +319,165 @@ class MetaOAuthService
     {
         return !empty($this->appId) && !empty($this->appSecret) && !empty($this->redirectUri);
     }
+
+    /**
+     * Verifica se o Embedded Signup está configurado.
+     */
+    public function isEmbeddedSignupConfigured(): bool
+    {
+        return $this->isConfigured() && !empty(config('services.meta.config_id'));
+    }
+
+    /**
+     * Retorna o Configuration ID para Embedded Signup.
+     */
+    public function getConfigId(): ?string
+    {
+        return config('services.meta.config_id');
+    }
+
+    /**
+     * Processa o callback do Embedded Signup.
+     * Recebe os dados do frontend após o usuário completar o fluxo no popup.
+     */
+    public function processEmbeddedSignup(
+        string $tenantId,
+        string $code,
+        ?string $wabaId = null,
+        ?string $phoneNumberId = null
+    ): MetaIntegration {
+        Log::info('Processing Embedded Signup', [
+            'tenant_id' => $tenantId,
+            'waba_id' => $wabaId,
+            'phone_number_id' => $phoneNumberId,
+        ]);
+
+        // 1. Troca o code por access_token (sem redirect_uri para Embedded Signup)
+        $tokenData = $this->exchangeCodeForTokenEmbedded($code);
+
+        // 2. Obtém long-lived token
+        if (!isset($tokenData['expires_in']) || $tokenData['expires_in'] < 5184000) {
+            $tokenData = $this->exchangeForLongLivedToken($tokenData['access_token']);
+        }
+
+        $accessToken = $tokenData['access_token'];
+        $expiresAt = isset($tokenData['expires_in'])
+            ? Carbon::now()->addSeconds($tokenData['expires_in'])
+            : null;
+
+        // 3. Se não recebemos waba_id ou phone_number_id, descobrimos automaticamente
+        if (empty($wabaId) || empty($phoneNumberId)) {
+            $businessData = $this->discoverWhatsAppBusiness($accessToken);
+            $wabaId = $businessData['waba_id'];
+            $phoneNumberId = $businessData['phone_number_id'];
+            $displayPhoneNumber = $businessData['display_phone_number'];
+            $verifiedName = $businessData['verified_name'];
+            $businessId = $businessData['business_id'];
+        } else {
+            // 4. Busca detalhes do phone number específico
+            $phoneDetails = $this->getPhoneNumberDetails($accessToken, $phoneNumberId);
+            $displayPhoneNumber = $phoneDetails['display_phone_number'] ?? null;
+            $verifiedName = $phoneDetails['verified_name'] ?? null;
+
+            // Busca o business_id do WABA
+            $wabaDetails = $this->getWabaDetails($accessToken, $wabaId);
+            $businessId = $wabaDetails['owner_business_info']['id'] ?? null;
+        }
+
+        // 5. Cria ou atualiza a integração
+        $integration = MetaIntegration::withoutGlobalScopes()->updateOrCreate(
+            [
+                'tenant_id' => $tenantId,
+                'phone_number_id' => $phoneNumberId,
+            ],
+            [
+                'business_id' => $businessId,
+                'waba_id' => $wabaId,
+                'display_phone_number' => $displayPhoneNumber,
+                'verified_name' => $verifiedName,
+                'access_token' => $accessToken,
+                'expires_at' => $expiresAt,
+                'status' => MetaIntegrationStatusEnum::ACTIVE,
+                'scopes' => $this->scopes,
+                'metadata' => [
+                    'connected_at' => now()->toIso8601String(),
+                    'app_id' => $this->appId,
+                    'signup_method' => 'embedded',
+                ],
+            ]
+        );
+
+        Log::info('Meta Embedded Signup integration created/updated', [
+            'tenant_id' => $tenantId,
+            'integration_id' => $integration->id,
+            'phone_number_id' => $phoneNumberId,
+            'display_phone_number' => $displayPhoneNumber,
+        ]);
+
+        return $integration;
+    }
+
+    /**
+     * Troca o code por token para Embedded Signup (sem redirect_uri).
+     */
+    protected function exchangeCodeForTokenEmbedded(string $code): array
+    {
+        $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", [
+            'client_id' => $this->appId,
+            'client_secret' => $this->appSecret,
+            'code' => $code,
+        ]);
+
+        if (!$response->successful()) {
+            Log::error('Meta Embedded Signup token exchange failed', [
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
+            throw new \Exception('Failed to exchange code for token: ' . ($response->json()['error']['message'] ?? 'Unknown error'));
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Busca detalhes de um phone number específico.
+     */
+    protected function getPhoneNumberDetails(string $accessToken, string $phoneNumberId): array
+    {
+        $response = Http::withToken($accessToken)
+            ->get("https://graph.facebook.com/{$this->apiVersion}/{$phoneNumberId}", [
+                'fields' => 'id,display_phone_number,verified_name,quality_rating,status',
+            ]);
+
+        if (!$response->successful()) {
+            Log::warning('Failed to fetch phone number details', [
+                'phone_number_id' => $phoneNumberId,
+                'error' => $response->json(),
+            ]);
+            return [];
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Busca detalhes de uma WABA.
+     */
+    protected function getWabaDetails(string $accessToken, string $wabaId): array
+    {
+        $response = Http::withToken($accessToken)
+            ->get("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}", [
+                'fields' => 'id,name,owner_business_info,account_review_status',
+            ]);
+
+        if (!$response->successful()) {
+            Log::warning('Failed to fetch WABA details', [
+                'waba_id' => $wabaId,
+                'error' => $response->json(),
+            ]);
+            return [];
+        }
+
+        return $response->json();
+    }
 }

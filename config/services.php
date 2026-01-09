@@ -68,6 +68,7 @@ return [
         'api_version' => env('META_API_VERSION', 'v19.0'),
         'verify_token' => env('META_VERIFY_TOKEN', 'crm_meta_verify_token'),
         'redirect_uri' => env('META_REDIRECT_URI', env('APP_URL') . '/api/meta/callback'),
+        'config_id' => env('META_CONFIG_ID'), // Embedded Signup Configuration ID
         'scopes' => [
             'whatsapp_business_management',
             'whatsapp_business_messaging',
