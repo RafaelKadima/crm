@@ -16,6 +16,7 @@ declare global {
         callback: (response: FBLoginResponse) => void,
         options: FBLoginOptions
       ) => void
+      getLoginStatus: (callback: (response: FBLoginResponse) => void) => void
     }
     fbAsyncInit: () => void
   }
@@ -69,36 +70,72 @@ interface EmbeddedSignupResponse {
   }
 }
 
-// Hook para carregar o Facebook SDK
-export function useFacebookSDK(appId: string, version = 'v19.0') {
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const loadAttempted = useRef(false)
+// Flag global para evitar múltiplas inicializações
+let fbSDKInitialized = false
+let fbSDKLoading = false
+let fbInitCallbacks: ((success: boolean) => void)[] = []
 
-  useEffect(() => {
-    // Evita carregar múltiplas vezes
-    if (loadAttempted.current) return
-    loadAttempted.current = true
-
-    // Se já existe FB no window, apenas inicializa
-    if (window.FB) {
-      window.FB.init({
-        appId,
-        xfbml: true,
-        version,
-      })
-      setIsLoaded(true)
+// Função para carregar o SDK do Facebook
+function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    // Se já está inicializado, resolve imediatamente
+    if (fbSDKInitialized && window.FB) {
+      resolve(true)
       return
     }
 
+    // Se está carregando, adiciona callback
+    if (fbSDKLoading) {
+      fbInitCallbacks.push(resolve)
+      return
+    }
+
+    // Se FB já existe mas não foi inicializado
+    if (window.FB) {
+      try {
+        window.FB.init({
+          appId,
+          xfbml: true,
+          version,
+        })
+        fbSDKInitialized = true
+        resolve(true)
+      } catch (e) {
+        console.error('Error initializing FB SDK:', e)
+        resolve(false)
+      }
+      return
+    }
+
+    // Começa o carregamento
+    fbSDKLoading = true
+    fbInitCallbacks.push(resolve)
+
     // Define callback para quando o SDK carregar
     window.fbAsyncInit = function () {
-      window.FB.init({
-        appId,
-        xfbml: true,
-        version,
-      })
-      setIsLoaded(true)
+      try {
+        window.FB.init({
+          appId,
+          xfbml: true,
+          version,
+        })
+        fbSDKInitialized = true
+        // Notifica todos os callbacks
+        fbInitCallbacks.forEach((cb) => cb(true))
+        fbInitCallbacks = []
+      } catch (e) {
+        console.error('Error in fbAsyncInit:', e)
+        fbInitCallbacks.forEach((cb) => cb(false))
+        fbInitCallbacks = []
+      }
+      fbSDKLoading = false
+    }
+
+    // Verifica se o script já existe
+    const existingScript = document.getElementById('facebook-jssdk')
+    if (existingScript) {
+      // Script existe, mas SDK não está pronto - espera
+      return
     }
 
     // Carrega o script do SDK
@@ -109,20 +146,49 @@ export function useFacebookSDK(appId: string, version = 'v19.0') {
     script.defer = true
 
     script.onerror = () => {
-      setError('Failed to load Facebook SDK')
+      console.error('Failed to load Facebook SDK script')
+      fbSDKLoading = false
+      fbInitCallbacks.forEach((cb) => cb(false))
+      fbInitCallbacks = []
     }
 
-    // Verifica se o script já existe
-    const existingScript = document.getElementById('facebook-jssdk')
-    if (!existingScript) {
-      document.body.appendChild(script)
+    document.body.appendChild(script)
+  })
+}
+
+// Hook para carregar o Facebook SDK
+export function useFacebookSDK(appId: string, version = 'v19.0') {
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const initAttempted = useRef(false)
+
+  useEffect(() => {
+    // Não tenta carregar se não tem appId
+    if (!appId) {
+      return
     }
 
-    return () => {
-      // Cleanup: remove o script se necessário
-      // Nota: geralmente não removemos o SDK uma vez carregado
+    // Evita múltiplas tentativas
+    if (initAttempted.current && isLoaded) {
+      return
     }
-  }, [appId, version])
+
+    initAttempted.current = true
+
+    loadFacebookSDK(appId, version)
+      .then((success) => {
+        if (success) {
+          setIsLoaded(true)
+          setError(null)
+        } else {
+          setError('Failed to load Facebook SDK')
+        }
+      })
+      .catch((e) => {
+        setError('Failed to load Facebook SDK')
+        console.error(e)
+      })
+  }, [appId, version, isLoaded])
 
   return { isLoaded, error }
 }
@@ -177,8 +243,6 @@ export function useMetaEmbeddedSignup() {
       if (event.data?.type === 'WA_EMBEDDED_SIGNUP') {
         const data = event.data.data as SessionInfoData
         setSessionInfo(data)
-
-        // Se temos os dados, podemos usá-los junto com o code
         console.log('Embedded Signup sessionInfo received:', data)
       }
     }
@@ -187,51 +251,62 @@ export function useMetaEmbeddedSignup() {
     return () => window.removeEventListener('message', handleMessage)
   }, [])
 
-  // Função para iniciar o fluxo de Embedded Signup
+  // Funcao para iniciar o fluxo de Embedded Signup
   const startEmbeddedSignup = useCallback(
     (config: EmbeddedSignupConfig) => {
+      // Verifica se FB está disponível e inicializado
       if (!window.FB) {
-        toast.error('Facebook SDK não carregado')
+        toast.error('Facebook SDK nao carregado. Atualize a pagina.')
+        return
+      }
+
+      if (!fbSDKInitialized) {
+        toast.error('Facebook SDK nao inicializado. Aguarde...')
         return
       }
 
       if (!config.configId) {
-        toast.error('Configuration ID não configurado')
+        toast.error('Configuration ID nao configurado')
         return
       }
 
       setIsProcessing(true)
 
-      window.FB.login(
-        (response: FBLoginResponse) => {
-          if (response.authResponse?.code) {
-            // Sucesso - envia para o backend
-            processSignupMutation.mutate({
-              code: response.authResponse.code,
-              waba_id: sessionInfo?.waba_id,
-              phone_number_id: sessionInfo?.phone_number_id,
-            })
-          } else {
-            // Usuário cancelou ou erro
-            setIsProcessing(false)
-            if (response.status === 'unknown') {
-              // Usuário fechou o popup sem completar
-              console.log('User closed the login popup')
+      try {
+        window.FB.login(
+          (response: FBLoginResponse) => {
+            if (response.authResponse?.code) {
+              // Sucesso - envia para o backend
+              processSignupMutation.mutate({
+                code: response.authResponse.code,
+                waba_id: sessionInfo?.waba_id,
+                phone_number_id: sessionInfo?.phone_number_id,
+              })
             } else {
-              toast.error('Falha na autenticacao com o Facebook')
+              // Usuário cancelou ou erro
+              setIsProcessing(false)
+              if (response.status === 'unknown') {
+                console.log('User closed the login popup')
+              } else {
+                toast.error('Falha na autenticacao com o Facebook')
+              }
             }
-          }
-        },
-        {
-          config_id: config.configId,
-          response_type: 'code',
-          override_default_response_type: true,
-          extras: {
-            sessionInfoVersion: '3',
-            version: '2', // Versão 2 do UI do Embedded Signup
           },
-        }
-      )
+          {
+            config_id: config.configId,
+            response_type: 'code',
+            override_default_response_type: true,
+            extras: {
+              sessionInfoVersion: '3',
+              version: '2',
+            },
+          }
+        )
+      } catch (e) {
+        console.error('Error calling FB.login:', e)
+        setIsProcessing(false)
+        toast.error('Erro ao abrir popup do Facebook')
+      }
     },
     [processSignupMutation, sessionInfo]
   )
