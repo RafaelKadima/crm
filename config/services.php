@@ -57,6 +57,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Meta OAuth & WhatsApp Cloud API
+    |--------------------------------------------------------------------------
+    | Configurações para integração via OAuth com a Meta.
+    | Permite que tenants conectem seus próprios números WhatsApp.
+    */
+    'meta' => [
+        'app_id' => env('META_APP_ID'),
+        'app_secret' => env('META_APP_SECRET'),
+        'api_version' => env('META_API_VERSION', 'v19.0'),
+        'verify_token' => env('META_VERIFY_TOKEN', 'crm_meta_verify_token'),
+        'redirect_uri' => env('META_REDIRECT_URI', env('APP_URL') . '/api/meta/callback'),
+        'scopes' => [
+            'whatsapp_business_management',
+            'whatsapp_business_messaging',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | n8n Workflow Automation
     |--------------------------------------------------------------------------
     */

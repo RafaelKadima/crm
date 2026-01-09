@@ -54,7 +54,7 @@ export interface SupportAction {
   created_at: string
 }
 
-export interface ChatResponse {
+export type ChatResponse = {
   message: SupportMessage
   tool_calls: ToolCall[]
   pending_approvals: SupportAction[]

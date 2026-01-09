@@ -30,7 +30,7 @@ import {
   useTestIntegration,
   integrationTypeInfo,
 } from '@/hooks/useIntegrations'
-import { IntegrationConfigModal, IntegrationLogsDrawer } from '@/components/integrations'
+import { IntegrationConfigModal, IntegrationLogsDrawer, MetaWhatsAppCard } from '@/components/integrations'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { ExternalIntegration } from '@/types'
@@ -148,6 +148,9 @@ export function IntegrationsSettingsPage() {
           Conecte servicos externos ao seu CRM
         </p>
       </div>
+
+      {/* WhatsApp Business API - Meta Cloud */}
+      <MetaWhatsAppCard />
 
       {/* Integracoes Externas (Linx, Webhooks CRM) */}
       <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">

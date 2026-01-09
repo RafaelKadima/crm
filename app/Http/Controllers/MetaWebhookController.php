@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Channel;
-use App\Services\WhatsAppService;
-use App\Services\InstagramService;
 use App\Enums\ChannelTypeEnum;
+use App\Enums\MetaIntegrationStatusEnum;
+use App\Models\Channel;
+use App\Models\MetaIntegration;
+use App\Services\InstagramService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -92,6 +94,9 @@ class MetaWebhookController extends Controller
 
     /**
      * Handle WhatsApp webhook
+     *
+     * Primeiro tenta resolver via MetaIntegration (novo sistema OAuth).
+     * Se não encontrar, faz fallback para Channel (sistema legado).
      */
     protected function handleWhatsApp(array $payload): JsonResponse
     {
@@ -102,6 +107,14 @@ class MetaWebhookController extends Controller
             return response()->json(['status' => 'ignored']);
         }
 
+        // 1. Primeiro tenta MetaIntegration (novo sistema OAuth)
+        $metaIntegration = MetaIntegration::findActiveByPhoneNumberId($phoneNumberId);
+
+        if ($metaIntegration) {
+            return $this->processWithMetaIntegration($payload, $metaIntegration);
+        }
+
+        // 2. Fallback: Sistema legado com Channel
         $channel = Channel::where('type', ChannelTypeEnum::WHATSAPP)
             ->whereJsonContains('config->phone_number_id', $phoneNumberId)
             ->first();
@@ -114,6 +127,59 @@ class MetaWebhookController extends Controller
         $this->whatsAppService->processIncomingWebhook($payload, $channel);
 
         return response()->json(['status' => 'success', 'platform' => 'whatsapp']);
+    }
+
+    /**
+     * Processa webhook usando MetaIntegration (novo sistema OAuth).
+     *
+     * Por enquanto, cria um Channel virtual para manter compatibilidade
+     * com o WhatsAppService existente. No futuro, pode usar MetaMessageService diretamente.
+     */
+    protected function processWithMetaIntegration(array $payload, MetaIntegration $integration): JsonResponse
+    {
+        Log::info('WhatsApp webhook: processing with MetaIntegration', [
+            'integration_id' => $integration->id,
+            'tenant_id' => $integration->tenant_id,
+            'phone_number_id' => $integration->phone_number_id,
+        ]);
+
+        // Tenta encontrar um Channel vinculado ao mesmo phone_number_id
+        $channel = Channel::withoutGlobalScopes()
+            ->where('tenant_id', $integration->tenant_id)
+            ->where('type', ChannelTypeEnum::WHATSAPP)
+            ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
+            ->first();
+
+        if ($channel) {
+            // Atualiza o token do Channel com o token da MetaIntegration (mais recente)
+            $config = $channel->config ?? [];
+            $config['access_token'] = $integration->access_token;
+            $channel->config = $config;
+            // Não salva para não sobrescrever permanentemente, apenas usa em memória
+
+            $this->whatsAppService->processIncomingWebhook($payload, $channel);
+
+            return response()->json([
+                'status' => 'success',
+                'platform' => 'whatsapp',
+                'source' => 'meta_integration',
+            ]);
+        }
+
+        // Se não tem Channel, precisa criar um virtual ou usar MetaMessageService
+        // Por enquanto, loga e retorna sucesso para não bloquear
+        Log::warning('WhatsApp webhook: MetaIntegration found but no Channel', [
+            'integration_id' => $integration->id,
+            'tenant_id' => $integration->tenant_id,
+        ]);
+
+        // TODO: No futuro, processar diretamente sem Channel
+        return response()->json([
+            'status' => 'success',
+            'platform' => 'whatsapp',
+            'source' => 'meta_integration',
+            'note' => 'no_channel_linked',
+        ]);
     }
 
     /**

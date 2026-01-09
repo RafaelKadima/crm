@@ -4,6 +4,7 @@ use App\Jobs\CalculateKpisJob;
 use App\Jobs\ProcessScheduledTasks;
 use App\Jobs\Ads\SyncAdMetricsJob;
 use App\Jobs\Ads\ProcessAdsAutomationJob;
+use App\Modules\Meta\Jobs\RefreshMetaTokenJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -52,3 +53,10 @@ Schedule::job(new CalculateKpisJob(
     period: now()->subMonth()->format('Y-m'),
     periodType: 'month'
 ))->monthlyOn(1, '02:00')->withoutOverlapping();
+
+// =============================================================================
+// META INTEGRATION - SCHEDULED JOBS
+// =============================================================================
+
+// Renova tokens Meta que estão próximos de expirar (menos de 7 dias)
+Schedule::job(new RefreshMetaTokenJob)->dailyAt('03:00')->withoutOverlapping();
