@@ -203,14 +203,16 @@ class LeadAssignmentService
         // #endregion
         
         try {
+            // Nota: constraint única é (tenant_id, user_id, channel_id)
+            // queue_id vai no update, não no match
             LeadAssignmentLog::updateOrCreate(
                 [
                     'tenant_id' => $tenantId,
                     'user_id' => $userId,
                     'channel_id' => $channelId,
-                    'queue_id' => $queueId,
                 ],
                 [
+                    'queue_id' => $queueId,
                     'last_assigned_at' => now(),
                 ]
             );
