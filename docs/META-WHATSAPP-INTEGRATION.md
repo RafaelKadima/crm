@@ -46,6 +46,7 @@ Documentacao da integracao com WhatsApp Business API via Meta Cloud API, incluin
 | `app/Modules/Meta/Services/MetaTokenService.php` | Renovacao automatica de tokens |
 | `app/Modules/Meta/Services/MetaMessageService.php` | Envio de mensagens via API |
 | `app/Modules/Meta/Services/MetaTemplateService.php` | CRUD de templates WhatsApp |
+| `app/Modules/Meta/Services/MetaProfileService.php` | Gerenciamento de perfil WhatsApp Business |
 | `app/Modules/Meta/Jobs/RefreshMetaTokenJob.php` | Job diario para renovar tokens |
 | `app/Models/MetaIntegration.php` | Model Eloquent com token criptografado |
 | `app/Enums/MetaIntegrationStatusEnum.php` | Status: ACTIVE, EXPIRED, REAUTH_REQUIRED |
@@ -57,8 +58,10 @@ Documentacao da integracao com WhatsApp Business API via Meta Cloud API, incluin
 | Arquivo | Descricao |
 |---------|-----------|
 | `frontend/src/components/integrations/MetaWhatsAppCard.tsx` | Card de conexao WhatsApp |
+| `frontend/src/components/integrations/WhatsAppProfileEditor.tsx` | Modal para editar perfil do WhatsApp |
 | `frontend/src/hooks/useMetaIntegrations.ts` | Hooks para API (CRUD, status) |
 | `frontend/src/hooks/useMetaEmbeddedSignup.ts` | Hook para Embedded Signup + Facebook SDK |
+| `frontend/src/hooks/useMetaProfile.ts` | Hooks para edicao de perfil WhatsApp Business |
 
 ### Database
 
@@ -168,6 +171,15 @@ META_CONFIG_ID=1388207333035427
 | GET | `/api/meta/integrations/{id}/templates` | Lista templates |
 | POST | `/api/meta/integrations/{id}/templates/sync` | Sincroniza templates da Meta |
 
+### Perfil do WhatsApp Business
+
+| Metodo | Rota | Descricao |
+|--------|------|-----------|
+| GET | `/api/meta/integrations/{id}/profile` | Obtem perfil atual |
+| PUT | `/api/meta/integrations/{id}/profile` | Atualiza perfil |
+| POST | `/api/meta/integrations/{id}/profile/photo` | Upload de foto de perfil |
+| GET | `/api/meta/profile/categories` | Lista categorias de negocio disponiveis |
+
 ---
 
 ## Model: MetaIntegration
@@ -255,6 +267,26 @@ delete($integration, $templateId)
 sync($integration)                // Sincroniza com Meta
 ```
 
+### MetaProfileService
+
+```php
+// Metodos publicos
+getProfile($integration)          // Obtem perfil do WhatsApp Business
+updateProfile($integration, $data)// Atualiza perfil (about, address, description, email, websites, vertical)
+uploadProfilePhoto($integration, $filePath) // Upload de foto de perfil via arquivo
+uploadProfilePhotoFromBase64($integration, $base64, $mimeType) // Upload via base64
+getAvailableCategories()          // Lista categorias de negocio disponiveis
+
+// Campos editaveis do perfil:
+// - about: string (max 139 chars) - Status/sobre
+// - address: string (max 256 chars) - Endereco
+// - description: string (max 512 chars) - Descricao do negocio
+// - email: string (max 128 chars) - Email de contato
+// - websites: array (max 2 URLs) - Sites do negocio
+// - vertical: string - Categoria do negocio
+// - profile_picture_handle: string - Handle da foto (obtido via upload)
+```
+
 ---
 
 ## Frontend Hooks
@@ -284,6 +316,34 @@ const { isLoaded } = useFacebookSDK(appId)
 const { startEmbeddedSignup, isProcessing } = useMetaEmbeddedSignup()
 
 startEmbeddedSignup({ appId, configId })
+```
+
+### useMetaProfile.ts
+
+```typescript
+// Hooks disponiveis
+useMetaProfile(integrationId)       // GET perfil
+useUpdateMetaProfile()              // PUT atualizar perfil
+useUploadMetaProfilePhoto()         // POST upload foto via File
+useUploadMetaProfilePhotoBase64()   // POST upload foto via base64
+useMetaProfileCategories()          // GET categorias disponiveis
+
+// Uso
+const { data: profile, isLoading } = useMetaProfile(integrationId)
+const updateMutation = useUpdateMetaProfile()
+const uploadMutation = useUploadMetaProfilePhoto()
+
+// Atualizar perfil
+updateMutation.mutate({
+  integrationId,
+  data: { about: 'Novo status', email: 'novo@email.com' }
+})
+
+// Upload de foto
+uploadMutation.mutate({
+  integrationId,
+  file: selectedFile
+})
 ```
 
 ---

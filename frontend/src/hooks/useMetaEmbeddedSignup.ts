@@ -207,7 +207,7 @@ export function useMetaEmbeddedSignup() {
       phone_number_id?: string
     }) => {
       const response = await api.post<EmbeddedSignupResponse>(
-        '/api/meta/embedded-signup',
+        '/meta/embedded-signup',
         data
       )
       return response.data

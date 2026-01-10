@@ -69,7 +69,21 @@ Route::prefix('api/meta')->group(function () {
 
                 Route::post('{id}/templates/sync', [MetaAuthController::class, 'syncTemplates'])
                     ->name('templates.sync');
+
+                // Profile
+                Route::get('{id}/profile', [MetaAuthController::class, 'getProfile'])
+                    ->name('profile');
+
+                Route::put('{id}/profile', [MetaAuthController::class, 'updateProfile'])
+                    ->name('profile.update');
+
+                Route::post('{id}/profile/photo', [MetaAuthController::class, 'uploadProfilePhoto'])
+                    ->name('profile.photo');
             });
+
+            // Profile categories (não precisa de ID)
+            Route::get('profile/categories', [MetaAuthController::class, 'getProfileCategories'])
+                ->name('meta.profile.categories');
         });
     });
 });

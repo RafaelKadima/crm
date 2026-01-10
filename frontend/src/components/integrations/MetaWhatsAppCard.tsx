@@ -13,6 +13,7 @@ import {
   Clock,
   Shield,
   Plus,
+  Settings,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -28,6 +29,7 @@ import {
   useMetaEmbeddedSignup,
 } from '@/hooks/useMetaEmbeddedSignup'
 import { Badge } from '@/components/ui/Badge'
+import { WhatsAppProfileEditor } from './WhatsAppProfileEditor'
 
 export function MetaWhatsAppCard() {
   const { data: status, isLoading: loadingStatus } = useMetaStatus()
@@ -37,6 +39,7 @@ export function MetaWhatsAppCard() {
   const refreshTokenMutation = useRefreshMetaToken()
 
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null)
+  const [editProfileId, setEditProfileId] = useState<string | null>(null)
 
   // Embedded Signup - carrega SDK se configurado
   const appId = status?.app_id || ''
@@ -204,6 +207,17 @@ export function MetaWhatsAppCard() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {/* Botao de editar perfil */}
+                      {integration.status === 'active' && (
+                        <button
+                          onClick={() => setEditProfileId(integration.id)}
+                          className="p-2 hover:bg-gray-600 rounded-lg transition-colors text-gray-400 hover:text-white"
+                          title="Editar perfil do WhatsApp"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </button>
+                      )}
+
                       {/* Botao de renovar token */}
                       {(integration.is_expiring_soon || integration.needs_reauth) && (
                         <button
@@ -293,6 +307,17 @@ export function MetaWhatsAppCard() {
           </>
         )}
       </div>
+
+      {/* Profile Editor Modal */}
+      {editProfileId && (
+        <WhatsAppProfileEditor
+          integrationId={editProfileId}
+          open={!!editProfileId}
+          onOpenChange={(open) => {
+            if (!open) setEditProfileId(null)
+          }}
+        />
+      )}
     </motion.div>
   )
 }

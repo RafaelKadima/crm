@@ -5,6 +5,7 @@ namespace App\Modules\Meta\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\MetaIntegration;
 use App\Modules\Meta\Services\MetaOAuthService;
+use App\Modules\Meta\Services\MetaProfileService;
 use App\Modules\Meta\Services\MetaTemplateService;
 use App\Modules\Meta\Services\MetaTokenService;
 use Illuminate\Http\JsonResponse;
@@ -17,7 +18,8 @@ class MetaAuthController extends Controller
     public function __construct(
         protected MetaOAuthService $oauthService,
         protected MetaTokenService $tokenService,
-        protected MetaTemplateService $templateService
+        protected MetaTemplateService $templateService,
+        protected MetaProfileService $profileService
     ) {}
 
     /**
@@ -367,5 +369,194 @@ class MetaAuthController extends Controller
                 'message' => $e->getMessage(),
             ], 400);
         }
+    }
+
+    /**
+     * Obtém o perfil do WhatsApp Business.
+     * GET /api/meta/integrations/{id}/profile
+     */
+    public function getProfile(string $id): JsonResponse
+    {
+        $integration = MetaIntegration::findOrFail($id);
+
+        if (!$integration->isActive()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Integration is not active',
+            ], 400);
+        }
+
+        try {
+            $profile = $this->profileService->getProfile($integration);
+
+            return response()->json([
+                'success' => true,
+                'data' => $profile,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Atualiza o perfil do WhatsApp Business.
+     * PUT /api/meta/integrations/{id}/profile
+     */
+    public function updateProfile(string $id, Request $request): JsonResponse
+    {
+        $integration = MetaIntegration::findOrFail($id);
+
+        if (!$integration->isActive()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Integration is not active',
+            ], 400);
+        }
+
+        $request->validate([
+            'about' => 'nullable|string|max:139',
+            'address' => 'nullable|string|max:256',
+            'description' => 'nullable|string|max:512',
+            'email' => 'nullable|email|max:128',
+            'websites' => 'nullable|array|max:2',
+            'websites.*' => 'url|max:256',
+            'vertical' => 'nullable|string',
+        ]);
+
+        try {
+            $data = $request->only([
+                'about',
+                'address',
+                'description',
+                'email',
+                'websites',
+                'vertical',
+            ]);
+
+            // Remove valores nulos/vazios
+            $data = array_filter($data, fn($value) => $value !== null && $value !== '');
+
+            if (empty($data)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No data provided for update',
+                ], 400);
+            }
+
+            $this->profileService->updateProfile($integration, $data);
+
+            // Retorna o perfil atualizado
+            $profile = $this->profileService->getProfile($integration);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully',
+                'data' => $profile,
+            ]);
+
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Meta profile update failed', [
+                'integration_id' => $integration->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Faz upload da foto de perfil do WhatsApp Business.
+     * POST /api/meta/integrations/{id}/profile/photo
+     */
+    public function uploadProfilePhoto(string $id, Request $request): JsonResponse
+    {
+        $integration = MetaIntegration::findOrFail($id);
+
+        if (!$integration->isActive()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Integration is not active',
+            ], 400);
+        }
+
+        // Aceita arquivo ou base64
+        $request->validate([
+            'photo' => 'required_without:photo_base64|file|image|mimes:jpeg,png|max:5120',
+            'photo_base64' => 'required_without:photo|string',
+        ]);
+
+        try {
+            $handle = null;
+
+            if ($request->hasFile('photo')) {
+                $file = $request->file('photo');
+                $handle = $this->profileService->uploadProfilePhoto($integration, $file->getPathname());
+            } elseif ($request->has('photo_base64')) {
+                $mimeType = $request->input('mime_type', 'image/jpeg');
+                $handle = $this->profileService->uploadProfilePhotoFromBase64(
+                    $integration,
+                    $request->input('photo_base64'),
+                    $mimeType
+                );
+            }
+
+            if (!$handle) {
+                throw new \Exception('No photo provided');
+            }
+
+            // Atualiza o perfil com o handle
+            $this->profileService->updateProfile($integration, [
+                'profile_picture_handle' => $handle,
+            ]);
+
+            // Retorna o perfil atualizado
+            $profile = $this->profileService->getProfile($integration);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile photo updated successfully',
+                'data' => $profile,
+            ]);
+
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Meta profile photo upload failed', [
+                'integration_id' => $integration->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtém as categorias de negócio disponíveis.
+     * GET /api/meta/profile/categories
+     */
+    public function getProfileCategories(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->profileService->getAvailableCategories(),
+        ]);
     }
 }
