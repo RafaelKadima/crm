@@ -419,60 +419,37 @@ class MetaOAuthService
 
     /**
      * Troca o code por token para Embedded Signup.
-     * A Meta pode exigir redirect_uri em algumas configuracoes.
+     * Para Embedded Signup (FB.login com config_id), NAO deve usar redirect_uri.
      */
     protected function exchangeCodeForTokenEmbedded(string $code): array
     {
-        // Lista de redirect_uris para tentar (do mais provavel para menos)
-        $redirectUris = [
-            null, // Sem redirect_uri (padrao para Embedded Signup)
-            $this->redirectUri, // redirect_uri configurado
-            config('app.url'), // URL base do app
-            config('app.url') . '/', // URL base com barra
+        // Embedded Signup usa apenas client_id, client_secret e code
+        // NAO envia redirect_uri pois o fluxo é via popup do SDK
+        $params = [
+            'client_id' => $this->appId,
+            'client_secret' => $this->appSecret,
+            'code' => $code,
         ];
 
-        $lastError = null;
+        Log::info('Embedded Signup: Exchanging code for token (no redirect_uri)');
 
-        foreach ($redirectUris as $index => $redirectUri) {
-            $params = [
-                'client_id' => $this->appId,
-                'client_secret' => $this->appSecret,
-                'code' => $code,
-            ];
+        $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", $params);
 
-            if ($redirectUri !== null) {
-                $params['redirect_uri'] = $redirectUri;
-            }
-
-            Log::info('Embedded Signup: Attempting token exchange', [
-                'attempt' => $index + 1,
-                'redirect_uri' => $redirectUri ?? '(none)',
-            ]);
-
-            $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", $params);
-
-            if ($response->successful()) {
-                Log::info('Embedded Signup: Token exchange successful', [
-                    'redirect_uri_used' => $redirectUri ?? '(none)',
-                ]);
-                return $response->json();
-            }
-
-            $lastError = $response->json()['error'] ?? [];
-
-            // Se nao for erro de redirect_uri, para de tentar
-            if (!str_contains($lastError['message'] ?? '', 'redirect_uri') &&
-                !str_contains($lastError['message'] ?? '', 'verification code')) {
-                break;
-            }
+        if ($response->successful()) {
+            Log::info('Embedded Signup: Token exchange successful');
+            return $response->json();
         }
 
-        Log::error('Meta Embedded Signup token exchange failed after all attempts', [
-            'status' => $response->status() ?? 400,
-            'body' => $lastError,
+        $error = $response->json()['error'] ?? [];
+
+        Log::error('Meta Embedded Signup token exchange failed', [
+            'status' => $response->status(),
+            'error_code' => $error['code'] ?? null,
+            'error_type' => $error['type'] ?? null,
+            'error_message' => $error['message'] ?? null,
         ]);
 
-        throw new \Exception('Failed to exchange code for token: ' . ($lastError['message'] ?? 'Unknown error'));
+        throw new \Exception('Failed to exchange code for token: ' . ($error['message'] ?? 'Unknown error'));
     }
 
     /**
