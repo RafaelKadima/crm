@@ -418,15 +418,35 @@ class MetaOAuthService
     }
 
     /**
-     * Troca o code por token para Embedded Signup (sem redirect_uri).
+     * Troca o code por token para Embedded Signup.
+     * Nota: A Meta ainda exige redirect_uri mesmo para Embedded Signup.
      */
     protected function exchangeCodeForTokenEmbedded(string $code): array
     {
+        // Primeiro tenta sem redirect_uri (comportamento esperado para Embedded Signup)
         $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", [
             'client_id' => $this->appId,
             'client_secret' => $this->appSecret,
             'code' => $code,
         ]);
+
+        // Se falhar com erro de redirect_uri, tenta com redirect_uri
+        if (!$response->successful()) {
+            $error = $response->json()['error'] ?? [];
+
+            if (str_contains($error['message'] ?? '', 'redirect_uri') ||
+                str_contains($error['message'] ?? '', 'verification code')) {
+
+                Log::info('Embedded Signup: Retrying with redirect_uri');
+
+                $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", [
+                    'client_id' => $this->appId,
+                    'client_secret' => $this->appSecret,
+                    'redirect_uri' => $this->redirectUri,
+                    'code' => $code,
+                ]);
+            }
+        }
 
         if (!$response->successful()) {
             Log::error('Meta Embedded Signup token exchange failed', [
