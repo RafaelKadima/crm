@@ -419,19 +419,20 @@ class MetaOAuthService
 
     /**
      * Troca o code por token para Embedded Signup.
-     * Para Embedded Signup (FB.login com config_id), NAO deve usar redirect_uri.
+     * Usa redirect_uri configurado pois Meta exige que seja idêntico ao usado no dialog.
      */
     protected function exchangeCodeForTokenEmbedded(string $code): array
     {
-        // Embedded Signup usa apenas client_id, client_secret e code
-        // NAO envia redirect_uri pois o fluxo é via popup do SDK
         $params = [
             'client_id' => $this->appId,
             'client_secret' => $this->appSecret,
             'code' => $code,
+            'redirect_uri' => $this->redirectUri,
         ];
 
-        Log::info('Embedded Signup: Exchanging code for token (no redirect_uri)');
+        Log::info('Embedded Signup: Exchanging code for token', [
+            'redirect_uri' => $this->redirectUri,
+        ]);
 
         $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", $params);
 
@@ -447,6 +448,7 @@ class MetaOAuthService
             'error_code' => $error['code'] ?? null,
             'error_type' => $error['type'] ?? null,
             'error_message' => $error['message'] ?? null,
+            'redirect_uri_used' => $this->redirectUri,
         ]);
 
         throw new \Exception('Failed to exchange code for token: ' . ($error['message'] ?? 'Unknown error'));
