@@ -26,6 +26,9 @@ export interface MetaIntegration {
 export interface MetaIntegrationStatus {
   oauth_configured: boolean
   token_service_configured: boolean
+  embedded_signup_configured: boolean
+  config_id: string | null
+  app_id: string | null
 }
 
 export interface MetaTemplate {
