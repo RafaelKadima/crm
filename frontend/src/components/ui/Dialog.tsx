@@ -95,30 +95,32 @@ export function DialogContent({ children, className, size = 'md' }: DialogConten
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
             onClick={() => onOpenChange(false)}
           />
-          
-          {/* Dialog */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={cn(
-              'fixed left-1/2 top-[42%] z-50 -translate-x-1/2 -translate-y-1/2',
-              'w-[calc(100%-48px)] max-h-[calc(100vh-140px)] rounded-xl bg-background shadow-2xl border',
-              sizeClasses[size],
-              className
-            )}
-          >
-            {/* Close button */}
-            <button
-              onClick={() => onOpenChange(false)}
-              className="absolute right-3 top-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-muted-foreground/20 text-muted-foreground hover:bg-muted hover:text-foreground z-10"
+
+          {/* Dialog container with padding for taskbar */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-8 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className={cn(
+                'pointer-events-auto relative',
+                'w-full max-h-full rounded-xl bg-background shadow-2xl border overflow-hidden',
+                sizeClasses[size],
+                className
+              )}
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
-            
-            {children}
-          </motion.div>
+              {/* Close button */}
+              <button
+                onClick={() => onOpenChange(false)}
+                className="absolute right-3 top-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-muted-foreground/20 text-muted-foreground hover:bg-muted hover:text-foreground z-10"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+
+              {children}
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>,
