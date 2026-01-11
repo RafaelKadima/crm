@@ -53,7 +53,8 @@ class TicketController extends Controller
             // #endregion
 
             $query = Ticket::with(['lead', 'contact', 'channel', 'assignedUser', 'lastMessage'])
-                ->withCount('messages');
+                ->withCount('messages')
+                ->where('tenant_id', $user->tenant_id); // SEMPRE filtrar por tenant
 
             // #region agent log
             $debugLog('Query built with eager loading', ['with' => ['lead', 'contact', 'channel', 'assignedUser', 'lastMessage']]);
@@ -61,7 +62,7 @@ class TicketController extends Controller
 
         // Aplica filtro baseado no role do usuário
         if ($user->isAdmin()) {
-            // Admin vê tudo - sem filtro
+            // Admin vê todos os tickets do SEU tenant
         } elseif ($user->isGestor()) {
             // Gestor vê tickets das filas onde está cadastrado
             $userQueueIds = $user->queues()->pluck('queues.id')->toArray();
