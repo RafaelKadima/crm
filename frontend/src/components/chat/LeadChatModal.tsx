@@ -1106,6 +1106,30 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                 <Edit className="h-4 w-4 mr-2" />
                 Editar Lead
               </Button>
+
+              {/* Templates Button - only for WhatsApp */}
+              {lead?.channel?.type?.toLowerCase() === 'whatsapp' && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsTemplateModalOpen(true)}
+                >
+                  <MessageSquareText className="h-4 w-4 mr-2" />
+                  Templates WhatsApp
+                </Button>
+              )}
+
+              {/* Catálogos Button */}
+              <Button
+                className="w-full"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsProductSelectorOpen(true)}
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Catálogo de Produtos
+              </Button>
             </div>
           )}
         </motion.div>
@@ -1119,7 +1143,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
             {/* Channel Info and Actions */}
             {activeView === 'chat' && (
-              <div className="flex items-center justify-end relative z-10 pr-8">
+              <div className="flex items-center justify-end relative z-10">
                 {/* Action Buttons */}
                 <div className="flex items-center gap-1.5">
                   {ticketStatus === 'open' ? (
@@ -1147,26 +1171,6 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       >
                         <MessageSquareOff className="h-3.5 w-3.5" />
                         Encerrar
-                      </button>
-                      {/* Templates Button - only for WhatsApp */}
-                      {lead?.channel?.type?.toLowerCase() === 'whatsapp' && (
-                        <button
-                          onClick={() => setIsTemplateModalOpen(true)}
-                          className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-green-500/20 text-[#C0C8D4] hover:bg-green-500/10 hover:text-green-400 hover:border-green-500/40"
-                          title="Enviar Template WhatsApp"
-                        >
-                          <MessageSquareText className="h-3.5 w-3.5" />
-                          Templates
-                        </button>
-                      )}
-                      {/* Catálogos Button */}
-                      <button
-                        onClick={() => setIsProductSelectorOpen(true)}
-                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-primary/20 text-[#C0C8D4] hover:bg-primary/10 hover:text-primary hover:border-primary/40"
-                        title="Enviar Produto do Catálogo"
-                      >
-                        <Package className="h-3.5 w-3.5" />
-                        Catálogos
                       </button>
                       {/* Separador visual */}
                       <div className="w-px h-5 bg-[#1E2330] mx-1" />
