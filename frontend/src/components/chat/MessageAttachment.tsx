@@ -64,7 +64,7 @@ function extractMediaPath(url: string | undefined): string | undefined {
     }
     
     // Not an internal API URL
-    return null
+    return undefined
   } catch {
     // If URL parsing fails, check if it's already a path
     if (url.startsWith('/api/media-public/')) {
@@ -73,7 +73,7 @@ function extractMediaPath(url: string | undefined): string | undefined {
     if (url.startsWith('/api/media/')) {
       return url.replace('/api/media/', '')
     }
-    return null
+    return undefined
   }
 }
 
@@ -81,7 +81,7 @@ export function MessageAttachment({ metadata, direction, ticketId }: MessageAtta
   const [isLoading, setIsLoading] = useState(true)
   const [isPlaying, setIsPlaying] = useState(false)
   const [imageError, setImageError] = useState(false)
-  const [proxyUrl, setProxyUrl] = useState<string | null>(null)
+  const [proxyUrl, setProxyUrl] = useState<string | undefined>(undefined)
 
   const originalMediaUrl = metadata.media_url || metadata.image_url || metadata.video_url || metadata.audio_url || metadata.document_url
   const mediaFilePath = extractMediaPath(originalMediaUrl)
@@ -93,7 +93,7 @@ export function MessageAttachment({ metadata, direction, ticketId }: MessageAtta
   // - Internal API URLs (have /api/media/ in path): fetch via authenticated endpoint
   // - Meta URLs: need WhatsApp proxy
   // - S3/external URLs: can be used directly
-  const isInternalApiUrl = mediaFilePath !== null
+  const isInternalApiUrl = mediaFilePath !== undefined
   const isExternalStorageUrl = originalMediaUrl?.includes('s3.') || 
                                originalMediaUrl?.includes('amazonaws.com')
   const isMetaUrl = !isInternalApiUrl && !isExternalStorageUrl && 
@@ -103,7 +103,7 @@ export function MessageAttachment({ metadata, direction, ticketId }: MessageAtta
   const needsProxy = isInternalApiUrl || isMetaUrl
 
   // Use proxy for internal API/Meta URLs, direct for external S3 URLs
-  const mediaUrl = proxyUrl || (!needsProxy ? originalMediaUrl : null)
+  const mediaUrl = proxyUrl || (!needsProxy ? originalMediaUrl : undefined)
 
   // Track if we already tried to fetch this URL (to avoid infinite retries)
   const [fetchAttempted, setFetchAttempted] = React.useState(false)

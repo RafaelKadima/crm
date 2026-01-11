@@ -1632,7 +1632,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           isOpen={isCloseModalOpen}
           onClose={() => setIsCloseModalOpen(false)}
           ticketId={ticketId}
-          onCloseSuccess={handleCloseSuccess}
+          onSuccess={handleCloseSuccess}
         />
 
         {/* Template Selector Modal - only for WhatsApp */}

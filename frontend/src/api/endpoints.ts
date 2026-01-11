@@ -813,7 +813,6 @@ import type {
   UserGamificationStats,
   LeaderboardEntry,
   GamificationAdminStats,
-  PaginatedResponse,
 } from '@/types'
 
 export const gamificationApi = {
