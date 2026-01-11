@@ -8,6 +8,7 @@ interface LeadsParams {
   status?: string
   stage_id?: string
   owner_id?: string
+  search?: string
 }
 
 export function useLeads(params?: LeadsParams) {

@@ -31,6 +31,7 @@ const ticketFilterTabs: { key: TicketFilterType; label: string; icon: any; color
 export function LeadsKanbanPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('') // Busca com debounce para API
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [localLeads, setLocalLeads] = useState<Lead[]>([])
@@ -44,14 +45,26 @@ export function LeadsKanbanPage() {
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false) // Modal de fechamento de venda
   const [pendingWonLead, setPendingWonLead] = useState<Lead | null>(null) // Lead aguardando fechamento
 
+  // Debounce da busca para evitar muitas requisições
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 500) // 500ms de debounce
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   // Fetch data from API - Carrega 10 leads por vez (lazy loading)
+  // Passa a busca para o backend quando há 3+ caracteres
   const {
     data: leadsData,
     isLoading: leadsLoading,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = useInfiniteLeads({ per_page: 10 })
+  } = useInfiniteLeads({
+    per_page: 10,
+    search: debouncedSearch.length >= 3 ? debouncedSearch : undefined
+  })
   const { data: pipelines, isLoading: pipelinesLoading } = usePipelines()
   const updateStageMutation = useUpdateLeadStage()
 
@@ -294,14 +307,19 @@ export function LeadsKanbanPage() {
   }
 
   const filteredLeads = useMemo(() => {
-    if (!searchQuery) return leadsFilteredByTicketStatus
-    const query = searchQuery.toLowerCase()
-    return leadsFilteredByTicketStatus.filter((lead) =>
-      lead.contact?.name?.toLowerCase().includes(query) ||
-      lead.contact?.phone?.includes(query) ||
-      lead.title?.toLowerCase().includes(query)
-    )
-  }, [leadsFilteredByTicketStatus, searchQuery])
+    // Se busca tem 3+ caracteres, o backend já filtra - não precisa filtrar localmente
+    if (debouncedSearch.length >= 3) return leadsFilteredByTicketStatus
+    // Se busca tem 1-2 caracteres, filtra localmente nos dados carregados
+    if (searchQuery && searchQuery.length < 3) {
+      const query = searchQuery.toLowerCase()
+      return leadsFilteredByTicketStatus.filter((lead) =>
+        lead.contact?.name?.toLowerCase().includes(query) ||
+        lead.contact?.phone?.includes(query) ||
+        lead.title?.toLowerCase().includes(query)
+      )
+    }
+    return leadsFilteredByTicketStatus
+  }, [leadsFilteredByTicketStatus, searchQuery, debouncedSearch])
 
   const totalUnread = getTotalUnread()
   const isLoading = leadsLoading || pipelinesLoading
