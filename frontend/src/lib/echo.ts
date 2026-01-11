@@ -5,7 +5,7 @@ import Pusher from 'pusher-js'
 declare global {
   interface Window {
     Pusher: typeof Pusher
-    Echo: Echo<'pusher'> | null
+    Echo: Echo<'reverb'> | null
   }
 }
 
@@ -15,21 +15,26 @@ const WEBSOCKET_ENABLED = import.meta.env.VITE_WEBSOCKET_ENABLED !== 'false'
 // URL base da API
 const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
-let echo: Echo<'pusher'> | null = null
+let echo: Echo<'reverb'> | null = null
 
 if (WEBSOCKET_ENABLED) {
   window.Pusher = Pusher
 
-  // Configuração do Laravel Echo
+  // Configuração do Laravel Echo com Reverb
+  const wsHost = import.meta.env.VITE_REVERB_HOST || import.meta.env.VITE_PUSHER_HOST || '127.0.0.1'
+  const wsPort = Number(import.meta.env.VITE_REVERB_PORT || import.meta.env.VITE_PUSHER_PORT || 6001)
+  const wsScheme = import.meta.env.VITE_REVERB_SCHEME || 'http'
+  const forceTLS = wsScheme === 'https'
+
   echo = new Echo({
-    broadcaster: 'pusher',
-    key: import.meta.env.VITE_PUSHER_APP_KEY || 'app-key',
-    wsHost: import.meta.env.VITE_PUSHER_HOST || '127.0.0.1',
-    wsPort: import.meta.env.VITE_PUSHER_PORT || 6001,
-    wssPort: import.meta.env.VITE_PUSHER_PORT || 6001,
-    forceTLS: false,
+    broadcaster: 'reverb',
+    key: import.meta.env.VITE_REVERB_APP_KEY || import.meta.env.VITE_PUSHER_APP_KEY || 'app-key',
+    wsHost: wsHost,
+    wsPort: wsPort,
+    wssPort: wsPort,
+    forceTLS: forceTLS,
     disableStats: true,
-    enabledTransports: ['ws', 'wss'],
+    enabledTransports: forceTLS ? ['wss'] : ['ws', 'wss'],
     cluster: 'mt1',
     // Autorização para canais privados
     authorizer: (channel: { name: string }) => ({
