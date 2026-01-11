@@ -1119,7 +1119,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
             {/* Channel Info and Actions */}
             {activeView === 'chat' && (
-              <div className="flex items-center justify-end relative z-10">
+              <div className="flex items-center justify-end relative z-10 pr-8">
                 {/* Action Buttons */}
                 <div className="flex items-center gap-1.5">
                   {ticketStatus === 'open' ? (
