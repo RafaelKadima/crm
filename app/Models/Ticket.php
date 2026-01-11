@@ -160,10 +160,14 @@ class Ticket extends Model
 
     /**
      * Última mensagem do ticket (para eager loading).
+     * Usa sent_at e created_at para evitar MAX(uuid) que PostgreSQL não suporta.
      */
     public function lastMessage(): HasOne
     {
-        return $this->hasOne(TicketMessage::class)->latestOfMany('sent_at');
+        return $this->hasOne(TicketMessage::class)->latestOfMany([
+            'sent_at' => 'max',
+            'created_at' => 'max',
+        ]);
     }
 
     /**
