@@ -3,6 +3,7 @@ import api from '@/api/axios'
 
 export interface ChannelConfig {
   phone_number_id?: string
+  waba_id?: string // WhatsApp Business Account ID
   access_token?: string
   business_account_id?: string
   page_id?: string

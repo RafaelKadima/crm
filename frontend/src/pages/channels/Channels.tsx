@@ -70,12 +70,14 @@ export function ChannelsPage() {
     sdr_agent_id: '' as string,
     config: {
       phone_number_id: '',
+      waba_id: '',
       access_token: '',
       business_account_id: '',
       page_id: '',
       instagram_account_id: '',
     } as ChannelConfig,
   })
+  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false)
 
   // Queries and mutations
   const { data: channels = [], isLoading } = useChannels()
@@ -107,14 +109,17 @@ export function ChannelsPage() {
       identifier: '',
       ia_mode: 'none',
       ia_workflow_id: '',
+      sdr_agent_id: '',
       config: {
         phone_number_id: '',
+        waba_id: '',
         access_token: '',
         business_account_id: '',
         page_id: '',
         instagram_account_id: '',
       },
     })
+    setShowAdvancedConfig(false)
     setIsCreateModalOpen(true)
   }
 
@@ -126,8 +131,10 @@ export function ChannelsPage() {
       identifier: channel.identifier,
       ia_mode: channel.ia_mode,
       ia_workflow_id: channel.ia_workflow_id || '',
+      sdr_agent_id: (channel as any).sdr_agent_id || '',
       config: channel.config || {
         phone_number_id: '',
+        waba_id: '',
         access_token: '',
         business_account_id: '',
         page_id: '',
@@ -551,6 +558,155 @@ export function ChannelsPage() {
                 </p>
               </motion.div>
             )}
+
+            {/* Advanced API Configuration */}
+            <div className="border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedConfig(!showAdvancedConfig)}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Settings className="h-4 w-4" />
+                Configuração Avançada (Token e IDs)
+                <motion.span
+                  animate={{ rotate: showAdvancedConfig ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  ▼
+                </motion.span>
+              </button>
+
+              <AnimatePresence>
+                {showAdvancedConfig && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 space-y-4"
+                  >
+                    {/* WhatsApp Config */}
+                    {formData.type === 'whatsapp' && (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Phone Number ID</label>
+                            <Input
+                              placeholder="Ex: 123456789012345"
+                              value={formData.config.phone_number_id || ''}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  config: { ...formData.config, phone_number_id: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">WABA ID</label>
+                            <Input
+                              placeholder="WhatsApp Business Account ID"
+                              value={formData.config.waba_id || ''}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  config: { ...formData.config, waba_id: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Access Token (Permanente)</label>
+                          <div className="flex gap-2">
+                            <Input
+                              type={showToken ? 'text' : 'password'}
+                              placeholder="Token de acesso do System User"
+                              value={formData.config.access_token || ''}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  config: { ...formData.config, access_token: e.target.value },
+                                })
+                              }
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setShowToken(!showToken)}
+                            >
+                              {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Instagram Config */}
+                    {formData.type === 'instagram' && (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Page ID</label>
+                            <Input
+                              placeholder="ID da Página do Facebook"
+                              value={formData.config.page_id || ''}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  config: { ...formData.config, page_id: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Instagram Account ID</label>
+                            <Input
+                              placeholder="ID da conta Instagram"
+                              value={formData.config.instagram_account_id || ''}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  config: { ...formData.config, instagram_account_id: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Access Token</label>
+                          <div className="flex gap-2">
+                            <Input
+                              type={showToken ? 'text' : 'password'}
+                              placeholder="Page Access Token"
+                              value={formData.config.access_token || ''}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  config: { ...formData.config, access_token: e.target.value },
+                                })
+                              }
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setShowToken(!showToken)}
+                            >
+                              {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      Você pode configurar isso depois clicando em "Configurar" no canal criado.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted/30">
@@ -655,14 +811,14 @@ export function ChannelsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Business Account ID</label>
+                    <label className="text-sm font-medium">WABA ID *</label>
                     <Input
-                      placeholder="Ex: 123456789012345"
-                      value={formData.config.business_account_id || ''}
+                      placeholder="WhatsApp Business Account ID"
+                      value={formData.config.waba_id || ''}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          config: { ...formData.config, business_account_id: e.target.value },
+                          config: { ...formData.config, waba_id: e.target.value },
                         })
                       }
                     />
@@ -670,11 +826,11 @@ export function ChannelsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Access Token *</label>
+                  <label className="text-sm font-medium">Access Token (Permanente) *</label>
                   <div className="flex gap-2">
                     <Input
                       type={showToken ? 'text' : 'password'}
-                      placeholder="Token de acesso permanente"
+                      placeholder="Token de acesso do System User"
                       value={formData.config.access_token || ''}
                       onChange={(e) =>
                         setFormData({
@@ -691,6 +847,9 @@ export function ChannelsPage() {
                       {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Token permanente gerado no Meta Business Suite → System Users
+                  </p>
                 </div>
               </div>
             )}
