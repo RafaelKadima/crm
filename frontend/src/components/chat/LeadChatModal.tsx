@@ -1127,33 +1127,49 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       {/* Atividades Button */}
                       <button
                         onClick={() => setActiveView('activities')}
-                        className={cn(
-                          "px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5",
-                          "border border-[#00D4FF]/20 hover:border-[#00D4FF]/40",
-                          activeView === 'activities'
-                            ? "bg-[#00D4FF]/20 text-[#00D4FF]"
-                            : "text-[#C0C8D4] hover:bg-[#00D4FF]/10 hover:text-[#00D4FF]"
-                        )}
+                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-[#00D4FF]/20 hover:border-[#00D4FF]/40 text-[#C0C8D4] hover:bg-[#00D4FF]/10 hover:text-[#00D4FF]"
                       >
                         <ListChecks className="h-3.5 w-3.5" />
                         Atividades
                       </button>
-                      {/* Botão Enviar para Linx - só aparece se tenant tem integração */}
-                      {hasLinxIntegration && (
+                      {/* Transferir Button */}
+                      <button
+                        onClick={() => setIsTransferModalOpen(true)}
+                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-blue-500/20 text-[#C0C8D4] hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/40"
+                      >
+                        <ArrowRightLeft className="h-3.5 w-3.5" />
+                        Transferir
+                      </button>
+                      {/* Encerrar Button */}
+                      <button
+                        onClick={() => setIsCloseModalOpen(true)}
+                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-red-500/20 text-[#C0C8D4] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40"
+                      >
+                        <MessageSquareOff className="h-3.5 w-3.5" />
+                        Encerrar
+                      </button>
+                      {/* Templates Button - only for WhatsApp */}
+                      {lead?.channel?.type?.toLowerCase() === 'whatsapp' && (
                         <button
-                          onClick={handleSendToLinx}
-                          disabled={isSendingToLinx}
-                          className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-orange-500/20 text-[#C0C8D4] hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-500/40 disabled:opacity-50"
-                          title="Enviar lead para o Linx Smart"
+                          onClick={() => setIsTemplateModalOpen(true)}
+                          className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-green-500/20 text-[#C0C8D4] hover:bg-green-500/10 hover:text-green-400 hover:border-green-500/40"
+                          title="Enviar Template WhatsApp"
                         >
-                          {isSendingToLinx ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          )}
-                          Linx
+                          <MessageSquareText className="h-3.5 w-3.5" />
+                          Templates
                         </button>
                       )}
+                      {/* Catálogos Button */}
+                      <button
+                        onClick={() => setIsProductSelectorOpen(true)}
+                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-primary/20 text-[#C0C8D4] hover:bg-primary/10 hover:text-primary hover:border-primary/40"
+                        title="Enviar Produto do Catálogo"
+                      >
+                        <Package className="h-3.5 w-3.5" />
+                        Catálogos
+                      </button>
+                      {/* Separador visual */}
+                      <div className="w-px h-5 bg-[#1E2330] mx-1" />
                       {/* Toggle IA Button - só aparece se tenant tem feature de IA */}
                       {hasIaFeature && (
                         <button
@@ -1177,20 +1193,22 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                           {iaEnabled ? 'IA' : 'Você'}
                         </button>
                       )}
-                      <button
-                        onClick={() => setIsTransferModalOpen(true)}
-                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-blue-500/20 text-[#C0C8D4] hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/40"
-                      >
-                        <ArrowRightLeft className="h-3.5 w-3.5" />
-                        Transferir
-                      </button>
-                      <button
-                        onClick={() => setIsCloseModalOpen(true)}
-                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-red-500/20 text-[#C0C8D4] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40"
-                      >
-                        <MessageSquareOff className="h-3.5 w-3.5" />
-                        Encerrar
-                      </button>
+                      {/* Botão Enviar para Linx - só aparece se tenant tem integração */}
+                      {hasLinxIntegration && (
+                        <button
+                          onClick={handleSendToLinx}
+                          disabled={isSendingToLinx}
+                          className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-orange-500/20 text-[#C0C8D4] hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-500/40 disabled:opacity-50"
+                          title="Enviar lead para o Linx Smart"
+                        >
+                          {isSendingToLinx ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          )}
+                          Linx
+                        </button>
+                      )}
                     </>
                   ) : (
                     <button
@@ -1517,30 +1535,6 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       queryClient.invalidateQueries({ queryKey: ['leads'] })
                     }}
                   />
-                  {/* Template button - only for WhatsApp */}
-                  {lead?.channel?.type?.toLowerCase() === 'whatsapp' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 border-green-500/30 text-green-500 hover:bg-green-500/10"
-                      onClick={() => setIsTemplateModalOpen(true)}
-                      title="Enviar Template WhatsApp"
-                    >
-                      <MessageSquareText className="h-4 w-4 mr-1" />
-                      Templates
-                    </Button>
-                  )}
-                  {/* Product Catalog button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 border-primary/30 text-primary hover:bg-primary/10"
-                    onClick={() => setIsProductSelectorOpen(true)}
-                    title="Enviar Produto do Catalogo"
-                  >
-                    <Package className="h-4 w-4 mr-1" />
-                    Catalogo
-                  </Button>
                   <div className="flex-1 relative">
                     {/* Quick Reply Selector */}
                     <QuickReplySelector
