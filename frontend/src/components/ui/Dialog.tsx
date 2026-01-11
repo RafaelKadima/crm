@@ -112,9 +112,9 @@ export function DialogContent({ children, className, size = 'md' }: DialogConten
             {/* Close button */}
             <button
               onClick={() => onOpenChange(false)}
-              className="absolute right-4 top-4 p-2 rounded-lg hover:bg-muted transition-colors z-10"
+              className="absolute right-3 top-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-muted-foreground/20 text-muted-foreground hover:bg-muted hover:text-foreground z-10"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
             
             {children}
