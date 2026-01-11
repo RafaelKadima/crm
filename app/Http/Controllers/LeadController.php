@@ -89,9 +89,10 @@ class LeadController extends Controller
         if ($request->has('search')) {
             $search = $request->search;
             $query->whereHas('contact', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                // Usar ILIKE para busca case-insensitive no PostgreSQL
+                $q->whereRaw('name ILIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('phone ILIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('email ILIKE ?', ["%{$search}%"]);
             });
         }
 
