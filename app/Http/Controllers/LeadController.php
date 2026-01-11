@@ -104,8 +104,9 @@ class LeadController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        // Ordenação
-        $query->orderByDesc('created_at');
+        // Ordenação: leads com mensagens mais recentes primeiro
+        // COALESCE garante que leads sem mensagens usem created_at
+        $query->orderByRaw('COALESCE(last_message_at, created_at) DESC');
 
         $leads = $query->paginate($request->get('per_page', 15));
 
