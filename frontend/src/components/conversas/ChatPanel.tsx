@@ -450,7 +450,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
   const channelType = lead.channel?.type || 'whatsapp'
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
       <div className="px-4 py-3 border-b bg-background flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -659,7 +659,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
       {/* Messages Area */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-3"
+        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3"
       >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
