@@ -1139,7 +1139,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           {/* Header - Futuristic Glass */}
           <div className="px-4 py-2 border-b border-[#00D4FF]/10 glass relative overflow-hidden">
             {/* Scan line effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00D4FF]/5 to-transparent opacity-50" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00D4FF]/5 to-transparent opacity-50 pointer-events-none" />
 
             {/* Channel Info and Actions */}
             {activeView === 'chat' && (
@@ -1243,7 +1243,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
             {/* Activities Header */}
             {activeView === 'activities' && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600">
                     <ListChecks className="h-5 w-5" />
@@ -1269,7 +1269,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
             {/* Edit Header */}
             {activeView === 'edit' && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600">
                     <Edit className="h-5 w-5" />
@@ -1295,7 +1295,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
             {/* Closing Header */}
             {activeView === 'closing' && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-green-500/10 text-green-600">
                     <FileText className="h-5 w-5" />
