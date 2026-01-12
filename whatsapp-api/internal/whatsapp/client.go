@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -46,8 +47,10 @@ func NewClient(id, clientID string, device *whatsmeow.Client, store *store.Postg
 }
 
 func (c *Client) handleEvent(evt interface{}) {
+	log.Printf("[CLIENT] Received event: %T", evt)
 	switch v := evt.(type) {
 	case *events.Message:
+		log.Printf("[CLIENT] Processing Message event from %s", v.Info.Sender.String())
 		c.handleMessage(v)
 	case *events.Receipt:
 		c.handleReceipt(v)
@@ -61,8 +64,11 @@ func (c *Client) handleEvent(evt interface{}) {
 }
 
 func (c *Client) handleMessage(msg *events.Message) {
+	log.Printf("[CLIENT] handleMessage called - Chat: %s, Server: %s", msg.Info.Chat.String(), msg.Info.Chat.Server)
+
 	// Ignorar mensagens de status/broadcast
 	if msg.Info.Chat.Server == "broadcast" {
+		log.Printf("[CLIENT] Ignoring broadcast message")
 		return
 	}
 
@@ -132,7 +138,14 @@ func (c *Client) handleMessage(msg *events.Message) {
 		}
 	}
 
-	c.Webhook.SendMessage(c.ID, c.ClientID, data)
+	log.Printf("[CLIENT] Sending webhook - SessionID: %s, ClientID: %s, Type: %s, From: %s, Body: %s",
+		c.ID, c.ClientID, data.Type, data.From, data.Body)
+
+	if err := c.Webhook.SendMessage(c.ID, c.ClientID, data); err != nil {
+		log.Printf("[CLIENT] ERROR sending webhook: %v", err)
+	} else {
+		log.Printf("[CLIENT] Webhook sent successfully")
+	}
 }
 
 func (c *Client) handleReceipt(receipt *events.Receipt) {

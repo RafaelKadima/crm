@@ -3,6 +3,7 @@ package webhook
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
@@ -60,17 +61,24 @@ type ConnectionData struct {
 }
 
 func (s *Sender) Send(event Event) error {
+	log.Printf("[WEBHOOK] Sending event type=%s to url=%s", event.Type, s.url)
+
 	if s.url == "" {
+		log.Printf("[WEBHOOK] URL is empty, skipping webhook")
 		return nil
 	}
 
 	body, err := json.Marshal(event)
 	if err != nil {
+		log.Printf("[WEBHOOK] Failed to marshal event: %v", err)
 		return err
 	}
 
+	log.Printf("[WEBHOOK] Request body: %s", string(body))
+
 	req, err := http.NewRequest("POST", s.url, bytes.NewBuffer(body))
 	if err != nil {
+		log.Printf("[WEBHOOK] Failed to create request: %v", err)
 		return err
 	}
 
@@ -80,10 +88,12 @@ func (s *Sender) Send(event Event) error {
 
 	resp, err := s.client.Do(req)
 	if err != nil {
+		log.Printf("[WEBHOOK] Failed to send request: %v", err)
 		return err
 	}
 	defer resp.Body.Close()
 
+	log.Printf("[WEBHOOK] Response status: %d", resp.StatusCode)
 	return nil
 }
 
