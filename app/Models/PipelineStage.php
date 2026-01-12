@@ -59,7 +59,20 @@ class PipelineStage extends Model
     {
         static::creating(function ($stage) {
             if (empty($stage->slug)) {
-                $stage->slug = Str::slug($stage->name);
+                $baseSlug = Str::slug($stage->name);
+                $slug = $baseSlug;
+                $counter = 1;
+
+                // Verificar se o slug já existe no pipeline e gerar um único
+                while (static::where('pipeline_id', $stage->pipeline_id)
+                    ->where('slug', $slug)
+                    ->exists()
+                ) {
+                    $counter++;
+                    $slug = $baseSlug . '-' . $counter;
+                }
+
+                $stage->slug = $slug;
             }
         });
     }
