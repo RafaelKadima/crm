@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -31,7 +32,8 @@ func NewPostgresStore(databaseURL string) (*PostgresStore, error) {
 
 	// Container do whatsmeow para armazenar dados do WhatsApp
 	container := sqlstore.NewWithDB(db, "postgres", nil)
-	if err := container.Upgrade(); err != nil {
+	ctx := context.Background()
+	if err := container.Upgrade(ctx); err != nil {
 		return nil, fmt.Errorf("failed to upgrade database schema: %w", err)
 	}
 
@@ -58,11 +60,13 @@ func createSessionsTable(db *sql.DB) error {
 }
 
 func (s *PostgresStore) GetDevice(sessionID string) (*store.Device, error) {
-	return s.container.GetFirstDevice()
+	ctx := context.Background()
+	return s.container.GetFirstDevice(ctx)
 }
 
 func (s *PostgresStore) GetOrCreateDevice(sessionID string) (*store.Device, error) {
-	devices, err := s.container.GetAllDevices()
+	ctx := context.Background()
+	devices, err := s.container.GetAllDevices(ctx)
 	if err != nil {
 		return nil, err
 	}

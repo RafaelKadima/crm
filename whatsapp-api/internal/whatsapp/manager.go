@@ -147,7 +147,7 @@ func (m *Manager) LoadExistingSessions(ctx context.Context) error {
 		return err
 	}
 
-	devices, err := m.store.Container().GetAllDevices()
+	devices, err := m.store.Container().GetAllDevices(ctx)
 	if err != nil {
 		return err
 	}
