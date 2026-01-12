@@ -52,9 +52,10 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
       whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.03)' }}
       whileTap={{ scale: 0.99 }}
       className={cn(
-        "w-full flex items-start gap-3 p-3 text-left transition-colors",
+        "w-full flex items-start gap-3 p-3 text-left transition-colors rounded-lg",
         isActive && "bg-primary/10 border-l-2 border-primary",
-        !isActive && "hover:bg-muted/50"
+        !isActive && "hover:bg-muted/50",
+        hasUnread && !isActive && "ring-2 ring-green-500 bg-green-500/5"
       )}
     >
       {/* Avatar */}
