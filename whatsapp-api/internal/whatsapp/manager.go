@@ -3,14 +3,41 @@ package whatsapp
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/google/uuid"
 	"go.mau.fi/whatsmeow"
+	waLog "go.mau.fi/whatsmeow/util/log"
 
 	"whatsapp-api/internal/store"
 	"whatsapp-api/internal/webhook"
 )
+
+// Simple logger for whatsmeow
+type stdLogger struct {
+	module string
+}
+
+func (l *stdLogger) Debugf(msg string, args ...interface{}) {
+	log.Printf("[WA DEBUG][%s] "+msg, append([]interface{}{l.module}, args...)...)
+}
+func (l *stdLogger) Infof(msg string, args ...interface{}) {
+	log.Printf("[WA INFO][%s] "+msg, append([]interface{}{l.module}, args...)...)
+}
+func (l *stdLogger) Warnf(msg string, args ...interface{}) {
+	log.Printf("[WA WARN][%s] "+msg, append([]interface{}{l.module}, args...)...)
+}
+func (l *stdLogger) Errorf(msg string, args ...interface{}) {
+	log.Printf("[WA ERROR][%s] "+msg, append([]interface{}{l.module}, args...)...)
+}
+func (l *stdLogger) Sub(module string) waLog.Logger {
+	return &stdLogger{module: l.module + "/" + module}
+}
+
+func newLogger() waLog.Logger {
+	return &stdLogger{module: "whatsmeow"}
+}
 
 type Manager struct {
 	clients  map[string]*Client
@@ -44,7 +71,7 @@ func (m *Manager) CreateSession(clientID string) (*Client, error) {
 
 	// Criar device store
 	device := m.store.Container().NewDevice()
-	waClient := whatsmeow.NewClient(device, nil)
+	waClient := whatsmeow.NewClient(device, newLogger())
 
 	// Criar cliente wrapper
 	client := NewClient(sessionID, clientID, waClient, m.store, m.webhook)
@@ -130,7 +157,7 @@ func (m *Manager) LoadExistingSessions(ctx context.Context) error {
 		var device *whatsmeow.Client
 		for _, d := range devices {
 			if d.ID != nil && d.ID.String() == session.ID {
-				device = whatsmeow.NewClient(d, nil)
+				device = whatsmeow.NewClient(d, newLogger())
 				break
 			}
 		}
@@ -138,7 +165,7 @@ func (m *Manager) LoadExistingSessions(ctx context.Context) error {
 		if device == nil {
 			// Device não encontrado, criar novo
 			newDevice := m.store.Container().NewDevice()
-			device = whatsmeow.NewClient(newDevice, nil)
+			device = whatsmeow.NewClient(newDevice, newLogger())
 		}
 
 		client := NewClient(session.ID, session.ClientID, device, m.store, m.webhook)
