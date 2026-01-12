@@ -173,22 +173,49 @@ export function PipelineManagerModal({
           sdr_agent_id: sdrAgentId,
         })
 
-        // Salvar novos estágios que ainda não foram salvos (não têm id)
+        // Salvar estágios: criar novos e atualizar existentes
         const newStages = stages.filter(s => !s.id)
+        const existingStages = stages.filter(s => s.id)
+
+        const promises: Promise<any>[] = []
+
+        // Criar novos estágios
         if (newStages.length > 0) {
-          console.log('Salvando novos estágios:', newStages)
-          // Criar todos os estágios em paralelo para evitar problemas com invalidação de queries
-          const stagePromises = newStages.map((stage) => {
+          console.log('Criando novos estágios:', newStages)
+          newStages.forEach((stage) => {
             const stageIndex = stages.findIndex(s => s === stage)
-            return createStage.mutateAsync({
-              pipelineId: selectedPipelineId,
-              name: stage.name,
-              color: stage.color,
-              order: stageIndex,
-              stage_type: stage.stage_type,
-            })
+            promises.push(
+              createStage.mutateAsync({
+                pipelineId: selectedPipelineId,
+                name: stage.name,
+                color: stage.color,
+                order: stageIndex,
+                stage_type: stage.stage_type,
+              })
+            )
           })
-          await Promise.all(stagePromises)
+        }
+
+        // Atualizar estágios existentes
+        if (existingStages.length > 0) {
+          console.log('Atualizando estágios existentes:', existingStages)
+          existingStages.forEach((stage) => {
+            const stageIndex = stages.findIndex(s => s === stage)
+            promises.push(
+              updateStage.mutateAsync({
+                pipelineId: selectedPipelineId,
+                stageId: stage.id!,
+                name: stage.name,
+                color: stage.color,
+                order: stageIndex,
+                stage_type: stage.stage_type,
+              })
+            )
+          })
+        }
+
+        if (promises.length > 0) {
+          await Promise.all(promises)
         }
 
         setSuccess('Pipeline atualizado!')
