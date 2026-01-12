@@ -177,17 +177,18 @@ export function PipelineManagerModal({
         const newStages = stages.filter(s => !s.id)
         if (newStages.length > 0) {
           console.log('Salvando novos estágios:', newStages)
-          for (let i = 0; i < newStages.length; i++) {
-            const stage = newStages[i]
+          // Criar todos os estágios em paralelo para evitar problemas com invalidação de queries
+          const stagePromises = newStages.map((stage) => {
             const stageIndex = stages.findIndex(s => s === stage)
-            await createStage.mutateAsync({
+            return createStage.mutateAsync({
               pipelineId: selectedPipelineId,
               name: stage.name,
               color: stage.color,
               order: stageIndex,
               stage_type: stage.stage_type,
             })
-          }
+          })
+          await Promise.all(stagePromises)
         }
 
         setSuccess('Pipeline atualizado!')
