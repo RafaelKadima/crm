@@ -76,7 +76,8 @@ func (c *Client) handleMessage(msg *events.Message) {
 	}
 
 	if msg.Info.IsGroup {
-		groupInfo, err := c.WAClient.GetGroupInfo(msg.Info.Chat)
+		ctx := context.Background()
+		groupInfo, err := c.WAClient.GetGroupInfo(ctx, msg.Info.Chat)
 		if err == nil {
 			data.GroupName = groupInfo.Name
 		}
@@ -90,14 +91,15 @@ func (c *Client) handleMessage(msg *events.Message) {
 		data.Type = "text"
 		data.Body = msg.Message.GetExtendedTextMessage().GetText()
 		if msg.Message.GetExtendedTextMessage().GetContextInfo() != nil {
-			data.QuotedMsgID = msg.Message.GetExtendedTextMessage().GetContextInfo().GetStanzaId()
+			data.QuotedMsgID = msg.Message.GetExtendedTextMessage().GetContextInfo().GetStanzaID()
 		}
 	} else if msg.Message.GetImageMessage() != nil {
 		data.Type = "image"
 		data.Body = msg.Message.GetImageMessage().GetCaption()
 		data.MimeType = msg.Message.GetImageMessage().GetMimetype()
 		// Download e salvar mídia
-		mediaData, err := c.WAClient.Download(msg.Message.GetImageMessage())
+		ctx := context.Background()
+		mediaData, err := c.WAClient.Download(ctx, msg.Message.GetImageMessage())
 		if err == nil {
 			data.MediaURL = c.saveMedia(msg.Info.ID, data.MimeType, mediaData)
 		}
@@ -106,14 +108,16 @@ func (c *Client) handleMessage(msg *events.Message) {
 		data.Body = msg.Message.GetDocumentMessage().GetCaption()
 		data.FileName = msg.Message.GetDocumentMessage().GetFileName()
 		data.MimeType = msg.Message.GetDocumentMessage().GetMimetype()
-		mediaData, err := c.WAClient.Download(msg.Message.GetDocumentMessage())
+		ctx := context.Background()
+		mediaData, err := c.WAClient.Download(ctx, msg.Message.GetDocumentMessage())
 		if err == nil {
 			data.MediaURL = c.saveMedia(msg.Info.ID, data.MimeType, mediaData)
 		}
 	} else if msg.Message.GetAudioMessage() != nil {
 		data.Type = "audio"
 		data.MimeType = msg.Message.GetAudioMessage().GetMimetype()
-		mediaData, err := c.WAClient.Download(msg.Message.GetAudioMessage())
+		ctx := context.Background()
+		mediaData, err := c.WAClient.Download(ctx, msg.Message.GetAudioMessage())
 		if err == nil {
 			data.MediaURL = c.saveMedia(msg.Info.ID, data.MimeType, mediaData)
 		}
@@ -121,7 +125,8 @@ func (c *Client) handleMessage(msg *events.Message) {
 		data.Type = "video"
 		data.Body = msg.Message.GetVideoMessage().GetCaption()
 		data.MimeType = msg.Message.GetVideoMessage().GetMimetype()
-		mediaData, err := c.WAClient.Download(msg.Message.GetVideoMessage())
+		ctx := context.Background()
+		mediaData, err := c.WAClient.Download(ctx, msg.Message.GetVideoMessage())
 		if err == nil {
 			data.MediaURL = c.saveMedia(msg.Info.ID, data.MimeType, mediaData)
 		}
