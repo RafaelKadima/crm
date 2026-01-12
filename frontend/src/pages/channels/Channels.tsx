@@ -180,7 +180,7 @@ export function ChannelsPage() {
 
   const handleCreateChannel = async () => {
     try {
-      await createChannel.mutateAsync({
+      const createdChannel = await createChannel.mutateAsync({
         name: formData.name,
         type: formData.type,
         provider_type: formData.type === 'whatsapp' ? formData.provider_type : undefined,
@@ -191,6 +191,12 @@ export function ChannelsPage() {
         is_active: true,
       })
       setIsCreateModalOpen(false)
+
+      // Se for WhatsApp interno, abre o modal de QR automaticamente
+      if (createdChannel.type === 'whatsapp' && createdChannel.provider_type === 'internal') {
+        setQrChannel(createdChannel)
+        setIsQRModalOpen(true)
+      }
     } catch (error) {
       console.error('Erro ao criar canal:', error)
     }
