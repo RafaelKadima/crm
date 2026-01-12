@@ -146,7 +146,7 @@ export function PipelineManagerModal({
     }
 
     setError(null)
-    
+
     try {
       if (isCreatingNew) {
         console.log('Criando pipeline:', { name, description, is_public: isPublic, is_default: isDefault, sdr_agent_id: sdrAgentId, stages })
@@ -162,6 +162,8 @@ export function PipelineManagerModal({
         setIsCreatingNew(false)
       } else if (selectedPipelineId) {
         console.log('Atualizando pipeline:', { id: selectedPipelineId, name, description, is_public: isPublic, is_default: isDefault, sdr_agent_id: sdrAgentId })
+
+        // Salvar metadados do pipeline
         await updatePipeline.mutateAsync({
           id: selectedPipelineId,
           name,
@@ -170,6 +172,24 @@ export function PipelineManagerModal({
           is_default: isDefault,
           sdr_agent_id: sdrAgentId,
         })
+
+        // Salvar novos estágios que ainda não foram salvos (não têm id)
+        const newStages = stages.filter(s => !s.id)
+        if (newStages.length > 0) {
+          console.log('Salvando novos estágios:', newStages)
+          for (let i = 0; i < newStages.length; i++) {
+            const stage = newStages[i]
+            const stageIndex = stages.findIndex(s => s === stage)
+            await createStage.mutateAsync({
+              pipelineId: selectedPipelineId,
+              name: stage.name,
+              color: stage.color,
+              order: stageIndex,
+              stage_type: stage.stage_type,
+            })
+          }
+        }
+
         setSuccess('Pipeline atualizado!')
       }
       setTimeout(() => setSuccess(null), 3000)
