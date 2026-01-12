@@ -157,4 +157,18 @@ return [
         'service_key' => env('SUPABASE_SERVICE_KEY'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Internal WhatsApp API (Whatsmeow)
+    |--------------------------------------------------------------------------
+    | Self-hosted WhatsApp API using Whatsmeow (Go library).
+    | Connects via QR Code, no Meta Business API costs.
+    | Does NOT support WhatsApp templates.
+    */
+    'internal_whatsapp' => [
+        'url' => env('WHATSAPP_API_URL', 'http://whatsapp-api:3000'),
+        'api_key' => env('WHATSAPP_API_KEY', ''),
+        'timeout' => env('WHATSAPP_API_TIMEOUT', 30),
+    ],
+
 ];

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\WhatsAppProviderInterface;
 use App\Events\TicketMessageCreated;
 use App\Models\Channel;
 use App\Models\Contact;
@@ -15,7 +16,7 @@ use App\Enums\TicketStatusEnum;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class WhatsAppService
+class WhatsAppService implements WhatsAppProviderInterface
 {
     protected string $apiVersion = 'v18.0';
     protected string $baseUrl;
@@ -1495,6 +1496,57 @@ class WhatsAppService
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getProviderType(): string
+    {
+        return 'meta';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supportsTemplates(): bool
+    {
+        return true;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getConnectionStatus(): array
+    {
+        try {
+            $result = $this->testConnection();
+
+            if ($result['success']) {
+                return [
+                    'status' => 'connected',
+                    'connected' => true,
+                    'phone_number' => $result['phone_number'] ?? null,
+                    'verified_name' => $result['verified_name'] ?? null,
+                    'quality_rating' => $result['quality_rating'] ?? null,
+                    'provider' => 'meta',
+                ];
+            }
+
+            return [
+                'status' => 'disconnected',
+                'connected' => false,
+                'error' => $result['error'] ?? 'Connection failed',
+                'provider' => 'meta',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'status' => 'error',
+                'connected' => false,
+                'error' => $e->getMessage(),
+                'provider' => 'meta',
             ];
         }
     }

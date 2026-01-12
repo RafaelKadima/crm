@@ -199,8 +199,36 @@ services:
     networks:
       - crm-network
 
+  # ===========================
+  # WhatsApp API (Internal/Whatsmeow)
+  # ===========================
+  whatsapp-api:
+    build:
+      context: ./whatsapp-api
+      dockerfile: Dockerfile
+    container_name: crm-whatsapp-api
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      API_KEY: ${WHATSAPP_API_KEY}
+      WEBHOOK_URL: http://nginx/api/webhooks/internal-whatsapp
+      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_DATABASE}?sslmode=disable
+    depends_on:
+      nginx:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - crm-network
+    volumes:
+      - whatsapp_data:/app/data
+
 volumes:
   redis_data:
+  whatsapp_data:
 
 networks:
   crm-network:

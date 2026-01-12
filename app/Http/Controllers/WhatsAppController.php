@@ -7,6 +7,8 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketMessageAttachment;
 use App\Services\WhatsAppService;
+use App\Services\InternalWhatsAppService;
+use App\Services\WhatsAppProviderFactory;
 use App\Enums\ChannelTypeEnum;
 use App\Enums\SenderTypeEnum;
 use App\Enums\MessageDirectionEnum;
@@ -598,9 +600,263 @@ class WhatsAppController extends Controller
         }
     }
 
+    // =========================================================================
+    // INTERNAL WHATSAPP API (Whatsmeow) ENDPOINTS
+    // =========================================================================
+
+    /**
+     * Get available WhatsApp providers.
+     */
+    public function getProviders(): JsonResponse
+    {
+        return response()->json([
+            'providers' => WhatsAppProviderFactory::getAvailableProviders(),
+        ]);
+    }
+
+    /**
+     * Create a new internal WhatsApp session for a channel.
+     */
+    public function createInternalSession(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'channel_id' => 'required|uuid|exists:channels,id',
+        ]);
+
+        $channel = Channel::find($validated['channel_id']);
+
+        if ($channel->type !== ChannelTypeEnum::WHATSAPP) {
+            return response()->json([
+                'error' => 'Este canal nao e do tipo WhatsApp.',
+            ], 400);
+        }
+
+        if ($channel->provider_type !== 'internal') {
+            return response()->json([
+                'error' => 'Este canal nao esta configurado para usar o provider interno.',
+            ], 400);
+        }
+
+        try {
+            $internalService = app(InternalWhatsAppService::class);
+            $result = $internalService->createSession($channel->id);
+
+            // Save session ID to channel
+            $channel->update(['internal_session_id' => $result['session_id']]);
+
+            return response()->json([
+                'success' => true,
+                'session_id' => $result['session_id'],
+                'message' => 'Sessao criada com sucesso. Conecte para obter o QR Code.',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create internal WhatsApp session', [
+                'channel_id' => $channel->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Connect internal session and get QR code.
+     */
+    public function connectInternalSession(Channel $channel): JsonResponse
+    {
+        if ($channel->type !== ChannelTypeEnum::WHATSAPP || $channel->provider_type !== 'internal') {
+            return response()->json([
+                'error' => 'Canal nao configurado para WhatsApp interno.',
+            ], 400);
+        }
+
+        // Create session if not exists
+        if (!$channel->internal_session_id) {
+            try {
+                $internalService = app(InternalWhatsAppService::class);
+                $result = $internalService->createSession($channel->id);
+                $channel->update(['internal_session_id' => $result['session_id']]);
+                $channel->refresh();
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => 'Falha ao criar sessao: ' . $e->getMessage(),
+                ], 500);
+            }
+        }
+
+        try {
+            $internalService = app(InternalWhatsAppService::class);
+            $internalService->loadFromChannel($channel);
+            $result = $internalService->connectSession();
+
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to connect internal WhatsApp session', [
+                'channel_id' => $channel->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get current QR code for internal session.
+     */
+    public function getInternalQRCode(Channel $channel): JsonResponse
+    {
+        if ($channel->type !== ChannelTypeEnum::WHATSAPP || $channel->provider_type !== 'internal') {
+            return response()->json([
+                'error' => 'Canal nao configurado para WhatsApp interno.',
+            ], 400);
+        }
+
+        if (!$channel->internal_session_id) {
+            return response()->json([
+                'error' => 'Sessao nao existe. Conecte primeiro.',
+            ], 400);
+        }
+
+        try {
+            $internalService = app(InternalWhatsAppService::class);
+            $internalService->loadFromChannel($channel);
+            $result = $internalService->getQRCode();
+
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get internal session connection status.
+     */
+    public function getInternalStatus(Channel $channel): JsonResponse
+    {
+        if ($channel->type !== ChannelTypeEnum::WHATSAPP || $channel->provider_type !== 'internal') {
+            return response()->json([
+                'error' => 'Canal nao configurado para WhatsApp interno.',
+            ], 400);
+        }
+
+        try {
+            $internalService = app(InternalWhatsAppService::class);
+            $internalService->loadFromChannel($channel);
+            $result = $internalService->getConnectionStatus();
+
+            // Also include channel config status
+            $result['channel_config'] = [
+                'internal_connected' => $channel->config['internal_connected'] ?? false,
+                'internal_phone_number' => $channel->config['internal_phone_number'] ?? null,
+                'connected_at' => $channel->config['connected_at'] ?? null,
+            ];
+
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'connected' => false,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Disconnect internal session.
+     */
+    public function disconnectInternalSession(Channel $channel): JsonResponse
+    {
+        if ($channel->type !== ChannelTypeEnum::WHATSAPP || $channel->provider_type !== 'internal') {
+            return response()->json([
+                'error' => 'Canal nao configurado para WhatsApp interno.',
+            ], 400);
+        }
+
+        if (!$channel->internal_session_id) {
+            return response()->json([
+                'error' => 'Sessao nao existe.',
+            ], 400);
+        }
+
+        try {
+            $internalService = app(InternalWhatsAppService::class);
+            $internalService->loadFromChannel($channel);
+            $result = $internalService->disconnectSession();
+
+            // Update channel config
+            $config = $channel->config ?? [];
+            $config['internal_connected'] = false;
+            $config['disconnected_at'] = now()->toIso8601String();
+            $channel->update(['config' => $config]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sessao desconectada.',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete internal session completely.
+     */
+    public function deleteInternalSession(Channel $channel): JsonResponse
+    {
+        if ($channel->type !== ChannelTypeEnum::WHATSAPP || $channel->provider_type !== 'internal') {
+            return response()->json([
+                'error' => 'Canal nao configurado para WhatsApp interno.',
+            ], 400);
+        }
+
+        if (!$channel->internal_session_id) {
+            return response()->json([
+                'error' => 'Sessao nao existe.',
+            ], 400);
+        }
+
+        try {
+            $internalService = app(InternalWhatsAppService::class);
+            $internalService->loadFromChannel($channel);
+            $result = $internalService->deleteSession();
+
+            // Clear session from channel
+            $config = $channel->config ?? [];
+            $config['internal_connected'] = false;
+            $config['disconnected_at'] = now()->toIso8601String();
+            $channel->update([
+                'internal_session_id' => null,
+                'config' => $config,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sessao removida completamente.',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * Simula recebimento de mensagem WhatsApp para testes locais.
-     * 
+     *
      * USO: POST /api/webhooks/simulate-message
      * BODY: { "ticket_id": "uuid", "message": "texto da mensagem" }
      */

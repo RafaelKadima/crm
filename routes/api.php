@@ -648,6 +648,23 @@ Route::middleware('auth:api')->group(function () {
         Route::post('configure', [WhatsAppController::class, 'configureChannel']);
         Route::post('test-connection', [WhatsAppController::class, 'testConnection']);
 
+        // Provider info
+        Route::get('providers', [WhatsAppController::class, 'getProviders']);
+
+        // Internal WhatsApp API (Whatsmeow) session management
+        Route::prefix('internal')->group(function () {
+            Route::post('session', [WhatsAppController::class, 'createInternalSession']);
+        });
+
+        // Channel-specific internal session routes
+        Route::prefix('channels/{channel}')->group(function () {
+            Route::post('internal/connect', [WhatsAppController::class, 'connectInternalSession']);
+            Route::get('internal/qr', [WhatsAppController::class, 'getInternalQRCode']);
+            Route::get('internal/status', [WhatsAppController::class, 'getInternalStatus']);
+            Route::post('internal/disconnect', [WhatsAppController::class, 'disconnectInternalSession']);
+            Route::delete('internal/session', [WhatsAppController::class, 'deleteInternalSession']);
+        });
+
         // =====================
         // TEMPLATES DO WHATSAPP
         // =====================
@@ -1184,9 +1201,12 @@ Route::prefix('lp')->group(function () {
 
 // Webhooks públicos (sem autenticação)
 Route::prefix('webhooks')->group(function () {
-    // WhatsApp webhook
+    // WhatsApp webhook (Meta Cloud API)
     Route::get('whatsapp', [WhatsAppController::class, 'verifyWebhook']);
     Route::post('whatsapp', [WhatsAppController::class, 'receiveWebhook']);
+
+    // Internal WhatsApp API webhook (Whatsmeow)
+    Route::post('internal-whatsapp', [\App\Http\Controllers\InternalWhatsAppWebhookController::class, 'receive']);
 
     // Simulação de mensagem WhatsApp para testes locais
     Route::post('simulate-message', [WhatsAppController::class, 'simulateMessage']);

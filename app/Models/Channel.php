@@ -24,6 +24,8 @@ class Channel extends Model
         'tenant_id',
         'name',
         'type',
+        'provider_type',
+        'internal_session_id',
         'identifier',
         'ia_mode',
         'ia_workflow_id',
@@ -172,6 +174,43 @@ class Channel extends Model
     public function isWhatsApp(): bool
     {
         return $this->type === ChannelTypeEnum::WHATSAPP;
+    }
+
+    /**
+     * Check if channel uses Meta Cloud API.
+     */
+    public function usesMetaApi(): bool
+    {
+        return ($this->provider_type ?? 'meta') === 'meta';
+    }
+
+    /**
+     * Check if channel uses internal WhatsApp API (Whatsmeow).
+     */
+    public function usesInternalApi(): bool
+    {
+        return $this->provider_type === 'internal';
+    }
+
+    /**
+     * Get the appropriate WhatsApp provider for this channel.
+     */
+    public function getWhatsAppProvider(): \App\Contracts\WhatsAppProviderInterface
+    {
+        return \App\Services\WhatsAppProviderFactory::make($this);
+    }
+
+    /**
+     * Check if internal WhatsApp session is connected.
+     */
+    public function isInternalConnected(): bool
+    {
+        if (!$this->usesInternalApi()) {
+            return false;
+        }
+
+        $config = $this->config ?? [];
+        return $config['internal_connected'] ?? false;
     }
 }
 
