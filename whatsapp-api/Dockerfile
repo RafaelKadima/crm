@@ -4,16 +4,13 @@ FROM golang:1.21-alpine AS builder
 WORKDIR /build
 
 # Instalar dependências de compilação
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache gcc musl-dev git
 
-# Copiar go.mod e go.sum
-COPY go.mod go.sum* ./
-
-# Download dependências
-RUN go mod download
-
-# Copiar código fonte
+# Copiar todo o código fonte primeiro
 COPY . .
+
+# Gerar go.sum e download dependências
+RUN go mod tidy && go mod download
 
 # Compilar
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o whatsapp-api ./cmd/server
