@@ -65,12 +65,12 @@ export function ReportsPage() {
 
   // Busca dados do funil
   const { data: funnelData, isLoading: loadingFunnel } = useQuery({
-    queryKey: ['reports-funnel', apiFilters],
+    queryKey: ['reports-funnel', filters.pipeline_id, filters.date_from, filters.date_to],
     queryFn: async () => {
       const params = new URLSearchParams()
-      if (apiFilters.pipeline_id) params.append('pipeline_id', apiFilters.pipeline_id)
-      if (apiFilters.date_from) params.append('date_from', apiFilters.date_from)
-      if (apiFilters.date_to) params.append('date_to', apiFilters.date_to)
+      if (filters.pipeline_id) params.append('pipeline_id', filters.pipeline_id)
+      if (filters.date_from) params.append('date_from', filters.date_from)
+      if (filters.date_to) params.append('date_to', filters.date_to)
       const { data } = await api.get(`/reports/funnel?${params}`)
       return data
     },
@@ -84,11 +84,11 @@ export function ReportsPage() {
 
   // Busca dados de produtividade
   const { data: productivityData, isLoading: loadingProductivity } = useQuery({
-    queryKey: ['reports-productivity', apiFilters],
+    queryKey: ['reports-productivity', filters.date_from, filters.date_to],
     queryFn: async () => {
       const params = new URLSearchParams()
-      if (apiFilters.date_from) params.append('date_from', apiFilters.date_from)
-      if (apiFilters.date_to) params.append('date_to', apiFilters.date_to)
+      if (filters.date_from) params.append('date_from', filters.date_from)
+      if (filters.date_to) params.append('date_to', filters.date_to)
       const { data } = await api.get(`/reports/productivity?${params}`)
       return data
     },
@@ -96,11 +96,11 @@ export function ReportsPage() {
 
   // Busca dados de distribuição (canais)
   const { data: distributionData, isLoading: loadingDistribution } = useQuery({
-    queryKey: ['reports-distribution', apiFilters],
+    queryKey: ['reports-distribution', filters.date_from, filters.date_to],
     queryFn: async () => {
       const params = new URLSearchParams()
-      if (apiFilters.date_from) params.append('date_from', apiFilters.date_from)
-      if (apiFilters.date_to) params.append('date_to', apiFilters.date_to)
+      if (filters.date_from) params.append('date_from', filters.date_from)
+      if (filters.date_to) params.append('date_to', filters.date_to)
       const { data } = await api.get(`/reports/distribution?${params}`)
       return data
     },
