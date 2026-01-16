@@ -1,43 +1,52 @@
 import { useQuery } from '@tanstack/react-query'
-import { reportsApi } from '@/api/endpoints'
+import { reportsApi, ReportFilters, TimeSeriesFilters } from '@/api/endpoints'
 
-export function useFunnelReport() {
+export function useFunnelReport(filters?: ReportFilters) {
   return useQuery({
-    queryKey: ['report-funnel'],
+    queryKey: ['report-funnel', filters],
     queryFn: async () => {
-      const response = await reportsApi.funnel()
+      const response = await reportsApi.funnel(filters)
       return response.data.data
     },
   })
 }
 
-export function useProductivityReport() {
+export function useFunnelTimeSeries(filters?: TimeSeriesFilters) {
   return useQuery({
-    queryKey: ['report-productivity'],
+    queryKey: ['report-funnel-time-series', filters],
     queryFn: async () => {
-      const response = await reportsApi.productivity()
+      const response = await reportsApi.funnelTimeSeries(filters)
+      return response.data
+    },
+  })
+}
+
+export function useProductivityReport(filters?: ReportFilters) {
+  return useQuery({
+    queryKey: ['report-productivity', filters],
+    queryFn: async () => {
+      const response = await reportsApi.productivity(filters)
       return response.data.data
     },
   })
 }
 
-export function useIaReport() {
+export function useIaReport(filters?: ReportFilters) {
   return useQuery({
-    queryKey: ['report-ia'],
+    queryKey: ['report-ia', filters],
     queryFn: async () => {
-      const response = await reportsApi.ia()
+      const response = await reportsApi.ia(filters)
       return response.data.data
     },
   })
 }
 
-export function useDistributionReport() {
+export function useDistributionReport(filters?: ReportFilters) {
   return useQuery({
-    queryKey: ['report-distribution'],
+    queryKey: ['report-distribution', filters],
     queryFn: async () => {
-      const response = await reportsApi.distribution()
+      const response = await reportsApi.distribution(filters)
       return response.data.data
     },
   })
 }
-

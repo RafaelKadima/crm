@@ -440,6 +440,7 @@ Route::middleware('auth:api')->group(function () {
         // Relatórios
         Route::prefix('reports')->group(function () {
             Route::get('funnel', [ReportController::class, 'funnel']);
+            Route::get('funnel-time-series', [ReportController::class, 'funnelTimeSeries']);
             Route::get('productivity', [ReportController::class, 'productivity']);
             Route::get('ia', [ReportController::class, 'ia']);
             Route::get('distribution', [ReportController::class, 'distribution']);

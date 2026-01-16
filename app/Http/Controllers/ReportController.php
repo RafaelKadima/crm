@@ -104,6 +104,111 @@ class ReportController extends Controller
     }
 
     /**
+     * Relatório do funil de vendas com série temporal.
+     */
+    public function funnelTimeSeries(Request $request): JsonResponse
+    {
+        $request->validate([
+            'pipeline_id' => 'nullable|uuid|exists:pipelines,id',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date',
+            'group_by' => 'nullable|in:day,week,month',
+        ]);
+
+        $tenantId = auth()->user()->tenant_id;
+        $groupBy = $request->input('group_by', 'day');
+
+        // Seleciona o pipeline
+        $pipelineId = $request->pipeline_id;
+        if (!$pipelineId) {
+            $pipeline = Pipeline::where('tenant_id', $tenantId)
+                ->where('is_default', true)
+                ->first();
+            $pipelineId = $pipeline?->id;
+        }
+
+        if (!$pipelineId) {
+            return response()->json([
+                'message' => 'Nenhum pipeline encontrado.',
+            ], 404);
+        }
+
+        // Define datas padrão (últimos 30 dias)
+        $dateFrom = $request->date_from ?? now()->subDays(30)->toDateString();
+        $dateTo = $request->date_to ?? now()->toDateString();
+
+        // Busca os estágios do pipeline
+        $stages = PipelineStage::where('pipeline_id', $pipelineId)
+            ->orderBy('order')
+            ->get();
+
+        // Define o formato de agrupamento baseado no banco (PostgreSQL)
+        $dateFormat = match($groupBy) {
+            'week' => "TO_CHAR(DATE_TRUNC('week', created_at), 'YYYY-MM-DD')",
+            'month' => "TO_CHAR(created_at, 'YYYY-MM')",
+            default => "TO_CHAR(created_at, 'YYYY-MM-DD')",
+        };
+
+        // Query agrupada por período e estágio
+        $data = Lead::where('tenant_id', $tenantId)
+            ->where('pipeline_id', $pipelineId)
+            ->whereDate('created_at', '>=', $dateFrom)
+            ->whereDate('created_at', '<=', $dateTo)
+            ->select(
+                DB::raw("{$dateFormat} as period"),
+                'stage_id',
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(value) as total_value')
+            )
+            ->groupBy('period', 'stage_id')
+            ->orderBy('period')
+            ->get();
+
+        // Organiza os dados por período
+        $series = [];
+        $stageMap = $stages->keyBy('id');
+
+        foreach ($data as $row) {
+            $period = $row->period;
+            $stageName = $stageMap->get($row->stage_id)?->name ?? 'Desconhecido';
+
+            if (!isset($series[$period])) {
+                $series[$period] = [
+                    'period' => $period,
+                    'stages' => [],
+                    'total' => 0,
+                ];
+            }
+
+            $series[$period]['stages'][$stageName] = [
+                'count' => $row->count,
+                'value' => $row->total_value ?? 0,
+            ];
+            $series[$period]['total'] += $row->count;
+        }
+
+        // Converte para array e adiciona estágios faltantes com zero
+        $stageNames = $stages->pluck('name')->toArray();
+        $seriesArray = collect($series)->map(function ($item) use ($stageNames) {
+            foreach ($stageNames as $stageName) {
+                if (!isset($item['stages'][$stageName])) {
+                    $item['stages'][$stageName] = ['count' => 0, 'value' => 0];
+                }
+            }
+            return $item;
+        })->values()->toArray();
+
+        return response()->json([
+            'pipeline_id' => $pipelineId,
+            'group_by' => $groupBy,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'stages' => $stageNames,
+            'series' => $seriesArray,
+        ]);
+    }
+
+    /**
      * Relatório de produtividade dos vendedores.
      */
     public function productivity(Request $request): JsonResponse

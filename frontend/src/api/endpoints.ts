@@ -216,18 +216,44 @@ export const dashboardApi = {
 // =====================
 // REPORTS ENDPOINTS
 // =====================
+export interface ReportFilters {
+  pipeline_id?: string
+  date_from?: string
+  date_to?: string
+}
+
+export interface TimeSeriesFilters extends ReportFilters {
+  group_by?: 'day' | 'week' | 'month'
+}
+
+export interface FunnelTimeSeriesResponse {
+  pipeline_id: string
+  group_by: string
+  date_from: string
+  date_to: string
+  stages: string[]
+  series: Array<{
+    period: string
+    stages: Record<string, { count: number; value: number }>
+    total: number
+  }>
+}
+
 export const reportsApi = {
-  funnel: () =>
-    api.get<{ data: FunnelReport[] }>('/reports/funnel'),
+  funnel: (params?: ReportFilters) =>
+    api.get<{ data: FunnelReport[] }>('/reports/funnel', { params }),
 
-  productivity: () =>
-    api.get<{ data: ProductivityReport[] }>('/reports/productivity'),
+  funnelTimeSeries: (params?: TimeSeriesFilters) =>
+    api.get<FunnelTimeSeriesResponse>('/reports/funnel-time-series', { params }),
 
-  ia: () =>
-    api.get<{ data: any }>('/reports/ia'),
+  productivity: (params?: ReportFilters) =>
+    api.get<{ data: ProductivityReport[] }>('/reports/productivity', { params }),
 
-  distribution: () =>
-    api.get<{ data: any }>('/reports/distribution'),
+  ia: (params?: ReportFilters) =>
+    api.get<{ data: any }>('/reports/ia', { params }),
+
+  distribution: (params?: ReportFilters) =>
+    api.get<{ data: any }>('/reports/distribution', { params }),
 }
 
 // =====================

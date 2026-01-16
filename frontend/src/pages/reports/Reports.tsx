@@ -17,12 +17,23 @@ import {
   Legend,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Loader2, TrendingUp, Users, DollarSign, Target, Calendar } from 'lucide-react'
+import { Label } from '@/components/ui/Label'
+import { Input } from '@/components/ui/Input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/Select'
+import { Loader2, TrendingUp, Users, DollarSign, Target, Calendar, Filter } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import api from '@/api/axios'
+import { usePipelines } from '@/hooks/usePipelines'
+import { useFunnelTimeSeries } from '@/hooks/useReports'
 
 // Cores para os gráficos
-const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#22c55e', '#06b6d4', '#f97316']
+const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#22c55e', '#06b6d4', '#f97316', '#ef4444', '#84cc16', '#14b8a6']
 
 const channelColors: Record<string, string> = {
   whatsapp: '#25D366',
@@ -34,27 +45,50 @@ const channelColors: Record<string, string> = {
 }
 
 export function ReportsPage() {
-  const [dateRange] = useState({ from: '', to: '' })
+  // State para filtros
+  const [filters, setFilters] = useState({
+    pipeline_id: '',
+    date_from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    date_to: new Date().toISOString().split('T')[0],
+    group_by: 'day' as 'day' | 'week' | 'month',
+  })
+
+  // Busca pipelines para o filtro
+  const { data: pipelines } = usePipelines()
+
+  // Prepara os filtros para a API (remove valores vazios)
+  const apiFilters = {
+    ...(filters.pipeline_id && { pipeline_id: filters.pipeline_id }),
+    ...(filters.date_from && { date_from: filters.date_from }),
+    ...(filters.date_to && { date_to: filters.date_to }),
+  }
 
   // Busca dados do funil
   const { data: funnelData, isLoading: loadingFunnel } = useQuery({
-    queryKey: ['reports-funnel', dateRange],
+    queryKey: ['reports-funnel', apiFilters],
     queryFn: async () => {
       const params = new URLSearchParams()
-      if (dateRange.from) params.append('date_from', dateRange.from)
-      if (dateRange.to) params.append('date_to', dateRange.to)
+      if (apiFilters.pipeline_id) params.append('pipeline_id', apiFilters.pipeline_id)
+      if (apiFilters.date_from) params.append('date_from', apiFilters.date_from)
+      if (apiFilters.date_to) params.append('date_to', apiFilters.date_to)
       const { data } = await api.get(`/reports/funnel?${params}`)
       return data
     },
   })
 
+  // Busca dados de série temporal do funil
+  const { data: timeSeriesData, isLoading: loadingTimeSeries } = useFunnelTimeSeries({
+    ...apiFilters,
+    group_by: filters.group_by,
+  })
+
   // Busca dados de produtividade
   const { data: productivityData, isLoading: loadingProductivity } = useQuery({
-    queryKey: ['reports-productivity', dateRange],
+    queryKey: ['reports-productivity', apiFilters],
     queryFn: async () => {
       const params = new URLSearchParams()
-      if (dateRange.from) params.append('date_from', dateRange.from)
-      if (dateRange.to) params.append('date_to', dateRange.to)
+      if (apiFilters.date_from) params.append('date_from', apiFilters.date_from)
+      if (apiFilters.date_to) params.append('date_to', apiFilters.date_to)
       const { data } = await api.get(`/reports/productivity?${params}`)
       return data
     },
@@ -62,11 +96,11 @@ export function ReportsPage() {
 
   // Busca dados de distribuição (canais)
   const { data: distributionData, isLoading: loadingDistribution } = useQuery({
-    queryKey: ['reports-distribution', dateRange],
+    queryKey: ['reports-distribution', apiFilters],
     queryFn: async () => {
       const params = new URLSearchParams()
-      if (dateRange.from) params.append('date_from', dateRange.from)
-      if (dateRange.to) params.append('date_to', dateRange.to)
+      if (apiFilters.date_from) params.append('date_from', apiFilters.date_from)
+      if (apiFilters.date_to) params.append('date_to', apiFilters.date_to)
       const { data } = await api.get(`/reports/distribution?${params}`)
       return data
     },
@@ -96,9 +130,23 @@ export function ReportsPage() {
     color: channelColors[channel.channel_type?.toLowerCase()] || '#6B7280',
   })) || []
 
+  // Formata dados da série temporal para o gráfico de linha
+  const timeSeriesChartData = timeSeriesData?.series?.map((item: any) => {
+    const row: Record<string, any> = { period: item.period }
+    if (item.stages) {
+      Object.entries(item.stages).forEach(([stageName, data]: [string, any]) => {
+        row[stageName] = data.count
+      })
+    }
+    row.total = item.total
+    return row
+  }) || []
+
+  const stages = timeSeriesData?.stages || []
+
   const isLoading = loadingFunnel || loadingProductivity || loadingDistribution
 
-  if (isLoading) {
+  if (isLoading && !funnelData) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -110,14 +158,85 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header com Filtros */}
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-3xl font-bold">Relatórios</h1>
           <p className="text-muted-foreground mt-1">
             Análise de performance e métricas em tempo real
           </p>
         </div>
+
+        {/* Filtros */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span className="text-sm font-medium">Filtros:</span>
+              </div>
+
+              {/* Pipeline */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Pipeline</Label>
+                <Select
+                  value={filters.pipeline_id || 'all'}
+                  onValueChange={(v) => setFilters({ ...filters, pipeline_id: v === 'all' ? '' : v })}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Pipelines</SelectItem>
+                    {pipelines?.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Data Inicial */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Data Inicial</Label>
+                <Input
+                  type="date"
+                  value={filters.date_from}
+                  onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
+                  className="w-[160px]"
+                />
+              </div>
+
+              {/* Data Final */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Data Final</Label>
+                <Input
+                  type="date"
+                  value={filters.date_to}
+                  onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
+                  className="w-[160px]"
+                />
+              </div>
+
+              {/* Agrupamento */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Agrupar por</Label>
+                <Select
+                  value={filters.group_by}
+                  onValueChange={(v) => setFilters({ ...filters, group_by: v as 'day' | 'week' | 'month' })}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">Dia</SelectItem>
+                    <SelectItem value="week">Semana</SelectItem>
+                    <SelectItem value="month">Mês</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* KPIs Cards */}
@@ -186,6 +305,76 @@ export function ReportsPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Gráfico de Evolução Temporal */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-400" />
+              Evolução do Funil
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                (por {filters.group_by === 'day' ? 'dia' : filters.group_by === 'week' ? 'semana' : 'mês'})
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingTimeSeries ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : timeSeriesChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={timeSeriesChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis
+                    dataKey="period"
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(value) => {
+                      if (filters.group_by === 'month') return value
+                      const date = new Date(value)
+                      return `${date.getDate()}/${date.getMonth() + 1}`
+                    }}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                    }}
+                    labelFormatter={(label) => {
+                      if (filters.group_by === 'month') return `Mês: ${label}`
+                      const date = new Date(label)
+                      return date.toLocaleDateString('pt-BR')
+                    }}
+                  />
+                  <Legend />
+                  {stages.map((stageName: string, index: number) => (
+                    <Line
+                      key={stageName}
+                      type="monotone"
+                      dataKey={stageName}
+                      stroke={COLORS[index % COLORS.length]}
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                Nenhum dado disponível para o período selecionado
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
