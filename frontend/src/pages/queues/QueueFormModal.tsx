@@ -25,6 +25,7 @@ export function QueueFormModal({
     channel_id: '',
     pipeline_id: '',
     sdr_agent_id: '',
+    sdr_disabled: false,
     name: '',
     menu_option: 1,
     menu_label: '',
@@ -49,6 +50,7 @@ export function QueueFormModal({
         channel_id: queue.channel_id,
         pipeline_id: queue.pipeline_id,
         sdr_agent_id: queue.sdr_agent_id || '',
+        sdr_disabled: queue.sdr_disabled || false,
         name: queue.name,
         menu_option: queue.menu_option,
         menu_label: queue.menu_label,
@@ -61,6 +63,7 @@ export function QueueFormModal({
         channel_id: defaultChannelId || '',
         pipeline_id: '',
         sdr_agent_id: '',
+        sdr_disabled: false,
         name: '',
         menu_option: 1,
         menu_label: '',
@@ -103,7 +106,8 @@ export function QueueFormModal({
         await updateQueue.mutateAsync({
           id: queue.id,
           pipeline_id: formData.pipeline_id,
-          sdr_agent_id: formData.sdr_agent_id || undefined,
+          sdr_agent_id: formData.sdr_disabled ? undefined : (formData.sdr_agent_id || undefined),
+          sdr_disabled: formData.sdr_disabled,
           name: formData.name,
           menu_option: formData.menu_option,
           menu_label: formData.menu_label,
@@ -217,7 +221,10 @@ export function QueueFormModal({
                   <select
                     value={formData.sdr_agent_id}
                     onChange={(e) => handleChange('sdr_agent_id', e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={formData.sdr_disabled}
+                    className={`w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formData.sdr_disabled ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
                     <option value="">Sem agente (manual)</option>
                     {sdrAgentsArray.map((agent: any) => (
@@ -229,6 +236,19 @@ export function QueueFormModal({
                   <p className="text-xs text-gray-500 mt-1">
                     Agente de IA que atenderá os leads desta fila
                   </p>
+
+                  {/* Desativar SDR completamente */}
+                  <label className="flex items-center gap-2 mt-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.sdr_disabled}
+                      onChange={(e) => handleChange('sdr_disabled', e.target.checked)}
+                      className="w-4 h-4 rounded text-red-500"
+                    />
+                    <span className="text-sm text-red-400">
+                      Desativar IA nesta fila (ignora agentes do canal/pipeline)
+                    </span>
+                  </label>
                 </div>
 
                 {/* Nome */}

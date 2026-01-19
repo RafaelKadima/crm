@@ -527,6 +527,11 @@ class InternalWhatsAppWebhookController extends Controller
      */
     protected function findSdrAgent(Lead $lead, Channel $channel): ?\App\Models\SdrAgent
     {
+        // Se a fila tem SDR desabilitado, não usa nenhum agente (ignora todos os fallbacks)
+        if ($lead->queue_id && $lead->queue && $lead->queue->sdr_disabled) {
+            return null;
+        }
+
         // Priority 1: Queue's SDR Agent
         if ($lead->queue_id && $lead->queue && $lead->queue->sdr_agent_id) {
             $agent = $lead->queue->sdrAgent;

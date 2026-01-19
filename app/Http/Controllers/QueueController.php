@@ -143,6 +143,7 @@ class QueueController extends Controller
         $validated = $request->validate([
             'pipeline_id' => 'sometimes|uuid|exists:pipelines,id',
             'sdr_agent_id' => 'nullable|uuid|exists:sdr_agents,id',
+            'sdr_disabled' => 'boolean',
             'name' => 'sometimes|string|max:100',
             'menu_option' => [
                 'sometimes',

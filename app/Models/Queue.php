@@ -24,6 +24,7 @@ class Queue extends Model
         'channel_id',
         'pipeline_id',
         'sdr_agent_id',
+        'sdr_disabled',
         'name',
         'menu_option',
         'menu_label',
@@ -43,6 +44,7 @@ class Queue extends Model
             'menu_option' => 'integer',
             'auto_distribute' => 'boolean',
             'is_active' => 'boolean',
+            'sdr_disabled' => 'boolean',
         ];
     }
 

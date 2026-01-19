@@ -7,6 +7,7 @@ export interface Queue {
   channel_id: string
   pipeline_id: string
   sdr_agent_id?: string
+  sdr_disabled?: boolean
   name: string
   menu_option: number
   menu_label: string
@@ -46,6 +47,7 @@ interface CreateQueueData {
   channel_id: string
   pipeline_id: string
   sdr_agent_id?: string
+  sdr_disabled?: boolean
   name: string
   menu_option: number
   menu_label: string
