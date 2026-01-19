@@ -106,12 +106,12 @@ export function QueueFormModal({
         const updateData = {
           id: queue.id,
           pipeline_id: formData.pipeline_id,
-          sdr_agent_id: formData.sdr_disabled ? null : (formData.sdr_agent_id || null),
+          sdr_agent_id: formData.sdr_disabled ? undefined : (formData.sdr_agent_id || undefined),
           sdr_disabled: formData.sdr_disabled,
           name: formData.name,
           menu_option: formData.menu_option,
           menu_label: formData.menu_label,
-          welcome_message: formData.welcome_message || null,
+          welcome_message: formData.welcome_message || undefined,
           auto_distribute: formData.auto_distribute,
           is_active: formData.is_active,
         }
