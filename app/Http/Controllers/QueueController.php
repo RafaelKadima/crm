@@ -140,10 +140,16 @@ class QueueController extends Controller
      */
     public function update(Request $request, Queue $queue): JsonResponse
     {
+        \Log::info('Queue update request', [
+            'queue_id' => $queue->id,
+            'all_input' => $request->all(),
+            'sdr_disabled_raw' => $request->input('sdr_disabled'),
+        ]);
+
         $validated = $request->validate([
             'pipeline_id' => 'sometimes|uuid|exists:pipelines,id',
             'sdr_agent_id' => 'nullable|uuid|exists:sdr_agents,id',
-            'sdr_disabled' => 'boolean',
+            'sdr_disabled' => 'sometimes|boolean',
             'name' => 'sometimes|string|max:100',
             'menu_option' => [
                 'sometimes',
@@ -156,9 +162,11 @@ class QueueController extends Controller
             ],
             'menu_label' => 'sometimes|string|max:100',
             'welcome_message' => 'nullable|string|max:1000',
-            'auto_distribute' => 'boolean',
-            'is_active' => 'boolean',
+            'auto_distribute' => 'sometimes|boolean',
+            'is_active' => 'sometimes|boolean',
         ]);
+
+        \Log::info('Queue update validated data', ['validated' => $validated]);
 
         $queue->update($validated);
         $queue->load(['channel:id,name', 'pipeline:id,name', 'sdrAgent:id,name', 'users:id,name']);

@@ -46,8 +46,19 @@ class ProcessAgentResponseDebounced implements ShouldQueue
         PythonAgentService $pythonAgent,
         WhatsAppService $whatsAppService
     ): void {
+        // Safety check: Se a fila do lead tem sdr_disabled, não processa
+        $this->lead->loadMissing('queue');
+        if ($this->lead->queue && $this->lead->queue->sdr_disabled) {
+            Log::info('Agent debounce: SDR disabled for queue, skipping', [
+                'ticket_id' => $this->ticket->id,
+                'queue_id' => $this->lead->queue_id,
+                'queue_name' => $this->lead->queue->name,
+            ]);
+            return;
+        }
+
         $cacheKey = "agent_processing:{$this->ticket->id}";
-        
+
         // Verifica se já está processando
         if (Cache::has($cacheKey)) {
             Log::info('Agent debounce: already processing, skipping', [

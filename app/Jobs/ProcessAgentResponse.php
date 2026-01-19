@@ -50,6 +50,17 @@ class ProcessAgentResponse implements ShouldQueue
         PythonAgentService $pythonAgent,
         WhatsAppService $whatsAppService
     ): void {
+        // Safety check: Se a fila do lead tem sdr_disabled, não processa
+        $this->lead->loadMissing('queue');
+        if ($this->lead->queue && $this->lead->queue->sdr_disabled) {
+            Log::info('Agent response: SDR disabled for queue, skipping', [
+                'message_id' => $this->message->id,
+                'queue_id' => $this->lead->queue_id,
+                'queue_name' => $this->lead->queue->name,
+            ]);
+            return;
+        }
+
         Log::info('Processing agent response via Python', [
             'message_id' => $this->message->id,
             'agent_id' => $this->agent->id,

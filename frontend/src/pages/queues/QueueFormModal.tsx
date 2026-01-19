@@ -103,18 +103,20 @@ export function QueueFormModal({
 
     try {
       if (isEditing && queue) {
-        await updateQueue.mutateAsync({
+        const updateData = {
           id: queue.id,
           pipeline_id: formData.pipeline_id,
-          sdr_agent_id: formData.sdr_disabled ? undefined : (formData.sdr_agent_id || undefined),
+          sdr_agent_id: formData.sdr_disabled ? null : (formData.sdr_agent_id || null),
           sdr_disabled: formData.sdr_disabled,
           name: formData.name,
           menu_option: formData.menu_option,
           menu_label: formData.menu_label,
-          welcome_message: formData.welcome_message || undefined,
+          welcome_message: formData.welcome_message || null,
           auto_distribute: formData.auto_distribute,
           is_active: formData.is_active,
-        })
+        }
+        console.log('Updating queue with data:', updateData)
+        await updateQueue.mutateAsync(updateData)
       } else {
         await createQueue.mutateAsync({
           ...formData,

@@ -26,10 +26,50 @@ class N8nWebhookService
     }
 
     /**
-     * Busca o SDR Agent do canal.
+     * Busca o SDR Agent para o lead/canal.
      */
-    protected function findSdrAgent(Channel $channel): ?SdrAgent
+    protected function findSdrAgent(Channel $channel, ?Lead $lead = null): ?SdrAgent
     {
+        // Se a fila do lead tem SDR desabilitado, não usa nenhum agente
+        if ($lead && $lead->queue_id) {
+            $lead->loadMissing('queue');
+            if ($lead->queue && $lead->queue->sdr_disabled) {
+                return null;
+            }
+        }
+
+        // Priority 1: Queue's SDR Agent
+        if ($lead && $lead->queue_id) {
+            $lead->loadMissing('queue.sdrAgent');
+            if ($lead->queue && $lead->queue->sdr_agent_id) {
+                $agent = $lead->queue->sdrAgent;
+                if ($agent && $agent->is_active) {
+                    return $agent;
+                }
+            }
+        }
+
+        // Priority 2: Pipeline's SDR Agent
+        if ($lead && $lead->pipeline_id) {
+            $lead->loadMissing('pipeline.sdrAgent');
+            if ($lead->pipeline && $lead->pipeline->sdr_agent_id) {
+                $agent = $lead->pipeline->sdrAgent;
+                if ($agent && $agent->is_active) {
+                    return $agent;
+                }
+            }
+        }
+
+        // Priority 3: Channel's SDR Agent
+        if ($channel->sdr_agent_id) {
+            $channel->loadMissing('sdrAgent');
+            $agent = $channel->sdrAgent;
+            if ($agent && $agent->is_active) {
+                return $agent;
+            }
+        }
+
+        // Fallback: Any active agent linked to channel
         return SdrAgent::where('channel_id', $channel->id)
             ->where('is_active', true)
             ->first();
@@ -124,10 +164,10 @@ class N8nWebhookService
      */
     protected function buildMessagePayload(TicketMessage $message, Ticket $ticket, Lead $lead, Channel $channel): array
     {
-        $lead->load(['contact', 'owner', 'stage', 'products']);
-        
-        // Busca o SDR Agent configurado para este canal
-        $sdrAgent = $this->findSdrAgent($channel);
+        $lead->load(['contact', 'owner', 'stage', 'products', 'queue']);
+
+        // Busca o SDR Agent configurado (respeitando sdr_disabled da fila)
+        $sdrAgent = $this->findSdrAgent($channel, $lead);
 
         $payload = [
             'event' => 'message.received',

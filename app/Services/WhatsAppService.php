@@ -1650,11 +1650,24 @@ class WhatsAppService implements WhatsAppProviderInterface
         // mesmo com a IA desabilitada para o ticket.
 
         // =====================
+        // VERIFICAÇÃO SDR DISABLED
+        // =====================
+        // Se a fila do lead tem sdr_disabled = true, não processa IA
+        if ($lead->queue_id && $lead->queue && $lead->queue->sdr_disabled) {
+            Log::info('SDR disabled for this queue, skipping AI response', [
+                'queue_id' => $lead->queue_id,
+                'queue_name' => $lead->queue->name,
+                'lead_id' => $lead->id,
+            ]);
+            return;
+        }
+
+        // =====================
         // SELEÇÃO DO SDR AGENT
         // =====================
         // Prioridade: Fila > Pipeline > Canal
         $sdrAgent = null;
-        
+
         // 1. PRIORIDADE MÁXIMA: Se o lead está em uma fila, busca o agente da fila
         if ($lead->queue_id && $lead->queue) {
             $queue = $lead->queue;
