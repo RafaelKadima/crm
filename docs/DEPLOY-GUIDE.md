@@ -10,7 +10,10 @@
 |-------|-------|
 | **IP** | 212.85.20.129 |
 | **Usuário** | root |
+| **Senha** | Motochefe2025@ |
 | **Domínio** | crm.omnify.center |
+| **Path** | /var/www/crm |
+| **Git** | git@github.com:RafaelKadima/crm.git |
 
 ---
 
@@ -68,9 +71,28 @@ Laravel API   WebSocket      Python/FastAPI
 
 ## 1. Conectar na VPS
 
+### Via SSH (com senha)
+
 ```bash
 ssh root@212.85.20.129
+# Senha: Motochefe2025@
 cd /var/www/crm
+```
+
+### Via sshpass (sem digitar senha - útil para scripts e Claude Code)
+
+```bash
+# Instalar sshpass (macOS)
+brew install hudochenkov/sshpass/sshpass
+
+# Instalar sshpass (Ubuntu/Debian)
+apt install -y sshpass
+
+# Conectar
+sshpass -p 'Motochefe2025@' ssh -o StrictHostKeyChecking=no root@212.85.20.129
+
+# Executar comando direto (sem abrir sessão interativa)
+sshpass -p 'Motochefe2025@' ssh -o StrictHostKeyChecking=no root@212.85.20.129 "cd /var/www/crm && docker compose ps"
 ```
 
 ---
@@ -263,6 +285,12 @@ docker compose stop php && docker compose up -d php
 docker compose down && docker compose up -d
 ```
 
+> **IMPORTANTE:** Após recriar containers (`docker compose up -d`), SEMPRE reinicie o Nginx para atualizar os IPs Docker internos:
+> ```bash
+> docker compose restart nginx
+> ```
+> Se não fizer isso, o Nginx pode tentar conectar em IPs antigos dos containers, causando erro 502.
+
 ### Quando mudou o Dockerfile: rebuild
 
 ```bash
@@ -380,14 +408,146 @@ docker compose logs ai-service --tail=50
 docker compose restart ai-service
 ```
 
-### WebSocket não conecta
+### WebSocket / Real-time não funciona (sem som, sem borda verde, sem notificações)
+
+O real-time usa **Laravel Reverb** (WebSocket) com o **Pusher.js** no frontend. O fluxo é:
+
+```
+Mensagem recebida → PHP dispara evento → Reverb (WebSocket) → Browser (Echo/Pusher.js)
+                                                                    ↓
+                                                              Som + borda verde + notificação
+```
+
+**Há 3 camadas que podem falhar:**
+
+#### Camada 1: PHP → Reverb (backend broadcasting)
 
 ```bash
-docker compose logs reverb --tail=50
-docker compose restart reverb
+# Verificar variável BROADCAST_CONNECTION (DEVE ser "reverb", NÃO "log" ou "null")
+grep BROADCAST_CONNECTION .env
+# Correto: BROADCAST_CONNECTION=reverb
 
-# Verificar variáveis REVERB_*
-grep REVERB .env
+# Verificar conexão PHP → Reverb
+docker compose exec -T php env | grep REVERB
+# Deve mostrar: REVERB_HOST=reverb, REVERB_PORT=8080, REVERB_SCHEME=http
+
+docker compose exec -T queue env | grep REVERB
+# Deve mostrar: REVERB_HOST=reverb, REVERB_PORT=8080, REVERB_SCHEME=http
+
+# Testar disparo de evento
+docker compose exec -T php php artisan tinker --execute='$msg = App\Models\TicketMessage::latest()->first(); $ticket = $msg->ticket; event(new App\Events\TicketMessageCreated($msg, $ticket)); echo "OK";'
+# Se der erro "cURL error 7: Failed to connect" → PHP não alcança o Reverb
+```
+
+**Erro comum:** `.env` com `BROADCAST_CONNECTION=log` faz os eventos irem para o log ao invés do WebSocket.
+
+**Correção:** `BROADCAST_CONNECTION=reverb` no `.env` + `php artisan config:clear`
+
+#### Camada 2: Reverb (servidor WebSocket)
+
+```bash
+# Ver logs do Reverb
+docker compose logs --tail=20 reverb
+# Deve mostrar: "Starting server on 0.0.0.0:8080 (crm.omnify.center)"
+
+# Verificar hostname do Reverb (DEVE ser o domínio público, NÃO 0.0.0.0)
+docker compose exec -T reverb env | grep REVERB
+# Deve mostrar: REVERB_HOST=crm.omnify.center, REVERB_PORT=443, REVERB_SCHEME=https
+```
+
+**Erro comum:** `REVERB_HOST=0.0.0.0` no container Reverb faz ele rejeitar conexões do browser com `Host: crm.omnify.center` (hostname mismatch → 500).
+
+**Correção:** No `docker-compose.yml`, o serviço `reverb` deve ter:
+```yaml
+REVERB_HOST: ${VITE_REVERB_HOST:-crm.omnify.center}
+REVERB_PORT: ${VITE_REVERB_PORT:-443}
+REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
+REVERB_SERVER_HOST: 0.0.0.0      # bind address (interno)
+REVERB_SERVER_PORT: 8080          # bind port (interno)
+```
+
+O `REVERB_HOST` no container Reverb é o hostname **público** (para validação do Host header).
+O `REVERB_HOST` nos containers PHP/Queue é o hostname **interno** Docker (`reverb`).
+
+#### Camada 3: Browser → Reverb (frontend WebSocket)
+
+```bash
+# Testar WebSocket externamente (DEVE usar --http1.1, não HTTP/2)
+curl -sv --http1.1 'https://crm.omnify.center/app/crm-omnify-reverb-key-2024?protocol=7&client=js&version=8.4.0&flash=false' \
+  -H 'Upgrade: websocket' -H 'Connection: upgrade' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  -H 'Sec-WebSocket-Version: 13' --max-time 5 -k 2>&1 | grep -E 'HTTP|pusher'
+# Deve mostrar: "HTTP/1.1 101 Switching Protocols" e "pusher:connection_established"
+```
+
+**Erro comum:** `enabledTransports: ['wss']` no `echo.ts`. O Pusher.js 8.x NÃO reconhece `'wss'` como transporte — deve ser `['ws']`. O TLS é controlado por `forceTLS: true`.
+
+**Config correta do `frontend/src/lib/echo.ts`:**
+```typescript
+echo = new Echo({
+  broadcaster: 'reverb',
+  wsHost: 'crm.omnify.center',
+  wsPort: 443,
+  wssPort: 443,
+  forceTLS: true,
+  enabledTransports: ['ws'],  // NÃO usar 'wss'!
+  // ...
+})
+```
+
+**Verificar variáveis do frontend (.env no frontend):**
+```
+VITE_REVERB_APP_KEY=crm-omnify-reverb-key-2024
+VITE_REVERB_HOST=crm.omnify.center
+VITE_REVERB_PORT=443
+VITE_REVERB_SCHEME=https
+```
+
+> **IMPORTANTE:** Essas variáveis são embutidas no build do frontend (`npm run build`). Se mudar alguma, precisa recompilar o frontend.
+
+#### Tabela de variáveis REVERB por container
+
+| Container | REVERB_HOST | REVERB_PORT | REVERB_SCHEME | Para quê |
+|-----------|-------------|-------------|---------------|----------|
+| **reverb** | `crm.omnify.center` | `443` | `https` | Hostname público (validação WebSocket) |
+| **php** | `reverb` | `8080` | `http` | Conexão interna Docker (broadcasting) |
+| **queue** | `reverb` | `8080` | `http` | Conexão interna Docker (broadcasting) |
+| **frontend** | `crm.omnify.center` | `443` | `https` | Conexão do browser (VITE_REVERB_*) |
+
+#### Erro 502 / Nginx com IP antigo
+
+Quando containers são recriados (`docker compose up -d`), eles podem receber novos IPs Docker. O Nginx cacheia os IPs dos upstreams. Se o Nginx mostrar `connect() failed (111: Connection refused)`:
+
+```bash
+# Reiniciar Nginx para atualizar DNS dos containers
+docker compose restart nginx
+```
+
+#### Checklist completo de real-time
+
+```bash
+# 1. BROADCAST_CONNECTION deve ser "reverb"
+grep BROADCAST_CONNECTION .env
+
+# 2. Reverb rodando com hostname correto
+docker compose logs --tail=5 reverb
+# Deve mostrar: "Starting server on 0.0.0.0:8080 (crm.omnify.center)"
+
+# 3. PHP/Queue conectam internamente ao Reverb
+docker compose exec -T php env | grep REVERB_HOST
+# Deve ser: reverb
+
+# 4. Teste de broadcast
+docker compose exec -T php php artisan tinker --execute='broadcast(new App\Events\TicketMessageCreated(App\Models\TicketMessage::latest()->first(), App\Models\TicketMessage::latest()->first()->ticket)); echo "OK";'
+
+# 5. Teste WebSocket externo
+curl -s --http1.1 'https://crm.omnify.center/app/crm-omnify-reverb-key-2024?protocol=7&client=js&version=8.4.0&flash=false' \
+  -H 'Upgrade: websocket' -H 'Connection: upgrade' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  -H 'Sec-WebSocket-Version: 13' --max-time 3 -k -o /dev/null -w '%{http_code}'
+# Deve retornar: 101
+
+# 6. Se tudo OK, pedir ao usuário dar F5 no navegador
 ```
 
 ### Jobs não processam (fila parada)
@@ -607,9 +767,96 @@ docker compose ps
 - [ ] `docker compose ps` → todos containers `Up`
 - [ ] https://crm.omnify.center carrega
 - [ ] Login funciona
-- [ ] WebSocket conecta (mensagens em tempo real)
-- [ ] Testar mensagem no WhatsApp
+- [ ] API responde: `curl -s -o /dev/null -w '%{http_code}' https://crm.omnify.center/api/branding` → 200
+- [ ] WebSocket responde: `curl -s --http1.1 -o /dev/null -w '%{http_code}' 'https://crm.omnify.center/app/crm-omnify-reverb-key-2024?protocol=7&client=js&version=8.4.0&flash=false' -H 'Upgrade: websocket' -H 'Connection: upgrade' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Version: 13' --max-time 3 -k` → 101
+- [ ] Testar mensagem no WhatsApp → som + borda verde no Kanban
 - [ ] `docker compose logs --tail=50` sem erros
+- [ ] Reverb mostra hostname correto: `docker compose logs --tail=3 reverb` → `crm.omnify.center`
+
+---
+
+## 12. Deploy Correto para Evitar Erros de Real-time e Notificações
+
+### Quando mudar APENAS código frontend ou backend
+
+```bash
+cd /var/www/crm
+git pull origin main
+
+# Se mudou frontend:
+cd frontend && npm run build && cd ..
+
+# Se mudou backend:
+docker compose exec -T php php artisan config:cache
+docker compose exec -T php php artisan route:cache
+
+# Reiniciar (sem recriar containers = sem problemas de DNS)
+docker compose restart php queue scheduler
+```
+
+### Quando mudar docker-compose.yml ou .env do Docker
+
+```bash
+cd /var/www/crm
+git pull origin main
+
+# Recriar apenas os containers afetados
+docker compose up -d reverb queue
+
+# OBRIGATÓRIO: reiniciar Nginx para atualizar IPs dos containers recriados
+docker compose restart nginx
+
+# Verificar que Reverb subiu com hostname correto
+docker compose logs --tail=3 reverb
+# Esperado: "Starting server on 0.0.0.0:8080 (crm.omnify.center)"
+```
+
+### Quando mudar variáveis VITE_REVERB_* (frontend .env)
+
+As variáveis `VITE_*` são embutidas no JavaScript durante `npm run build`. Mudar o `.env` do frontend **requer recompilação**:
+
+```bash
+cd /var/www/crm/frontend
+# Editar .env se necessário
+npm run build
+cd ..
+# Nginx serve os arquivos estáticos diretamente, basta reload
+docker compose exec nginx nginx -s reload
+```
+
+### Deploy completo seguro (quando não sabe o que mudou)
+
+```bash
+cd /var/www/crm
+git pull origin main
+
+# Frontend
+cd frontend && npm install --legacy-peer-deps && npm run build && cd ..
+
+# Backend
+docker compose exec -T php composer install --no-dev --optimize-autoloader
+docker compose exec -T php php artisan migrate --force
+docker compose exec -T php php artisan config:cache
+docker compose exec -T php php artisan route:cache
+docker compose exec -T php php artisan view:cache
+
+# Recriar containers (pega novas configs do docker-compose.yml)
+docker compose up -d
+
+# SEMPRE reiniciar Nginx por último (para pegar os novos IPs)
+docker compose restart nginx
+
+# Verificar
+docker compose ps
+docker compose logs --tail=3 reverb
+```
+
+### Comando único via sshpass (deploy remoto sem interação)
+
+```bash
+sshpass -p 'Motochefe2025@' ssh -o StrictHostKeyChecking=no root@212.85.20.129 \
+  "cd /var/www/crm && git pull origin main && cd frontend && npm run build && cd .. && docker compose exec -T php php artisan config:cache && docker compose exec -T php php artisan route:cache && docker compose up -d && docker compose restart nginx && docker compose ps"
+```
 
 ---
 
