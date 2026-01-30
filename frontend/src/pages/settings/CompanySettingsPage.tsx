@@ -18,7 +18,7 @@ import { useAuthStore } from '@/store/authStore'
 import api from '@/api/axios'
 
 export function CompanySettingsPage() {
-  const { tenant, setTenant } = useAuthStore()
+  const { tenant } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,7 +45,7 @@ export function CompanySettingsPage() {
       setFormData({
         name: tenant.name || '',
         slug: tenant.slug || '',
-        whatsapp_number: tenant.whatsapp_number || '',
+        whatsapp_number: (tenant as any).whatsapp_number || '',
         email: (tenant.settings?.email as string) || '',
         phone: (tenant.settings?.phone as string) || '',
         address: (tenant.settings?.address as string) || '',

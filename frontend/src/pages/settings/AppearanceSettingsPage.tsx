@@ -139,7 +139,7 @@ export function AppearanceSettingsPage() {
           {themes.map((t) => (
             <button
               key={t.id}
-              onClick={() => setSelectedTheme(t.id)}
+              onClick={() => setSelectedTheme(t.id as 'light' | 'dark' | 'system')}
               className={`relative p-4 rounded-xl border-2 transition-all ${
                 selectedTheme === t.id
                   ? 'border-blue-500 bg-blue-500/10'

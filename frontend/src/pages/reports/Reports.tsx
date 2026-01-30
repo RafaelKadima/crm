@@ -449,7 +449,7 @@ export function ReportsPage() {
                       outerRadius={100}
                       paddingAngle={5}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                     >
                       {channelChartData.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />

@@ -109,7 +109,7 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
     if (!validate()) return
 
     try {
-      const payload = {
+      const payload: any = {
         title: formData.title,
         type: formData.type,
         description: formData.description || null,
