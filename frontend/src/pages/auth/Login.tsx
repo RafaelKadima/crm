@@ -40,7 +40,7 @@ export function LoginPage() {
     (loginMutation.error ? 'Erro ao fazer login' : '')
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Futuristic Background - Monochrome */}
       <div className="absolute inset-0 bg-background">
         {/* Grid Pattern */}
