@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
   Bell,
+  BellOff,
+  BellRing,
   Moon,
   Sun,
   LogOut,
@@ -20,15 +22,24 @@ import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { UserPointsBadge } from '@/components/gamification/UserPointsBadge'
 import { Breadcrumbs } from './Breadcrumbs'
+import { useSoundSettings } from '@/hooks/useSounds'
 
 export function Header() {
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
   const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
   const { theme, setTheme } = useTheme()
+  const { enabled: soundEnabled, toggle: toggleSound } = useSoundSettings()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
+  const [soundAnimating, setSoundAnimating] = useState(false)
+
+  const handleToggleSound = () => {
+    toggleSound()
+    setSoundAnimating(true)
+    setTimeout(() => setSoundAnimating(false), 600)
+  }
 
   const handleLogout = () => {
     logout()
@@ -122,6 +133,59 @@ export function Header() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </Button>
+
+          {/* Sound Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleSound}
+            title={soundEnabled ? 'Desativar sons' : 'Ativar sons'}
+            className={cn(
+              "relative transition-all duration-300",
+              "hover:bg-white/5 hover:text-white",
+              "border border-transparent hover:border-white/10",
+              soundEnabled && "text-amber-400",
+              !soundEnabled && "text-muted-foreground/50",
+              soundAnimating && "scale-110"
+            )}
+          >
+            <AnimatePresence mode="wait">
+              {soundEnabled ? (
+                <motion.div
+                  key="bell-on"
+                  initial={{ scale: 0.5, opacity: 0, rotate: -30 }}
+                  animate={{
+                    scale: 1,
+                    opacity: 1,
+                    rotate: [0, 15, -15, 10, -10, 0],
+                  }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <BellRing className="h-5 w-5" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="bell-off"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <BellOff className="h-5 w-5" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {/* Glow indicator when sound is ON */}
+            {soundEnabled && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute top-1 right-1 h-2 w-2 rounded-full bg-amber-400"
+                style={{ boxShadow: '0 0 8px rgba(251, 191, 36, 0.6)' }}
+              />
+            )}
           </Button>
 
           {/* Notifications */}
