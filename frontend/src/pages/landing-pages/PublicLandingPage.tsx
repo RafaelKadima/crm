@@ -313,12 +313,13 @@ function PublicBlockRenderer({
         ? { backgroundImage: `url(${s.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
         : { backgroundColor: s.backgroundColor }
       
-      const heightClass = {
+      const heightMap: Record<string, string> = {
         small: 'min-h-[40vh]',
         medium: 'min-h-[60vh]',
         large: 'min-h-[80vh]',
         full: 'min-h-screen',
-      }[s.height || 'medium']
+      }
+      const heightClass = heightMap[s.height || 'medium']
 
       return (
         <section 
@@ -536,7 +537,7 @@ function PublicBlockRenderer({
       )
 
     case 'text':
-      const TitleTag = (s.titleTag || 'h2') as keyof JSX.IntrinsicElements
+      const TitleTag = (s.titleTag || 'h2') as React.ElementType
       return (
         <section 
           className={cn(

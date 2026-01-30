@@ -373,7 +373,7 @@ function CreateLandingPageModal({ open, onOpenChange }: CreateModalProps) {
   const products = productsData?.data || []
 
   const handleCreate = async () => {
-    await createMutation.mutateAsync(formData)
+    await createMutation.mutateAsync(formData as any)
     onOpenChange(false)
     setStep(1)
     setFormData({
