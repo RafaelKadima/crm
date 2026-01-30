@@ -10,9 +10,10 @@ interface KanbanColumnProps {
   leads: Lead[]
   onLeadClick: (lead: Lead) => void
   isOver?: boolean
+  totalLeadsInPipeline?: number
 }
 
-export function KanbanColumn({ stage, leads, onLeadClick, isOver }: KanbanColumnProps) {
+export function KanbanColumn({ stage, leads, onLeadClick, isOver, totalLeadsInPipeline = 0 }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({
     id: stage.id,
   })
@@ -23,7 +24,7 @@ export function KanbanColumn({ stage, leads, onLeadClick, isOver }: KanbanColumn
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex-shrink-0 w-80"
+      className="flex-shrink-0 w-80 h-full"
     >
       <div
         ref={setNodeRef}
@@ -45,10 +46,21 @@ export function KanbanColumn({ stage, leads, onLeadClick, isOver }: KanbanColumn
             </span>
           </div>
           {totalValue > 0 && (
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-xs font-semibold text-green-500">
               {formatCurrency(totalValue)}
             </span>
           )}
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1 rounded-full bg-muted overflow-hidden mt-2 mb-1 mx-1 shrink-0">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              backgroundColor: stage.color,
+              width: `${Math.min((leads.length / Math.max(totalLeadsInPipeline, 1)) * 100, 100)}%`,
+            }}
+          />
         </div>
 
         {/* Cards - scrollable area */}

@@ -9,7 +9,7 @@ import {
   LogOut,
   User,
   ChevronDown,
-  Sparkles,
+  Menu,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
@@ -19,11 +19,12 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { UserPointsBadge } from '@/components/gamification/UserPointsBadge'
+import { Breadcrumbs } from './Breadcrumbs'
 
 export function Header() {
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
-  const { sidebarCollapsed } = useUIStore()
+  const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
   const { theme, setTheme } = useTheme()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -43,60 +44,57 @@ export function Header() {
       className={cn(
         "fixed top-0 right-0 z-30 h-16 transition-all duration-200",
         "bg-background/80 backdrop-blur-xl",
-        sidebarCollapsed ? "left-[72px]" : "left-[280px]"
+        "left-0 md:left-[72px]",
+        !sidebarCollapsed && "md:left-[280px]"
       )}
       style={{
         borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
       }}
     >
-      {/* Gradient line at top */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-px"
-        style={{
-          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05), transparent)',
-        }}
-      />
-
-      <div className="h-full flex items-center justify-between px-6">
-        {/* Search */}
-        <div className="flex-1 max-w-md">
-          <div className="relative group">
-            <Search className={cn(
-              "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors duration-300",
-              searchFocused ? "text-white" : "text-muted-foreground"
-            )} />
-            <Input
-              placeholder="Buscar leads, contatos..."
-              className={cn(
-                "pl-10 bg-card/50 transition-all duration-300",
-                "border-white/5 focus:border-white/20",
-                "placeholder:text-muted-foreground/60",
-                searchFocused && "shadow-[0_0_20px_rgba(255,255,255,0.05)]"
-              )}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-          </div>
+      <div className="h-full flex items-center justify-between px-3 sm:px-6">
+        {/* Mobile menu button + Breadcrumbs */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden shrink-0"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <Breadcrumbs />
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {/* AI Status Indicator */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-            <Sparkles className="h-4 w-4 text-white/60 animate-pulse" />
-            <span className="text-xs font-medium text-white/60">IA Ativa</span>
+          {/* Compact Search */}
+          <div className="hidden md:block relative">
+            <Search className={cn(
+              "absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 transition-colors duration-200",
+              searchFocused ? "text-white" : "text-muted-foreground"
+            )} />
+            <Input
+              placeholder="Buscar..."
+              className={cn(
+                "pl-9 w-44 h-9 text-sm bg-card/50 transition-all duration-200",
+                "border-white/5 focus:border-white/20 focus:w-56",
+                "placeholder:text-muted-foreground/60"
+              )}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+            />
           </div>
 
           {/* Gamification Points Badge */}
           <UserPointsBadge className="hidden md:block" />
 
           {/* Theme Toggle */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={toggleTheme}
             className={cn(
-              "relative overflow-hidden transition-all duration-300",
+              "relative overflow-hidden transition-all duration-200",
               "hover:bg-white/5 hover:text-white",
               "border border-transparent hover:border-white/10"
             )}
@@ -133,15 +131,14 @@ export function Header() {
               size="icon"
               onClick={() => setShowNotifications(!showNotifications)}
               className={cn(
-                "relative transition-all duration-300",
+                "relative transition-all duration-200",
                 "hover:bg-white/5 hover:text-white",
                 "border border-transparent hover:border-white/10",
                 showNotifications && "bg-white/5 border-white/10"
               )}
             >
               <Bell className="h-5 w-5" />
-              {/* Notification badge */}
-              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-white/80" 
+              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-white/80"
                 style={{ boxShadow: '0 0 8px rgba(255, 255, 255, 0.4)' }}
               />
             </Button>
@@ -173,7 +170,7 @@ export function Header() {
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className={cn(
-                "flex items-center gap-3 p-2 rounded-xl transition-all duration-300",
+                "flex items-center gap-3 p-2 rounded-xl transition-all duration-200",
                 "hover:bg-white/5 border border-transparent hover:border-white/10",
                 showUserMenu && "bg-white/5 border-white/10"
               )}
@@ -184,7 +181,6 @@ export function Header() {
                   fallback={user?.name || 'U'}
                   size="sm"
                 />
-                {/* Online indicator */}
                 <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background"
                   style={{ boxShadow: '0 0 6px rgba(16, 185, 129, 0.5)' }}
                 />
@@ -194,7 +190,7 @@ export function Header() {
                 <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
               </div>
               <ChevronDown className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-300",
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
                 showUserMenu && "rotate-180"
               )} />
             </button>
@@ -214,7 +210,7 @@ export function Header() {
                         navigate('/settings/profile')
                       }}
                       className={cn(
-                        "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-300",
+                        "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-200",
                         "hover:bg-white/5 hover:text-white"
                       )}
                     >
@@ -225,7 +221,7 @@ export function Header() {
                     <button
                       onClick={handleLogout}
                       className={cn(
-                        "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-300",
+                        "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-200",
                         "hover:bg-destructive/10 text-destructive"
                       )}
                     >

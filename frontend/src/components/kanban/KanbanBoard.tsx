@@ -126,6 +126,7 @@ export function KanbanBoard({ stages, leads, onLeadMove, onLeadClick }: KanbanBo
             leads={getLeadsByStage(stage.id)}
             onLeadClick={onLeadClick}
             isOver={hoveredStageId === stage.id && activeId !== null}
+            totalLeadsInPipeline={leads.length}
           />
         ))}
       </div>

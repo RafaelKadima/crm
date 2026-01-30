@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useAgentLearning } from '../../hooks/useAgentLearning';
 import type { DetectedQuestion } from '../../hooks/useAgentLearning';
 
@@ -75,25 +76,16 @@ export const DetectedQuestionsPage: React.FC = () => {
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <Sparkles className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              FAQs Automáticas
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              Perguntas detectadas nas conversas que podem virar FAQs
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title="FAQs Automáticas"
+          subtitle="Perguntas detectadas nas conversas que podem virar FAQs"
+        />
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
+        <div className="bg-white dark:bg-muted rounded-lg p-4 border border-gray-200 dark:border-border">
+          <div className="flex items-center gap-2 text-muted-foreground dark:text-muted-foreground mb-1">
             <HelpCircle className="w-4 h-4" />
             <span className="text-sm">Total Detectadas</span>
           </div>
@@ -101,7 +93,7 @@ export const DetectedQuestionsPage: React.FC = () => {
             {questions.length}
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-muted rounded-lg p-4 border border-gray-200 dark:border-border">
           <div className="flex items-center gap-2 text-yellow-500 mb-1">
             <Clock className="w-4 h-4" />
             <span className="text-sm">Pendentes</span>
@@ -110,7 +102,7 @@ export const DetectedQuestionsPage: React.FC = () => {
             {questions.filter(q => q.status === 'pending').length}
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-muted rounded-lg p-4 border border-gray-200 dark:border-border">
           <div className="flex items-center gap-2 text-green-500 mb-1">
             <Check className="w-4 h-4" />
             <span className="text-sm">Aprovadas</span>
@@ -119,7 +111,7 @@ export const DetectedQuestionsPage: React.FC = () => {
             {questions.filter(q => q.status === 'approved' || q.status === 'converted').length}
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-muted rounded-lg p-4 border border-gray-200 dark:border-border">
           <div className="flex items-center gap-2 text-purple-500 mb-1">
             <TrendingUp className="w-4 h-4" />
             <span className="text-sm">Convertidas em FAQ</span>
@@ -139,7 +131,7 @@ export const DetectedQuestionsPage: React.FC = () => {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === f
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                : 'bg-gray-100 dark:bg-muted text-muted-foreground dark:text-muted-foreground hover:bg-gray-200 dark:hover:bg-accent'
             }`}
           >
             {f === 'all' ? 'Todas' : f === 'pending' ? 'Pendentes' : f === 'approved' ? 'Aprovadas' : 'Rejeitadas'}
@@ -150,12 +142,12 @@ export const DetectedQuestionsPage: React.FC = () => {
       {/* Questions List */}
       <div className="space-y-4">
         {filteredQuestions.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <HelpCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-500 dark:text-gray-400">
+          <div className="text-center py-12 bg-white dark:bg-muted rounded-lg border border-gray-200 dark:border-border">
+            <HelpCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground dark:text-muted-foreground">
               Nenhuma pergunta {filter !== 'all' ? filter : ''} encontrada
             </p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Perguntas frequentes serão detectadas automaticamente nas conversas
             </p>
           </div>
@@ -163,11 +155,11 @@ export const DetectedQuestionsPage: React.FC = () => {
           filteredQuestions.map((question) => (
             <div
               key={question.id}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+              className="bg-white dark:bg-muted rounded-lg border border-gray-200 dark:border-border overflow-hidden"
             >
               {/* Question Header */}
               <div
-                className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-accent/50"
                 onClick={() => setSelectedQuestion(
                   selectedQuestion === question.id ? null : question.id
                 )}
@@ -180,7 +172,7 @@ export const DetectedQuestionsPage: React.FC = () => {
                          question.status === 'approved' ? 'Aprovada' :
                          question.status === 'converted' ? 'FAQ Criada' : 'Rejeitada'}
                       </span>
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <MessageSquare className="w-3 h-3" />
                         {question.occurrence_count}x
                       </span>
@@ -189,7 +181,7 @@ export const DetectedQuestionsPage: React.FC = () => {
                       {question.question}
                     </p>
                     {question.variations && question.variations.length > 0 && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         +{question.variations.length} variações
                       </p>
                     )}
@@ -220,9 +212,9 @@ export const DetectedQuestionsPage: React.FC = () => {
                       </>
                     )}
                     {selectedQuestion === question.id ? (
-                      <ChevronUp className="w-5 h-5 text-gray-400" />
+                      <ChevronUp className="w-5 h-5 text-muted-foreground" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
                     )}
                   </div>
                 </div>
@@ -230,11 +222,11 @@ export const DetectedQuestionsPage: React.FC = () => {
 
               {/* Expanded Content */}
               {selectedQuestion === question.id && (
-                <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="px-4 pb-4 border-t border-gray-200 dark:border-border">
                   <div className="pt-4 space-y-4">
                     {/* Suggested Answer */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-muted-foreground mb-2">
                         Resposta Sugerida
                       </label>
                       {question.status === 'pending' ? (
@@ -242,11 +234,11 @@ export const DetectedQuestionsPage: React.FC = () => {
                           value={editedAnswer || question.suggested_answer || ''}
                           onChange={(e) => setEditedAnswer(e.target.value)}
                           rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-accent text-gray-900 dark:text-white"
                           placeholder="Digite ou edite a resposta..."
                         />
                       ) : (
-                        <p className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-700 dark:text-gray-300">
+                        <p className="p-3 bg-gray-50 dark:bg-accent/50 rounded-lg text-gray-700 dark:text-muted-foreground">
                           {question.suggested_answer || 'Sem resposta definida'}
                         </p>
                       )}
@@ -255,12 +247,12 @@ export const DetectedQuestionsPage: React.FC = () => {
                     {/* Variations */}
                     {question.variations && question.variations.length > 0 && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-muted-foreground mb-2">
                           Variações Detectadas
                         </label>
                         <div className="space-y-1">
                           {question.variations.map((v, i) => (
-                            <p key={i} className="text-sm text-gray-600 dark:text-gray-400 pl-3 border-l-2 border-gray-300 dark:border-gray-600">
+                            <p key={i} className="text-sm text-muted-foreground dark:text-muted-foreground pl-3 border-l-2 border-gray-300 dark:border-border">
                               "{v}"
                             </p>
                           ))}
@@ -273,7 +265,7 @@ export const DetectedQuestionsPage: React.FC = () => {
                       <div className="flex justify-end gap-2 pt-2">
                         <button
                           onClick={() => handleReject(question.id)}
-                          className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                          className="px-4 py-2 text-muted-foreground dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-accent rounded-lg"
                         >
                           Rejeitar
                         </button>

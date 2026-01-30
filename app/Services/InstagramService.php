@@ -339,6 +339,22 @@ class InstagramService
             ]);
 
             Log::info('Ticket created from Instagram', ['ticket_id' => $ticket->id, 'lead_id' => $lead->id]);
+
+            // Se o lead tem estágio, mover para o primeiro estágio do pipeline
+            if ($lead->stage_id) {
+                $pipeline = $lead->stage?->pipeline;
+                if ($pipeline) {
+                    $firstStage = $pipeline->stages()->orderBy('position')->first();
+                    if ($firstStage && $firstStage->id !== $lead->stage_id) {
+                        $lead->update(['stage_id' => $firstStage->id]);
+                        Log::info('Lead moved to first stage on reopen', [
+                            'lead_id' => $lead->id,
+                            'from_stage' => $lead->getOriginal('stage_id'),
+                            'to_stage' => $firstStage->id,
+                        ]);
+                    }
+                }
+            }
         } else if (!$ticket->lead_id) {
             // Se ticket existe mas não tem lead, associa
             $ticket->update(['lead_id' => $lead->id]);

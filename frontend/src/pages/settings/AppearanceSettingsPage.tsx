@@ -23,13 +23,13 @@ const themes = [
     id: 'dark',
     name: 'Escuro',
     icon: Moon,
-    preview: 'bg-gray-900 border-2 border-gray-700',
+    preview: 'bg-background border-2 border-border',
   },
   {
     id: 'system',
     name: 'Sistema',
     icon: Monitor,
-    preview: 'bg-gradient-to-r from-gray-100 to-gray-900 border-2 border-gray-500',
+    preview: 'bg-gradient-to-r from-gray-100 to-gray-900 border-2 border-border',
   },
 ]
 
@@ -116,7 +116,7 @@ export function AppearanceSettingsPage() {
           <Palette className="w-6 h-6 text-pink-500" />
           Aparência
         </h2>
-        <p className="text-gray-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Personalize a aparência do sistema
         </p>
       </div>
@@ -133,7 +133,7 @@ export function AppearanceSettingsPage() {
       )}
 
       {/* Tema */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4">Tema</h3>
         <div className="grid grid-cols-3 gap-4">
           {themes.map((t) => (
@@ -143,7 +143,7 @@ export function AppearanceSettingsPage() {
               className={`relative p-4 rounded-xl border-2 transition-all ${
                 selectedTheme === t.id
                   ? 'border-blue-500 bg-blue-500/10'
-                  : 'border-gray-700 hover:border-gray-600'
+                  : 'border-border hover:border-border'
               }`}
             >
               {selectedTheme === t.id && (
@@ -162,7 +162,7 @@ export function AppearanceSettingsPage() {
       </div>
 
       {/* Cor de Destaque */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4">Cor de Destaque</h3>
         <div className="flex flex-wrap gap-3">
           {accentColors.map((color) => (
@@ -184,7 +184,7 @@ export function AppearanceSettingsPage() {
       </div>
 
       {/* Tamanho da Fonte */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4">Tamanho do Texto</h3>
         <div className="flex gap-3">
           {fontSizes.map((size) => (
@@ -194,7 +194,7 @@ export function AppearanceSettingsPage() {
               className={`flex-1 py-3 px-4 rounded-lg border transition-colors ${
                 selectedFontSize === size.id
                   ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                  : 'border-gray-700 hover:border-gray-600'
+                  : 'border-border hover:border-border'
               }`}
             >
               <span className="font-medium" style={{ fontSize: size.scale }}>
@@ -206,18 +206,18 @@ export function AppearanceSettingsPage() {
       </div>
 
       {/* Modo Compacto */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="font-medium">Modo Compacto</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Reduz o espaçamento entre elementos para mostrar mais conteúdo
             </p>
           </div>
           <button
             onClick={() => setSelectedCompactMode(!selectedCompactMode)}
             className={`relative w-14 h-7 rounded-full transition-colors ${
-              selectedCompactMode ? 'bg-blue-600' : 'bg-gray-600'
+              selectedCompactMode ? 'bg-blue-600' : 'bg-muted-foreground/20'
             }`}
           >
             <div
@@ -230,13 +230,13 @@ export function AppearanceSettingsPage() {
       </div>
 
       {/* Preview */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4">Pré-visualização</h3>
         <div
           className={`p-4 rounded-lg border transition-colors ${
             selectedTheme === 'light' 
               ? 'bg-white text-gray-900 border-gray-300' 
-              : 'bg-gray-900 text-white border-gray-700'
+              : 'bg-background text-white border-border'
           }`}
         >
           <div className="flex items-center gap-3 mb-4">
@@ -248,7 +248,7 @@ export function AppearanceSettingsPage() {
               <p className="font-semibold" style={{ fontSize: fontSizes.find(s => s.id === selectedFontSize)?.scale }}>
                 Lead de Exemplo
               </p>
-              <p className={`text-sm ${selectedTheme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
+              <p className={`text-sm ${selectedTheme === 'light' ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                 contato@exemplo.com
               </p>
             </div>

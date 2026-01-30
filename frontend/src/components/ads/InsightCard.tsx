@@ -81,7 +81,7 @@ export default function InsightCard({
 
   if (compact) {
     return (
-      <div className={`p-3 rounded-lg border-l-4 ${config.borderColor} bg-gray-50 dark:bg-gray-800/50`}>
+      <div className={`p-3 rounded-lg border-l-4 ${config.borderColor} bg-gray-50 dark:bg-muted/50`}>
         <div className="flex items-start gap-3">
           <div className={`p-1.5 rounded ${config.bgColor}`}>
             <Icon className={`w-4 h-4 ${config.iconColor}`} />
@@ -90,11 +90,11 @@ export default function InsightCard({
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {insight.title}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {insight.entity_name || 'Geral'}
             </p>
           </div>
-          <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
         </div>
       </div>
     );
@@ -123,12 +123,12 @@ export default function InsightCard({
                 </div>
                 
                 {insight.entity_name && (
-                  <p className="text-sm text-gray-500 mb-2">
+                  <p className="text-sm text-muted-foreground mb-2">
                     {insight.entity_type}: {insight.entity_name}
                   </p>
                 )}
                 
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+                <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                   {insight.description}
                 </p>
                 
@@ -142,16 +142,16 @@ export default function InsightCard({
                   <div className="mt-3 flex flex-wrap gap-2">
                     {insight.data.previous_ctr !== undefined && insight.data.current_ctr !== undefined && (
                       <>
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                        <span className="px-2 py-1 bg-gray-100 dark:bg-muted rounded text-xs">
                           CTR anterior: {insight.data.previous_ctr.toFixed(2)}%
                         </span>
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                        <span className="px-2 py-1 bg-gray-100 dark:bg-muted rounded text-xs">
                           CTR atual: {insight.data.current_ctr.toFixed(2)}%
                         </span>
                       </>
                     )}
                     {insight.data.performance_score !== undefined && (
-                      <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                      <span className="px-2 py-1 bg-gray-100 dark:bg-muted rounded text-xs">
                         Score: {insight.data.performance_score.toFixed(0)}/100
                       </span>
                     )}
@@ -191,7 +191,7 @@ export default function InsightCard({
                 <span className={`px-2 py-1 text-xs rounded ${
                   insight.status === 'applied' 
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                    : 'bg-gray-100 text-muted-foreground dark:bg-muted dark:text-muted-foreground'
                 }`}>
                   {insight.status === 'applied' ? '✓ Aplicado' :
                    insight.status === 'dismissed' ? 'Dispensado' : insight.status}

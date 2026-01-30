@@ -297,6 +297,22 @@ class InternalWhatsAppWebhookController extends Controller
                 'ticket_id' => $ticket->id,
                 'lead_id' => $lead->id,
             ]);
+
+            // Se o lead tem estágio, mover para o primeiro estágio do pipeline
+            if ($lead->stage_id) {
+                $pipeline = $lead->stage?->pipeline;
+                if ($pipeline) {
+                    $firstStage = $pipeline->stages()->orderBy('position')->first();
+                    if ($firstStage && $firstStage->id !== $lead->stage_id) {
+                        $lead->update(['stage_id' => $firstStage->id]);
+                        Log::info('Lead moved to first stage on reopen', [
+                            'lead_id' => $lead->id,
+                            'from_stage' => $lead->getOriginal('stage_id'),
+                            'to_stage' => $firstStage->id,
+                        ]);
+                    }
+                }
+            }
         } elseif (!$ticket->lead_id) {
             $ticket->update(['lead_id' => $lead->id]);
         }

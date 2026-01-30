@@ -8,6 +8,7 @@ import {
   Play,
   BarChart3
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useAdCampaigns, useAdAccounts } from '@/hooks/useAds';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -61,16 +62,10 @@ export default function AdsCampaigns() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Campanhas
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Visualize e gerencie suas campanhas de anúncios
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Campanhas"
+        subtitle="Visualize e gerencie suas campanhas de anúncios"
+      />
 
       {/* Filters */}
       <Card>
@@ -78,7 +73,7 @@ export default function AdsCampaigns() {
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar campanhas..."
                   value={search}
@@ -91,7 +86,7 @@ export default function AdsCampaigns() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
+              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
             >
               <option value="">Todos os status</option>
               <option value="ACTIVE">Ativo</option>
@@ -102,7 +97,7 @@ export default function AdsCampaigns() {
             <select
               value={accountFilter}
               onChange={(e) => setAccountFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
+              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
             >
               <option value="">Todas as contas</option>
               {accounts?.map((account) => (
@@ -120,33 +115,33 @@ export default function AdsCampaigns() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
+              <thead className="bg-gray-50 dark:bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Campanha
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Gasto
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Impressões
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Cliques
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     CTR
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     CPC
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Conv.
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     ROAS
                   </th>
                 </tr>
@@ -155,14 +150,14 @@ export default function AdsCampaigns() {
                 {campaigns?.data?.map((campaign) => (
                   <tr 
                     key={campaign.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                    className="hover:bg-gray-50 dark:hover:bg-muted/50 cursor-pointer"
                   >
                     <td className="px-4 py-4">
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">
                           {campaign.name}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           {campaign.account?.name} • {campaign.objective || 'Sem objetivo'}
                         </p>
                       </div>
@@ -173,10 +168,10 @@ export default function AdsCampaigns() {
                     <td className="px-4 py-4 text-right font-medium text-gray-900 dark:text-white">
                       {formatCurrency(campaign.spend)}
                     </td>
-                    <td className="px-4 py-4 text-right text-gray-600 dark:text-gray-300">
+                    <td className="px-4 py-4 text-right text-muted-foreground dark:text-muted-foreground">
                       {formatNumber(campaign.impressions)}
                     </td>
-                    <td className="px-4 py-4 text-right text-gray-600 dark:text-gray-300">
+                    <td className="px-4 py-4 text-right text-muted-foreground dark:text-muted-foreground">
                       {formatNumber(campaign.clicks)}
                     </td>
                     <td className="px-4 py-4 text-right">
@@ -187,10 +182,10 @@ export default function AdsCampaigns() {
                         {Number(campaign.ctr || 0).toFixed(2)}%
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-right text-gray-600 dark:text-gray-300">
+                    <td className="px-4 py-4 text-right text-muted-foreground dark:text-muted-foreground">
                       {formatCurrency(Number(campaign.cpc || 0))}
                     </td>
-                    <td className="px-4 py-4 text-right text-gray-600 dark:text-gray-300">
+                    <td className="px-4 py-4 text-right text-muted-foreground dark:text-muted-foreground">
                       {formatNumber(Number(campaign.conversions || 0))}
                     </td>
                     <td className="px-4 py-4 text-right">
@@ -217,11 +212,11 @@ export default function AdsCampaigns() {
           {/* Empty State */}
           {(!campaigns?.data || campaigns.data.length === 0) && (
             <div className="text-center py-12">
-              <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Nenhuma campanha encontrada
               </h3>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 Conecte uma conta de anúncios para ver suas campanhas aqui.
               </p>
             </div>
@@ -232,7 +227,7 @@ export default function AdsCampaigns() {
       {/* Pagination */}
       {campaigns?.meta && campaigns.meta.last_page > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Mostrando {campaigns.data.length} de {campaigns.meta.total} campanhas
           </p>
           <div className="flex gap-2">

@@ -204,24 +204,24 @@ export function UserPermissionsModal({ user, open, onClose, onUpdated }: UserPer
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-gray-900 rounded-2xl border border-gray-700/50 w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col shadow-2xl"
+          className="bg-background rounded-2xl border border-border w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col shadow-2xl"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+          <div className="flex items-center justify-between p-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-xl font-bold">Permissões de {user.name}</h3>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Cargo: <span className="text-purple-400">{roleLabels[user.role] || user.role}</span>
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent/50 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -241,37 +241,37 @@ export function UserPermissionsModal({ user, open, onClose, onUpdated }: UserPer
             ) : (
               <div className="space-y-4">
                 {/* Legenda */}
-                <div className="flex flex-wrap gap-4 p-4 bg-gray-800/50 rounded-xl border border-gray-700/30">
+                <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-xl border border-border/30">
                   <div className="flex items-center gap-2 text-sm">
                     <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span className="text-gray-400">Permissão ativa</span>
+                    <span className="text-muted-foreground">Permissão ativa</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <div className="w-3 h-3 rounded-full bg-gray-600"></div>
-                    <span className="text-gray-400">Permissão inativa</span>
+                    <div className="w-3 h-3 rounded-full bg-muted-foreground/20"></div>
+                    <span className="text-muted-foreground">Permissão inativa</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Lock className="w-3 h-3 text-purple-400" />
-                    <span className="text-gray-400">Padrão do cargo</span>
+                    <span className="text-muted-foreground">Padrão do cargo</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Unlock className="w-3 h-3 text-amber-400" />
-                    <span className="text-gray-400">Customizado</span>
+                    <span className="text-muted-foreground">Customizado</span>
                   </div>
                 </div>
 
                 {/* Módulos e Permissões */}
                 {modules.map((module) => (
-                  <div key={module.key} className="bg-gray-800/30 rounded-xl border border-gray-700/30 overflow-hidden">
+                  <div key={module.key} className="bg-muted/30 rounded-xl border border-border/30 overflow-hidden">
                     <button
                       onClick={() => toggleModule(module.key)}
-                      className="w-full flex items-center justify-between p-4 hover:bg-gray-700/20 transition-colors"
+                      className="w-full flex items-center justify-between p-4 hover:bg-accent/20 transition-colors"
                     >
                       <span className="font-semibold text-lg">{module.name}</span>
                       {expandedModules.has(module.key) ? (
-                        <ChevronDown className="w-5 h-5 text-gray-400" />
+                        <ChevronDown className="w-5 h-5 text-muted-foreground" />
                       ) : (
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
                       )}
                     </button>
 
@@ -281,7 +281,7 @@ export function UserPermissionsModal({ user, open, onClose, onUpdated }: UserPer
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="border-t border-gray-700/30"
+                          className="border-t border-border/30"
                         >
                           <div className="p-4 space-y-2">
                             {module.permissions.map((permission) => {
@@ -296,14 +296,14 @@ export function UserPermissionsModal({ user, open, onClose, onUpdated }: UserPer
                                   className={`flex items-center justify-between p-3 rounded-lg transition-all ${
                                     isPending 
                                       ? 'bg-amber-500/10 border border-amber-500/30' 
-                                      : 'bg-gray-800/50 border border-transparent hover:border-gray-600/50'
+                                      : 'bg-muted/50 border border-transparent hover:border-border'
                                   }`}
                                 >
                                   <div className="flex items-center gap-3">
-                                    <div className={`w-2 h-2 rounded-full ${enabled ? 'bg-green-500' : 'bg-gray-600'}`} />
+                                    <div className={`w-2 h-2 rounded-full ${enabled ? 'bg-green-500' : 'bg-muted-foreground/20'}`} />
                                     <div>
                                       <p className="font-medium text-sm">{permission.name}</p>
-                                      <p className="text-xs text-gray-500">{permission.key}</p>
+                                      <p className="text-xs text-muted-foreground">{permission.key}</p>
                                     </div>
                                     {isDefault && !isCustom && (
                                       <Lock className="w-3 h-3 text-purple-400" title="Padrão do cargo" />
@@ -316,7 +316,7 @@ export function UserPermissionsModal({ user, open, onClose, onUpdated }: UserPer
                                   <button
                                     onClick={() => togglePermission(permission.key)}
                                     className={`relative w-12 h-6 rounded-full transition-colors ${
-                                      enabled ? 'bg-green-600' : 'bg-gray-600'
+                                      enabled ? 'bg-green-600' : 'bg-muted-foreground/20'
                                     }`}
                                   >
                                     <motion.div
@@ -340,7 +340,7 @@ export function UserPermissionsModal({ user, open, onClose, onUpdated }: UserPer
           </div>
 
           {/* Footer */}
-          <div className="p-6 border-t border-gray-700/50 bg-gray-800/30">
+          <div className="p-6 border-t border-border bg-muted/30">
             {success && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -356,7 +356,7 @@ export function UserPermissionsModal({ user, open, onClose, onUpdated }: UserPer
               <button
                 onClick={handleReset}
                 disabled={resetting || loading}
-                className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-white hover:bg-accent/50 rounded-lg transition-colors disabled:opacity-50"
               >
                 {resetting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -374,7 +374,7 @@ export function UserPermissionsModal({ user, open, onClose, onUpdated }: UserPer
                 )}
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>

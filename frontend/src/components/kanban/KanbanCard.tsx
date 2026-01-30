@@ -18,7 +18,7 @@ const channelConfig: Record<string, { icon: typeof Phone; color: string }> = {
   whatsapp: { icon: MessageSquare, color: 'text-green-500' },
   instagram: { icon: MessageCircle, color: 'text-pink-500' },
   messenger: { icon: MessageCircle, color: 'text-blue-500' },
-  telefone: { icon: Phone, color: 'text-gray-400' },
+  telefone: { icon: Phone, color: 'text-muted-foreground' },
   email: { icon: Mail, color: 'text-blue-400' },
 }
 
@@ -41,7 +41,7 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
   }
 
   const channelType = lead.channel?.type?.toLowerCase() || ''
-  const channel = channelConfig[channelType] || { icon: MessageSquare, color: 'text-gray-400' }
+  const channel = channelConfig[channelType] || { icon: MessageSquare, color: 'text-muted-foreground' }
   const ChannelIcon = channel.icon
   const hasUnread = (lead.unread_messages && lead.unread_messages > 0) || lead.has_new_message
 

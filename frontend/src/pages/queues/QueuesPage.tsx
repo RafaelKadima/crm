@@ -124,7 +124,7 @@ export function QueuesPage() {
           <div className="relative">
             <button
               onClick={() => setShowChannelSelector(!showChannelSelector)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-accent rounded-lg transition-colors"
             >
               <MessageSquare className="w-4 h-4" />
               <span className="font-medium">
@@ -141,7 +141,7 @@ export function QueuesPage() {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full left-0 mt-2 w-64 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50 overflow-hidden"
+                className="absolute top-full left-0 mt-2 w-64 bg-muted rounded-lg shadow-xl border border-border z-50 overflow-hidden"
               >
                 <div className="max-h-60 overflow-y-auto">
                   <button
@@ -149,7 +149,7 @@ export function QueuesPage() {
                       setSelectedChannelId(null)
                       setShowChannelSelector(false)
                     }}
-                    className={`w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors ${
+                    className={`w-full text-left px-4 py-3 hover:bg-accent transition-colors ${
                       !selectedChannelId ? 'bg-blue-600/20' : ''
                     }`}
                   >
@@ -162,12 +162,12 @@ export function QueuesPage() {
                         setSelectedChannelId(channel.id)
                         setShowChannelSelector(false)
                       }}
-                      className={`w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors ${
+                      className={`w-full text-left px-4 py-3 hover:bg-accent transition-colors ${
                         channel.id === selectedChannelId ? 'bg-blue-600/20' : ''
                       }`}
                     >
                       <p className="font-medium">{channel.name}</p>
-                      <p className="text-xs text-gray-400">{channel.type}</p>
+                      <p className="text-xs text-muted-foreground">{channel.type}</p>
                     </button>
                   ))}
                 </div>
@@ -220,7 +220,7 @@ export function QueuesPage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-gray-800 rounded-xl border border-gray-700 p-5 hover:border-gray-600 transition-colors"
+                className="bg-muted rounded-xl border border-border p-5 hover:border-muted-foreground/20 transition-colors"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -231,7 +231,7 @@ export function QueuesPage() {
                       </span>
                       <h3 className="text-lg font-semibold">{queue.name}</h3>
                     </div>
-                    <p className="text-sm text-gray-400 mt-1">{queue.menu_label}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{queue.menu_label}</p>
                   </div>
                   <Badge variant={queue.is_active ? 'success' : 'secondary'}>
                     {queue.is_active ? 'Ativa' : 'Inativa'}
@@ -241,33 +241,33 @@ export function QueuesPage() {
                 {/* Info */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Canal:</span>
+                    <span className="text-muted-foreground">Canal:</span>
                     <span>{queue.channel?.name || '-'}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Pipeline:</span>
+                    <span className="text-muted-foreground">Pipeline:</span>
                     <span>{queue.pipeline?.name || '-'}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">SDR Agent:</span>
-                    <span className={queue.sdr_agent_id ? 'text-green-400' : 'text-gray-500'}>
+                    <span className="text-muted-foreground">SDR Agent:</span>
+                    <span className={queue.sdr_agent_id ? 'text-green-400' : 'text-muted-foreground'}>
                       {queue.sdr_agent?.name || 'Sem agente'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Leads:</span>
+                    <span className="text-muted-foreground">Leads:</span>
                     <span>{queue.leads_count || 0}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Usuários:</span>
+                    <span className="text-muted-foreground">Usuários:</span>
                     <span>{queue.users_count || 0}</span>
                   </div>
                 </div>
 
                 {/* Auto-distribute toggle */}
-                <div className="flex items-center justify-between p-3 bg-gray-900 rounded-lg mb-4">
+                <div className="flex items-center justify-between p-3 bg-background rounded-lg mb-4">
                   <div className="flex items-center gap-2">
-                    <LayoutGrid className="w-4 h-4 text-gray-400" />
+                    <LayoutGrid className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm">Autodistribuir</span>
                   </div>
                   <button
@@ -278,7 +278,7 @@ export function QueuesPage() {
                     {queue.auto_distribute ? (
                       <ToggleRight className="w-8 h-8 text-green-500" />
                     ) : (
-                      <ToggleLeft className="w-8 h-8 text-gray-500" />
+                      <ToggleLeft className="w-8 h-8 text-muted-foreground" />
                     )}
                   </button>
                 </div>
@@ -333,7 +333,7 @@ export function QueuesPage() {
 
           {/* Empty state */}
           {filteredQueues.length === 0 && !isLoading && (
-            <div className="col-span-full text-center py-12 text-gray-400">
+            <div className="col-span-full text-center py-12 text-muted-foreground">
               <LayoutGrid className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma fila encontrada</p>
               <Button onClick={handleCreateQueue} className="mt-4">

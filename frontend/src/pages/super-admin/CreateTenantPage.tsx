@@ -66,12 +66,12 @@ export function CreateTenantPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Header */}
-      <div className="border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm">
+      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center gap-3">
             <Link
               to="/super-admin/tenants"
-              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent/50 rounded-lg transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </Link>
@@ -81,7 +81,7 @@ export function CreateTenantPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">Nova Empresa</h1>
-                <p className="text-sm text-gray-400">Criar um novo tenant no sistema</p>
+                <p className="text-sm text-muted-foreground">Criar um novo tenant no sistema</p>
               </div>
             </div>
           </div>
@@ -118,7 +118,7 @@ export function CreateTenantPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6"
+            className="bg-muted/50 rounded-xl border border-border p-6"
           >
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-blue-400" />
@@ -126,33 +126,33 @@ export function CreateTenantPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nome da Empresa *</label>
+                <label className="block text-sm text-muted-foreground mb-1">Nome da Empresa *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                   placeholder="Empresa XYZ"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Slug (URL)</label>
+                <label className="block text-sm text-muted-foreground mb-1">Slug (URL)</label>
                 <input
                   type="text"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                   placeholder="empresa-xyz"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Plano *</label>
+                <label className="block text-sm text-muted-foreground mb-1">Plano *</label>
                 <select
                   required
                   value={formData.plan}
                   onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                 >
                   {plans?.map((plan: any) => (
                     <option key={plan.value} value={plan.value}>
@@ -162,12 +162,12 @@ export function CreateTenantPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">WhatsApp</label>
+                <label className="block text-sm text-muted-foreground mb-1">WhatsApp</label>
                 <input
                   type="text"
                   value={formData.whatsapp_number}
                   onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                   placeholder="5511999999999"
                 />
               </div>
@@ -179,7 +179,7 @@ export function CreateTenantPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6"
+            className="bg-muted/50 rounded-xl border border-border p-6"
           >
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-purple-400" />
@@ -187,36 +187,36 @@ export function CreateTenantPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nome *</label>
+                <label className="block text-sm text-muted-foreground mb-1">Nome *</label>
                 <input
                   type="text"
                   required
                   value={formData.admin_name}
                   onChange={(e) => setFormData({ ...formData, admin_name: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                   placeholder="João Silva"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Email *</label>
+                <label className="block text-sm text-muted-foreground mb-1">Email *</label>
                 <input
                   type="email"
                   required
                   value={formData.admin_email}
                   onChange={(e) => setFormData({ ...formData, admin_email: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                   placeholder="admin@empresa.com"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm text-gray-400 mb-1">Senha *</label>
+                <label className="block text-sm text-muted-foreground mb-1">Senha *</label>
                 <input
                   type="password"
                   required
                   minLength={8}
                   value={formData.admin_password}
                   onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                   placeholder="Mínimo 8 caracteres"
                 />
               </div>
@@ -228,7 +228,7 @@ export function CreateTenantPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6"
+            className="bg-muted/50 rounded-xl border border-border p-6"
           >
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-amber-400" />
@@ -243,17 +243,17 @@ export function CreateTenantPage() {
                   className={`flex items-center gap-3 p-4 rounded-lg border transition-all ${
                     formData.features.includes(key)
                       ? 'bg-blue-500/20 border-blue-500/50'
-                      : 'bg-gray-700/30 border-gray-600/50 hover:border-gray-500'
+                      : 'bg-accent/30 border-border hover:border-border'
                   }`}
                 >
                   <div className={`p-2 rounded-lg ${
-                    formData.features.includes(key) ? 'bg-blue-500/30' : 'bg-gray-600/30'
+                    formData.features.includes(key) ? 'bg-blue-500/30' : 'bg-muted-foreground/20'
                   }`}>
                     {formData.features.includes(key) && <Check className="w-4 h-4 text-blue-400" />}
                   </div>
                   <div className="text-left">
                     <p className="font-medium text-sm">{feature.name}</p>
-                    <p className="text-xs text-gray-400">{feature.description}</p>
+                    <p className="text-xs text-muted-foreground">{feature.description}</p>
                   </div>
                 </button>
               ))}
@@ -265,12 +265,12 @@ export function CreateTenantPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6"
+            className="bg-muted/50 rounded-xl border border-border p-6"
           >
             <label className="flex items-center gap-4 cursor-pointer">
               <div
                 className={`relative w-12 h-6 rounded-full transition-colors ${
-                  formData.ia_enabled ? 'bg-blue-600' : 'bg-gray-600'
+                  formData.ia_enabled ? 'bg-blue-600' : 'bg-muted-foreground/20'
                 }`}
               >
                 <div
@@ -281,7 +281,7 @@ export function CreateTenantPage() {
               </div>
               <div>
                 <p className="font-medium">Habilitar IA SDR</p>
-                <p className="text-sm text-gray-400">Permite que a empresa use agentes de IA para vendas</p>
+                <p className="text-sm text-muted-foreground">Permite que a empresa use agentes de IA para vendas</p>
               </div>
             </label>
           </motion.div>
@@ -290,7 +290,7 @@ export function CreateTenantPage() {
           <div className="flex justify-end gap-4">
             <Link
               to="/super-admin/tenants"
-              className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              className="px-6 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
             >
               Cancelar
             </Link>

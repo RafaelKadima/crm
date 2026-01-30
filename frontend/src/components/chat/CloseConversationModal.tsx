@@ -58,16 +58,16 @@ export function CloseConversationModal({
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           >
-            <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-md border border-gray-700">
+            <div className="bg-background rounded-lg shadow-xl w-full max-w-md border border-border">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <div className="flex items-center justify-between p-4 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-red-600/20 text-red-400">
                     <MessageSquareOff className="h-5 w-5" />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold">Encerrar Conversa</h2>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       A conversa será finalizada
                     </p>
                   </div>
@@ -100,7 +100,7 @@ export function CloseConversationModal({
               </div>
 
               {/* Footer */}
-              <div className="flex gap-3 p-4 border-t border-gray-700">
+              <div className="flex gap-3 p-4 border-t border-border">
                 <Button variant="outline" onClick={onClose} className="flex-1">
                   Cancelar
                 </Button>

@@ -15,22 +15,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Plug,
   Package,
   Globe,
-  Radio,
   Bot,
   CalendarDays,
   Clock,
   Shield,
-  LayoutGrid,
-  Megaphone,
-  Headphones,
-  TrendingUp,
-  FileText,
-  Cog,
-  BookOpen,
-  Home,
   Target,
   Zap,
   Lightbulb,
@@ -38,14 +28,10 @@ import {
   PieChart,
   Brain,
   ClipboardCheck,
-  FileSpreadsheet,
-  Settings2,
   Video,
-  Search,
-  Sparkles,
   PlayCircle,
+  TrendingUp,
   Trophy,
-  Award,
   History,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -61,48 +47,33 @@ interface NavItem {
   label: string
   path: string
   feature?: string
-  featureFunction?: string  // Sub-função necessária do módulo (ex: 'ads.dashboard')
-  permission?: string  // Ex: 'leads.view_own' ou 'leads.view_all'
-  permissions?: string[] // Qualquer uma das permissões
+  featureFunction?: string
+  permission?: string
+  permissions?: string[]
   adminOnly?: boolean
   superAdminOnly?: boolean
+  hideOnMobile?: boolean
 }
 
-interface NavGroup {
-  id: string
-  label: string
-  icon: LucideIcon
-  items: NavItem[]
-  defaultOpen?: boolean
-}
+// Navigation entry types
+type NavEntry =
+  | { type: 'item'; item: NavItem }
+  | { type: 'separator' }
+  | { type: 'section'; label: string; items: NavItem[] }
+  | { type: 'group'; id: string; label: string; icon: LucideIcon; items: NavItem[]; defaultOpen?: boolean }
 
-// Menu reorganizado - 7 grupos principais
-const navGroups: NavGroup[] = [
-  // ═══════════════════════════════════════════════════════════════
-  // PRINCIPAL
-  // ═══════════════════════════════════════════════════════════════
-  {
-    id: 'main',
-    label: 'Principal',
-    icon: Home,
-    defaultOpen: true,
-    items: [
-      { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-    ],
-  },
+const navEntries: NavEntry[] = [
+  // Dashboard - item direto
+  { type: 'item', item: { icon: LayoutDashboard, label: 'Dashboard', path: '/' } },
 
-  // ═══════════════════════════════════════════════════════════════
-  // ATENDIMENTO - Core do dia-a-dia (inclui Contatos e Tarefas)
-  // ═══════════════════════════════════════════════════════════════
+  { type: 'separator' },
+
+  // ATENDIMENTO - section flat
   {
-    id: 'support',
+    type: 'section',
     label: 'Atendimento',
-    icon: Headphones,
-    defaultOpen: true,
     items: [
       { icon: Kanban, label: 'Leads', path: '/leads', permissions: ['leads.view_own', 'leads.view_all'] },
-      { icon: MessageSquareText, label: 'Conversas', path: '/conversas', permissions: ['leads.view_own', 'leads.view_all'] },
-      { icon: MessageSquare, label: 'Tickets', path: '/tickets', permissions: ['tickets.view_own', 'tickets.view_all'] },
       { icon: Users, label: 'Contatos', path: '/contacts', permission: 'contacts.view' },
       { icon: CheckSquare, label: 'Tarefas', path: '/tasks', permissions: ['tasks.view_own', 'tasks.view_all'] },
       { icon: CalendarDays, label: 'Agendamentos', path: '/appointments', feature: 'appointments', featureFunction: 'appointments.list', permission: 'appointments.view' },
@@ -111,55 +82,36 @@ const navGroups: NavGroup[] = [
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════
-  // MARKETING - Produtos e Landing Pages (removido Templates e GTM)
-  // ═══════════════════════════════════════════════════════════════
+  { type: 'separator' },
+
+  // MARKETING - section flat
   {
-    id: 'marketing',
+    type: 'section',
     label: 'Marketing',
-    icon: Megaphone,
-    defaultOpen: false,
     items: [
       { icon: Package, label: 'Produtos', path: '/products', feature: 'products', featureFunction: 'products.list', permission: 'products.view' },
       { icon: Globe, label: 'Landing Pages', path: '/landing-pages', feature: 'landing_pages', featureFunction: 'lp.list', permissions: ['landing_pages.view', 'landing_pages.create'] },
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════
-  // CRIADOR DE CONTEÚDO - Colapsável
-  // ═══════════════════════════════════════════════════════════════
-  {
-    id: 'viral_content',
-    label: 'Criador de Conteúdo',
-    icon: Video,
-    defaultOpen: false,
-    items: [
-      { icon: PlayCircle, label: 'Dashboard', path: '/content', feature: 'viral_content', featureFunction: 'viral.dashboard' },
-      { icon: Bot, label: 'Chat com Agente', path: '/content/chat', feature: 'viral_content', featureFunction: 'viral.generate' },
-      { icon: Users, label: 'Criadores', path: '/content/creators', feature: 'viral_content', featureFunction: 'viral.analyze' },
-      { icon: TrendingUp, label: 'Busca Viral', path: '/content/viral-search', feature: 'viral_content', featureFunction: 'viral.auto_discover' },
-    ],
-  },
+  { type: 'separator' },
 
-  // ═══════════════════════════════════════════════════════════════
-  // VENDAS & METAS - Novo grupo unificado
-  // ═══════════════════════════════════════════════════════════════
+  // VENDAS - section flat
   {
-    id: 'sales',
-    label: 'Vendas & Metas',
-    icon: Trophy,
-    defaultOpen: true,
+    type: 'section',
+    label: 'Vendas',
     items: [
       { icon: Trophy, label: 'Metas e KPIs', path: '/goals' },
       { icon: BarChart3, label: 'Relatórios', path: '/reports', permissions: ['reports.view_own', 'reports.view_all'] },
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════
-  // SDR COM IA
-  // ═══════════════════════════════════════════════════════════════
+  { type: 'separator' },
+
+  // SDR com IA - colapsável
   {
-    id: 'intelligence',
+    type: 'group',
+    id: 'sdr',
     label: 'SDR com IA',
     icon: Bot,
     defaultOpen: false,
@@ -168,10 +120,9 @@ const navGroups: NavGroup[] = [
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════
-  // ADS INTELLIGENCE - Colapsável (removido configs para Settings)
-  // ═══════════════════════════════════════════════════════════════
+  // Ads Intelligence - colapsável
   {
+    type: 'group',
     id: 'ads',
     label: 'Ads Intelligence',
     icon: Target,
@@ -187,10 +138,24 @@ const navGroups: NavGroup[] = [
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════
-  // BI ANALYTICS - Colapsável, Admin only (removido configs)
-  // ═══════════════════════════════════════════════════════════════
+  // Criador de Conteúdo - colapsável
   {
+    type: 'group',
+    id: 'content',
+    label: 'Criador de Conteúdo',
+    icon: Video,
+    defaultOpen: false,
+    items: [
+      { icon: PlayCircle, label: 'Dashboard', path: '/content', feature: 'viral_content', featureFunction: 'viral.dashboard' },
+      { icon: Bot, label: 'Chat com Agente', path: '/content/chat', feature: 'viral_content', featureFunction: 'viral.generate' },
+      { icon: Users, label: 'Criadores', path: '/content/creators', feature: 'viral_content', featureFunction: 'viral.analyze' },
+      { icon: TrendingUp, label: 'Busca Viral', path: '/content/viral-search', feature: 'viral_content', featureFunction: 'viral.auto_discover' },
+    ],
+  },
+
+  // BI Analytics - colapsável, admin only
+  {
+    type: 'group',
     id: 'bi',
     label: 'BI Analytics',
     icon: PieChart,
@@ -202,23 +167,14 @@ const navGroups: NavGroup[] = [
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════
-  // CONFIGURAÇÕES - Link único para página de settings
-  // ═══════════════════════════════════════════════════════════════
-  {
-    id: 'settings',
-    label: 'Configurações',
-    icon: Cog,
-    defaultOpen: false,
-    items: [
-      { icon: Settings, label: 'Configurações', path: '/settings', permission: 'settings.view' },
-    ],
-  },
+  { type: 'separator' },
 
-  // ═══════════════════════════════════════════════════════════════
-  // ADMINISTRAÇÃO
-  // ═══════════════════════════════════════════════════════════════
+  // Configurações - item direto
+  { type: 'item', item: { icon: Settings, label: 'Configurações', path: '/settings', permission: 'settings.view' } },
+
+  // Administração - colapsável
   {
+    type: 'group',
     id: 'admin',
     label: 'Administração',
     icon: Shield,
@@ -231,85 +187,117 @@ const navGroups: NavGroup[] = [
   },
 ]
 
-interface NavGroupComponentProps {
-  group: NavGroup
+// ─── Render Components ─────────────────────────────────────────────
+
+function NavItemLink({
+  item,
+  isCollapsed,
+  currentPath,
+}: {
+  item: NavItem
   isCollapsed: boolean
-  isOpen: boolean
-  onToggle: () => void
-  filteredItems: NavItem[]
   currentPath: string
-  branding: any
+}) {
+  const isActive = currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path))
+
+  return (
+    <NavLink
+      to={item.path}
+      className={cn(
+        'group items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
+        'hover:bg-white/5',
+        isActive && 'text-white nav-active',
+        item.hideOnMobile ? 'hidden md:flex' : 'flex'
+      )}
+    >
+      <item.icon className={cn(
+        'h-[18px] w-[18px] shrink-0 transition-colors',
+        isActive ? 'text-white' : 'text-muted-foreground group-hover:text-white/80'
+      )} />
+      <AnimatePresence mode="wait">
+        {!isCollapsed && (
+          <motion.span
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            className={cn(
+              'text-sm whitespace-nowrap',
+              isActive ? 'text-white font-medium' : 'text-foreground/70'
+            )}
+          >
+            {item.label}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </NavLink>
+  )
 }
 
-function NavGroupComponent({
-  group,
+function SectionLabel({ label, isCollapsed }: { label: string; isCollapsed: boolean }) {
+  if (isCollapsed) return null
+
+  return (
+    <div className="px-3 pt-2 pb-1">
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+        {label}
+      </span>
+    </div>
+  )
+}
+
+function SeparatorLine({ isCollapsed }: { isCollapsed: boolean }) {
+  return (
+    <div className={cn('my-2', isCollapsed ? 'mx-3' : 'mx-3')}>
+      <div className="h-px bg-white/5" />
+    </div>
+  )
+}
+
+function CollapsibleGroup({
+  id,
+  label,
+  icon: Icon,
+  items,
   isCollapsed,
   isOpen,
   onToggle,
-  filteredItems,
   currentPath,
-  branding,
-}: NavGroupComponentProps) {
-  if (filteredItems.length === 0) return null
+}: {
+  id: string
+  label: string
+  icon: LucideIcon
+  items: NavItem[]
+  isCollapsed: boolean
+  isOpen: boolean
+  onToggle: () => void
+  currentPath: string
+}) {
+  if (items.length === 0) return null
 
-  const hasActiveItem = filteredItems.some(
+  const hasActiveItem = items.some(
     (item) => currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path))
   )
 
-  // Se tem apenas 1 item no grupo, renderiza diretamente sem o grupo
-  if (filteredItems.length === 1 && group.id === 'main') {
-    const item = filteredItems[0]
-    const isActive = currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path))
-
+  // Single item in group - render as direct link
+  if (items.length === 1) {
     return (
-      <NavLink
-        to={item.path}
-        className={cn(
-          'group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300',
-          'hover:bg-white/5',
-          isActive && 'text-white nav-active'
-        )}
-      >
-        <item.icon className={cn(
-          'h-5 w-5 shrink-0 transition-colors',
-          isActive ? 'text-white' : 'text-muted-foreground group-hover:text-white/80'
-        )} />
-        <AnimatePresence mode="wait">
-          {!isCollapsed && (
-            <motion.span
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              className={cn(
-                'text-sm font-medium whitespace-nowrap',
-                isActive && 'text-white'
-              )}
-            >
-              {item.label}
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </NavLink>
+      <NavItemLink item={items[0]} isCollapsed={isCollapsed} currentPath={currentPath} />
     )
   }
 
   return (
-    <div className="mb-1">
-      {/* Group Header */}
+    <div>
       <button
         onClick={onToggle}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300',
-          'hover:bg-white/5 text-left',
-          hasActiveItem && !isCollapsed && 'bg-white/5'
+          'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
+          'hover:bg-white/5 text-left'
         )}
       >
-        <group.icon
-          className={cn(
-            'h-5 w-5 shrink-0 transition-colors',
-            hasActiveItem ? 'text-white' : 'text-muted-foreground'
-          )}
-        />
+        <Icon className={cn(
+          'h-[18px] w-[18px] shrink-0 transition-colors',
+          hasActiveItem ? 'text-white' : 'text-muted-foreground'
+        )} />
         <AnimatePresence mode="wait">
           {!isCollapsed && (
             <>
@@ -318,11 +306,11 @@ function NavGroupComponent({
                 animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
                 className={cn(
-                  'text-sm font-semibold whitespace-nowrap flex-1 font-display tracking-wide',
-                  hasActiveItem ? 'text-white' : 'text-foreground/80'
+                  'text-sm whitespace-nowrap flex-1',
+                  hasActiveItem ? 'text-white font-medium' : 'text-foreground/70'
                 )}
               >
-                {group.label}
+                {label}
               </motion.span>
               <motion.div
                 initial={{ opacity: 0 }}
@@ -330,14 +318,13 @@ function NavGroupComponent({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <ChevronDown className="h-4 w-4 opacity-60" />
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/50" />
               </motion.div>
             </>
           )}
         </AnimatePresence>
       </button>
 
-      {/* Group Items */}
       <AnimatePresence initial={false}>
         {(isOpen || isCollapsed) && (
           <motion.div
@@ -348,46 +335,14 @@ function NavGroupComponent({
             className="overflow-hidden"
           >
             <ul className={cn(
-              'mt-1 space-y-0.5',
-              !isCollapsed && 'ml-4 pl-3 border-l border-white/10'
+              'mt-0.5 space-y-0.5',
+              !isCollapsed && 'ml-4 pl-3 border-l border-white/8'
             )}>
-              {filteredItems.map((item) => {
-                const isActive =
-                  currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path))
-
-                return (
-                  <li key={item.path}>
-                    <NavLink
-                      to={item.path}
-                      className={cn(
-                        'group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300',
-                        'hover:bg-white/5',
-                        isActive && 'text-white nav-active'
-                      )}
-                    >
-                      <item.icon className={cn(
-                        'h-4 w-4 shrink-0 transition-colors',
-                        isActive ? 'text-white' : 'text-muted-foreground group-hover:text-white/80'
-                      )} />
-                      <AnimatePresence mode="wait">
-                        {!isCollapsed && (
-                          <motion.span
-                            initial={{ opacity: 0, width: 0 }}
-                            animate={{ opacity: 1, width: 'auto' }}
-                            exit={{ opacity: 0, width: 0 }}
-                            className={cn(
-                              'text-sm whitespace-nowrap',
-                              isActive && 'text-white font-medium'
-                            )}
-                          >
-                            {item.label}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </NavLink>
-                  </li>
-                )
-              })}
+              {items.map((item) => (
+                <li key={item.path}>
+                  <NavItemLink item={item} isCollapsed={isCollapsed} currentPath={currentPath} />
+                </li>
+              ))}
             </ul>
           </motion.div>
         )}
@@ -396,51 +351,46 @@ function NavGroupComponent({
   )
 }
 
+// ─── Main Sidebar ──────────────────────────────────────────────────
+
 export function Sidebar() {
   const location = useLocation()
-  const { sidebarCollapsed, toggleSidebar } = useUIStore()
+  const { sidebarCollapsed, toggleSidebar, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
   const { tenant, user } = useAuthStore()
   const { data: featuresData, isLoading: featuresLoading } = useMyFeatures()
   const { data: branding } = useBranding()
   const { hasPermission, hasAnyPermission, isAdmin, isSuperAdmin, isLoading: permissionsLoading } = usePermissions()
 
-  // Estado para controlar quais grupos estão abertos
+  // State for collapsible groups
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}
-    navGroups.forEach((group) => {
-      initial[group.id] = group.defaultOpen ?? false
+    navEntries.forEach((entry) => {
+      if (entry.type === 'group') {
+        initial[entry.id] = entry.defaultOpen ?? false
+      }
     })
     return initial
   })
 
   const toggleGroup = (groupId: string) => {
-    setOpenGroups((prev) => ({
-      ...prev,
-      [groupId]: !prev[groupId],
-    }))
+    setOpenGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }))
   }
 
-  // Filtra os itens do menu baseado nas features, sub-funções e permissões
+  // Filter items based on features, permissions, roles
   const filterItems = (items: NavItem[]): NavItem[] => {
     return items.filter((item) => {
-      // Se é item apenas para super admin
       if (item.superAdminOnly) {
         return user?.is_super_admin || isSuperAdmin || featuresData?.is_super_admin
       }
 
-      // Se é item apenas para admin
       if (item.adminOnly) {
-        // Admins ainda precisam verificar features
         const isAdminUser = isAdmin || isSuperAdmin || user?.role === 'admin'
         if (!isAdminUser) return false
 
-        // Verifica feature do tenant para admins
         if (item.feature) {
           if (featuresLoading || !featuresData) return false
           const feature = featuresData.features[item.feature]
           if (!feature?.is_enabled) return false
-
-          // Verifica sub-função se especificada
           if (item.featureFunction) {
             if (feature.all_functions) return true
             if (!feature.enabled_functions?.includes(item.featureFunction)) return false
@@ -449,57 +399,38 @@ export function Sidebar() {
         return true
       }
 
-      // Super admins vêem tudo (exceto superAdminOnly que já foi verificado)
       if (user?.is_super_admin || isSuperAdmin || featuresData?.is_super_admin) {
         return true
       }
 
-      // Verifica feature do tenant
       if (item.feature) {
-        if (featuresLoading || !featuresData) {
-          return false
-        }
+        if (featuresLoading || !featuresData) return false
         const feature = featuresData.features[item.feature]
-        if (!feature?.is_enabled) {
-          return false
-        }
-
-        // Verifica sub-função se especificada
+        if (!feature?.is_enabled) return false
         if (item.featureFunction) {
-          // Se all_functions = true, tem acesso a tudo
-          if (feature.all_functions) {
-            // continua para verificar permissões
-          } else {
-            // Verifica se a sub-função está habilitada
-            if (!feature.enabled_functions?.includes(item.featureFunction)) {
-              return false
-            }
+          if (!feature.all_functions && !feature.enabled_functions?.includes(item.featureFunction)) {
+            return false
           }
         }
       }
 
-      // Verifica permissão específica
       if (item.permission) {
-        if (permissionsLoading) {
-          return false
-        }
-        if (!hasPermission(item.permission)) {
-          return false
-        }
+        if (permissionsLoading) return false
+        if (!hasPermission(item.permission)) return false
       }
 
-      // Verifica múltiplas permissões (qualquer uma)
       if (item.permissions && item.permissions.length > 0) {
-        if (permissionsLoading) {
-          return false
-        }
-        if (!hasAnyPermission(item.permissions)) {
-          return false
-        }
+        if (permissionsLoading) return false
+        if (!hasAnyPermission(item.permissions)) return false
       }
 
       return true
     })
+  }
+
+  // Check if single item is visible
+  const isItemVisible = (item: NavItem): boolean => {
+    return filterItems([item]).length > 0
   }
 
   const companyName = branding?.name || tenant?.name || 'OmniFy HUB'
@@ -511,28 +442,25 @@ export function Sidebar() {
       animate={{ width: sidebarCollapsed ? 72 : 280 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       className={cn(
-        'fixed left-0 top-0 z-40 h-screen flex flex-col',
-        'bg-sidebar sidebar-futuristic'
+        'fixed left-0 top-0 z-40 h-screen flex-col',
+        'bg-sidebar',
+        // Mobile: hidden by default, shown as overlay when menu is open
+        mobileMenuOpen ? 'flex' : 'hidden md:flex'
       )}
       style={{
         borderRight: '1px solid rgba(255, 255, 255, 0.06)',
       }}
+      onClick={(e) => {
+        // Close mobile menu when clicking a link
+        if ((e.target as HTMLElement).closest('a')) {
+          setMobileMenuOpen(false)
+        }
+      }}
     >
-      {/* Ambient Light Effect */}
-      <div
-        className="absolute inset-0 pointer-events-none overflow-hidden"
-        style={{
-          background: 'radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.02) 0%, transparent 50%)',
-        }}
-      />
-
       {/* Logo */}
-      <div
-        className="relative h-16 flex items-center justify-between px-4 border-b border-white/5"
-      >
+      <div className="relative h-16 flex items-center justify-between px-4 border-b border-white/5">
         <AnimatePresence mode="wait">
           {logoUrl ? (
-            // Custom branding logo
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -547,7 +475,6 @@ export function Sidebar() {
               )}
             </motion.div>
           ) : (
-            // OmniFy HUB default logo
             <OmnifyLogo
               collapsed={sidebarCollapsed}
               size="md"
@@ -559,7 +486,7 @@ export function Sidebar() {
         <button
           onClick={toggleSidebar}
           className={cn(
-            'p-2 rounded-lg transition-all duration-300',
+            'p-2 rounded-lg transition-all duration-200',
             'hover:bg-white/5 hover:text-white',
             'border border-transparent hover:border-white/10'
           )}
@@ -589,23 +516,64 @@ export function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="relative flex-1 py-4 overflow-y-auto scrollbar-thin">
-        <div className="px-3 space-y-1">
-          {navGroups.map((group) => {
-            const filteredItems = filterItems(group.items)
+      <nav className="relative flex-1 py-3 overflow-y-auto scrollbar-thin">
+        <div className="px-3 space-y-0.5">
+          {navEntries.map((entry, idx) => {
+            if (entry.type === 'separator') {
+              return <SeparatorLine key={`sep-${idx}`} isCollapsed={sidebarCollapsed} />
+            }
 
-            return (
-              <NavGroupComponent
-                key={group.id}
-                group={group}
-                isCollapsed={sidebarCollapsed}
-                isOpen={openGroups[group.id]}
-                onToggle={() => toggleGroup(group.id)}
-                filteredItems={filteredItems}
-                currentPath={location.pathname}
-                branding={branding?.branding}
-              />
-            )
+            if (entry.type === 'item') {
+              if (!isItemVisible(entry.item)) return null
+              return (
+                <NavItemLink
+                  key={entry.item.path}
+                  item={entry.item}
+                  isCollapsed={sidebarCollapsed}
+                  currentPath={location.pathname}
+                />
+              )
+            }
+
+            if (entry.type === 'section') {
+              const filtered = filterItems(entry.items)
+              if (filtered.length === 0) return null
+              return (
+                <div key={`section-${entry.label}`}>
+                  <SectionLabel label={entry.label} isCollapsed={sidebarCollapsed} />
+                  <div className="space-y-0.5">
+                    {filtered.map((item) => (
+                      <NavItemLink
+                        key={item.path}
+                        item={item}
+                        isCollapsed={sidebarCollapsed}
+                        currentPath={location.pathname}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+
+            if (entry.type === 'group') {
+              const filtered = filterItems(entry.items)
+              if (filtered.length === 0) return null
+              return (
+                <CollapsibleGroup
+                  key={entry.id}
+                  id={entry.id}
+                  label={entry.label}
+                  icon={entry.icon}
+                  items={filtered}
+                  isCollapsed={sidebarCollapsed}
+                  isOpen={openGroups[entry.id]}
+                  onToggle={() => toggleGroup(entry.id)}
+                  currentPath={location.pathname}
+                />
+              )
+            }
+
+            return null
           })}
         </div>
       </nav>
@@ -627,14 +595,6 @@ export function Sidebar() {
           </span>
         </div>
       </div>
-
-      {/* Bottom Gradient Line */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-px"
-        style={{
-          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1), transparent)',
-        }}
-      />
     </motion.aside>
   )
 }

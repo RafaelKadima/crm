@@ -23,6 +23,7 @@ import {
   type AdAutomationRule,
   type AdAutomationLog
 } from '@/hooks/useAds';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -138,30 +139,25 @@ export default function AdsAutomation() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Automação
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Configure regras automáticas para otimizar suas campanhas
-          </p>
-        </div>
-        
-        <Button onClick={() => { setEditingRule(null); setShowRuleModal(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Regra
-        </Button>
-      </div>
+      <PageHeader
+        title="Automação"
+        subtitle="Configure regras automáticas para otimizar suas campanhas"
+        actions={
+          <Button onClick={() => { setEditingRule(null); setShowRuleModal(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Regra
+          </Button>
+        }
+      />
 
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-4 border-b border-gray-200 dark:border-border">
         <button
           onClick={() => setActiveTab('rules')}
           className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'rules'
               ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-muted-foreground hover:text-gray-700'
           }`}
         >
           <Zap className="w-4 h-4 inline mr-2" />
@@ -172,7 +168,7 @@ export default function AdsAutomation() {
           className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'logs'
               ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-muted-foreground hover:text-gray-700'
           }`}
         >
           <History className="w-4 h-4 inline mr-2" />
@@ -190,11 +186,11 @@ export default function AdsAutomation() {
           ) : rules?.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
-                <Zap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   Nenhuma regra configurada
                 </h3>
-                <p className="text-gray-500 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Crie sua primeira regra de automação para otimizar suas campanhas automaticamente.
                 </p>
                 <Button onClick={() => setShowRuleModal(true)}>
@@ -222,12 +218,12 @@ export default function AdsAutomation() {
                       </div>
                       
                       {rule.description && (
-                        <p className="text-sm text-gray-500 mb-3">{rule.description}</p>
+                        <p className="text-sm text-muted-foreground mb-3">{rule.description}</p>
                       )}
 
                       <div className="flex flex-wrap gap-4 text-sm">
-                        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded">
-                          <span className="text-gray-500">SE:</span>{' '}
+                        <div className="bg-gray-100 dark:bg-muted px-3 py-1.5 rounded">
+                          <span className="text-muted-foreground">SE:</span>{' '}
                           <span className="font-medium text-gray-900 dark:text-white">
                             {formatCondition(rule)}
                           </span>
@@ -240,7 +236,7 @@ export default function AdsAutomation() {
                         </div>
                       </div>
 
-                      <div className="flex gap-4 mt-3 text-xs text-gray-500">
+                      <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
                         <span>Frequência: {rule.frequency}</span>
                         <span>•</span>
                         <span>Execuções: {rule.execution_count}</span>
@@ -298,11 +294,11 @@ export default function AdsAutomation() {
           ) : logsData?.data?.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
-                <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <History className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   Nenhuma execução registrada
                 </h3>
-                <p className="text-gray-500">
+                <p className="text-muted-foreground">
                   O histórico de execuções aparecerá aqui quando as regras forem executadas.
                 </p>
               </CardContent>
@@ -312,24 +308,24 @@ export default function AdsAutomation() {
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50 dark:bg-gray-800/50">
+                    <thead className="bg-gray-50 dark:bg-muted/50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                           Data/Hora
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                           Regra
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                           Entidade
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                           Ação
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                           Status
                         </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
                           Ações
                         </th>
                       </tr>
@@ -337,16 +333,16 @@ export default function AdsAutomation() {
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {logsData?.data?.map((log) => (
                         <tr key={log.id}>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                          <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground">
                             {new Date(log.created_at).toLocaleString('pt-BR')}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                             {log.rule?.name || '-'}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                          <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground">
                             {log.entity_name}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                          <td className="px-4 py-3 text-sm text-muted-foreground dark:text-muted-foreground">
                             {actionLabels[log.action_type] || log.action_type}
                           </td>
                           <td className="px-4 py-3">

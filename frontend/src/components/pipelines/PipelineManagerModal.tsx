@@ -387,19 +387,19 @@ export function PipelineManagerModal({
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-gray-800 rounded-xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex"
+          className="bg-muted rounded-xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Sidebar */}
-          <div className="w-64 border-r border-gray-700 flex flex-col">
-            <div className="p-4 border-b border-gray-700">
+          <div className="w-64 border-r border-border flex flex-col">
+            <div className="p-4 border-b border-border">
               <h3 className="font-semibold text-lg">Pipelines</h3>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2">
               {isLoading ? (
                 <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -413,16 +413,16 @@ export function PipelineManagerModal({
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                         selectedPipelineId === pipeline.id && !isCreatingNew
                           ? 'bg-blue-600'
-                          : 'hover:bg-gray-700'
+                          : 'hover:bg-accent'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="truncate">{pipeline.name}</span>
                         <div className="flex items-center gap-1">
                           {pipeline.is_public ? (
-                            <Globe className="w-3 h-3 text-gray-400" />
+                            <Globe className="w-3 h-3 text-muted-foreground" />
                           ) : (
-                            <Lock className="w-3 h-3 text-gray-400" />
+                            <Lock className="w-3 h-3 text-muted-foreground" />
                           )}
                           {pipeline.is_default && (
                             <span className="text-xs bg-blue-500/30 text-blue-300 px-1 rounded">
@@ -431,7 +431,7 @@ export function PipelineManagerModal({
                           )}
                         </div>
                       </div>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         {pipeline.stages?.length || 0} estágios
                         {pipeline.sdr_agent && (
                           <span className="ml-2 text-blue-400">
@@ -453,10 +453,10 @@ export function PipelineManagerModal({
               )}
             </div>
 
-            <div className="p-2 border-t border-gray-700">
+            <div className="p-2 border-t border-border">
               <button
                 onClick={handleCreateNew}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-accent hover:bg-accent rounded-lg text-sm transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Criar Pipeline
@@ -467,19 +467,19 @@ export function PipelineManagerModal({
           {/* Main Content */}
           <div className="flex-1 flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <div>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Nome do Pipeline"
-                  className="text-xl font-bold bg-transparent border-b border-transparent hover:border-gray-600 focus:border-blue-500 outline-none px-1"
+                  className="text-xl font-bold bg-transparent border-b border-transparent hover:border-border focus:border-blue-500 outline-none px-1"
                 />
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-accent rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -522,11 +522,11 @@ export function PipelineManagerModal({
               {/* SDR Agent Selection */}
               <div className="flex items-center gap-3">
                 <Bot className="w-4 h-4 text-blue-400" />
-                <label className="text-sm text-gray-400">Agente SDR:</label>
+                <label className="text-sm text-muted-foreground">Agente SDR:</label>
                 <select
                   value={sdrAgentId || ''}
                   onChange={(e) => setSdrAgentId(e.target.value || null)}
-                  className="flex-1 max-w-xs px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-sm focus:border-blue-500 outline-none"
+                  className="flex-1 max-w-xs px-3 py-1.5 bg-accent border border-border rounded-lg text-sm focus:border-blue-500 outline-none"
                 >
                   <option value="">Nenhum (sem agente automático)</option>
                   {sdrAgents.map((agent: any) => (
@@ -549,7 +549,7 @@ export function PipelineManagerModal({
                 <button
                   onClick={() => setActiveTab('stages')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
-                    activeTab === 'stages' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+                    activeTab === 'stages' ? 'bg-blue-600' : 'bg-accent hover:bg-accent'
                   }`}
                 >
                   <Settings className="w-4 h-4" />
@@ -558,7 +558,7 @@ export function PipelineManagerModal({
                 <button
                   onClick={() => setActiveTab('permissions')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
-                    activeTab === 'permissions' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+                    activeTab === 'permissions' ? 'bg-blue-600' : 'bg-accent hover:bg-accent'
                   }`}
                 >
                   <Users className="w-4 h-4" />
@@ -567,7 +567,7 @@ export function PipelineManagerModal({
                 <button
                   onClick={() => setActiveTab('activities')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
-                    activeTab === 'activities' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+                    activeTab === 'activities' ? 'bg-blue-600' : 'bg-accent hover:bg-accent'
                   }`}
                 >
                   <ClipboardList className="w-4 h-4" />
@@ -583,9 +583,9 @@ export function PipelineManagerModal({
                   {stages.map((stage, index) => (
                     <div
                       key={stage.id || index}
-                      className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg"
+                      className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg"
                     >
-                      <GripVertical className="w-4 h-4 text-gray-500 cursor-grab" />
+                      <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
 
                       <input
                         type="color"
@@ -598,7 +598,7 @@ export function PipelineManagerModal({
                         type="text"
                         value={stage.name}
                         onChange={(e) => handleStageChange(index, 'name', e.target.value)}
-                        className="flex-1 px-3 py-1.5 bg-gray-600 rounded border border-gray-500 focus:border-blue-500 outline-none"
+                        className="flex-1 px-3 py-1.5 bg-muted-foreground/20 rounded border border-border focus:border-blue-500 outline-none"
                       />
 
                       {/* Stage Type Selector */}
@@ -610,7 +610,7 @@ export function PipelineManagerModal({
                             ? 'bg-green-500/20 border-green-500 text-green-400'
                             : stage.stage_type === 'lost'
                             ? 'bg-red-500/20 border-red-500 text-red-400'
-                            : 'bg-gray-600 border-gray-500 text-gray-300'
+                            : 'bg-muted-foreground/20 border-border text-muted-foreground'
                         }`}
                         title="Tipo do estágio"
                       >
@@ -622,7 +622,7 @@ export function PipelineManagerModal({
                       {!isCreatingNew && (
                         <button
                           onClick={() => handleSaveStage(stage, index)}
-                          className="p-1.5 hover:bg-gray-600 rounded transition-colors text-green-400"
+                          className="p-1.5 hover:bg-accent rounded transition-colors text-green-400"
                           title="Salvar estágio"
                         >
                           <Save className="w-4 h-4" />
@@ -631,7 +631,7 @@ export function PipelineManagerModal({
 
                       <button
                         onClick={() => isCreatingNew ? handleRemoveStage(index) : handleDeleteStage(stage, index)}
-                        className="p-1.5 hover:bg-gray-600 rounded transition-colors text-red-400"
+                        className="p-1.5 hover:bg-accent rounded transition-colors text-red-400"
                         title="Excluir estágio"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -641,7 +641,7 @@ export function PipelineManagerModal({
 
                   <button
                     onClick={handleAddStage}
-                    className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-600 rounded-lg hover:border-gray-500 transition-colors text-gray-400"
+                    className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-lg hover:border-border transition-colors text-muted-foreground"
                   >
                     <Plus className="w-4 h-4" />
                     Adicionar Estágio
@@ -659,16 +659,16 @@ export function PipelineManagerModal({
                   )}
 
                   <div className="space-y-2">
-                    <h4 className="font-medium text-sm text-gray-400">Usuários com acesso</h4>
+                    <h4 className="font-medium text-sm text-muted-foreground">Usuários com acesso</h4>
                     
                     {pipelineUsers?.map((user) => (
                       <div
                         key={user.id}
-                        className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-accent/50 rounded-lg"
                       >
                         <div>
                           <p className="font-medium">{user.name}</p>
-                          <p className="text-xs text-gray-400">{user.email}</p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
                         
                         <div className="flex items-center gap-3">
@@ -704,7 +704,7 @@ export function PipelineManagerModal({
                           
                           <button
                             onClick={() => handleRemoveUser(user.id)}
-                            className="p-1 hover:bg-gray-600 rounded transition-colors text-red-400"
+                            className="p-1 hover:bg-accent rounded transition-colors text-red-400"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -713,7 +713,7 @@ export function PipelineManagerModal({
                     ))}
 
                     {(!pipelineUsers || pipelineUsers.length === 0) && !isPublic && (
-                      <p className="text-gray-500 text-sm py-4 text-center">
+                      <p className="text-muted-foreground text-sm py-4 text-center">
                         Nenhum usuário específico. Apenas admins têm acesso.
                       </p>
                     )}
@@ -721,13 +721,13 @@ export function PipelineManagerModal({
 
                   {usersNotInPipeline.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="font-medium text-sm text-gray-400">Adicionar usuário</h4>
+                      <h4 className="font-medium text-sm text-muted-foreground">Adicionar usuário</h4>
                       <div className="flex flex-wrap gap-2">
                         {usersNotInPipeline.map((user: any) => (
                           <button
                             key={user.id}
                             onClick={() => handleAddUser(user.id)}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-full text-sm transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-accent hover:bg-accent rounded-full text-sm transition-colors"
                           >
                             <Plus className="w-3 h-3" />
                             {user.name}
@@ -750,7 +750,7 @@ export function PipelineManagerModal({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between p-4 border-t border-gray-700">
+            <div className="flex items-center justify-between p-4 border-t border-border">
               {!isCreatingNew && selectedPipelineId && !selectedPipeline?.is_default && (
                 <button
                   onClick={handleDelete}
@@ -761,7 +761,7 @@ export function PipelineManagerModal({
                 </button>
               )}
               {!isCreatingNew && selectedPipeline?.is_default && (
-                <span className="text-sm text-gray-500">Pipeline padrão não pode ser excluído</span>
+                <span className="text-sm text-muted-foreground">Pipeline padrão não pode ser excluído</span>
               )}
               {isCreatingNew && <div />}
               
@@ -861,7 +861,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
 
   if (savedStages.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-muted-foreground">
         <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-50" />
         <p>Salve os estágios primeiro para configurar atividades.</p>
       </div>
@@ -879,7 +879,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
               effectiveStageId === stage.id
                 ? 'bg-blue-600'
-                : 'bg-gray-700 hover:bg-gray-600'
+                : 'bg-accent hover:bg-accent'
             }`}
           >
             <div
@@ -898,8 +898,8 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
 
       {/* Selected stage info */}
       {selectedStage && (
-        <div className="p-3 bg-gray-700/50 rounded-lg">
-          <p className="text-sm text-gray-400">
+        <div className="p-3 bg-accent/50 rounded-lg">
+          <p className="text-sm text-muted-foreground">
             Configure as atividades obrigatórias para a etapa <strong style={{ color: selectedStage.color }}>{selectedStage.name}</strong>.
             O vendedor precisará completar essas atividades antes de avançar o lead.
           </p>
@@ -909,19 +909,19 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
       {/* Activities list */}
       {isLoading ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <div className="space-y-2">
           {activities?.map((activity: any, index: number) => (
             <div
               key={activity.id}
-              className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg"
+              className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg"
             >
-              <GripVertical className="w-4 h-4 text-gray-500 cursor-grab" />
+              <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
 
               <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                activity.is_required ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-600 text-gray-400'
+                activity.is_required ? 'bg-blue-500/20 text-blue-400' : 'bg-muted-foreground/20 text-muted-foreground'
               }`}>
                 {activity.is_required ? (
                   <CheckSquare className="w-4 h-4" />
@@ -936,7 +936,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
                     type="text"
                     value={editingActivity.title}
                     onChange={(e) => setEditingActivity({ ...editingActivity, title: e.target.value })}
-                    className="flex-1 px-2 py-1 bg-gray-600 rounded border border-gray-500 focus:border-blue-500 outline-none text-sm"
+                    className="flex-1 px-2 py-1 bg-muted-foreground/20 rounded border border-border focus:border-blue-500 outline-none text-sm"
                   />
                   <label className="flex items-center gap-1 text-xs">
                     <input
@@ -949,13 +949,13 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
                   </label>
                   <button
                     onClick={() => handleUpdateActivity(activity.id, editingActivity)}
-                    className="p-1 text-green-400 hover:bg-gray-600 rounded"
+                    className="p-1 text-green-400 hover:bg-accent rounded"
                   >
                     <Save className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setEditingActivity(null)}
-                    className="p-1 text-gray-400 hover:bg-gray-600 rounded"
+                    className="p-1 text-muted-foreground hover:bg-accent rounded"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -965,27 +965,27 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
                   <div className="flex-1">
                     <p className="font-medium text-sm">{activity.title}</p>
                     {activity.description && (
-                      <p className="text-xs text-gray-400">{activity.description}</p>
+                      <p className="text-xs text-muted-foreground">{activity.description}</p>
                     )}
                   </div>
 
                   <span className={`text-xs px-2 py-0.5 rounded ${
                     activity.is_required
                       ? 'bg-blue-500/20 text-blue-300'
-                      : 'bg-gray-600 text-gray-400'
+                      : 'bg-muted-foreground/20 text-muted-foreground'
                   }`}>
                     {activity.is_required ? 'Obrigatória' : 'Opcional'}
                   </span>
 
                   <button
                     onClick={() => setEditingActivity({ id: activity.id, title: activity.title, is_required: activity.is_required })}
-                    className="p-1 hover:bg-gray-600 rounded text-gray-400"
+                    className="p-1 hover:bg-accent rounded text-muted-foreground"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteActivity(activity.id)}
-                    className="p-1 hover:bg-gray-600 rounded text-red-400"
+                    className="p-1 hover:bg-accent rounded text-red-400"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -995,7 +995,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
           ))}
 
           {(!activities || activities.length === 0) && (
-            <div className="text-center py-6 text-gray-500 text-sm">
+            <div className="text-center py-6 text-muted-foreground text-sm">
               Nenhuma atividade configurada para este estágio.
             </div>
           )}
@@ -1003,15 +1003,15 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
       )}
 
       {/* Add new activity */}
-      <div className="border-2 border-dashed border-gray-600 rounded-lg p-4 space-y-3">
-        <h4 className="text-sm font-medium text-gray-400">Adicionar Atividade</h4>
+      <div className="border-2 border-dashed border-border rounded-lg p-4 space-y-3">
+        <h4 className="text-sm font-medium text-muted-foreground">Adicionar Atividade</h4>
         <div className="flex gap-2">
           <input
             type="text"
             value={newActivityName}
             onChange={(e) => setNewActivityName(e.target.value)}
             placeholder="Nome da atividade (ex: Fazer ligação de descoberta)"
-            className="flex-1 px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:border-blue-500 outline-none text-sm"
+            className="flex-1 px-3 py-2 bg-accent rounded-lg border border-border focus:border-blue-500 outline-none text-sm"
             onKeyDown={(e) => e.key === 'Enter' && handleAddActivity()}
           />
           <button
@@ -1028,7 +1028,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-gray-400">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <input
               type="checkbox"
               checked={newActivityRequired}
@@ -1043,7 +1043,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
           value={newActivityDescription}
           onChange={(e) => setNewActivityDescription(e.target.value)}
           placeholder="Descrição (opcional)"
-          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:border-blue-500 outline-none text-sm"
+          className="w-full px-3 py-2 bg-accent rounded-lg border border-border focus:border-blue-500 outline-none text-sm"
         />
       </div>
     </div>

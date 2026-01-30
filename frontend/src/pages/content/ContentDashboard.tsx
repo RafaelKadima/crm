@@ -11,6 +11,7 @@ import {
   Bot,
   Palette,
 } from 'lucide-react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -79,37 +80,32 @@ export function ContentDashboard() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Video className="h-8 w-8 text-purple-500" />
-            Content Creator
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Crie roteiros virais com inteligência artificial
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/content/brand-settings">
-            <Button variant="outline" className="gap-2">
-              <Palette className="h-4 w-4" />
-              DNA da Marca
-            </Button>
-          </Link>
-          <Link to="/content/creators">
-            <Button variant="outline" className="gap-2">
-              <Users className="h-4 w-4" />
-              Criadores
-            </Button>
-          </Link>
-          <Link to="/content/chat">
-            <Button className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600">
-              <Bot className="h-4 w-4" />
-              Chat com Agente
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Content Creator"
+        subtitle="Crie roteiros virais com inteligência artificial"
+        actions={
+          <div className="flex gap-2">
+            <Link to="/content/brand-settings">
+              <Button variant="outline" className="gap-2">
+                <Palette className="h-4 w-4" />
+                DNA da Marca
+              </Button>
+            </Link>
+            <Link to="/content/creators">
+              <Button variant="outline" className="gap-2">
+                <Users className="h-4 w-4" />
+                Criadores
+              </Button>
+            </Link>
+            <Link to="/content/chat">
+              <Button className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600">
+                <Bot className="h-4 w-4" />
+                Chat com Agente
+              </Button>
+            </Link>
+          </div>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -264,7 +260,7 @@ export function ContentDashboard() {
                       className={cn(
                         session.current_step === 'completed' && "border-green-500 text-green-500",
                         session.current_step === 'write_reel' && "border-blue-500 text-blue-500",
-                        session.current_step === 'idle' && "border-gray-500 text-gray-500"
+                        session.current_step === 'idle' && "border-border text-muted-foreground"
                       )}
                     >
                       {session.current_step === 'completed' ? 'Concluído' :

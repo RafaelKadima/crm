@@ -144,7 +144,7 @@ export function IntegrationsSettingsPage() {
           <Plug className="w-6 h-6 text-blue-500" />
           Integracoes
         </h2>
-        <p className="text-gray-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Conecte servicos externos ao seu CRM
         </p>
       </div>
@@ -153,14 +153,14 @@ export function IntegrationsSettingsPage() {
       <MetaWhatsAppCard />
 
       {/* Integracoes Externas (Linx, Webhooks CRM) */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <ExternalLink className="w-5 h-5 text-purple-400" />
               Integracoes Externas
             </h3>
-            <p className="text-gray-400 text-sm">
+            <p className="text-muted-foreground text-sm">
               Envie leads automaticamente para ERPs, CRMs e outros sistemas
             </p>
           </div>
@@ -175,10 +175,10 @@ export function IntegrationsSettingsPage() {
 
         {loadingIntegrations ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : !externalIntegrations || externalIntegrations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Plug className="w-12 h-12 mb-2 opacity-50" />
             <p>Nenhuma integracao configurada</p>
             <p className="text-sm">Clique em "Nova Integracao" para comecar</p>
@@ -192,8 +192,8 @@ export function IntegrationsSettingsPage() {
                   key={integration.id}
                   className={`flex items-center justify-between p-4 rounded-lg border ${
                     integration.is_active
-                      ? 'bg-gray-700/30 border-gray-600'
-                      : 'bg-gray-800/50 border-gray-700 opacity-60'
+                      ? 'bg-accent/30 border-border'
+                      : 'bg-muted/50 border-border opacity-60'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -206,7 +206,7 @@ export function IntegrationsSettingsPage() {
                         <span className={`px-2 py-0.5 text-xs rounded-full ${
                           integration.is_active
                             ? 'bg-green-500/20 text-green-400'
-                            : 'bg-gray-500/20 text-gray-400'
+                            : 'bg-gray-500/20 text-muted-foreground'
                         }`}>
                           {integration.is_active ? 'Ativo' : 'Inativo'}
                         </span>
@@ -220,7 +220,7 @@ export function IntegrationsSettingsPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         {typeInfo.label} - {integration.endpoint_url.substring(0, 50)}...
                       </p>
                     </div>
@@ -230,7 +230,7 @@ export function IntegrationsSettingsPage() {
                     <button
                       onClick={() => handleTestIntegration(integration)}
                       disabled={testMutation.isPending}
-                      className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
+                      className="p-2 hover:bg-muted-foreground/20 rounded-lg transition-colors"
                       title="Testar conexao"
                     >
                       {testMutation.isPending ? (
@@ -241,27 +241,27 @@ export function IntegrationsSettingsPage() {
                     </button>
                     <button
                       onClick={() => handleOpenLogs(integration)}
-                      className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
+                      className="p-2 hover:bg-muted-foreground/20 rounded-lg transition-colors"
                       title="Ver logs"
                     >
                       <Activity className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleEditIntegration(integration)}
-                      className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
+                      className="p-2 hover:bg-muted-foreground/20 rounded-lg transition-colors"
                       title="Configurar"
                     >
                       <Settings className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleToggleIntegration(integration)}
-                      className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
+                      className="p-2 hover:bg-muted-foreground/20 rounded-lg transition-colors"
                       title={integration.is_active ? 'Desativar' : 'Ativar'}
                     >
                       {integration.is_active ? (
                         <ToggleRight className="w-5 h-5 text-green-400" />
                       ) : (
-                        <ToggleLeft className="w-5 h-5 text-gray-400" />
+                        <ToggleLeft className="w-5 h-5 text-muted-foreground" />
                       )}
                     </button>
                     <button
@@ -280,12 +280,12 @@ export function IntegrationsSettingsPage() {
       </div>
 
       {/* API Key */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Key className="w-5 h-5 text-amber-400" />
           Chave de API
         </h3>
-        <p className="text-gray-400 text-sm mb-4">
+        <p className="text-muted-foreground text-sm mb-4">
           Use esta chave para integrar sistemas externos com o CRM
         </p>
 
@@ -295,18 +295,18 @@ export function IntegrationsSettingsPage() {
               type={showApiKey ? 'text' : 'password'}
               value={apiKey}
               readOnly
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg font-mono text-sm"
+              className="w-full px-4 py-2 bg-accent border border-border rounded-lg font-mono text-sm"
             />
             <button
               onClick={() => setShowApiKey(!showApiKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white"
             >
               {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
           <button
             onClick={copyApiKey}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
           >
             {copied ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
             {copied ? 'Copiado!' : 'Copiar'}
@@ -324,7 +324,7 @@ export function IntegrationsSettingsPage() {
               key={integration.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6"
+              className="bg-muted/50 rounded-xl border border-border p-6"
             >
               <div className="flex items-start gap-4">
                 <div className={`p-3 rounded-xl ${integration.color}`}>
@@ -339,13 +339,13 @@ export function IntegrationsSettingsPage() {
                         Conectado
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <XCircle className="w-3 h-3" />
                         Desconectado
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {integration.description}
                   </p>
                   {integration.configPath && (
@@ -365,25 +365,25 @@ export function IntegrationsSettingsPage() {
       </div>
 
       {/* Webhook Endpoint */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Webhook className="w-5 h-5 text-blue-400" />
           Endpoint de Webhook
         </h3>
-        <p className="text-gray-400 text-sm mb-4">
+        <p className="text-muted-foreground text-sm mb-4">
           Envie dados para este endpoint para criar leads automaticamente
         </p>
 
-        <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm">
-          <p className="text-gray-400 mb-2">POST</p>
+        <div className="bg-background rounded-lg p-4 font-mono text-sm">
+          <p className="text-muted-foreground mb-2">POST</p>
           <p className="text-green-400 break-all">
             {window.location.origin}/api/external/webhook
           </p>
         </div>
 
-        <div className="mt-4 p-4 bg-gray-700/30 rounded-lg">
-          <p className="text-xs text-gray-400 mb-2">Exemplo de payload:</p>
-          <pre className="text-xs text-gray-300 font-mono overflow-x-auto">
+        <div className="mt-4 p-4 bg-accent/30 rounded-lg">
+          <p className="text-xs text-muted-foreground mb-2">Exemplo de payload:</p>
+          <pre className="text-xs text-muted-foreground font-mono overflow-x-auto">
 {`{
   "name": "Joao Silva",
   "email": "joao@email.com",

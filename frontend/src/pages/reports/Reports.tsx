@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -160,12 +161,10 @@ export function ReportsPage() {
     <div className="space-y-6">
       {/* Header com Filtros */}
       <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Relatórios</h1>
-          <p className="text-muted-foreground mt-1">
-            Análise de performance e métricas em tempo real
-          </p>
-        </div>
+        <PageHeader
+          title="Relatórios"
+          subtitle="Análise de performance e métricas em tempo real"
+        />
 
         {/* Filtros */}
         <Card>

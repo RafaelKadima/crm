@@ -100,6 +100,7 @@ class QueueController extends Controller
             ],
             'menu_label' => 'required|string|max:100',
             'welcome_message' => 'nullable|string|max:1000',
+            'close_message' => 'nullable|string|max:1000',
             'auto_distribute' => 'boolean',
             'is_active' => 'boolean',
             'user_ids' => 'nullable|array',
@@ -115,6 +116,7 @@ class QueueController extends Controller
                 'menu_option' => $validated['menu_option'],
                 'menu_label' => $validated['menu_label'],
                 'welcome_message' => $validated['welcome_message'] ?? null,
+                'close_message' => $validated['close_message'] ?? null,
                 'auto_distribute' => $validated['auto_distribute'] ?? true,
                 'is_active' => $validated['is_active'] ?? true,
             ]);
@@ -162,6 +164,7 @@ class QueueController extends Controller
             ],
             'menu_label' => 'sometimes|string|max:100',
             'welcome_message' => 'nullable|string|max:1000',
+            'close_message' => 'nullable|string|max:1000',
             'auto_distribute' => 'sometimes|boolean',
             'is_active' => 'sometimes|boolean',
         ]);

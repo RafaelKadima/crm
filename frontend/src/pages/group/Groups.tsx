@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import {
   Building2,
@@ -48,20 +49,18 @@ export function GroupsPage() {
   if (groupsList.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Visão de Grupo</h1>
-            <p className="text-muted-foreground mt-1">
-              {isGestor ? 'Visualize o desempenho das lojas' : 'Gerencie múltiplas lojas em um só lugar'}
-            </p>
-          </div>
-          {canManage && (
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Grupo
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          title="Visão de Grupo"
+          subtitle={isGestor ? 'Visualize o desempenho das lojas' : 'Gerencie múltiplas lojas em um só lugar'}
+          actions={
+            canManage ? (
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Grupo
+              </Button>
+            ) : undefined
+          }
+        />
         <div className="text-center py-12 text-muted-foreground">
           {isGestor
             ? 'Você ainda não foi adicionado a nenhum grupo. Entre em contato com o administrador.'
@@ -75,20 +74,18 @@ export function GroupsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Visão de Grupo</h1>
-          <p className="text-muted-foreground mt-1">
-            {isGestor ? 'Visualize o desempenho das lojas' : 'Gerencie múltiplas lojas em um só lugar'}
-          </p>
-        </div>
-        {canManage && (
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Grupo
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Visão de Grupo"
+        subtitle={isGestor ? 'Visualize o desempenho das lojas' : 'Gerencie múltiplas lojas em um só lugar'}
+        actions={
+          canManage ? (
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Grupo
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Group Overview */}
       {selectedGroup && (

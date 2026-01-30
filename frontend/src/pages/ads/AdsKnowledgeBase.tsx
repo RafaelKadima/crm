@@ -23,6 +23,7 @@ import {
   Sparkles,
   Brain
 } from 'lucide-react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -193,66 +194,60 @@ export default function AdsKnowledgeBase() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Brain className="w-6 h-6 text-purple-500" />
-            Base de Conhecimento
-          </h1>
-          <p className="text-gray-500">
-            Regras, práticas e padrões para o Ads Agent
-          </p>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => triggerLearning.mutate()}
-            disabled={triggerLearning.isPending}
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            {triggerLearning.isPending ? 'Aprendendo...' : 'Aprender de Campanhas'}
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={() => setIsUploadModalOpen(true)}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Upload
-          </Button>
-          
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Adicionar
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Base de Conhecimento"
+        subtitle="Regras, práticas e padrões para o Ads Agent"
+        actions={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => triggerLearning.mutate()}
+              disabled={triggerLearning.isPending}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {triggerLearning.isPending ? 'Aprendendo...' : 'Aprender de Campanhas'}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setIsUploadModalOpen(true)}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Upload
+            </Button>
+
+            <Button onClick={() => setIsAddModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar
+            </Button>
+          </div>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold">{stats?.total || 0}</div>
-            <div className="text-sm text-gray-500">Total de conhecimentos</div>
+            <div className="text-sm text-muted-foreground">Total de conhecimentos</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold">{stats?.total_usage || 0}</div>
-            <div className="text-sm text-gray-500">Vezes utilizado</div>
+            <div className="text-sm text-muted-foreground">Vezes utilizado</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold">{stats?.by_source?.manual || 0}</div>
-            <div className="text-sm text-gray-500">Manual</div>
+            <div className="text-sm text-muted-foreground">Manual</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold">{stats?.by_source?.learned || 0}</div>
-            <div className="text-sm text-gray-500">Aprendido</div>
+            <div className="text-sm text-muted-foreground">Aprendido</div>
           </CardContent>
         </Card>
       </div>
@@ -260,7 +255,7 @@ export default function AdsKnowledgeBase() {
       {/* Search e Filtros */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar conhecimento..."
             className="pl-10"
@@ -294,12 +289,12 @@ export default function AdsKnowledgeBase() {
       {/* Lista de Conhecimento */}
       <div className="space-y-3">
         {isLoading ? (
-          <div className="text-center py-8 text-gray-500">Carregando...</div>
+          <div className="text-center py-8 text-muted-foreground">Carregando...</div>
         ) : knowledge.length === 0 ? (
           <div className="text-center py-8">
-            <BookOpen className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500">Nenhum conhecimento encontrado</p>
-            <p className="text-sm text-gray-400">
+            <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">Nenhum conhecimento encontrado</p>
+            <p className="text-sm text-muted-foreground">
               Adicione regras, práticas ou faça upload de documentos
             </p>
           </div>
@@ -327,7 +322,7 @@ export default function AdsKnowledgeBase() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 line-clamp-1">{item.content}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-1">{item.content}</p>
                     
                     {item.tags?.length > 0 && (
                       <div className="flex gap-1 mt-2">
@@ -337,7 +332,7 @@ export default function AdsKnowledgeBase() {
                           </span>
                         ))}
                         {item.tags.length > 3 && (
-                          <span className="text-xs text-gray-400">+{item.tags.length - 3}</span>
+                          <span className="text-xs text-muted-foreground">+{item.tags.length - 3}</span>
                         )}
                       </div>
                     )}
@@ -345,16 +340,16 @@ export default function AdsKnowledgeBase() {
                   
                   <div className="flex items-center gap-3">
                     <div className="text-right text-sm">
-                      <div className="text-gray-500">Usado {item.usage_count}x</div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-muted-foreground">Usado {item.usage_count}x</div>
+                      <div className="text-xs text-muted-foreground">
                         Prioridade: {item.priority}
                       </div>
                     </div>
                     
                     {isExpanded ? (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
                     ) : (
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     )}
                   </div>
                 </div>
@@ -364,7 +359,7 @@ export default function AdsKnowledgeBase() {
                     <p className="text-sm whitespace-pre-wrap mb-4">{item.content}</p>
                     
                     <div className="flex justify-between items-center">
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-muted-foreground">
                         Criado em: {new Date(item.created_at).toLocaleDateString('pt-BR')}
                       </div>
                       
@@ -480,19 +475,19 @@ export default function AdsKnowledgeBase() {
             )}
           >
             <input {...getInputProps()} />
-            <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+            <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             {isDragActive ? (
               <p className="text-blue-600">Solte o arquivo aqui...</p>
             ) : (
               <>
-                <p className="text-gray-600">Arraste um arquivo ou clique para selecionar</p>
-                <p className="text-sm text-gray-400 mt-2">PDF, DOCX, TXT ou MD</p>
+                <p className="text-muted-foreground">Arraste um arquivo ou clique para selecionar</p>
+                <p className="text-sm text-muted-foreground mt-2">PDF, DOCX, TXT ou MD</p>
               </>
             )}
           </div>
           
           {uploadFile.isPending && (
-            <div className="text-center text-gray-500">
+            <div className="text-center text-muted-foreground">
               Processando documento...
             </div>
           )}

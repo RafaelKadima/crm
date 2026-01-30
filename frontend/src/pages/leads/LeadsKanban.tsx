@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, Search, Loader2, Bell, Settings2, ChevronDown, Upload, MessageCircle, CheckCircle2, Inbox } from 'lucide-react'
+import { Plus, Search, Loader2, Bell, Settings2, ChevronDown, Upload, MessageCircle, CheckCircle2, Inbox, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
@@ -10,19 +11,21 @@ import { LeadChatModal } from '@/components/chat/LeadChatModal'
 import { PipelineManagerModal } from '@/components/pipelines/PipelineManagerModal'
 import { CreateLeadModal } from '@/components/leads/CreateLeadModal'
 import { ImportLeadsModal } from './ImportLeadsModal'
+import { LeadsTable } from '@/components/leads/LeadsTable'
 import { SaleClosingModal } from '@/components/sales/SaleClosingModal'
 import { useInfiniteLeads, useUpdateLeadStage } from '@/hooks/useLeads'
 import { usePipelines, type Pipeline } from '@/hooks/usePipelines'
 import { useNotificationStore } from '@/store/notificationStore'
 import { useTenantMessages } from '@/hooks/useWebSocket'
 import { useAuthStore } from '@/store/authStore'
+import { cn } from '@/lib/utils'
 import type { Lead, PipelineStage } from '@/types'
 
 // Filtros de status de conversa
 type TicketFilterType = 'all' | 'pending' | 'open' | 'closed'
 
 const ticketFilterTabs: { key: TicketFilterType; label: string; icon: any; color: string; description: string }[] = [
-  { key: 'all', label: 'Todos', icon: Inbox, color: 'text-gray-400', description: 'Todos os leads' },
+  { key: 'all', label: 'Todos', icon: Inbox, color: 'text-muted-foreground', description: 'Todos os leads' },
   { key: 'pending', label: 'Pendentes', icon: Bell, color: 'text-amber-400', description: 'Aguardando atendimento' },
   { key: 'open', label: 'Em Atendimento', icon: MessageCircle, color: 'text-blue-400', description: 'Conversas ativas' },
   { key: 'closed', label: 'Encerrados', icon: CheckCircle2, color: 'text-green-400', description: 'Conversas finalizadas' },
@@ -44,6 +47,7 @@ export function LeadsKanbanPage() {
   const [ticketFilter, setTicketFilter] = useState<TicketFilterType>('all') // Filtro de status do ticket
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false) // Modal de fechamento de venda
   const [pendingWonLead, setPendingWonLead] = useState<Lead | null>(null) // Lead aguardando fechamento
+  const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban')
 
   // Debounce da busca para evitar muitas requisições
   useEffect(() => {
@@ -53,16 +57,13 @@ export function LeadsKanbanPage() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Fetch data from API - Carrega 10 leads por vez (lazy loading)
+  // Fetch data from API - Carrega todos os leads de uma vez
   // Passa a busca para o backend quando há 3+ caracteres
   const {
     data: leadsData,
     isLoading: leadsLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage
   } = useInfiniteLeads({
-    per_page: 10,
+    per_page: 200,
     search: debouncedSearch.length >= 3 ? debouncedSearch : undefined
   })
   const { data: pipelines, isLoading: pipelinesLoading } = usePipelines()
@@ -88,9 +89,6 @@ export function LeadsKanbanPage() {
     if (!leadsData?.pages) return []
     return leadsData.pages.flatMap(page => page.data || [])
   }, [leadsData])
-
-  // Total count from first page
-  const totalLeads = leadsData?.pages?.[0]?.total || 0
 
   // Sync API data with local state
   useEffect(() => {
@@ -333,28 +331,26 @@ export function LeadsKanbanPage() {
   }
 
   return (
-    <div className="h-full flex flex-col gap-4 overflow-hidden">
+    <div className="flex-1 flex flex-col gap-4 min-h-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Leads</h1>
-            <p className="text-muted-foreground mt-1">
-              {filteredLeads.length} {
-                ticketFilter === 'pending' ? 'pendentes' : 
-                ticketFilter === 'open' ? 'em atendimento' : 
-                ticketFilter === 'closed' ? 'encerrados' : 
-                'no funil'
-              }
-            </p>
-          </div>
+          <PageHeader
+            title="Leads"
+            subtitle={`${filteredLeads.length} ${
+              ticketFilter === 'pending' ? 'pendentes' :
+              ticketFilter === 'open' ? 'em atendimento' :
+              ticketFilter === 'closed' ? 'encerrados' :
+              'no funil'
+            }`}
+          />
           
           {/* Pipeline Selector - Mostra apenas se admin/gestor OU se tem mais de 1 pipeline */}
           {(user?.role === 'admin' || user?.role === 'gestor' || pipelinesArray.length > 1) && (
             <div className="relative">
               <button
                 onClick={() => setShowPipelineSelector(!showPipelineSelector)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-accent rounded-lg transition-colors"
               >
                 <span className="font-medium">{currentPipeline?.name || 'Selecionar Pipeline'}</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${showPipelineSelector ? 'rotate-180' : ''}`} />
@@ -364,7 +360,7 @@ export function LeadsKanbanPage() {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute top-full left-0 mt-2 w-64 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50 overflow-hidden"
+                  className="absolute top-full left-0 mt-2 w-64 bg-muted rounded-lg shadow-xl border border-border z-50 overflow-hidden"
                 >
                   <div className="max-h-60 overflow-y-auto">
                     {pipelinesArray.map((pipeline: Pipeline) => (
@@ -374,13 +370,13 @@ export function LeadsKanbanPage() {
                           setSelectedPipelineId(pipeline.id)
                           setShowPipelineSelector(false)
                         }}
-                        className={`w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors flex items-center justify-between ${
+                        className={`w-full text-left px-4 py-3 hover:bg-accent transition-colors flex items-center justify-between ${
                           pipeline.id === selectedPipelineId ? 'bg-blue-600/20' : ''
                         }`}
                       >
                         <div>
                           <p className="font-medium">{pipeline.name}</p>
-                          <p className="text-xs text-gray-400">{pipeline.stages?.length || 0} estágios</p>
+                          <p className="text-xs text-muted-foreground">{pipeline.stages?.length || 0} estágios</p>
                         </div>
                         {pipeline.is_default && (
                           <span className="text-xs bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded">
@@ -392,13 +388,13 @@ export function LeadsKanbanPage() {
                   </div>
                   {/* Só mostra gerenciar pipelines para admin/gestor */}
                   {(user?.role === 'admin' || user?.role === 'gestor') && (
-                    <div className="border-t border-gray-700 p-2">
+                    <div className="border-t border-border p-2">
                       <button
                         onClick={() => {
                           setShowPipelineSelector(false)
                           setIsPipelineManagerOpen(true)
                         }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/30 rounded-lg text-sm transition-colors"
                       >
                         <Settings2 className="w-4 h-4" />
                         Gerenciar Pipelines
@@ -412,6 +408,34 @@ export function LeadsKanbanPage() {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* View mode toggle */}
+          <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={cn(
+                "p-2 rounded-md transition-all",
+                viewMode === 'kanban'
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Kanban"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={cn(
+                "p-2 rounded-md transition-all",
+                viewMode === 'table'
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Tabela"
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
+
           {/* Pipeline settings button */}
           {currentPipeline?.user_permissions?.is_admin && (
             <Button
@@ -464,7 +488,7 @@ export function LeadsKanbanPage() {
         className="flex flex-col sm:flex-row gap-4 shrink-0"
       >
         {/* Status Tabs - Filtro por status do ticket */}
-        <div className="flex bg-gray-800/50 rounded-lg p-1 gap-1">
+        <div className="flex bg-muted/50 rounded-lg p-1 gap-1">
           {ticketFilterTabs.map((tab) => {
             const Icon = tab.icon
             const isActive = ticketFilter === tab.key
@@ -474,15 +498,15 @@ export function LeadsKanbanPage() {
                 onClick={() => setTicketFilter(tab.key)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all text-sm ${
                   isActive
-                    ? 'bg-gray-700 text-white shadow-md'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    ? 'bg-accent text-foreground shadow-md'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                 }`}
               >
                 <Icon className={`h-4 w-4 ${isActive ? tab.color : ''}`} />
                 <span className="font-medium">{tab.label}</span>
                 {tab.key !== 'all' && (
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    isActive ? 'bg-gray-600' : 'bg-gray-700'
+                    isActive ? 'bg-muted-foreground/20' : 'bg-accent'
                   } ${tab.key === 'pending' && ticketCounts.pending > 0 ? 'bg-amber-500/30 text-amber-300' : ''}`}>
                     {tab.key === 'pending' ? ticketCounts.pending : tab.key === 'open' ? ticketCounts.open : ticketCounts.closed}
                   </span>
@@ -504,45 +528,29 @@ export function LeadsKanbanPage() {
         </div>
       </motion.div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {stages.length > 0 ? (
-          <KanbanBoard
-            stages={stages}
+      {/* Kanban Board / Table View */}
+      <div className="flex-1 min-h-0 overflow-auto">
+        {viewMode === 'kanban' ? (
+          stages.length > 0 ? (
+            <KanbanBoard
+              stages={stages}
+              leads={filteredLeads}
+              onLeadMove={handleLeadMove}
+              onLeadClick={handleLeadClick}
+            />
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              Nenhum estágio configurado no pipeline
+            </div>
+          )
+        ) : (
+          <LeadsTable
             leads={filteredLeads}
-            onLeadMove={handleLeadMove}
+            stages={stages}
             onLeadClick={handleLeadClick}
           />
-        ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            Nenhum estágio configurado no pipeline
-          </div>
         )}
       </div>
-
-      {/* Load More Button */}
-      {hasNextPage && (
-        <div className="shrink-0 flex items-center justify-center py-3 border-t border-gray-700/50">
-          <Button
-            variant="outline"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="min-w-[200px]"
-          >
-            {isFetchingNextPage ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Carregando...
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-2" />
-                Carregar mais ({localLeads.length} de {totalLeads})
-              </>
-            )}
-          </Button>
-        </div>
-      )}
 
       {/* Lead Chat Modal */}
       <LeadChatModal

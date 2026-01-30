@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { reportsApi, ReportFilters, TimeSeriesFilters } from '@/api/endpoints'
+import { reportsApi, type ReportFilters, type TimeSeriesFilters } from '@/api/endpoints'
 
 export function useFunnelReport(filters?: ReportFilters) {
   return useQuery({

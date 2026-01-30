@@ -8,11 +8,10 @@ import {
   useCreateEscalationRule,
   useUpdateEscalationRule,
   useDeleteEscalationRule,
-  AgentStageRule,
-  AgentEscalationRule,
   CONDITION_TYPES,
   ESCALATION_ACTIONS,
 } from '@/hooks/useAgentRules';
+import type { AgentStageRule, AgentEscalationRule } from '@/hooks/useAgentRules';
 import { usePipelines } from '@/hooks/usePipelines';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';

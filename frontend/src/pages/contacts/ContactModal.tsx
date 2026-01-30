@@ -138,10 +138,10 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-lg bg-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden"
+            className="w-full max-w-lg bg-background rounded-2xl shadow-2xl border border-border overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+            <div className="flex items-center justify-between p-6 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500/20 rounded-lg">
                   <User className="w-5 h-5 text-blue-400" />
@@ -150,14 +150,14 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
                   <h2 className="text-xl font-semibold">
                     {isEditing ? 'Editar Contato' : 'Novo Contato'}
                   </h2>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     {isEditing ? 'Atualize as informações do contato' : 'Preencha os dados do contato'}
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -167,7 +167,7 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
             <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
               {/* Nome */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                   <User className="w-4 h-4" />
                   Nome *
                 </label>
@@ -185,7 +185,7 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
               {/* Email e Telefone */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                     <Mail className="w-4 h-4" />
                     Email
                   </label>
@@ -202,7 +202,7 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                     <Phone className="w-4 h-4" />
                     Telefone
                   </label>
@@ -216,7 +216,7 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
 
               {/* Empresa */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                   <Building2 className="w-4 h-4" />
                   Empresa
                 </label>
@@ -230,7 +230,7 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
               {/* Cidade e Estado */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                     <MapPin className="w-4 h-4" />
                     Cidade
                   </label>
@@ -242,7 +242,7 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1.5">
+                  <label className="block text-sm text-muted-foreground mb-1.5">
                     Estado
                   </label>
                   <Input
@@ -256,7 +256,7 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
 
               {/* Endereço */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                   <MapPin className="w-4 h-4" />
                   Endereço
                 </label>
@@ -269,7 +269,7 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
 
               {/* Observações */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                   <FileText className="w-4 h-4" />
                   Observações
                 </label>
@@ -278,13 +278,13 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Anotações sobre o contato..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
+                  className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg focus:border-blue-500 focus:outline-none resize-none"
                 />
               </div>
             </form>
 
             {/* Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-gray-700/50 bg-gray-800/30">
+            <div className="flex items-center justify-between p-6 border-t border-border bg-muted/30">
               {isEditing ? (
                 <div>
                   {showDeleteConfirm ? (

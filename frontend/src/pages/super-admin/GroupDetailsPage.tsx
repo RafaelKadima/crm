@@ -131,7 +131,7 @@ export function GroupDetailsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-400 mb-4">Grupo não encontrado</p>
+          <p className="text-muted-foreground mb-4">Grupo não encontrado</p>
           <Link to="/super-admin/groups" className="text-purple-400 hover:underline">
             Voltar para lista de grupos
           </Link>
@@ -143,13 +143,13 @@ export function GroupDetailsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Header */}
-      <div className="border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm">
+      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link
                 to="/super-admin/groups"
-                className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+                className="p-2 hover:bg-accent/50 rounded-lg transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Link>
@@ -163,7 +163,7 @@ export function GroupDetailsPage() {
                       type="text"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="text-xl font-bold bg-gray-800 border border-gray-600 rounded px-2 py-1"
+                      className="text-xl font-bold bg-muted border border-border rounded px-2 py-1"
                       autoFocus
                     />
                   ) : (
@@ -175,10 +175,10 @@ export function GroupDetailsPage() {
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
                       placeholder="Descrição do grupo..."
-                      className="text-sm text-gray-400 bg-gray-800 border border-gray-600 rounded px-2 py-1 mt-1 w-64"
+                      className="text-sm text-muted-foreground bg-muted border border-border rounded px-2 py-1 mt-1 w-64"
                     />
                   ) : (
-                    <p className="text-sm text-gray-400">{group.description || group.slug}</p>
+                    <p className="text-sm text-muted-foreground">{group.description || group.slug}</p>
                   )}
                 </div>
               </div>
@@ -188,7 +188,7 @@ export function GroupDetailsPage() {
                 <>
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-lg transition-colors"
+                    className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-lg transition-colors"
                   >
                     Cancelar
                   </button>
@@ -204,7 +204,7 @@ export function GroupDetailsPage() {
               ) : (
                 <button
                   onClick={handleStartEdit}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
                 >
                   <Edit className="w-4 h-4" />
                   Editar
@@ -225,14 +225,14 @@ export function GroupDetailsPage() {
                 onClick={() => setActiveTab(tab.key as TabType)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors ${
                   activeTab === tab.key
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                    ? 'bg-muted text-foreground'
+                    : 'text-muted-foreground hover:text-white hover:bg-muted/50'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
                 {tab.label}
                 {tab.count !== undefined && (
-                  <span className="text-xs bg-gray-700 px-2 py-0.5 rounded-full">{tab.count}</span>
+                  <span className="text-xs bg-accent px-2 py-0.5 rounded-full">{tab.count}</span>
                 )}
               </button>
             ))}
@@ -255,24 +255,24 @@ export function GroupDetailsPage() {
               </button>
             </div>
 
-            <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+            <div className="bg-muted/50 rounded-xl border border-border overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-700/50">
-                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Empresa</th>
-                    <th className="text-right px-6 py-4 text-sm font-medium text-gray-400">Ações</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Empresa</th>
+                    <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {group.tenants?.length === 0 ? (
                     <tr>
-                      <td colSpan={2} className="px-6 py-12 text-center text-gray-400">
+                      <td colSpan={2} className="px-6 py-12 text-center text-muted-foreground">
                         Nenhuma empresa no grupo. Adicione empresas para começar.
                       </td>
                     </tr>
                   ) : (
                     group.tenants?.map((tenant: any) => (
-                      <tr key={tenant.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
+                      <tr key={tenant.id} className="border-b border-border hover:bg-accent/20">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -280,7 +280,7 @@ export function GroupDetailsPage() {
                             </div>
                             <div>
                               <p className="font-medium">{tenant.name}</p>
-                              <p className="text-xs text-gray-400">{tenant.slug}</p>
+                              <p className="text-xs text-muted-foreground">{tenant.slug}</p>
                             </div>
                           </div>
                         </td>
@@ -316,25 +316,25 @@ export function GroupDetailsPage() {
               </button>
             </div>
 
-            <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+            <div className="bg-muted/50 rounded-xl border border-border overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-700/50">
-                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Usuário</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Role</th>
-                    <th className="text-right px-6 py-4 text-sm font-medium text-gray-400">Ações</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Usuário</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Role</th>
+                    <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {group.users?.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-12 text-center text-gray-400">
+                      <td colSpan={3} className="px-6 py-12 text-center text-muted-foreground">
                         Nenhum usuário com acesso ao grupo.
                       </td>
                     </tr>
                   ) : (
                     group.users?.map((user: any) => (
-                      <tr key={user.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
+                      <tr key={user.id} className="border-b border-border hover:bg-accent/20">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="p-2 bg-green-500/20 rounded-lg">
@@ -342,7 +342,7 @@ export function GroupDetailsPage() {
                             </div>
                             <div>
                               <p className="font-medium">{user.name}</p>
-                              <p className="text-xs text-gray-400">{user.email}</p>
+                              <p className="text-xs text-muted-foreground">{user.email}</p>
                             </div>
                           </div>
                         </td>
@@ -382,29 +382,29 @@ export function GroupDetailsPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             {/* KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-2">
+              <div className="bg-muted/50 rounded-xl border border-border p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
                   <TrendingUp className="w-4 h-4" />
                   <span className="text-sm">Total de Leads</span>
                 </div>
                 <p className="text-3xl font-bold">{dashboardData?.metrics?.leads?.total || 0}</p>
               </div>
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-2">
+              <div className="bg-muted/50 rounded-xl border border-border p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
                   <Check className="w-4 h-4" />
                   <span className="text-sm">Leads Ganhos</span>
                 </div>
                 <p className="text-3xl font-bold text-green-400">{dashboardData?.metrics?.leads?.won || 0}</p>
               </div>
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-2">
+              <div className="bg-muted/50 rounded-xl border border-border p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
                   <Ticket className="w-4 h-4" />
                   <span className="text-sm">Tickets Abertos</span>
                 </div>
                 <p className="text-3xl font-bold text-amber-400">{dashboardData?.metrics?.tickets?.open || 0}</p>
               </div>
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-4">
-                <div className="flex items-center gap-2 text-gray-400 mb-2">
+              <div className="bg-muted/50 rounded-xl border border-border p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
                   <Users className="w-4 h-4" />
                   <span className="text-sm">Usuários Ativos</span>
                 </div>
@@ -413,24 +413,24 @@ export function GroupDetailsPage() {
             </div>
 
             {/* Metrics per Tenant */}
-            <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-700/50">
+            <div className="bg-muted/50 rounded-xl border border-border overflow-hidden">
+              <div className="px-6 py-4 border-b border-border">
                 <h3 className="font-semibold">Métricas por Empresa</h3>
               </div>
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-700/50">
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-400">Empresa</th>
-                    <th className="text-right px-6 py-3 text-sm font-medium text-gray-400">Leads</th>
-                    <th className="text-right px-6 py-3 text-sm font-medium text-gray-400">Ganhos</th>
-                    <th className="text-right px-6 py-3 text-sm font-medium text-gray-400">Conversão</th>
-                    <th className="text-right px-6 py-3 text-sm font-medium text-gray-400">Valor</th>
-                    <th className="text-right px-6 py-3 text-sm font-medium text-gray-400">Tickets</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Empresa</th>
+                    <th className="text-right px-6 py-3 text-sm font-medium text-muted-foreground">Leads</th>
+                    <th className="text-right px-6 py-3 text-sm font-medium text-muted-foreground">Ganhos</th>
+                    <th className="text-right px-6 py-3 text-sm font-medium text-muted-foreground">Conversão</th>
+                    <th className="text-right px-6 py-3 text-sm font-medium text-muted-foreground">Valor</th>
+                    <th className="text-right px-6 py-3 text-sm font-medium text-muted-foreground">Tickets</th>
                   </tr>
                 </thead>
                 <tbody>
                   {metricsPerTenant?.metrics_per_tenant?.map((m: any) => (
-                    <tr key={m.tenant_id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
+                    <tr key={m.tenant_id} className="border-b border-border hover:bg-accent/20">
                       <td className="px-6 py-3 font-medium">{m.tenant_name}</td>
                       <td className="px-6 py-3 text-right">{m.leads?.total || 0}</td>
                       <td className="px-6 py-3 text-right text-green-400">{m.leads?.won || 0}</td>
@@ -441,7 +441,7 @@ export function GroupDetailsPage() {
                   ))}
                   {(!metricsPerTenant?.metrics_per_tenant || metricsPerTenant.metrics_per_tenant.length === 0) && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
+                      <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
                         Adicione empresas ao grupo para ver as métricas
                       </td>
                     </tr>
@@ -451,42 +451,42 @@ export function GroupDetailsPage() {
             </div>
 
             {/* Sales Ranking */}
-            <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-700/50">
+            <div className="bg-muted/50 rounded-xl border border-border overflow-hidden">
+              <div className="px-6 py-4 border-b border-border">
                 <h3 className="font-semibold">Ranking de Vendedores</h3>
               </div>
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-700/50">
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-400">#</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-400">Vendedor</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-400">Empresa</th>
-                    <th className="text-right px-6 py-3 text-sm font-medium text-gray-400">Ganhos</th>
-                    <th className="text-right px-6 py-3 text-sm font-medium text-gray-400">Valor Total</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">#</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Vendedor</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Empresa</th>
+                    <th className="text-right px-6 py-3 text-sm font-medium text-muted-foreground">Ganhos</th>
+                    <th className="text-right px-6 py-3 text-sm font-medium text-muted-foreground">Valor Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {salesRanking?.ranking?.map((r: any, index: number) => (
-                    <tr key={r.user_id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
+                    <tr key={r.user_id} className="border-b border-border hover:bg-accent/20">
                       <td className="px-6 py-3">
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                           index === 0 ? 'bg-amber-500 text-black' :
                           index === 1 ? 'bg-gray-400 text-black' :
                           index === 2 ? 'bg-amber-700 text-white' :
-                          'bg-gray-700 text-white'
+                          'bg-accent text-white'
                         }`}>
                           {index + 1}
                         </span>
                       </td>
                       <td className="px-6 py-3 font-medium">{r.user_name}</td>
-                      <td className="px-6 py-3 text-gray-400">{r.tenant_name}</td>
+                      <td className="px-6 py-3 text-muted-foreground">{r.tenant_name}</td>
                       <td className="px-6 py-3 text-right text-green-400">{r.won_count}</td>
                       <td className="px-6 py-3 text-right font-medium">{formatCurrency(r.total_value || 0)}</td>
                     </tr>
                   ))}
                   {(!salesRanking?.ranking || salesRanking.ranking.length === 0) && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                      <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
                         Nenhum dado de vendas disponível
                       </td>
                     </tr>
@@ -513,24 +513,24 @@ export function GroupDetailsPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-lg"
+              className="bg-muted rounded-xl border border-border w-full max-w-lg"
             >
-              <div className="p-6 border-b border-gray-700 flex items-center justify-between">
+              <div className="p-6 border-b border-border flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Adicionar Empresa</h2>
-                <button onClick={() => setShowAddTenantModal(false)} className="p-2 hover:bg-gray-700 rounded-lg">
+                <button onClick={() => setShowAddTenantModal(false)} className="p-2 hover:bg-accent rounded-lg">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="p-4">
                 <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Buscar empresa..."
                     value={tenantSearch}
                     onChange={(e) => setTenantSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                    className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                   />
                 </div>
 
@@ -540,20 +540,20 @@ export function GroupDetailsPage() {
                       key={tenant.id}
                       onClick={() => handleAddTenant(tenant.id)}
                       disabled={addTenant.isPending}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/50 rounded-lg transition-colors text-left"
                     >
                       <div className="p-2 bg-blue-500/20 rounded-lg">
                         <Building2 className="w-4 h-4 text-blue-400" />
                       </div>
                       <div className="flex-1">
                         <p className="font-medium">{tenant.name}</p>
-                        <p className="text-xs text-gray-400">{tenant.slug}</p>
+                        <p className="text-xs text-muted-foreground">{tenant.slug}</p>
                       </div>
-                      <Plus className="w-4 h-4 text-gray-400" />
+                      <Plus className="w-4 h-4 text-muted-foreground" />
                     </button>
                   ))}
                   {availableTenants.length === 0 && (
-                    <p className="text-center text-gray-400 py-8">
+                    <p className="text-center text-muted-foreground py-8">
                       {tenantSearch ? 'Nenhuma empresa encontrada' : 'Todas as empresas já estão no grupo'}
                     </p>
                   )}
@@ -579,11 +579,11 @@ export function GroupDetailsPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-lg"
+              className="bg-muted rounded-xl border border-border w-full max-w-lg"
             >
-              <div className="p-6 border-b border-gray-700 flex items-center justify-between">
+              <div className="p-6 border-b border-border flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Adicionar Usuário</h2>
-                <button onClick={() => setShowAddUserModal(false)} className="p-2 hover:bg-gray-700 rounded-lg">
+                <button onClick={() => setShowAddUserModal(false)} className="p-2 hover:bg-accent rounded-lg">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -594,7 +594,7 @@ export function GroupDetailsPage() {
                   <select
                     value={selectedUserRole}
                     onChange={(e) => setSelectedUserRole(e.target.value as any)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                   >
                     <option value="viewer">Viewer - Apenas visualização</option>
                     <option value="admin">Admin - Pode gerenciar o grupo</option>
@@ -602,13 +602,13 @@ export function GroupDetailsPage() {
                 </div>
 
                 <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Buscar usuário..."
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                    className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                   />
                 </div>
 
@@ -618,20 +618,20 @@ export function GroupDetailsPage() {
                       key={user.id}
                       onClick={() => handleAddUser(user.id)}
                       disabled={addUser.isPending}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/50 rounded-lg transition-colors text-left"
                     >
                       <div className="p-2 bg-green-500/20 rounded-lg">
                         <Users className="w-4 h-4 text-green-400" />
                       </div>
                       <div className="flex-1">
                         <p className="font-medium">{user.name}</p>
-                        <p className="text-xs text-gray-400">{user.email}</p>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
-                      <Plus className="w-4 h-4 text-gray-400" />
+                      <Plus className="w-4 h-4 text-muted-foreground" />
                     </button>
                   ))}
                   {availableUsers.length === 0 && (
-                    <p className="text-center text-gray-400 py-8">
+                    <p className="text-center text-muted-foreground py-8">
                       {userSearch ? 'Nenhum usuário encontrado' : 'Todos os usuários já estão no grupo'}
                     </p>
                   )}

@@ -2,15 +2,19 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Bell,
+  BellRing,
   Mail,
   MessageSquare,
+  Monitor,
   Smartphone,
   Volume2,
   VolumeX,
   Save,
   Loader2,
   CheckCircle,
+  AlertTriangle,
 } from 'lucide-react'
+import { useNotifications } from '@/hooks/useNotifications'
 
 interface NotificationSetting {
   key: string
@@ -85,6 +89,7 @@ export function NotificationsSettingsPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [globalSound, setGlobalSound] = useState(true)
+  const { permission, isSupported, requestPermission } = useNotifications()
 
   const toggleSetting = (key: string, field: 'email' | 'push' | 'sound') => {
     setSettings(prev =>
@@ -110,7 +115,7 @@ export function NotificationsSettingsPage() {
           <Bell className="w-6 h-6 text-amber-500" />
           Notificações
         </h2>
-        <p className="text-gray-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Configure como você deseja receber alertas
         </p>
       </div>
@@ -126,18 +131,55 @@ export function NotificationsSettingsPage() {
         </motion.div>
       )}
 
+      {/* Notificações do Navegador */}
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Monitor className="w-5 h-5 text-blue-400" />
+            <div>
+              <p className="font-medium">Notificações do Navegador</p>
+              <p className="text-sm text-muted-foreground">
+                Receba notificações na área de trabalho quando novas mensagens chegarem
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isSupported ? (
+              <span className="text-xs text-muted-foreground">Não suportado</span>
+            ) : permission === 'granted' ? (
+              <span className="flex items-center gap-1.5 text-xs text-green-400">
+                <BellRing className="w-3.5 h-3.5" />
+                Ativado
+              </span>
+            ) : permission === 'denied' ? (
+              <span className="flex items-center gap-1.5 text-xs text-red-400">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Bloqueado pelo navegador
+              </span>
+            ) : (
+              <button
+                onClick={requestPermission}
+                className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+              >
+                Permitir notificações
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Som Global */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {globalSound ? (
               <Volume2 className="w-5 h-5 text-green-400" />
             ) : (
-              <VolumeX className="w-5 h-5 text-gray-400" />
+              <VolumeX className="w-5 h-5 text-muted-foreground" />
             )}
             <div>
               <p className="font-medium">Som de Notificações</p>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Ativar ou desativar todos os sons de notificação
               </p>
             </div>
@@ -145,7 +187,7 @@ export function NotificationsSettingsPage() {
           <button
             onClick={() => setGlobalSound(!globalSound)}
             className={`relative w-14 h-7 rounded-full transition-colors ${
-              globalSound ? 'bg-green-600' : 'bg-gray-600'
+              globalSound ? 'bg-green-600' : 'bg-muted-foreground/20'
             }`}
           >
             <div
@@ -158,26 +200,26 @@ export function NotificationsSettingsPage() {
       </div>
 
       {/* Tabela de Notificações */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+      <div className="bg-muted/50 rounded-xl border border-border overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-700/50">
-              <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">
+            <tr className="border-b border-border">
+              <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">
                 Tipo de Notificação
               </th>
-              <th className="text-center px-4 py-4 text-sm font-medium text-gray-400">
+              <th className="text-center px-4 py-4 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center justify-center gap-1">
                   <Mail className="w-4 h-4" />
                   Email
                 </div>
               </th>
-              <th className="text-center px-4 py-4 text-sm font-medium text-gray-400">
+              <th className="text-center px-4 py-4 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center justify-center gap-1">
                   <Smartphone className="w-4 h-4" />
                   Push
                 </div>
               </th>
-              <th className="text-center px-4 py-4 text-sm font-medium text-gray-400">
+              <th className="text-center px-4 py-4 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center justify-center gap-1">
                   <Volume2 className="w-4 h-4" />
                   Som
@@ -189,17 +231,17 @@ export function NotificationsSettingsPage() {
             {settings.map((setting) => (
               <tr
                 key={setting.key}
-                className="border-b border-gray-700/30 hover:bg-gray-700/20"
+                className="border-b border-border/30 hover:bg-accent/20"
               >
                 <td className="px-6 py-4">
                   <p className="font-medium">{setting.label}</p>
-                  <p className="text-sm text-gray-400">{setting.description}</p>
+                  <p className="text-sm text-muted-foreground">{setting.description}</p>
                 </td>
                 <td className="text-center px-4 py-4">
                   <button
                     onClick={() => toggleSetting(setting.key, 'email')}
                     className={`w-10 h-6 rounded-full transition-colors ${
-                      setting.email ? 'bg-blue-600' : 'bg-gray-600'
+                      setting.email ? 'bg-blue-600' : 'bg-muted-foreground/20'
                     }`}
                   >
                     <div
@@ -213,7 +255,7 @@ export function NotificationsSettingsPage() {
                   <button
                     onClick={() => toggleSetting(setting.key, 'push')}
                     className={`w-10 h-6 rounded-full transition-colors ${
-                      setting.push ? 'bg-blue-600' : 'bg-gray-600'
+                      setting.push ? 'bg-blue-600' : 'bg-muted-foreground/20'
                     }`}
                   >
                     <div
@@ -228,7 +270,7 @@ export function NotificationsSettingsPage() {
                     onClick={() => toggleSetting(setting.key, 'sound')}
                     disabled={!globalSound}
                     className={`w-10 h-6 rounded-full transition-colors ${
-                      setting.sound && globalSound ? 'bg-blue-600' : 'bg-gray-600'
+                      setting.sound && globalSound ? 'bg-blue-600' : 'bg-muted-foreground/20'
                     } ${!globalSound ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div

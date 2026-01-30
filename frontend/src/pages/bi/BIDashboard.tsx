@@ -323,7 +323,7 @@ export function BIDashboard() {
           <Card className="cursor-pointer hover:shadow-lg transition-shadow">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gray-500/10">
-                <Settings className="h-6 w-6 text-gray-500" />
+                <Settings className="h-6 w-6 text-muted-foreground" />
               </div>
               <div>
                 <h3 className="font-semibold">Configurações</h3>

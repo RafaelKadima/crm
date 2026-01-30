@@ -95,6 +95,44 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   ☀️ LIGHT THEME OVERRIDES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.light {
+  color-scheme: light;
+
+  /* Surface Colors */
+  --color-background: #F8FAFC;
+  --color-foreground: #0F172A;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #0F172A;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #0F172A;
+
+  /* Interactive Colors */
+  --color-primary: #0F172A;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #F1F5F9;
+  --color-secondary-foreground: #334155;
+  --color-muted: #F1F5F9;
+  --color-muted-foreground: #64748B;
+  --color-accent: #E2E8F0;
+  --color-accent-foreground: #0F172A;
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FFFFFF;
+
+  /* Border & Input */
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-input: #F1F5F9;
+  --color-ring: rgba(0, 0, 0, 0.15);
+
+  /* Sidebar */
+  --color-sidebar: #FFFFFF;
+  --color-sidebar-foreground: #334155;
+  --color-sidebar-accent: #0F172A;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    📐 BASE STYLES
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -116,8 +154,8 @@ html {
 }
 
 body {
-  background-color: #0A0C10;
-  color: #E8ECF2;
+  background-color: var(--color-background, #0A0C10);
+  color: var(--color-foreground, #E8ECF2);
   font-family: 'Exo 2', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -232,6 +270,25 @@ code, pre, .mono {
   background: linear-gradient(145deg, rgba(18, 21, 28, 0.95), rgba(13, 17, 23, 0.98));
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Chat Messages Background */
+.chat-messages-bg {
+  scroll-behavior: auto;
+  background-color: var(--color-background);
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+    radial-gradient(ellipse at 0% 100%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+  background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%;
+}
+
+/* Chat Bubble - Outbound */
+.chat-bubble-outbound {
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--color-foreground);
+  border: 1px solid rgba(0, 212, 255, 0.15);
 }
 
 /* Grid Pattern */
@@ -491,4 +548,157 @@ input:focus, textarea:focus, select:focus {
 @keyframes toast-exit {
   0% { opacity: 1; transform: translateX(0) scale(1); }
   100% { opacity: 0; transform: translateX(100%) scale(0.9); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ☀️ LIGHT MODE EFFECT ADAPTATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Scrollbar */
+.light .scrollbar-thin {
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+.light .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+.light .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Glass Effect */
+.light .glass {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Gradient Text */
+.light .gradient-text {
+  background: linear-gradient(135deg, #0F172A 0%, #64748B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow Effects */
+.light .glow-white {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+.light .glow-soft {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* Futuristic Card */
+.light .futuristic-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.light .chat-messages-bg {
+  background-color: var(--color-background);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.light .chat-bubble-outbound {
+  background: rgba(0, 132, 255, 0.08);
+  color: var(--color-foreground);
+  border: 1px solid rgba(0, 132, 255, 0.12);
+}
+
+/* Grid Pattern */
+.light .grid-pattern {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Shine Effect */
+.light .shine::before {
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.04), transparent);
+}
+
+/* Active Nav Item */
+.light .nav-active {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Sidebar Border */
+.light .sidebar-futuristic::after {
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.06) 20%, rgba(0, 0, 0, 0.04) 50%, rgba(0, 0, 0, 0.06) 80%, transparent 100%);
+}
+
+/* Input Focus */
+.light input:focus,
+.light textarea:focus,
+.light select:focus {
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Selection */
+.light ::selection {
+  background: rgba(59, 130, 246, 0.2);
+  color: #0F172A;
+}
+
+/* Chat Container */
+.light .chat-container-premium {
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+/* Logo */
+.light .omnify-logo-text .omni { color: #0F172A; }
+.light .omnify-logo-text .fy { color: #64748B; }
+.light .omnify-logo-text .hub { color: #94A3B8; }
+
+/* Status */
+.light .status-online { box-shadow: 0 0 6px rgba(16, 185, 129, 0.4); }
+.light .status-offline { box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
+
+/* Toast */
+.light .futuristic-toast {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.1) !important;
+}
+.light .futuristic-toast::before {
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+}
+.light .futuristic-toast::after {
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.01) 50%, transparent 100%);
+}
+.light .futuristic-toast-title {
+  color: #0F172A !important;
+}
+.light .futuristic-toast-description {
+  color: rgba(15, 23, 42, 0.7) !important;
+}
+.light .futuristic-toast-close {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: rgba(15, 23, 42, 0.5) !important;
+}
+.light .futuristic-toast-close:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  color: #0F172A !important;
+}
+.light .futuristic-toast-success {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), 0 0 12px rgba(16, 185, 129, 0.08) !important;
+}
+.light .futuristic-toast-error {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), 0 0 12px rgba(239, 68, 68, 0.08) !important;
+}
+.light .futuristic-toast-warning {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), 0 0 12px rgba(245, 158, 11, 0.08) !important;
+}
+.light .futuristic-toast-info {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), 0 0 12px rgba(0, 212, 255, 0.08) !important;
 }

@@ -132,7 +132,7 @@ export function PublicLandingPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800">{error || 'Página não encontrada'}</h1>
-          <p className="text-gray-600 mt-2">A landing page que você está procurando não existe ou foi removida.</p>
+          <p className="text-muted-foreground mt-2">A landing page que você está procurando não existe ou foi removida.</p>
         </div>
       </div>
     )
@@ -368,7 +368,7 @@ function PublicBlockRenderer({
       return (
         <section id="products-section" className="py-12 container mx-auto px-4" style={{ backgroundColor: s.backgroundColor }}>
           {s.title && <h2 className="text-2xl md:text-3xl font-bold text-center mb-2">{s.title}</h2>}
-          {s.subtitle && <p className="text-center text-gray-600 mb-8">{s.subtitle}</p>}
+          {s.subtitle && <p className="text-center text-muted-foreground mb-8">{s.subtitle}</p>}
           
           <div className={cn(
             "grid gap-4 max-w-5xl mx-auto",
@@ -395,7 +395,7 @@ function PublicBlockRenderer({
                     <img src={product.images[0].url} alt={product.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Package className="h-10 w-10 text-gray-300" />
+                      <Package className="h-10 w-10 text-muted-foreground" />
                     </div>
                   )}
                   {selectedProduct?.id === product.id && (
@@ -407,7 +407,7 @@ function PublicBlockRenderer({
                 <div className="p-3">
                   <h3 className="font-semibold text-gray-800">{product.name}</h3>
                   {s.showDescription && product.short_description && (
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{product.short_description}</p>
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{product.short_description}</p>
                   )}
                 </div>
               </motion.div>
@@ -424,12 +424,12 @@ function PublicBlockRenderer({
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
                 <CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500" />
                 <h2 className="text-2xl font-bold mb-2">Obrigado!</h2>
-                <p className="text-gray-600">{landingPage.success_message}</p>
+                <p className="text-muted-foreground">{landingPage.success_message}</p>
               </motion.div>
             ) : (
               <>
                 {s.title && <h2 className="text-2xl font-bold text-center mb-2">{s.title}</h2>}
-                {s.subtitle && <p className="text-center text-gray-600 mb-6">{s.subtitle}</p>}
+                {s.subtitle && <p className="text-center text-muted-foreground mb-6">{s.subtitle}</p>}
                 
                 <form onSubmit={onSubmit} className="space-y-4">
                   {(s.fields || []).map((field: any, i: number) => (
@@ -485,17 +485,17 @@ function PublicBlockRenderer({
                 <div key={i} className="bg-white p-6 rounded-xl shadow-md">
                   <div className="flex mb-3">
                     {[1,2,3,4,5].map((star) => (
-                      <Star key={star} className={cn("h-4 w-4", star <= (item.rating || 5) ? "text-yellow-400 fill-yellow-400" : "text-gray-300")} />
+                      <Star key={star} className={cn("h-4 w-4", star <= (item.rating || 5) ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground")} />
                     ))}
                   </div>
-                  <p className="text-gray-600 italic mb-4">"{item.content}"</p>
+                  <p className="text-muted-foreground italic mb-4">"{item.content}"</p>
                   <div className="flex items-center">
                     <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold mr-3">
                       {item.name?.[0] || '?'}
                     </div>
                     <div>
                       <p className="font-semibold">{item.name}</p>
-                      {item.role && <p className="text-sm text-gray-500">{item.role}</p>}
+                      {item.role && <p className="text-sm text-muted-foreground">{item.role}</p>}
                     </div>
                   </div>
                 </div>
@@ -525,7 +525,7 @@ function PublicBlockRenderer({
                   </button>
                   {expandedFaq === i && (
                     <div className="px-6 pb-4">
-                      <p className="text-gray-600">{item.answer}</p>
+                      <p className="text-muted-foreground">{item.answer}</p>
                     </div>
                   )}
                 </div>
@@ -617,7 +617,7 @@ function PublicBlockRenderer({
                 <div key={i} className="text-center p-4">
                   {item.icon && <span className="text-4xl block mb-3">{item.icon}</span>}
                   <h3 className="font-semibold mb-2">{item.title}</h3>
-                  <p className="text-sm text-gray-600">{item.description}</p>
+                  <p className="text-sm text-muted-foreground">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -668,7 +668,7 @@ function PublicBlockRenderer({
                 s.shadow && 'shadow-lg',
               )}
             />
-            {s.caption && <p className="text-sm text-gray-500 mt-2">{s.caption}</p>}
+            {s.caption && <p className="text-sm text-muted-foreground mt-2">{s.caption}</p>}
           </div>
         </div>
       )
@@ -737,7 +737,7 @@ function PublicBlockRenderer({
                     {col.type === 'text' && (
                       <>
                         {col.title && <h3 className="text-xl font-semibold mb-2">{col.title}</h3>}
-                        <p className="text-gray-600">{col.content}</p>
+                        <p className="text-muted-foreground">{col.content}</p>
                       </>
                     )}
                     {col.type === 'image' && col.imageUrl && (
@@ -755,7 +755,7 @@ function PublicBlockRenderer({
                       <>
                         <span className="text-4xl block mb-3">{col.iconName || '✨'}</span>
                         {col.title && <h3 className="text-lg font-semibold mb-1">{col.title}</h3>}
-                        {col.content && <p className="text-sm text-gray-600">{col.content}</p>}
+                        {col.content && <p className="text-sm text-muted-foreground">{col.content}</p>}
                       </>
                     )}
                   </div>
@@ -1037,7 +1037,7 @@ function LegacyLayout({
                     <img src={product.images[0].url} alt={product.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Package className="h-10 w-10 text-gray-300" />
+                      <Package className="h-10 w-10 text-muted-foreground" />
                     </div>
                   )}
                   {selectedProduct?.id === product.id && (
@@ -1049,7 +1049,7 @@ function LegacyLayout({
                 <div className="p-3">
                   <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">{product.name}</h3>
                   {product.short_description && (
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{product.short_description}</p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.short_description}</p>
                   )}
                 </div>
               </motion.div>
@@ -1065,7 +1065,7 @@ function LegacyLayout({
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
               <CheckCircle className="h-16 w-16 mx-auto mb-4" style={{ color: cta_button_color }} />
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Obrigado!</h2>
-              <p className="text-gray-600">{landingPage.success_message}</p>
+              <p className="text-muted-foreground">{landingPage.success_message}</p>
             </motion.div>
           ) : (
             <>
@@ -1130,18 +1130,18 @@ function LegacyLayout({
                   {testimonial.rating && (
                     <div className="flex mb-4">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`h-5 w-5 ${i < testimonial.rating! ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                        <Star key={i} className={`h-5 w-5 ${i < testimonial.rating! ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'}`} />
                       ))}
                     </div>
                   )}
-                  <p className="text-gray-600 italic mb-4">"{testimonial.content}"</p>
+                  <p className="text-muted-foreground italic mb-4">"{testimonial.content}"</p>
                   <div className="flex items-center">
                     <div className="h-10 w-10 rounded-full mr-3 flex items-center justify-center text-white font-semibold" style={{ backgroundColor: primary_color }}>
                       {testimonial.name[0]}
                     </div>
                     <div>
                       <p className="font-semibold text-gray-800">{testimonial.name}</p>
-                      {testimonial.role && <p className="text-sm text-gray-500">{testimonial.role}</p>}
+                      {testimonial.role && <p className="text-sm text-muted-foreground">{testimonial.role}</p>}
                     </div>
                   </div>
                 </div>
@@ -1164,11 +1164,11 @@ function LegacyLayout({
                     className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50"
                   >
                     <span className="font-medium text-gray-800">{item.question}</span>
-                    {expandedFaq === index ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
+                    {expandedFaq === index ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
                   </button>
                   {expandedFaq === index && (
                     <div className="px-6 pb-4">
-                      <p className="text-gray-600">{item.answer}</p>
+                      <p className="text-muted-foreground">{item.answer}</p>
                     </div>
                   )}
                 </div>
@@ -1179,7 +1179,7 @@ function LegacyLayout({
       )}
 
       {/* Footer */}
-      <footer className="py-8 bg-gray-900 text-center text-gray-400">
+      <footer className="py-8 bg-background text-center text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} {landingPage.tenant.name}. Todos os direitos reservados.</p>
       </footer>
     </div>

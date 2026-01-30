@@ -536,6 +536,12 @@ class WhatsAppService implements WhatsAppProviderInterface
         $messageId = $message['id'];
         $timestamp = $message['timestamp'];
 
+        // Handle reactions (não cria mensagem, atualiza metadata da mensagem original)
+        if ($messageType === 'reaction') {
+            $this->handleReaction($message, $channel, $phoneNumber, $contactInfo);
+            return null;
+        }
+
         // Find or create contact
         $contact = $this->findOrCreateContact($channel, $phoneNumber, $contactInfo);
 
@@ -558,7 +564,8 @@ class WhatsAppService implements WhatsAppProviderInterface
             // Não cria ticket normal, apenas retorna
             return null;
         }
-        $metadata = $this->extractMediaMetadata($message, $channel);
+        $metadata = $this->extractMediaMetadata($message, $channel) ?? [];
+        $metadata['whatsapp_message_id'] = $messageId;
 
         // Create ticket message
         $ticketMessage = TicketMessage::create([
@@ -679,6 +686,23 @@ class WhatsAppService implements WhatsAppProviderInterface
             ]);
 
             Log::info('Ticket created from WhatsApp', ['ticket_id' => $ticket->id, 'lead_id' => $lead->id]);
+
+            // Se o lead tem estágio, mover para o primeiro estágio do pipeline
+            // (indica que a conversa anterior foi encerrada e o lead está retornando)
+            if ($lead->stage_id) {
+                $pipeline = $lead->stage?->pipeline;
+                if ($pipeline) {
+                    $firstStage = $pipeline->stages()->orderBy('position')->first();
+                    if ($firstStage && $firstStage->id !== $lead->stage_id) {
+                        $lead->update(['stage_id' => $firstStage->id]);
+                        Log::info('Lead moved to first stage on reopen', [
+                            'lead_id' => $lead->id,
+                            'from_stage' => $lead->getOriginal('stage_id'),
+                            'to_stage' => $firstStage->id,
+                        ]);
+                    }
+                }
+            }
         } else if (!$ticket->lead_id) {
             // Se ticket existe mas não tem lead, associa
             $ticket->update(['lead_id' => $lead->id]);
@@ -1411,6 +1435,74 @@ class WhatsAppService implements WhatsAppProviderInterface
         ];
 
         return $extensions[$mimeType] ?? 'bin';
+    }
+
+    /**
+     * Processa reação a uma mensagem.
+     * WhatsApp envia: reaction.message_id (ID da msg original) + reaction.emoji (emoji ou vazio para remover)
+     */
+    protected function handleReaction(array $message, Channel $channel, string $phoneNumber, ?array $contactInfo): void
+    {
+        try {
+            $reaction = $message['reaction'] ?? null;
+            if (!$reaction) return;
+
+            $targetMessageId = $reaction['message_id'] ?? null;
+            $emoji = $reaction['emoji'] ?? '';
+
+            if (!$targetMessageId) return;
+
+            // Buscar a mensagem original pelo whatsapp_message_id no metadata
+            $ticketMessage = TicketMessage::where('tenant_id', $channel->tenant_id)
+                ->whereJsonContains('metadata->whatsapp_message_id', $targetMessageId)
+                ->first();
+
+            if (!$ticketMessage) {
+                Log::debug('Reaction target message not found', [
+                    'target_message_id' => $targetMessageId,
+                    'from' => $phoneNumber,
+                ]);
+                return;
+            }
+
+            $metadata = $ticketMessage->metadata ?? [];
+            $reactions = $metadata['reactions'] ?? [];
+
+            if (empty($emoji)) {
+                // Remover reação deste número
+                $reactions = array_filter($reactions, fn($r) => ($r['from'] ?? '') !== $phoneNumber);
+                $reactions = array_values($reactions);
+            } else {
+                // Remover reação anterior do mesmo número (se existir) e adicionar nova
+                $reactions = array_filter($reactions, fn($r) => ($r['from'] ?? '') !== $phoneNumber);
+                $reactions = array_values($reactions);
+                $reactions[] = [
+                    'emoji' => $emoji,
+                    'from' => $phoneNumber,
+                    'timestamp' => $message['timestamp'] ?? now()->timestamp,
+                ];
+            }
+
+            $metadata['reactions'] = $reactions;
+            $ticketMessage->update(['metadata' => $metadata]);
+
+            Log::info('Reaction processed', [
+                'message_id' => $ticketMessage->id,
+                'emoji' => $emoji,
+                'from' => $phoneNumber,
+            ]);
+
+            // Broadcast para atualizar o chat em tempo real
+            $ticket = $ticketMessage->ticket;
+            if ($ticket) {
+                event(new \App\Events\TicketMessageCreated($ticketMessage, $ticket));
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to process reaction', [
+                'error' => $e->getMessage(),
+                'from' => $phoneNumber,
+            ]);
+        }
     }
 
     /**

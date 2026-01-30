@@ -51,10 +51,10 @@ const statusColors: Record<WhatsAppTemplateStatus, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   APPROVED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   REJECTED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  PAUSED: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
-  DISABLED: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+  PAUSED: 'bg-gray-100 text-gray-800 dark:bg-muted dark:text-muted-foreground',
+  DISABLED: 'bg-gray-100 text-gray-800 dark:bg-muted dark:text-muted-foreground',
   IN_APPEAL: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  PENDING_DELETION: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+  PENDING_DELETION: 'bg-gray-100 text-gray-800 dark:bg-muted dark:text-muted-foreground',
   DELETED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   LIMIT_EXCEEDED: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
 }
@@ -187,14 +187,14 @@ export function WhatsAppTemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Templates do WhatsApp
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-muted-foreground dark:text-muted-foreground">
             Gerencie seus templates de mensagem do WhatsApp Business
           </p>
         </div>
@@ -215,19 +215,19 @@ export function WhatsAppTemplatesPage() {
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <Card className="p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Total</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             </Card>
             <Card className="p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Aprovados</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Aprovados</p>
               <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
             </Card>
             <Card className="p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Pendentes</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Pendentes</p>
               <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
             </Card>
             <Card className="p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Rejeitados</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Rejeitados</p>
               <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
             </Card>
           </div>
@@ -238,13 +238,13 @@ export function WhatsAppTemplatesPage() {
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Canal */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-muted-foreground mb-1">
                 Canal do WhatsApp
               </label>
               <select
                 value={selectedChannel}
                 onChange={(e) => setSelectedChannel(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todos os canais</option>
                 {whatsAppChannels.map(channel => (
@@ -257,13 +257,13 @@ export function WhatsAppTemplatesPage() {
 
             {/* Categoria */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-muted-foreground mb-1">
                 Categoria
               </label>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todas as categorias</option>
                 <option value="MARKETING">Marketing</option>
@@ -274,13 +274,13 @@ export function WhatsAppTemplatesPage() {
 
             {/* Status */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-muted-foreground mb-1">
                 Status
               </label>
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todos os status</option>
                 <option value="APPROVED">Aprovado</option>
@@ -291,7 +291,7 @@ export function WhatsAppTemplatesPage() {
 
             {/* Busca */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-muted-foreground mb-1">
                 Buscar
               </label>
               <div className="relative">
@@ -302,7 +302,7 @@ export function WhatsAppTemplatesPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <SearchIcon />
                 </div>
               </div>
@@ -310,7 +310,7 @@ export function WhatsAppTemplatesPage() {
           </div>
 
           {/* Botões de ação */}
-          <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-border">
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               disabled={!selectedChannel}
@@ -338,7 +338,7 @@ export function WhatsAppTemplatesPage() {
           </div>
         ) : templates.length === 0 ? (
           <Card className="p-12 text-center">
-            <div className="text-gray-400 mb-4">
+            <div className="text-muted-foreground mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
@@ -346,7 +346,7 @@ export function WhatsAppTemplatesPage() {
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               Nenhum template encontrado
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-muted-foreground dark:text-muted-foreground mb-4">
               {selectedChannel 
                 ? 'Crie seu primeiro template ou sincronize do Meta'
                 : 'Selecione um canal do WhatsApp para começar'}
@@ -377,31 +377,31 @@ export function WhatsAppTemplatesPage() {
                       </Badge>
                     </div>
 
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-3">
                       Idioma: {template.language} • Canal: {template.channel?.name || '-'}
                     </p>
 
                     {/* Preview do template */}
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+                    <div className="bg-gray-50 dark:bg-muted rounded-lg p-4 space-y-2">
                       {template.header_text && (
                         <p className="font-medium text-gray-800 dark:text-gray-200">
                           {template.header_text}
                         </p>
                       )}
-                      <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                      <p className="text-gray-700 dark:text-muted-foreground whitespace-pre-wrap">
                         {template.body_text}
                       </p>
                       {template.footer_text && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                        <p className="text-sm text-muted-foreground dark:text-muted-foreground italic">
                           {template.footer_text}
                         </p>
                       )}
                       {template.buttons && template.buttons.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-border">
                           {template.buttons.map((btn, idx) => (
                             <span
                               key={idx}
-                              className="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full text-gray-700 dark:text-gray-300"
+                              className="px-3 py-1 text-sm bg-white dark:bg-accent border border-gray-300 dark:border-border rounded-full text-gray-700 dark:text-muted-foreground"
                             >
                               {btn.text || btn.type}
                             </span>
@@ -444,7 +444,7 @@ export function WhatsAppTemplatesPage() {
                 </div>
 
                 {/* Timestamps */}
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-border flex flex-wrap gap-4 text-sm text-muted-foreground dark:text-muted-foreground">
                   <span>Criado: {new Date(template.created_at).toLocaleString('pt-BR')}</span>
                   {template.submitted_at && (
                     <span>Enviado: {new Date(template.submitted_at).toLocaleString('pt-BR')}</span>
@@ -469,7 +469,7 @@ export function WhatsAppTemplatesPage() {
                 >
                   Anterior
                 </Button>
-                <span className="flex items-center px-4 text-gray-600 dark:text-gray-400">
+                <span className="flex items-center px-4 text-muted-foreground dark:text-muted-foreground">
                   Página {currentPage} de {lastPage} ({total} templates)
                 </span>
                 <Button

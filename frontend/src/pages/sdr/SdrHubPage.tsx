@@ -15,6 +15,7 @@ import {
   Clock,
   CheckCircle,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import api from '../../api/axios';
 
 interface SdrAgent {
@@ -99,35 +100,26 @@ export const SdrHubPage: React.FC = () => {
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-4 mb-2">
-          <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
-            <Bot className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Central SDR
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              Gerencie seus agentes SDR com Inteligência Artificial
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title="Central SDR"
+          subtitle="Gerencie seus agentes SDR com Inteligência Artificial"
+        />
       </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-muted rounded-xl p-4 border border-gray-200 dark:border-border shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <Bot className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{agents.length}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Agentes SDR</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Agentes SDR</p>
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-muted rounded-xl p-4 border border-gray-200 dark:border-border shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -136,29 +128,29 @@ export const SdrHubPage: React.FC = () => {
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {agents.filter(a => a.is_active).length}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Ativos</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Ativos</p>
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-muted rounded-xl p-4 border border-gray-200 dark:border-border shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">--</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Conversas Hoje</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Conversas Hoje</p>
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-muted rounded-xl p-4 border border-gray-200 dark:border-border shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
               <TrendingUp className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">--</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Taxa de Sucesso</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Taxa de Sucesso</p>
             </div>
           </div>
         </div>
@@ -196,10 +188,10 @@ export const SdrHubPage: React.FC = () => {
           {agents.map((agent) => (
             <div
               key={agent.id}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm"
+              className="bg-white dark:bg-muted rounded-xl border border-gray-200 dark:border-border overflow-hidden shadow-sm"
             >
               {/* Agent Header */}
-              <div className="p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750">
+              <div className="p-5 border-b border-gray-200 dark:border-border bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
@@ -213,13 +205,13 @@ export const SdrHubPage: React.FC = () => {
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                           agent.is_active 
                             ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                            : 'bg-gray-100 text-muted-foreground dark:bg-accent dark:text-muted-foreground'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${agent.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                           {agent.is_active ? 'Ativo' : 'Inativo'}
                         </span>
                         {agent.personality && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-muted-foreground dark:text-muted-foreground">
                             {agent.personality}
                           </span>
                         )}
@@ -235,7 +227,7 @@ export const SdrHubPage: React.FC = () => {
                   <Link
                     key={item.id}
                     to={item.link}
-                    className="p-5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+                    className="p-5 hover:bg-gray-50 dark:hover:bg-accent/50 transition-colors group"
                   >
                     <div className="flex flex-col items-center text-center">
                       <div className={`p-3 rounded-xl bg-gradient-to-br ${item.color} mb-3 group-hover:scale-110 transition-transform`}>
@@ -244,7 +236,7 @@ export const SdrHubPage: React.FC = () => {
                       <h4 className="font-medium text-gray-900 dark:text-white mb-1">
                         {item.title}
                       </h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-muted-foreground dark:text-muted-foreground">
                         {item.description}
                       </p>
                     </div>
@@ -258,12 +250,12 @@ export const SdrHubPage: React.FC = () => {
 
       {/* Empty State */}
       {agents.length === 0 && (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-          <Bot className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <div className="text-center py-12 bg-white dark:bg-muted rounded-xl border border-gray-200 dark:border-border">
+          <Bot className="w-16 h-16 text-muted-foreground dark:text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             Nenhum Agente SDR Configurado
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+          <p className="text-muted-foreground dark:text-muted-foreground mb-6 max-w-md mx-auto">
             Crie seu primeiro agente SDR com IA para automatizar a qualificação de leads via WhatsApp
           </p>
           <Link
@@ -283,7 +275,7 @@ export const SdrHubPage: React.FC = () => {
             <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <h4 className="font-medium text-gray-900 dark:text-white">Respostas Instantâneas</h4>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
             Responda leads 24/7 com IA treinada no seu negócio
           </p>
         </div>
@@ -292,7 +284,7 @@ export const SdrHubPage: React.FC = () => {
             <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             <h4 className="font-medium text-gray-900 dark:text-white">Aprendizado Contínuo</h4>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
             O agente aprende com cada conversa e feedback
           </p>
         </div>
@@ -301,7 +293,7 @@ export const SdrHubPage: React.FC = () => {
             <Users className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             <h4 className="font-medium text-gray-900 dark:text-white">Qualificação Inteligente</h4>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
             Identifica leads quentes e agenda reuniões automaticamente
           </p>
         </div>

@@ -85,7 +85,7 @@ export function CompanySettingsPage() {
           <Building2 className="w-6 h-6 text-blue-500" />
           Dados da Empresa
         </h2>
-        <p className="text-gray-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Configure as informações da sua empresa
         </p>
       </div>
@@ -112,27 +112,27 @@ export function CompanySettingsPage() {
         </motion.div>
       )}
 
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6 space-y-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6 space-y-6">
         {/* Informações Básicas */}
         <div>
           <h3 className="text-lg font-semibold mb-4">Informações Básicas</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Nome da Empresa</label>
+              <label className="block text-sm text-muted-foreground mb-1">Nome da Empresa</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Slug (URL)</label>
+              <label className="block text-sm text-muted-foreground mb-1">Slug (URL)</label>
               <input
                 type="text"
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                 disabled
               />
             </div>
@@ -147,27 +147,27 @@ export function CompanySettingsPage() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">WhatsApp Business</label>
+              <label className="block text-sm text-muted-foreground mb-1">WhatsApp Business</label>
               <input
                 type="text"
                 value={formData.whatsapp_number}
                 onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
                 placeholder="5511999999999"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Telefone</label>
+              <label className="block text-sm text-muted-foreground mb-1">Telefone</label>
               <input
                 type="text"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="(11) 3333-3333"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1 flex items-center gap-1">
+              <label className="block text-sm text-muted-foreground mb-1 flex items-center gap-1">
                 <Mail className="w-4 h-4" />
                 Email
               </label>
@@ -176,11 +176,11 @@ export function CompanySettingsPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="contato@empresa.com"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1 flex items-center gap-1">
+              <label className="block text-sm text-muted-foreground mb-1 flex items-center gap-1">
                 <Globe className="w-4 h-4" />
                 Website
               </label>
@@ -189,7 +189,7 @@ export function CompanySettingsPage() {
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 placeholder="https://www.empresa.com"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
@@ -203,31 +203,31 @@ export function CompanySettingsPage() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-3">
-              <label className="block text-sm text-gray-400 mb-1">Endereço</label>
+              <label className="block text-sm text-muted-foreground mb-1">Endereço</label>
               <input
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Rua, número, bairro"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Cidade</label>
+              <label className="block text-sm text-muted-foreground mb-1">Cidade</label>
               <input
                 type="text"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 placeholder="São Paulo"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Estado</label>
+              <label className="block text-sm text-muted-foreground mb-1">Estado</label>
               <select
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               >
                 <option value="">Selecione</option>
                 {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => (
@@ -246,10 +246,10 @@ export function CompanySettingsPage() {
           </h3>
 
           {/* Toggle de ativação */}
-          <div className="flex items-center justify-between mb-4 p-4 bg-gray-700/30 rounded-lg">
+          <div className="flex items-center justify-between mb-4 p-4 bg-accent/30 rounded-lg">
             <div>
               <p className="font-medium">Integração Ativa</p>
-              <p className="text-sm text-gray-400">Habilitar envio de leads para o Linx Smart</p>
+              <p className="text-sm text-muted-foreground">Habilitar envio de leads para o Linx Smart</p>
             </div>
             <button
               type="button"
@@ -259,44 +259,44 @@ export function CompanySettingsPage() {
               {formData.linx_enabled ? (
                 <ToggleRight className="w-10 h-10 text-green-400" />
               ) : (
-                <ToggleLeft className="w-10 h-10 text-gray-500" />
+                <ToggleLeft className="w-10 h-10 text-muted-foreground" />
               )}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Código da Empresa</label>
+              <label className="block text-sm text-muted-foreground mb-1">Código da Empresa</label>
               <input
                 type="text"
                 value={formData.linx_empresa_id}
                 onChange={(e) => setFormData({ ...formData, linx_empresa_id: e.target.value })}
                 placeholder="Ex: 1"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
-              <p className="text-xs text-gray-500 mt-1">ID da empresa no Linx Smart</p>
+              <p className="text-xs text-muted-foreground mt-1">ID da empresa no Linx Smart</p>
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Código da Revenda</label>
+              <label className="block text-sm text-muted-foreground mb-1">Código da Revenda</label>
               <input
                 type="text"
                 value={formData.linx_revenda_id}
                 onChange={(e) => setFormData({ ...formData, linx_revenda_id: e.target.value })}
                 placeholder="Ex: 1"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
-              <p className="text-xs text-gray-500 mt-1">ID da revenda no Linx Smart</p>
+              <p className="text-xs text-muted-foreground mt-1">ID da revenda no Linx Smart</p>
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">URL da API (opcional)</label>
+              <label className="block text-sm text-muted-foreground mb-1">URL da API (opcional)</label>
               <input
                 type="url"
                 value={formData.linx_api_url}
                 onChange={(e) => setFormData({ ...formData, linx_api_url: e.target.value })}
                 placeholder="https://api.linx.com.br"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
-              <p className="text-xs text-gray-500 mt-1">Deixe em branco para usar padrão</p>
+              <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar padrão</p>
             </div>
           </div>
         </div>

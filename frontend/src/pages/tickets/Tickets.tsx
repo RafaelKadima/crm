@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { Search, MessageSquare, Clock, User, Loader2, MessageCircle, CheckCircle2, Inbox } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
@@ -21,7 +22,7 @@ const statusConfig: Record<string, { label: string; variant: 'info' | 'warning' 
 type StatusFilterType = 'all' | 'pending' | 'open' | 'closed'
 
 const filterTabs: { key: StatusFilterType; label: string; icon: any; color: string }[] = [
-  { key: 'all', label: 'Todos', icon: Inbox, color: 'text-gray-400' },
+  { key: 'all', label: 'Todos', icon: Inbox, color: 'text-muted-foreground' },
   { key: 'pending', label: 'Pendentes', icon: Clock, color: 'text-amber-400' },
   { key: 'open', label: 'Em Atendimento', icon: MessageCircle, color: 'text-blue-400' },
   { key: 'closed', label: 'Encerrados', icon: CheckCircle2, color: 'text-green-400' },
@@ -152,24 +153,20 @@ export function TicketsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Conversas</h1>
-          <p className="text-muted-foreground mt-1">
-            {filteredTickets.length} {
-              statusFilter === 'pending' ? 'pendentes' :
-              statusFilter === 'open' ? 'em atendimento' : 
-              statusFilter === 'closed' ? 'encerradas' : 
-              'no total'
-            }
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Conversas"
+        subtitle={`${filteredTickets.length} ${
+          statusFilter === 'pending' ? 'pendentes' :
+          statusFilter === 'open' ? 'em atendimento' :
+          statusFilter === 'closed' ? 'encerradas' :
+          'no total'
+        }`}
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Status Tabs */}
-        <div className="flex bg-gray-800/50 rounded-lg p-1 gap-1">
+        <div className="flex bg-muted/50 rounded-lg p-1 gap-1">
           {filterTabs.map((tab) => {
             const Icon = tab.icon
             const isActive = statusFilter === tab.key
@@ -179,15 +176,15 @@ export function TicketsPage() {
                 onClick={() => setStatusFilter(tab.key)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
                   isActive
-                    ? 'bg-gray-700 text-white shadow-md'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    ? 'bg-accent text-white shadow-md'
+                    : 'text-muted-foreground hover:text-white hover:bg-accent/50'
                 }`}
               >
                 <Icon className={`h-4 w-4 ${isActive ? tab.color : ''}`} />
                 <span className="font-medium">{tab.label}</span>
                 {tab.key !== 'all' && (
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    isActive ? 'bg-gray-600' : 'bg-gray-700'
+                    isActive ? 'bg-muted-foreground/20' : 'bg-accent'
                   } ${tab.key === 'pending' && counts.pending > 0 ? 'bg-amber-500/30 text-amber-300' : ''}`}>
                     {tab.key === 'pending' ? counts.pending : tab.key === 'open' ? counts.open : counts.closed}
                   </span>

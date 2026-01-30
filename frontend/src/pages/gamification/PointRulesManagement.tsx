@@ -169,7 +169,7 @@ export function PointRulesManagement() {
             <Star className="w-6 h-6 text-yellow-500" />
             Regras de Pontos
           </h2>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Defina quantos pontos cada ação vale
           </p>
         </div>
@@ -210,16 +210,16 @@ export function PointRulesManagement() {
           <Loader2 className="w-6 h-6 animate-spin text-yellow-500" />
         </div>
       ) : rules && rules.length > 0 ? (
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+        <div className="bg-muted/50 rounded-xl border border-border overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-700/50">
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Ação</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Regra</th>
-                <th className="text-center px-6 py-4 text-sm font-medium text-gray-400">Pontos</th>
-                <th className="text-center px-6 py-4 text-sm font-medium text-gray-400">Multi</th>
-                <th className="text-center px-6 py-4 text-sm font-medium text-gray-400">Status</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-gray-400">Ações</th>
+              <tr className="border-b border-border">
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Ação</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Regra</th>
+                <th className="text-center px-6 py-4 text-sm font-medium text-muted-foreground">Pontos</th>
+                <th className="text-center px-6 py-4 text-sm font-medium text-muted-foreground">Multi</th>
+                <th className="text-center px-6 py-4 text-sm font-medium text-muted-foreground">Status</th>
+                <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -228,7 +228,7 @@ export function PointRulesManagement() {
                   key={rule.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className={`border-b border-gray-700/30 hover:bg-gray-700/20 ${
+                  className={`border-b border-border hover:bg-accent/20 ${
                     !rule.is_active ? 'opacity-50' : ''
                   }`}
                 >
@@ -240,9 +240,9 @@ export function PointRulesManagement() {
                   <td className="px-6 py-4">
                     <div>
                       <p className="font-medium">{rule.name}</p>
-                      <p className="text-xs text-gray-500">{getActionLabel(rule.action_type)}</p>
+                      <p className="text-xs text-muted-foreground">{getActionLabel(rule.action_type)}</p>
                       {rule.description && (
-                        <p className="text-xs text-gray-400 mt-1">{rule.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{rule.description}</p>
                       )}
                     </div>
                   </td>
@@ -273,7 +273,7 @@ export function PointRulesManagement() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => openModal(rule)}
-                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 hover:bg-accent rounded-lg transition-colors"
                         title="Editar"
                       >
                         <Edit className="w-4 h-4" />
@@ -304,10 +304,10 @@ export function PointRulesManagement() {
           </table>
         </div>
       ) : (
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-8 text-center">
-          <Star className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+        <div className="bg-muted/50 rounded-xl border border-border p-8 text-center">
+          <Star className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <h3 className="text-lg font-medium mb-1">Nenhuma regra configurada</h3>
-          <p className="text-gray-400 text-sm mb-4">
+          <p className="text-muted-foreground text-sm mb-4">
             Crie regras de pontuação para as ações dos vendedores
           </p>
           <button
@@ -326,7 +326,7 @@ export function PointRulesManagement() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-muted rounded-xl border border-border p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
@@ -334,7 +334,7 @@ export function PointRulesManagement() {
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1 hover:bg-gray-700 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -342,7 +342,7 @@ export function PointRulesManagement() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Tipo de Ação</label>
+                <label className="block text-sm text-muted-foreground mb-1">Tipo de Ação</label>
                 <select
                   value={formData.action_type}
                   onChange={(e) => {
@@ -353,7 +353,7 @@ export function PointRulesManagement() {
                       name: formData.name || action?.label || '',
                     })
                   }}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-yellow-500 focus:outline-none"
                 >
                   {actionTypes.map((action) => (
                     <option key={action.value} value={action.value}>
@@ -364,42 +364,42 @@ export function PointRulesManagement() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nome da Regra</label>
+                <label className="block text-sm text-muted-foreground mb-1">Nome da Regra</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Pontos por lead criado"
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-yellow-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Descrição (opcional)</label>
+                <label className="block text-sm text-muted-foreground mb-1">Descrição (opcional)</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Descrição da regra..."
                   rows={2}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-yellow-500 focus:outline-none resize-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-yellow-500 focus:outline-none resize-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Pontos</label>
+                  <label className="block text-sm text-muted-foreground mb-1">Pontos</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={formData.points}
                     onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-yellow-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-yellow-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Multiplicador</label>
+                  <label className="block text-sm text-muted-foreground mb-1">Multiplicador</label>
                   <input
                     type="number"
                     step="0.1"
@@ -407,15 +407,15 @@ export function PointRulesManagement() {
                     max={10}
                     value={formData.multiplier}
                     onChange={(e) => setFormData({ ...formData, multiplier: parseFloat(e.target.value) || 1 })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-yellow-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-yellow-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">
+                <label className="block text-sm text-muted-foreground mb-1">
                   Condições (JSON - opcional)
-                  <span className="text-xs text-gray-500 ml-2">
+                  <span className="text-xs text-muted-foreground ml-2">
                     Ex: {`{"min_value": 1000}`}
                   </span>
                 </label>
@@ -424,7 +424,7 @@ export function PointRulesManagement() {
                   onChange={(e) => setFormData({ ...formData, conditions: e.target.value })}
                   placeholder='{"min_value": 1000, "pipeline_id": "..."}'
                   rows={3}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-yellow-500 focus:outline-none font-mono text-sm resize-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-yellow-500 focus:outline-none font-mono text-sm resize-none"
                 />
               </div>
 
@@ -434,21 +434,21 @@ export function PointRulesManagement() {
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-yellow-500 focus:ring-yellow-500"
+                  className="w-4 h-4 rounded border-border bg-accent text-yellow-500 focus:ring-yellow-500"
                 />
-                <label htmlFor="is_active" className="text-sm text-gray-300">
+                <label htmlFor="is_active" className="text-sm text-muted-foreground">
                   Regra ativa
                 </label>
               </div>
 
               {/* Preview */}
-              <div className="bg-gray-900/50 rounded-lg p-4">
-                <p className="text-xs text-gray-500 mb-2">Preview:</p>
+              <div className="bg-background/50 rounded-lg p-4">
+                <p className="text-xs text-muted-foreground mb-2">Preview:</p>
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{getActionIcon(formData.action_type)}</span>
                   <div className="flex-1">
                     <p className="font-medium">{formData.name || 'Nome da regra'}</p>
-                    <p className="text-xs text-gray-400">{getActionLabel(formData.action_type)}</p>
+                    <p className="text-xs text-muted-foreground">{getActionLabel(formData.action_type)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-yellow-400" />
@@ -463,7 +463,7 @@ export function PointRulesManagement() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>

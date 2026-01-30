@@ -18,6 +18,7 @@ import {
   FileVideo,
 } from 'lucide-react'
 
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -144,77 +145,71 @@ export default function CreativeUpload() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Upload className="w-7 h-7 text-purple-500" />
-            Criativos
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Faça upload de imagens e vídeos para usar em suas campanhas
-          </p>
-        </div>
-        
-        <Dialog open={showUrlDialog} onOpenChange={setShowUrlDialog}>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <Link2 className="w-4 h-4 mr-2" />
-              Adicionar via URL
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Criativo via URL</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Nome do criativo</Label>
-                <Input
-                  placeholder="Meu criativo"
-                  value={urlForm.name}
-                  onChange={e => setUrlForm(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>URL do arquivo</Label>
-                <Input
-                  placeholder="https://..."
-                  value={urlForm.url}
-                  onChange={e => setUrlForm(prev => ({ ...prev, url: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <div className="flex gap-2">
-                  <Button
-                    variant={urlForm.type === 'image' ? 'default' : 'outline'}
-                    onClick={() => setUrlForm(prev => ({ ...prev, type: 'image' }))}
-                    className="flex-1"
-                  >
-                    <FileImage className="w-4 h-4 mr-2" />
-                    Imagem
-                  </Button>
-                  <Button
-                    variant={urlForm.type === 'video' ? 'default' : 'outline'}
-                    onClick={() => setUrlForm(prev => ({ ...prev, type: 'video' }))}
-                    className="flex-1"
-                  >
-                    <FileVideo className="w-4 h-4 mr-2" />
-                    Vídeo
-                  </Button>
-                </div>
-              </div>
-              <Button
-                className="w-full"
-                onClick={() => uploadFromUrlMutation.mutate(urlForm)}
-                disabled={!urlForm.url || !urlForm.name || uploadFromUrlMutation.isPending}
-              >
-                {uploadFromUrlMutation.isPending ? 'Adicionando...' : 'Adicionar'}
+      <PageHeader
+        title="Criativos"
+        subtitle="Faça upload de imagens e vídeos para usar em suas campanhas"
+        actions={
+          <Dialog open={showUrlDialog} onOpenChange={setShowUrlDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Link2 className="w-4 h-4 mr-2" />
+                Adicionar via URL
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar Criativo via URL</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Nome do criativo</Label>
+                  <Input
+                    placeholder="Meu criativo"
+                    value={urlForm.name}
+                    onChange={e => setUrlForm(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>URL do arquivo</Label>
+                  <Input
+                    placeholder="https://..."
+                    value={urlForm.url}
+                    onChange={e => setUrlForm(prev => ({ ...prev, url: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={urlForm.type === 'image' ? 'default' : 'outline'}
+                      onClick={() => setUrlForm(prev => ({ ...prev, type: 'image' }))}
+                      className="flex-1"
+                    >
+                      <FileImage className="w-4 h-4 mr-2" />
+                      Imagem
+                    </Button>
+                    <Button
+                      variant={urlForm.type === 'video' ? 'default' : 'outline'}
+                      onClick={() => setUrlForm(prev => ({ ...prev, type: 'video' }))}
+                      className="flex-1"
+                    >
+                      <FileVideo className="w-4 h-4 mr-2" />
+                      Vídeo
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={() => uploadFromUrlMutation.mutate(urlForm)}
+                  disabled={!urlForm.url || !urlForm.name || uploadFromUrlMutation.isPending}
+                >
+                  {uploadFromUrlMutation.isPending ? 'Adicionando...' : 'Adicionar'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       {/* Upload Zone */}
       <Card>
@@ -226,7 +221,7 @@ export default function CreativeUpload() {
               transition-all duration-200
               ${isDragActive 
                 ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
-                : 'border-gray-300 dark:border-gray-700 hover:border-purple-400'
+                : 'border-gray-300 dark:border-border hover:border-purple-400'
               }
             `}
           >
@@ -234,9 +229,9 @@ export default function CreativeUpload() {
             <div className="flex flex-col items-center gap-3">
               <div className={`
                 w-16 h-16 rounded-full flex items-center justify-center
-                ${isDragActive ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-gray-100 dark:bg-gray-800'}
+                ${isDragActive ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-gray-100 dark:bg-muted'}
               `}>
-                <Upload className={`w-8 h-8 ${isDragActive ? 'text-purple-500' : 'text-gray-400'}`} />
+                <Upload className={`w-8 h-8 ${isDragActive ? 'text-purple-500' : 'text-muted-foreground'}`} />
               </div>
               
               {isDragActive ? (
@@ -245,16 +240,16 @@ export default function CreativeUpload() {
                 </p>
               ) : (
                 <>
-                  <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                  <p className="text-lg font-medium text-gray-700 dark:text-muted-foreground">
                     Arraste e solte arquivos aqui
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     ou clique para selecionar
                   </p>
                 </>
               )}
               
-              <div className="flex gap-4 mt-2 text-xs text-gray-400">
+              <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Image className="w-3 h-3" />
                   JPG, PNG, GIF
@@ -269,7 +264,7 @@ export default function CreativeUpload() {
           </div>
           
           {uploadMutation.isPending && (
-            <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
+            <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
               <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
               Enviando arquivo...
             </div>
@@ -286,16 +281,16 @@ export default function CreativeUpload() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-gray-500">Carregando...</div>
+            <div className="text-center py-8 text-muted-foreground">Carregando...</div>
           ) : creatives.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                <Image className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-muted flex items-center justify-center">
+                <Image className="w-8 h-8 text-muted-foreground" />
               </div>
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="text-muted-foreground dark:text-muted-foreground">
                 Nenhum criativo ainda
               </p>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Faça upload de imagens ou vídeos para começar
               </p>
             </div>
@@ -303,17 +298,17 @@ export default function CreativeUpload() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {creatives.map(creative => {
                 const StatusIcon = statusConfig[creative.status]?.icon || Clock
-                const statusColor = statusConfig[creative.status]?.color || 'text-gray-500'
+                const statusColor = statusConfig[creative.status]?.color || 'text-muted-foreground'
                 const mediaUrl = creative.file_url || creative.external_url
                 const thumbnailUrl = creative.thumbnail_url || (creative.type === 'image' ? mediaUrl : null)
                 
                 return (
                   <div
                     key={creative.id}
-                    className="group relative bg-gray-50 dark:bg-gray-800/50 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700"
+                    className="group relative bg-gray-50 dark:bg-muted/50 rounded-xl overflow-hidden border border-gray-200 dark:border-border"
                   >
                     {/* Thumbnail */}
-                    <div className="aspect-square relative bg-gray-200 dark:bg-gray-700">
+                    <div className="aspect-square relative bg-gray-200 dark:bg-accent">
                       {thumbnailUrl ? (
                         <img
                           src={thumbnailUrl}
@@ -323,9 +318,9 @@ export default function CreativeUpload() {
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           {creative.type === 'video' ? (
-                            <Video className="w-12 h-12 text-gray-400" />
+                            <Video className="w-12 h-12 text-muted-foreground" />
                           ) : (
-                            <Image className="w-12 h-12 text-gray-400" />
+                            <Image className="w-12 h-12 text-muted-foreground" />
                           )}
                         </div>
                       )}
@@ -368,7 +363,7 @@ export default function CreativeUpload() {
                         {creative.name}
                       </p>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {formatFileSize(creative.file_size)}
                         </span>
                         <span className={`flex items-center gap-1 text-xs ${statusColor}`}>

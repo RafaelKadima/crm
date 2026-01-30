@@ -171,13 +171,13 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] bg-gray-900 border-gray-700 text-white overflow-hidden">
+      <DialogContent className="sm:max-w-[600px] bg-background border-border text-foreground overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-emerald-400" />
             Importar Leads
             {!isAdmin && (
-              <span className="text-xs font-normal text-gray-400 ml-2">
+              <span className="text-xs font-normal text-muted-foreground ml-2">
                 (para sua carteira)
               </span>
             )}
@@ -195,13 +195,13 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                     ? 'bg-emerald-500 text-white'
                     : ['upload', 'configure', 'processing', 'complete'].indexOf(step) > i
                     ? 'bg-emerald-500/30 text-emerald-400'
-                    : 'bg-gray-700 text-gray-400'
+                    : 'bg-accent text-muted-foreground'
                 )}
               >
                 {i + 1}
               </div>
               {i < 3 && (
-                <ArrowRight className="h-4 w-4 mx-2 text-gray-600" />
+                <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
               )}
             </div>
           ))}
@@ -223,7 +223,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                   'border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all',
                   dragOver
                     ? 'border-emerald-400 bg-emerald-400/10'
-                    : 'border-gray-600 hover:border-gray-500 hover:bg-gray-800/50'
+                    : 'border-border hover:border-muted-foreground/20 hover:bg-muted/50'
                 )}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -240,20 +240,20 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                 
                 <Upload className={cn(
                   'h-12 w-12 mx-auto mb-4 transition-colors',
-                  dragOver ? 'text-emerald-400' : 'text-gray-400'
+                  dragOver ? 'text-emerald-400' : 'text-muted-foreground'
                 )} />
                 
                 <p className="text-lg font-medium mb-2">
                   Arraste seu arquivo CSV aqui
                 </p>
-                <p className="text-sm text-gray-400 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   ou clique para selecionar
                 </p>
                 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-gray-600"
+                  className="border-border"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleDownloadTemplate()
@@ -270,9 +270,9 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
               </div>
 
               {/* Instructions */}
-              <div className="bg-gray-800/50 rounded-lg p-4 space-y-2">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                 <h4 className="font-medium text-sm text-emerald-400">📋 Instruções:</h4>
-                <ul className="text-sm text-gray-400 space-y-1">
+                <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• O arquivo deve ser em formato <strong className="text-white">CSV</strong> separado por ponto e vírgula (;)</li>
                   <li>• Campos obrigatórios: <strong className="text-white">Nome</strong> e <strong className="text-white">Telefone</strong></li>
                   <li>• Telefone com DDD (ex: 11999998888)</li>
@@ -296,7 +296,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                 <FileSpreadsheet className="h-8 w-8 text-emerald-400" />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{selectedFile?.name}</p>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     {selectedFile?.size ? `${(selectedFile.size / 1024).toFixed(1)} KB` : ''}
                   </p>
                 </div>
@@ -315,7 +315,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
               {/* Admin: Distribution Mode */}
               {isAdmin && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Distribuição dos leads
                   </label>
                   <div className="space-y-2">
@@ -323,7 +323,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                       "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border",
                       distributionMode === 'round-robin' 
                         ? "bg-emerald-500/10 border-emerald-500/50" 
-                        : "bg-gray-800/50 border-gray-700 hover:bg-gray-800"
+                        : "bg-muted/50 border-border hover:bg-muted"
                     )}>
                       <input
                         type="radio"
@@ -337,7 +337,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                           <Shuffle className="h-4 w-4 text-emerald-400" />
                           <span className="font-medium">Distribuir automaticamente (Round-Robin)</span>
                         </div>
-                        <p className="text-sm text-gray-400 mt-0.5">
+                        <p className="text-sm text-muted-foreground mt-0.5">
                           Distribui igualmente entre todos os vendedores ativos
                         </p>
                       </div>
@@ -347,7 +347,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                       "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border",
                       distributionMode === 'specific' 
                         ? "bg-emerald-500/10 border-emerald-500/50" 
-                        : "bg-gray-800/50 border-gray-700 hover:bg-gray-800"
+                        : "bg-muted/50 border-border hover:bg-muted"
                     )}>
                       <input
                         type="radio"
@@ -361,7 +361,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                           <User className="h-4 w-4 text-blue-400" />
                           <span className="font-medium">Atribuir a um vendedor específico</span>
                         </div>
-                        <p className="text-sm text-gray-400 mt-0.5">
+                        <p className="text-sm text-muted-foreground mt-0.5">
                           Todos os leads vão para o vendedor selecionado
                         </p>
                       </div>
@@ -378,7 +378,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                       <select
                         value={selectedOwnerId}
                         onChange={(e) => setSelectedOwnerId(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
+                        className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg text-foreground focus:border-emerald-500 focus:outline-none"
                       >
                         <option value="">Selecione um vendedor</option>
                         {sellers.map((seller: any) => (
@@ -399,26 +399,26 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                     <User className="h-4 w-4 text-blue-400" />
                     <span className="font-medium text-blue-400">Importação para sua carteira</span>
                   </div>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     Os leads importados serão atribuídos automaticamente a você e entrarão como novos leads no seu pipeline.
                   </p>
                 </div>
               )}
 
               {/* Skip Duplicates Option */}
-              <label className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-800 transition-colors">
+              <label className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors">
                 <input
                   type="checkbox"
                   checked={skipDuplicates}
                   onChange={(e) => setSkipDuplicates(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500"
+                  className="w-4 h-4 rounded border-border bg-accent text-emerald-500 focus:ring-emerald-500"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-emerald-400" />
                     <span className="font-medium">Ignorar duplicados</span>
                   </div>
-                  <p className="text-sm text-gray-400 mt-0.5">
+                  <p className="text-sm text-muted-foreground mt-0.5">
                     Pula leads com telefone já cadastrado no sistema
                   </p>
                 </div>
@@ -466,7 +466,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
               className="py-8 text-center"
             >
               <div className="relative w-24 h-24 mx-auto mb-6">
-                <div className="absolute inset-0 border-4 border-gray-700 rounded-full" />
+                <div className="absolute inset-0 border-4 border-accent rounded-full" />
                 <div
                   className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin"
                   style={{
@@ -481,13 +481,13 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
               </div>
 
               <h3 className="text-lg font-medium mb-2">Processando importação...</h3>
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 {importStatus?.processed_rows || 0} de {importStatus?.total_rows || 0} leads processados
               </p>
 
               {/* Progress Bar */}
               <div className="mt-6 max-w-xs mx-auto">
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-accent rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-emerald-500"
                     initial={{ width: 0 }}
@@ -497,7 +497,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                     transition={{ duration: 0.5 }}
                   />
                 </div>
-                <p className="text-sm text-gray-400 mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   {importData?.progress || 0}% concluído
                 </p>
               </div>
@@ -522,17 +522,17 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                <div className="bg-muted/50 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-white">{importStatus.total_rows}</p>
-                  <p className="text-sm text-gray-400">Total</p>
+                  <p className="text-sm text-muted-foreground">Total</p>
                 </div>
                 <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-emerald-400">{importStatus.success_count}</p>
-                  <p className="text-sm text-gray-400">Sucesso</p>
+                  <p className="text-sm text-muted-foreground">Sucesso</p>
                 </div>
                 <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-red-400">{importStatus.error_count}</p>
-                  <p className="text-sm text-gray-400">Erros</p>
+                  <p className="text-sm text-muted-foreground">Erros</p>
                 </div>
               </div>
 
@@ -543,14 +543,14 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
                     <AlertCircle className="h-4 w-4 text-red-400" />
                     <span className="font-medium text-red-400">Erros encontrados:</span>
                   </div>
-                  <ul className="text-sm text-gray-300 space-y-1">
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     {importStatus.errors.slice(0, 10).map((error: any, i: number) => (
                       <li key={i}>
                         Linha {error.row}: {error.message}
                       </li>
                     ))}
                     {importStatus.errors.length > 10 && (
-                      <li className="text-gray-400">
+                      <li className="text-muted-foreground">
                         ... e mais {importStatus.errors.length - 10} erros
                       </li>
                     )}

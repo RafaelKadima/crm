@@ -155,7 +155,7 @@ export function RewardsManagement() {
             <Gift className="w-6 h-6 text-pink-500" />
             Recompensas
           </h2>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Configure os prêmios que os vendedores podem resgatar
           </p>
         </div>
@@ -207,7 +207,7 @@ export function RewardsManagement() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden ${
+                className={`bg-muted/50 rounded-xl border border-border overflow-hidden ${
                   !reward.is_active ? 'opacity-50' : ''
                 }`}
               >
@@ -228,7 +228,7 @@ export function RewardsManagement() {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <h3 className="font-semibold">{reward.name}</h3>
-                      <span className="text-xs text-gray-500">{typeInfo.label}</span>
+                      <span className="text-xs text-muted-foreground">{typeInfo.label}</span>
                     </div>
                     {tierInfo && (
                       <div
@@ -241,7 +241,7 @@ export function RewardsManagement() {
                   </div>
 
                   {reward.description && (
-                    <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                       {reward.description}
                     </p>
                   )}
@@ -253,17 +253,17 @@ export function RewardsManagement() {
                       </span>
                     )}
                     {reward.stock !== null && (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         Estoque: {reward.stock}
                       </span>
                     )}
                   </div>
 
                   {/* Ações */}
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-700/50">
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
                     <button
                       onClick={() => openModal(reward)}
-                      className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                      className="p-2 hover:bg-accent rounded-lg transition-colors"
                       title="Editar"
                     >
                       <Edit className="w-4 h-4" />
@@ -293,10 +293,10 @@ export function RewardsManagement() {
           })}
         </div>
       ) : (
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-8 text-center">
-          <Gift className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+        <div className="bg-muted/50 rounded-xl border border-border p-8 text-center">
+          <Gift className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <h3 className="text-lg font-medium mb-1">Nenhuma recompensa configurada</h3>
-          <p className="text-gray-400 text-sm mb-4">
+          <p className="text-muted-foreground text-sm mb-4">
             Crie prêmios para motivar sua equipe
           </p>
           <button
@@ -315,7 +315,7 @@ export function RewardsManagement() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-muted rounded-xl border border-border p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
@@ -323,7 +323,7 @@ export function RewardsManagement() {
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1 hover:bg-gray-700 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -331,19 +331,19 @@ export function RewardsManagement() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nome</label>
+                <label className="block text-sm text-muted-foreground mb-1">Nome</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Camiseta da empresa"
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-pink-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-pink-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Tipo</label>
+                <label className="block text-sm text-muted-foreground mb-2">Tipo</label>
                 <div className="grid grid-cols-3 gap-2">
                   {rewardTypes.map((type) => (
                     <button
@@ -353,7 +353,7 @@ export function RewardsManagement() {
                       className={`p-3 rounded-lg border transition-all text-center ${
                         formData.type === type.value
                           ? 'border-pink-500 bg-pink-500/20'
-                          : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                          : 'border-border bg-accent hover:border-muted-foreground/30'
                       }`}
                     >
                       <span className="text-2xl block mb-1">{type.icon}</span>
@@ -364,38 +364,38 @@ export function RewardsManagement() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Descrição</label>
+                <label className="block text-sm text-muted-foreground mb-1">Descrição</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Descrição da recompensa..."
                   rows={2}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-pink-500 focus:outline-none resize-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-pink-500 focus:outline-none resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">URL da Imagem (opcional)</label>
+                <label className="block text-sm text-muted-foreground mb-1">URL da Imagem (opcional)</label>
                 <input
                   type="url"
                   value={formData.image_url}
                   onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                   placeholder="https://..."
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-pink-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-pink-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">
+                <label className="block text-sm text-muted-foreground mb-1">
                   Tier Mínimo (opcional)
-                  <span className="text-xs text-gray-500 ml-2">
+                  <span className="text-xs text-muted-foreground ml-2">
                     Só disponível para este tier ou superior
                   </span>
                 </label>
                 <select
                   value={formData.tier_id}
                   onChange={(e) => setFormData({ ...formData, tier_id: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-pink-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-pink-500 focus:outline-none"
                 >
                   <option value="">Disponível para todos</option>
                   {tiers?.map((tier) => (
@@ -408,22 +408,22 @@ export function RewardsManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">
+                  <label className="block text-sm text-muted-foreground mb-1">
                     Pontos Necessários
-                    <span className="text-xs text-gray-500 ml-2">(0 = grátis)</span>
+                    <span className="text-xs text-muted-foreground ml-2">(0 = grátis)</span>
                   </label>
                   <input
                     type="number"
                     min={0}
                     value={formData.points_required}
                     onChange={(e) => setFormData({ ...formData, points_required: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-pink-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-pink-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">
+                  <label className="block text-sm text-muted-foreground mb-1">
                     Estoque
-                    <span className="text-xs text-gray-500 ml-2">(vazio = ilimitado)</span>
+                    <span className="text-xs text-muted-foreground ml-2">(vazio = ilimitado)</span>
                   </label>
                   <input
                     type="number"
@@ -434,7 +434,7 @@ export function RewardsManagement() {
                       stock: e.target.value === '' ? null : parseInt(e.target.value),
                     })}
                     placeholder="Ilimitado"
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-pink-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-pink-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -445,9 +445,9 @@ export function RewardsManagement() {
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-pink-500 focus:ring-pink-500"
+                  className="w-4 h-4 rounded border-border bg-accent text-pink-500 focus:ring-pink-500"
                 />
-                <label htmlFor="is_active" className="text-sm text-gray-300">
+                <label htmlFor="is_active" className="text-sm text-muted-foreground">
                   Recompensa ativa
                 </label>
               </div>
@@ -456,7 +456,7 @@ export function RewardsManagement() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>

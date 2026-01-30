@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { 
   Plus, 
@@ -36,7 +37,7 @@ const typeColors: Record<string, string> = {
   whatsapp: 'text-emerald-400 bg-emerald-500/20',
   meeting: 'text-purple-400 bg-purple-500/20',
   follow_up: 'text-blue-400 bg-blue-500/20',
-  other: 'text-gray-400 bg-gray-500/20',
+  other: 'text-muted-foreground bg-gray-500/20',
 }
 
 const typeLabels: Record<string, string> = {
@@ -104,18 +105,16 @@ export function TasksPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Tarefas</h1>
-          <p className="text-muted-foreground mt-1">
-            {pendingCount} pendentes • {completedCount} concluídas
-          </p>
-        </div>
-        <Button onClick={handleNewTask}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Tarefa
-        </Button>
-      </div>
+      <PageHeader
+        title="Tarefas"
+        subtitle={`${pendingCount} pendentes • ${completedCount} concluídas`}
+        actions={
+          <Button onClick={handleNewTask}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Tarefa
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -239,13 +238,13 @@ export function TasksPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center py-16"
         >
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center">
-            <ListTodo className="w-8 h-8 text-gray-500" />
+          <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+            <ListTodo className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-medium text-gray-300 mb-2">
+          <h3 className="text-lg font-medium text-muted-foreground mb-2">
             {searchQuery ? 'Nenhuma tarefa encontrada' : 'Nenhuma tarefa cadastrada'}
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-muted-foreground mb-6">
             {searchQuery 
               ? 'Tente buscar por outro termo' 
               : 'Comece adicionando sua primeira tarefa'

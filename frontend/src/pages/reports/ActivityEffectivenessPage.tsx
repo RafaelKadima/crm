@@ -14,6 +14,7 @@ import {
   Pie,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import {
   Loader2,
@@ -128,20 +129,15 @@ export function ActivityEffectivenessPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Activity className="h-8 w-8 text-primary" />
-            Efetividade de Atividades
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Analise quais atividades mais contribuem para conversao de vendas
-          </p>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Periodo: {dateRange.start_date} a {dateRange.end_date}
-        </div>
-      </div>
+      <PageHeader
+        title="Efetividade de Atividades"
+        subtitle="Analise quais atividades mais contribuem para conversao de vendas"
+        actions={
+          <div className="text-sm text-muted-foreground">
+            Periodo: {dateRange.start_date} a {dateRange.end_date}
+          </div>
+        }
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

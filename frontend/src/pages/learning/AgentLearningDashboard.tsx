@@ -15,6 +15,7 @@ import {
   Lightbulb,
   RefreshCw,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useAgentLearning } from '../../hooks/useAgentLearning';
 import type { LearningStats, ConversationPattern } from '../../hooks/useAgentLearning';
 
@@ -62,7 +63,7 @@ export const AgentLearningDashboard: React.FC = () => {
     subValue?: string;
     color: string;
   }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div className="bg-white dark:bg-muted rounded-xl p-5 border border-gray-200 dark:border-border shadow-sm">
       <div className="flex items-start justify-between">
         <div className={`p-2 rounded-lg ${color}`}>
           <Icon className="w-5 h-5" />
@@ -72,11 +73,11 @@ export const AgentLearningDashboard: React.FC = () => {
         <div className="text-2xl font-bold text-gray-900 dark:text-white">
           {value}
         </div>
-        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <div className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
           {label}
         </div>
         {subValue && (
-          <div className="text-xs text-gray-400 mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             {subValue}
           </div>
         )}
@@ -88,29 +89,20 @@ export const AgentLearningDashboard: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl shadow-lg">
-              <Brain className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Central de Aprendizado
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400">
-                Acompanhe como o agente está evoluindo com cada interação
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={loadData}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </button>
-        </div>
+        <PageHeader
+          title="Central de Aprendizado"
+          subtitle="Acompanhe como o agente está evoluindo com cada interação"
+          actions={
+            <button
+              onClick={loadData}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-muted hover:bg-gray-200 dark:hover:bg-accent rounded-lg text-gray-700 dark:text-muted-foreground transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </button>
+          }
+        />
       </div>
 
       {/* Stats Grid */}
@@ -148,7 +140,7 @@ export const AgentLearningDashboard: React.FC = () => {
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Feedback Overview */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-muted rounded-xl border border-gray-200 dark:border-border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-blue-500" />
@@ -160,12 +152,12 @@ export const AgentLearningDashboard: React.FC = () => {
             {/* Positive/Negative Bar */}
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600 dark:text-gray-400">Distribuição</span>
+                <span className="text-muted-foreground dark:text-muted-foreground">Distribuição</span>
                 <span className="text-gray-900 dark:text-white font-medium">
                   {stats?.feedback?.total || 0} feedbacks
                 </span>
               </div>
-              <div className="flex h-4 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+              <div className="flex h-4 rounded-full overflow-hidden bg-gray-200 dark:bg-accent">
                 <div
                   className="bg-green-500 transition-all"
                   style={{ 
@@ -192,7 +184,7 @@ export const AgentLearningDashboard: React.FC = () => {
             </div>
 
             {/* Info Cards */}
-            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-200 dark:border-border">
               <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-1">
                   <Award className="w-4 h-4" />
@@ -216,7 +208,7 @@ export const AgentLearningDashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-muted rounded-xl border border-gray-200 dark:border-border p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <Target className="w-5 h-5 text-purple-500" />
             Ações Rápidas
@@ -235,12 +227,12 @@ export const AgentLearningDashboard: React.FC = () => {
                   <div className="font-medium text-gray-900 dark:text-white">
                     Revisar FAQs Pendentes
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground">
                     {stats?.questions?.pending || 0} perguntas aguardando
                   </div>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground transition-colors" />
             </Link>
 
             <Link
@@ -255,12 +247,12 @@ export const AgentLearningDashboard: React.FC = () => {
                   <div className="font-medium text-gray-900 dark:text-white">
                     Gerenciar Base de Conhecimento
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground">
                     FAQs e documentos do agente
                   </div>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground transition-colors" />
             </Link>
 
             <Link
@@ -275,12 +267,12 @@ export const AgentLearningDashboard: React.FC = () => {
                   <div className="font-medium text-gray-900 dark:text-white">
                     Ver Padrões Aprendidos
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground">
                     {stats?.patterns?.total || 0} padrões identificados
                   </div>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground transition-colors" />
             </Link>
           </div>
         </div>
@@ -288,7 +280,7 @@ export const AgentLearningDashboard: React.FC = () => {
 
       {/* Patterns Preview */}
       {patterns.length > 0 && (
-        <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="mt-6 bg-white dark:bg-muted rounded-xl border border-gray-200 dark:border-border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-500" />
@@ -306,7 +298,7 @@ export const AgentLearningDashboard: React.FC = () => {
             {patterns.slice(0, 3).map((pattern) => (
               <div
                 key={pattern.id}
-                className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                className="p-4 bg-gray-50 dark:bg-accent/50 rounded-lg"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-xs">
@@ -319,10 +311,10 @@ export const AgentLearningDashboard: React.FC = () => {
                 <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
                   {pattern.pattern_name}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground line-clamp-2">
                   {pattern.pattern_description}
                 </p>
-                <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                   <TrendingUp className="w-3 h-3" />
                   Usado {pattern.times_used}x
                 </div>
@@ -340,53 +332,53 @@ export const AgentLearningDashboard: React.FC = () => {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="p-2 bg-white dark:bg-muted rounded-lg shadow">
               <ThumbsUp className="w-4 h-4 text-green-600" />
             </div>
             <div>
               <div className="font-medium text-gray-900 dark:text-white text-sm">
                 Feedbacks
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground">
                 Usuários avaliam respostas com 👍/👎
               </p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="p-2 bg-white dark:bg-muted rounded-lg shadow">
               <HelpCircle className="w-4 h-4 text-yellow-600" />
             </div>
             <div>
               <div className="font-medium text-gray-900 dark:text-white text-sm">
                 FAQs Auto
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground">
                 Detecta perguntas frequentes
               </p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="p-2 bg-white dark:bg-muted rounded-lg shadow">
               <TrendingUp className="w-4 h-4 text-purple-600" />
             </div>
             <div>
               <div className="font-medium text-gray-900 dark:text-white text-sm">
                 Padrões
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground">
                 Analisa conversas bem-sucedidas
               </p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="p-2 bg-white dark:bg-muted rounded-lg shadow">
               <Sparkles className="w-4 h-4 text-blue-600" />
             </div>
             <div>
               <div className="font-medium text-gray-900 dark:text-white text-sm">
                 Evolui
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground">
                 Melhora continuamente
               </p>
             </div>

@@ -192,7 +192,7 @@ export function AchievementsManagement() {
             <Medal className="w-6 h-6 text-amber-500" />
             Conquistas
           </h2>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Configure badges e achievements para sua equipe
           </p>
         </div>
@@ -242,7 +242,7 @@ export function AchievementsManagement() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className={`bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden ${
+                className={`bg-muted/50 rounded-xl border border-border overflow-hidden ${
                   !achievement.is_active ? 'opacity-50' : ''
                 }`}
               >
@@ -258,19 +258,19 @@ export function AchievementsManagement() {
                         {conditionInfo.icon} {conditionInfo.label}
                       </span>
                       {achievement.description && (
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {achievement.description}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-700/50">
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                     <div className="flex items-center gap-3">
                       <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs font-medium">
                         +{achievement.points_bonus} pts
                       </span>
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Target className="w-3 h-3" />
                         {getConditionValueDisplay(achievement)}
                       </span>
@@ -278,7 +278,7 @@ export function AchievementsManagement() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => openModal(achievement)}
-                        className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-accent rounded-lg transition-colors"
                         title="Editar"
                       >
                         <Edit className="w-3.5 h-3.5" />
@@ -309,10 +309,10 @@ export function AchievementsManagement() {
           })}
         </div>
       ) : (
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-8 text-center">
-          <Medal className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+        <div className="bg-muted/50 rounded-xl border border-border p-8 text-center">
+          <Medal className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <h3 className="text-lg font-medium mb-1">Nenhuma conquista configurada</h3>
-          <p className="text-gray-400 text-sm mb-4">
+          <p className="text-muted-foreground text-sm mb-4">
             Crie badges e achievements para engajar sua equipe
           </p>
           <button
@@ -331,7 +331,7 @@ export function AchievementsManagement() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-muted rounded-xl border border-border p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
@@ -339,7 +339,7 @@ export function AchievementsManagement() {
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1 hover:bg-gray-700 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -347,19 +347,19 @@ export function AchievementsManagement() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nome</label>
+                <label className="block text-sm text-muted-foreground mb-1">Nome</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Primeiro de Muitos"
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-amber-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-amber-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Icone</label>
+                <label className="block text-sm text-muted-foreground mb-2">Icone</label>
                 <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
                   {badgeIcons.map((icon) => (
                     <button
@@ -369,7 +369,7 @@ export function AchievementsManagement() {
                       className={`w-10 h-10 text-xl rounded-lg transition-all ${
                         formData.icon === icon
                           ? 'bg-amber-600 scale-110'
-                          : 'bg-gray-700 hover:bg-gray-600'
+                          : 'bg-accent hover:bg-muted-foreground/20'
                       }`}
                     >
                       {icon}
@@ -379,11 +379,11 @@ export function AchievementsManagement() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Tipo de Condicao</label>
+                <label className="block text-sm text-muted-foreground mb-1">Tipo de Condicao</label>
                 <select
                   value={formData.condition_type}
                   onChange={(e) => setFormData({ ...formData, condition_type: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-amber-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-amber-500 focus:outline-none"
                 >
                   {conditionTypes.map((cond) => (
                     <option key={cond.value} value={cond.value}>
@@ -394,30 +394,30 @@ export function AchievementsManagement() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Descricao</label>
+                <label className="block text-sm text-muted-foreground mb-1">Descricao</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Descricao da conquista..."
                   rows={2}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-amber-500 focus:outline-none resize-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-amber-500 focus:outline-none resize-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Pontos Bonus</label>
+                  <label className="block text-sm text-muted-foreground mb-1">Pontos Bonus</label>
                   <input
                     type="number"
                     required
                     min={0}
                     value={formData.points_bonus}
                     onChange={(e) => setFormData({ ...formData, points_bonus: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-amber-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-amber-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">
+                  <label className="block text-sm text-muted-foreground mb-1">
                     {getConditionInfo(formData.condition_type).valueLabel}
                   </label>
                   <input
@@ -426,7 +426,7 @@ export function AchievementsManagement() {
                     min={1}
                     value={formData.condition_value}
                     onChange={(e) => setFormData({ ...formData, condition_value: parseInt(e.target.value) || 1 })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-amber-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-amber-500 focus:outline-none"
                     disabled={['first_sale', 'monthly_target', 'perfect_week'].includes(formData.condition_type)}
                   />
                 </div>
@@ -438,16 +438,16 @@ export function AchievementsManagement() {
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-amber-500 focus:ring-amber-500"
+                  className="w-4 h-4 rounded border-border bg-accent text-amber-500 focus:ring-amber-500"
                 />
-                <label htmlFor="is_active" className="text-sm text-gray-300">
+                <label htmlFor="is_active" className="text-sm text-muted-foreground">
                   Conquista ativa
                 </label>
               </div>
 
               {/* Preview */}
-              <div className="bg-gray-900/50 rounded-lg p-4">
-                <p className="text-xs text-gray-500 mb-2">Preview:</p>
+              <div className="bg-background/50 rounded-lg p-4">
+                <p className="text-xs text-muted-foreground mb-2">Preview:</p>
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl bg-amber-500/20">
                     {formData.icon}
@@ -457,7 +457,7 @@ export function AchievementsManagement() {
                     <p className="text-xs text-amber-400">
                       {getConditionInfo(formData.condition_type).icon} {getConditionInfo(formData.condition_type).label}
                     </p>
-                    <p className="text-xs text-gray-400">{formData.description || 'Descricao...'}</p>
+                    <p className="text-xs text-muted-foreground">{formData.description || 'Descricao...'}</p>
                   </div>
                 </div>
               </div>
@@ -466,7 +466,7 @@ export function AchievementsManagement() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>

@@ -97,7 +97,7 @@ export function DialogContent({ children, className, size = 'md' }: DialogConten
           />
 
           {/* Dialog container with padding for taskbar */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-8 pointer-events-none">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 sm:pb-8 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -105,7 +105,9 @@ export function DialogContent({ children, className, size = 'md' }: DialogConten
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className={cn(
                 'pointer-events-auto relative',
-                'w-full max-h-full rounded-xl bg-background shadow-2xl border overflow-hidden',
+                'w-full max-h-full bg-background shadow-2xl border overflow-hidden',
+                'rounded-none sm:rounded-xl',
+                'h-full sm:h-auto',
                 sizeClasses[size],
                 className
               )}

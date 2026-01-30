@@ -739,7 +739,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl" className="p-0 flex !h-[80vh] relative overflow-hidden chat-container-premium border-primary/20 shadow-2xl shadow-primary/10">
+      <DialogContent size="xl" className="p-0 flex !h-[100dvh] sm:!h-[80vh] relative overflow-hidden chat-container-premium border-primary/20 shadow-2xl shadow-primary/10">
         {/* 🔥 Efeito visual de transferência em tempo real */}
         <AnimatePresence>
           {transferEffect.show && (
@@ -814,10 +814,11 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           )}
         </AnimatePresence>
 
-        {/* Left Panel - Lead Info (Collapsible) */}
+        {/* Left Panel - Lead Info (Collapsible) - Hidden on mobile */}
         <motion.div
           className={cn(
-            "border-r bg-muted/30 flex flex-col relative transition-all duration-300",
+            "border-r bg-muted/30 flex-col relative transition-all duration-300",
+            "hidden sm:flex",
             isSidebarCollapsed ? "w-16" : "w-80"
           )}
           animate={{ width: isSidebarCollapsed ? 64 : 320 }}
@@ -962,7 +963,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
             {/* Last Interaction */}
             {lead.last_interaction_at && (
               <div className="flex items-center gap-3 p-3 rounded-lg bg-background">
-                <div className="p-2 rounded-lg bg-gray-500/10 text-gray-600">
+                <div className="p-2 rounded-lg bg-gray-500/10 text-muted-foreground">
                   <Clock className="h-4 w-4" />
                 </div>
                 <div>
@@ -1135,52 +1136,71 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
         </motion.div>
 
         {/* Right Panel - Chat / Closing */}
-        <div className="flex-1 flex flex-col bg-[#0A0C10]">
+        <div className="flex-1 flex flex-col bg-background min-w-0">
           {/* Header - Futuristic Glass */}
-          <div className="px-4 py-2 border-b border-[#00D4FF]/10 glass relative overflow-hidden">
+          <div className="px-3 sm:px-4 py-2 border-b border-[#00D4FF]/10 glass relative overflow-hidden">
             {/* Scan line effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00D4FF]/5 to-transparent opacity-50 pointer-events-none" />
 
+            {/* Mobile Contact Header - visible only on mobile */}
+            <div className="flex sm:hidden items-center gap-3 relative z-10 mb-1">
+              <Avatar
+                src={null}
+                fallback={lead.contact?.name || 'Lead'}
+                size="sm"
+                className="h-8 w-8 text-xs shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{lead.contact?.name || 'Sem nome'}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {lead.contact?.phone ? formatPhone(lead.contact.phone) : lead.channel?.name || ''}
+                </p>
+              </div>
+            </div>
+
             {/* Channel Info and Actions */}
             {activeView === 'chat' && (
-              <div className="flex items-center justify-end relative z-10 mr-8">
+              <div className="flex items-center justify-end relative z-10 mr-0 sm:mr-8">
                 {/* Action Buttons */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 sm:gap-1.5">
                   {ticketStatus === 'open' ? (
                     <>
                       {/* Atividades Button */}
                       <button
                         onClick={() => setActiveView('activities')}
-                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-[#00D4FF]/20 hover:border-[#00D4FF]/40 text-[#C0C8D4] hover:bg-[#00D4FF]/10 hover:text-[#00D4FF]"
+                        className="px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-[#00D4FF]/20 hover:border-[#00D4FF]/40 text-[#C0C8D4] hover:bg-[#00D4FF]/10 hover:text-[#00D4FF]"
+                        title="Atividades"
                       >
                         <ListChecks className="h-3.5 w-3.5" />
-                        Atividades
+                        <span className="hidden sm:inline">Atividades</span>
                       </button>
                       {/* Transferir Button */}
                       <button
                         onClick={() => setIsTransferModalOpen(true)}
-                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-blue-500/20 text-[#C0C8D4] hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/40"
+                        className="px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-blue-500/20 text-[#C0C8D4] hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/40"
+                        title="Transferir"
                       >
                         <ArrowRightLeft className="h-3.5 w-3.5" />
-                        Transferir
+                        <span className="hidden sm:inline">Transferir</span>
                       </button>
                       {/* Encerrar Button */}
                       <button
                         onClick={() => setIsCloseModalOpen(true)}
-                        className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-red-500/20 text-[#C0C8D4] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40"
+                        className="px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-red-500/20 text-[#C0C8D4] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40"
+                        title="Encerrar"
                       >
                         <MessageSquareOff className="h-3.5 w-3.5" />
-                        Encerrar
+                        <span className="hidden sm:inline">Encerrar</span>
                       </button>
                       {/* Separador visual */}
-                      <div className="w-px h-5 bg-[#1E2330] mx-1" />
+                      <div className="w-px h-5 bg-[#1E2330] mx-0.5 sm:mx-1" />
                       {/* Toggle IA Button - só aparece se tenant tem feature de IA */}
                       {hasIaFeature && (
                         <button
                           onClick={handleToggleIa}
                           disabled={isTogglingIa}
                           className={cn(
-                            "px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border disabled:opacity-50",
+                            "px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border disabled:opacity-50",
                             iaEnabled
                               ? "border-purple-500/20 text-purple-400 hover:bg-purple-500/10 hover:border-purple-500/40"
                               : "border-orange-500/20 text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/40"
@@ -1194,7 +1214,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                           ) : (
                             <UserRound className="h-3.5 w-3.5" />
                           )}
-                          {iaEnabled ? 'IA' : 'Você'}
+                          <span className="hidden sm:inline">{iaEnabled ? 'IA' : 'Você'}</span>
                         </button>
                       )}
                       {/* Botão Enviar para Linx - só aparece se tenant tem integração */}
@@ -1202,7 +1222,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                         <button
                           onClick={handleSendToLinx}
                           disabled={isSendingToLinx}
-                          className="px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-orange-500/20 text-[#C0C8D4] hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-500/40 disabled:opacity-50"
+                          className="px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-orange-500/20 text-[#C0C8D4] hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-500/40 disabled:opacity-50"
                           title="Enviar lead para o Linx Smart"
                         >
                           {isSendingToLinx ? (
@@ -1210,7 +1230,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                           ) : (
                             <ExternalLink className="h-3.5 w-3.5" />
                           )}
-                          Linx
+                          <span className="hidden sm:inline">Linx</span>
                         </button>
                       )}
                     </>
@@ -1378,18 +1398,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
               {/* Messages Area - Futuristic Grid Pattern */}
               <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin relative"
-                style={{
-                  scrollBehavior: 'auto',
-                  backgroundColor: '#0A0C10',
-                  backgroundImage: `
-                    linear-gradient(rgba(0, 212, 255, 0.02) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px),
-                    radial-gradient(ellipse at 0% 100%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
-                    radial-gradient(ellipse at 100% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 50%)
-                  `,
-                  backgroundSize: '40px 40px, 40px 40px, 100% 100%, 100% 100%'
-                }}
+                className="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-thin relative chat-messages-bg"
                 onScroll={handleScroll}
               >
                 {isLoading ? (
@@ -1421,7 +1430,15 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                         </button>
                       </div>
                     )}
-                    {messages.map((msg, index) => (
+                    {messages.map((msg, index) => {
+                      const prevMsg = index > 0 ? messages[index - 1] : null
+                      const nextMsg = index < messages.length - 1 ? messages[index + 1] : null
+                      const isSameDirectionAsPrev = prevMsg?.direction === msg.direction
+                      const isSameDirectionAsNext = nextMsg?.direction === msg.direction
+                      const isFirstInGroup = !isSameDirectionAsPrev
+                      const isLastInGroup = !isSameDirectionAsNext
+
+                      return (
                       <motion.div
                         key={msg.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -1429,17 +1446,16 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                         transition={{ delay: index * 0.05 }}
                         className={cn(
                           'flex',
-                          msg.direction === 'outbound' ? 'justify-end' : 'justify-start'
+                          msg.direction === 'outbound' ? 'justify-end' : 'justify-start',
+                          isFirstInGroup && index > 0 && 'mt-3'
                         )}
                       >
-                        <div className="group flex flex-col gap-1">
+                        <div className="group flex flex-col gap-1 max-w-[85%]">
                           <div
                             onClick={(e) => {
-                              // Só abre menu contextual para mensagens inbound (do contato)
                               if (msg.direction === 'inbound') {
                                 const extractedData = extractDataFromText(msg.content)
                                 if (extractedData.length > 0) {
-                                  // Calcula posição do menu
                                   const rect = (e.target as HTMLElement).getBoundingClientRect()
                                   setContextMenu({
                                     show: true,
@@ -1453,16 +1469,18 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                               }
                             }}
                             className={cn(
-                              'max-w-[75%] rounded-xl px-4 py-2.5 relative',
+                              'rounded-xl px-3.5 py-2 relative',
                               msg.direction === 'outbound'
-                                ? 'bg-gradient-to-br from-[#00D4FF]/20 to-[#00D4FF]/5 text-[#E8ECF2] rounded-br-sm border border-[#00D4FF]/30 shadow-lg shadow-[#00D4FF]/10'
-                                : 'bg-[#12151C] text-[#C0C8D4] rounded-bl-sm border border-[#1E2330] cursor-pointer hover:border-[#00D4FF]/30 transition-all'
+                                ? 'chat-bubble-outbound'
+                                : 'bg-muted text-foreground border border-border cursor-pointer hover:border-primary/30 transition-all',
+                              msg.direction === 'outbound' && isLastInGroup && 'rounded-br-sm',
+                              msg.direction === 'inbound' && isLastInGroup && 'rounded-bl-sm'
                             )}
                           >
                             {/* Media attachment if present */}
-                            {msg.metadata && (msg.metadata.media_url || msg.metadata.image_url || msg.metadata.audio_url || msg.metadata.video_url || msg.metadata.document_url) && (
-                              <MessageAttachment 
-                                metadata={msg.metadata} 
+                            {msg.metadata && (msg.metadata.media_url || msg.metadata.image_url || msg.metadata.audio_url || msg.metadata.video_url || msg.metadata.document_url || msg.metadata.sticker_url) && (
+                              <MessageAttachment
+                                metadata={msg.metadata}
                                 direction={msg.direction}
                                 ticketId={ticketId}
                               />
@@ -1470,9 +1488,9 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                             {/* Only show text content if not just a media placeholder */}
                             {(() => {
                               // Regex para detectar placeholders de mídia (PT e EN)
-                              const mediaPlaceholderRegex = /^\[(imagem|vídeo|áudio|image|video|audio|document)(:\s*.+?)?\](\s+(.*))?$/i
+                              const mediaPlaceholderRegex = /^\[(imagem|vídeo|áudio|image|video|audio|document|sticker)(:\s*.+?)?\](\s+(.*))?$/i
                               const match = msg.content.match(mediaPlaceholderRegex)
-                              const hasMedia = msg.metadata && (msg.metadata.media_url || msg.metadata.image_url || msg.metadata.audio_url || msg.metadata.video_url || msg.metadata.document_url)
+                              const hasMedia = msg.metadata && (msg.metadata.media_url || msg.metadata.image_url || msg.metadata.audio_url || msg.metadata.video_url || msg.metadata.document_url || msg.metadata.sticker_url)
                               
                               // Se tem mídia e o conteúdo é só placeholder, não mostra o texto
                               if (hasMedia && match) {
@@ -1511,6 +1529,23 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                               )}
                             </div>
                           </div>
+                          {/* Reactions */}
+                          {msg.metadata?.reactions && msg.metadata.reactions.length > 0 && (
+                            <div className={cn(
+                              'flex gap-1 -mt-1',
+                              msg.direction === 'outbound' ? 'justify-end' : 'justify-start'
+                            )}>
+                              {(msg.metadata.reactions as Array<{emoji: string; from: string}>).map((r, i) => (
+                                <span
+                                  key={i}
+                                  className="text-sm bg-muted border border-border rounded-full px-1.5 py-0.5 shadow-sm"
+                                  title={r.from}
+                                >
+                                  {r.emoji}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           {/* Feedback buttons for IA messages */}
                           {msg.sender_type === 'ia' && msg.direction === 'outbound' && (
                             <div className="flex justify-end">
@@ -1522,14 +1557,14 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                           )}
                         </div>
                       </motion.div>
-                    ))}
+                    )})}
                     <div ref={messagesEndRef} />
                   </>
                 )}
               </div>
 
               {/* Message Input - Futuristic */}
-              <div className="p-3 border-t border-[#00D4FF]/10 bg-[#0D1117] relative">
+              <div className="p-3 border-t border-primary/10 bg-background relative">
                 <div className="flex items-center gap-2">
                   {/* File upload button */}
                   <FileUploadButton

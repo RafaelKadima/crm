@@ -31,7 +31,7 @@ import {
   useApproveAction,
   useRejectAction,
 } from '@/hooks/useSupportAgent'
-import { SupportMessage, SupportAction, ToolCall } from '@/api/supportAgent'
+import type { SupportMessage, SupportAction, ToolCall } from '@/api/supportAgent'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -96,16 +96,16 @@ export function SupportAgentPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex">
       {/* Sidebar - Sessions */}
-      <div className="w-80 border-r border-gray-700/50 bg-gray-900/50 flex flex-col">
+      <div className="w-80 border-r border-border bg-background/50 flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-700/50">
+        <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl">
               <Bot className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-lg font-bold">Agente de Suporte</h1>
-              <p className="text-xs text-gray-400">IA para resolver problemas</p>
+              <p className="text-xs text-muted-foreground">IA para resolver problemas</p>
             </div>
           </div>
 
@@ -127,10 +127,10 @@ export function SupportAgentPage() {
         <div className="flex-1 overflow-y-auto p-2">
           {loadingSessions ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : sessions.length === 0 ? (
-            <div className="text-center text-gray-400 py-8">
+            <div className="text-center text-muted-foreground py-8">
               <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
               <p>Nenhuma sessao ainda</p>
               <p className="text-xs">Clique em "Nova Sessao" para comecar</p>
@@ -145,7 +145,7 @@ export function SupportAgentPage() {
                     'w-full p-3 rounded-lg text-left transition-all',
                     selectedSessionId === session.id
                       ? 'bg-purple-600/20 border border-purple-500/50'
-                      : 'hover:bg-gray-700/50'
+                      : 'hover:bg-accent/50'
                   )}
                 >
                   <div className="flex items-center justify-between mb-1">
@@ -157,13 +157,13 @@ export function SupportAgentPage() {
                         'text-xs px-2 py-0.5 rounded',
                         session.status === 'active'
                           ? 'bg-green-500/20 text-green-400'
-                          : 'bg-gray-500/20 text-gray-400'
+                          : 'bg-gray-500/20 text-muted-foreground'
                       )}
                     >
                       {session.status === 'active' ? 'Ativa' : 'Concluida'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <MessageSquare className="w-3 h-3" />
                     <span>{session.messages_count || 0} msgs</span>
                     {session.last_message_at && (
@@ -185,10 +185,10 @@ export function SupportAgentPage() {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-700/50">
+        <div className="p-4 border-t border-border">
           <Link
             to="/super-admin"
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors"
           >
             <Crown className="w-4 h-4" />
             Voltar ao Super Admin
@@ -206,30 +206,30 @@ export function SupportAgentPage() {
                 <Bot className="w-10 h-10 text-white" />
               </div>
               <h2 className="text-2xl font-bold mb-2">Agente de Suporte IA</h2>
-              <p className="text-gray-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Eu posso ajudar com suporte sobre funcionalidades, identificar e corrigir bugs,
                 executar comandos na VPS, fazer commits e deploy.
               </p>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="p-3 bg-gray-800/50 rounded-lg text-left">
+                <div className="p-3 bg-muted/50 rounded-lg text-left">
                   <FileCode className="w-5 h-5 text-purple-400 mb-2" />
                   <p className="font-medium">Corrigir Bugs</p>
-                  <p className="text-xs text-gray-400">Analiso codigo e aplico correcoes</p>
+                  <p className="text-xs text-muted-foreground">Analiso codigo e aplico correcoes</p>
                 </div>
-                <div className="p-3 bg-gray-800/50 rounded-lg text-left">
+                <div className="p-3 bg-muted/50 rounded-lg text-left">
                   <Server className="w-5 h-5 text-green-400 mb-2" />
                   <p className="font-medium">Deploy</p>
-                  <p className="text-xs text-gray-400">Executo deploy na VPS</p>
+                  <p className="text-xs text-muted-foreground">Executo deploy na VPS</p>
                 </div>
-                <div className="p-3 bg-gray-800/50 rounded-lg text-left">
+                <div className="p-3 bg-muted/50 rounded-lg text-left">
                   <GitBranch className="w-5 h-5 text-blue-400 mb-2" />
                   <p className="font-medium">Git</p>
-                  <p className="text-xs text-gray-400">Commits e push automaticos</p>
+                  <p className="text-xs text-muted-foreground">Commits e push automaticos</p>
                 </div>
-                <div className="p-3 bg-gray-800/50 rounded-lg text-left">
+                <div className="p-3 bg-muted/50 rounded-lg text-left">
                   <MessageSquare className="w-5 h-5 text-amber-400 mb-2" />
                   <p className="font-medium">Suporte</p>
-                  <p className="text-xs text-gray-400">Respondo duvidas do sistema</p>
+                  <p className="text-xs text-muted-foreground">Respondo duvidas do sistema</p>
                 </div>
               </div>
               <Button
@@ -248,7 +248,7 @@ export function SupportAgentPage() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {loadingSession ? (
                 <div className="flex items-center justify-center h-32">
-                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
                 <>
@@ -257,7 +257,7 @@ export function SupportAgentPage() {
                   ))}
 
                   {sendMessage.isPending && (
-                    <div className="flex items-center gap-2 text-gray-400">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span className="text-sm">Processando...</span>
                     </div>
@@ -275,7 +275,7 @@ export function SupportAgentPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="border-t border-gray-700/50 bg-amber-900/20 p-4"
+                  className="border-t border-border bg-amber-900/20 p-4"
                 >
                   <div className="flex items-center gap-2 text-amber-400 mb-3">
                     <AlertTriangle className="w-5 h-5" />
@@ -298,14 +298,14 @@ export function SupportAgentPage() {
             </AnimatePresence>
 
             {/* Input */}
-            <div className="border-t border-gray-700/50 p-4 bg-gray-900/50">
+            <div className="border-t border-border p-4 bg-background/50">
               <div className="flex gap-2">
                 <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                   placeholder="Descreva o problema ou faca uma pergunta..."
-                  className="flex-1 bg-gray-800 border-gray-700"
+                  className="flex-1 bg-muted border-border"
                   disabled={sendMessage.isPending}
                 />
                 <Button
@@ -343,7 +343,7 @@ function MessageBubble({ message }: { message: SupportMessage }) {
           'max-w-[80%] rounded-2xl p-4',
           isUser
             ? 'bg-purple-600 text-white'
-            : 'bg-gray-800 text-gray-100'
+            : 'bg-muted text-gray-100'
         )}
       >
         {!isUser && (
@@ -366,7 +366,7 @@ function MessageBubble({ message }: { message: SupportMessage }) {
 
         {/* Tokens */}
         {message.input_tokens && (
-          <div className="mt-2 text-xs text-gray-400">
+          <div className="mt-2 text-xs text-muted-foreground">
             Tokens: {message.input_tokens} in / {message.output_tokens} out
           </div>
         )}
@@ -387,7 +387,7 @@ function ToolCallCard({ tool }: { tool: ToolCall }) {
     : Terminal
 
   return (
-    <div className="bg-gray-900/50 rounded-lg p-2 text-xs">
+    <div className="bg-background/50 rounded-lg p-2 text-xs">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-2 w-full text-left"
@@ -437,7 +437,7 @@ function ApprovalCard({
   isRejecting: boolean
 }) {
   return (
-    <div className="bg-gray-800/50 rounded-lg p-3 border border-amber-500/30">
+    <div className="bg-muted/50 rounded-lg p-3 border border-amber-500/30">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-amber-400" />

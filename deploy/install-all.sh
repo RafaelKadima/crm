@@ -95,11 +95,11 @@ MEDIA_AWS_DEFAULT_REGION=sa-east-1
 MEDIA_AWS_BUCKET=meu-crm-storage
 
 # WhatsApp
-WHATSAPP_VERIFY_TOKEN=crm_omnify_whatsapp_verify_2024
+WHATSAPP_VERIFY_TOKEN=crm_whatsapp_verify_token
 WHATSAPP_API_VERSION=v18.0
 
 # Instagram
-INSTAGRAM_VERIFY_TOKEN=crm_omnify_instagram_verify_2024
+INSTAGRAM_VERIFY_TOKEN=crm_instagram_verify_token
 INSTAGRAM_API_VERSION=v18.0
 
 # Mail
@@ -518,7 +518,7 @@ AWS_SECRET_ACCESS_KEY=w/GA4YchLMtyIhf+gVmjn+U5S+l7zIXlZ+mjlV2l
 AWS_DEFAULT_REGION=sa-east-1
 AWS_BUCKET=meu-crm-storage
 MEDIA_DISK_DRIVER=s3
-WHATSAPP_VERIFY_TOKEN=crm_omnify_whatsapp_verify_2024
+WHATSAPP_VERIFY_TOKEN=crm_whatsapp_verify_token
 MAIL_MAILER=log
 LOG_CHANNEL=stack
 LOG_LEVEL=error

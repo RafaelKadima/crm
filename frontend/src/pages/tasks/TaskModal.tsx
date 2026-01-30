@@ -35,7 +35,7 @@ const taskTypes = [
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, color: 'text-emerald-400' },
   { value: 'meeting', label: 'Reunião', icon: Video, color: 'text-purple-400' },
   { value: 'follow_up', label: 'Follow-up', icon: Mail, color: 'text-blue-400' },
-  { value: 'other', label: 'Outro', icon: MoreHorizontal, color: 'text-gray-400' },
+  { value: 'other', label: 'Outro', icon: MoreHorizontal, color: 'text-muted-foreground' },
 ]
 
 export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModalProps) {
@@ -164,10 +164,10 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-lg bg-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden"
+            className="w-full max-w-lg bg-background rounded-2xl shadow-2xl border border-border overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+            <div className="flex items-center justify-between p-6 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-500/20 rounded-lg">
                   <ListTodo className="w-5 h-5 text-amber-400" />
@@ -176,14 +176,14 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
                   <h2 className="text-xl font-semibold">
                     {isEditing ? 'Editar Tarefa' : 'Nova Tarefa'}
                   </h2>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     {isEditing ? 'Atualize os dados da tarefa' : 'Preencha os dados da tarefa'}
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -193,7 +193,7 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
             <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
               {/* Título */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                   <ListTodo className="w-4 h-4" />
                   Título *
                 </label>
@@ -210,7 +210,7 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
 
               {/* Tipo */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5">
+                <label className="block text-sm text-muted-foreground mb-1.5">
                   Tipo de tarefa *
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -225,7 +225,7 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
                         className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all ${
                           isSelected
                             ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                            : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                            : 'bg-muted border-border hover:border-border'
                         }`}
                       >
                         <Icon className={`w-5 h-5 ${isSelected ? 'text-blue-400' : type.color}`} />
@@ -241,7 +241,7 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
 
               {/* Data de vencimento */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                   <Calendar className="w-4 h-4" />
                   Data de vencimento *
                 </label>
@@ -254,14 +254,14 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
 
               {/* Contato */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                   <User className="w-4 h-4" />
                   Contato relacionado
                 </label>
                 <select
                   value={formData.contact_id}
                   onChange={(e) => setFormData({ ...formData, contact_id: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                 >
                   <option value="">Selecione um contato (opcional)</option>
                   {contacts.map((contact: any) => (
@@ -274,7 +274,7 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
 
               {/* Descrição */}
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-sm text-muted-foreground mb-1.5 flex items-center gap-1.5">
                   <FileText className="w-4 h-4" />
                   Descrição
                 </label>
@@ -283,13 +283,13 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Detalhes adicionais sobre a tarefa..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
+                  className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg focus:border-blue-500 focus:outline-none resize-none"
                 />
               </div>
             </form>
 
             {/* Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-gray-700/50 bg-gray-800/30">
+            <div className="flex items-center justify-between p-6 border-t border-border bg-muted/30">
               {isEditing ? (
                 <div>
                   {showDeleteConfirm ? (

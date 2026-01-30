@@ -44,18 +44,18 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
 
   if (loading) {
     return (
-      <div className="animate-pulse p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-3" />
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2" />
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+      <div className="animate-pulse p-4 bg-gray-50 dark:bg-muted rounded-lg">
+        <div className="h-4 bg-gray-200 dark:bg-accent rounded w-1/3 mb-3" />
+        <div className="h-3 bg-gray-200 dark:bg-accent rounded w-full mb-2" />
+        <div className="h-3 bg-gray-200 dark:bg-accent rounded w-2/3" />
       </div>
     );
   }
 
   if (!exists) {
     return (
-      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+      <div className="p-4 bg-gray-50 dark:bg-muted rounded-lg border border-gray-200 dark:border-border">
+        <div className="flex items-center gap-2 text-muted-foreground dark:text-muted-foreground">
           <Brain className="w-5 h-5" />
           <span className="text-sm">Insights serão gerados após mais interações</span>
         </div>
@@ -94,9 +94,9 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
           </span>
         </div>
         {expanded ? (
-          <ChevronUp className="w-5 h-5 text-gray-400" />
+          <ChevronUp className="w-5 h-5 text-muted-foreground" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-gray-400" />
+          <ChevronDown className="w-5 h-5 text-muted-foreground" />
         )}
       </div>
 
@@ -104,10 +104,10 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
         <div className="px-4 pb-4 space-y-4">
           {/* Conversion Probability */}
           {memory.conversion_probability !== undefined && (
-            <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-white dark:bg-muted rounded-lg">
               <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <Target className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground dark:text-muted-foreground">
                   Probabilidade de Conversão
                 </span>
               </div>
@@ -130,14 +130,14 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
 
           {/* Recommended Approach */}
           {memory.recommended_approach && (
-            <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
+            <div className="p-3 bg-white dark:bg-muted rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <span className="text-sm font-medium text-gray-700 dark:text-muted-foreground">
                   Abordagem Recomendada
                 </span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                 {memory.recommended_approach}
               </p>
             </div>
@@ -147,10 +147,10 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
           <div className="grid grid-cols-2 gap-3">
             {/* Interests */}
             {memory.interests && memory.interests.length > 0 && (
-              <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
+              <div className="p-3 bg-white dark:bg-muted rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Heart className="w-4 h-4 text-pink-500" />
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-xs font-medium text-gray-700 dark:text-muted-foreground">
                     Interesses
                   </span>
                 </div>
@@ -169,10 +169,10 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
 
             {/* Pain Points */}
             {memory.pain_points && memory.pain_points.length > 0 && (
-              <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
+              <div className="p-3 bg-white dark:bg-muted rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertCircle className="w-4 h-4 text-orange-500" />
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-xs font-medium text-gray-700 dark:text-muted-foreground">
                     Dores
                   </span>
                 </div>
@@ -193,10 +193,10 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
           {/* Communication Style & Decision Pattern */}
           <div className="grid grid-cols-2 gap-3">
             {memory.communication_style && (
-              <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
+              <div className="p-3 bg-white dark:bg-muted rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <MessageCircle className="w-4 h-4 text-blue-500" />
-                  <span className="text-xs text-gray-500">Estilo</span>
+                  <span className="text-xs text-muted-foreground">Estilo</span>
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">
                   {memory.communication_style}
@@ -205,10 +205,10 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
             )}
 
             {memory.decision_pattern && (
-              <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
+              <div className="p-3 bg-white dark:bg-muted rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Zap className="w-4 h-4 text-yellow-500" />
-                  <span className="text-xs text-gray-500">Decisão</span>
+                  <span className="text-xs text-muted-foreground">Decisão</span>
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">
                   {memory.decision_pattern}
@@ -219,21 +219,21 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
 
           {/* Last Objections */}
           {memory.objections_history && memory.objections_history.length > 0 && (
-            <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
+            <div className="p-3 bg-white dark:bg-muted rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="w-4 h-4 text-red-500" />
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                <span className="text-xs font-medium text-gray-700 dark:text-muted-foreground">
                   Últimas Objeções
                 </span>
               </div>
               <div className="space-y-2">
                 {memory.objections_history.slice(-3).map((obj, i) => (
                   <div key={i} className="text-xs">
-                    <p className="text-gray-700 dark:text-gray-300">
+                    <p className="text-gray-700 dark:text-muted-foreground">
                       "{obj.objection}"
                     </p>
                     {obj.response && (
-                      <p className="text-gray-500 dark:text-gray-500 mt-0.5 pl-2 border-l-2 border-gray-200 dark:border-gray-700">
+                      <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 pl-2 border-l-2 border-gray-200 dark:border-border">
                         Resposta: {obj.response}
                       </p>
                     )}
@@ -244,24 +244,24 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
           )}
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-border">
             <div className="text-center">
               <div className="text-lg font-bold text-gray-900 dark:text-white">
                 {memory.total_interactions || 0}
               </div>
-              <div className="text-xs text-gray-500">Interações</div>
+              <div className="text-xs text-muted-foreground">Interações</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-green-600 dark:text-green-400">
                 {memory.positive_rate || 0}%
               </div>
-              <div className="text-xs text-gray-500">Taxa Positiva</div>
+              <div className="text-xs text-muted-foreground">Taxa Positiva</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                 {memory.meeting_attendance_rate || 0}%
               </div>
-              <div className="text-xs text-gray-500">Comparecimento</div>
+              <div className="text-xs text-muted-foreground">Comparecimento</div>
             </div>
           </div>
         </div>

@@ -176,7 +176,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 formData.scope === scope.id
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-muted text-gray-700 dark:text-muted-foreground hover:bg-gray-200'
               }`}
             >
               {scope.name}
@@ -186,7 +186,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
       </div>
 
       {/* Condição */}
-      <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg">
+      <div className="bg-gray-50 dark:bg-muted/50 p-4 rounded-lg">
         <Label className="text-base font-semibold mb-3 block">SE (Condição)</Label>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -195,7 +195,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
             <select
               value={formData.condition.metric}
               onChange={(e) => updateCondition('metric', e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
+              className="w-full mt-1 px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
             >
               {METRICS.map((m) => (
                 <option key={m.id} value={m.id}>{m.name}</option>
@@ -208,7 +208,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
             <select
               value={formData.condition.operator}
               onChange={(e) => updateCondition('operator', e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
+              className="w-full mt-1 px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
             >
               {OPERATORS.map((op) => (
                 <option key={op.id} value={op.id}>{op.name}</option>
@@ -251,7 +251,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
             <select
               value={formData.action.type}
               onChange={(e) => updateAction('type', e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
+              className="w-full mt-1 px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
             >
               {ACTIONS.map((action) => (
                 <option key={action.id} value={action.id}>{action.name}</option>
@@ -294,7 +294,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
           <select
             value={formData.frequency}
             onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
-            className="w-full mt-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
+            className="w-full mt-1 px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
           >
             {FREQUENCIES.map((freq) => (
               <option key={freq.id} value={freq.id}>{freq.name}</option>
@@ -312,7 +312,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
             onChange={(e) => setFormData(prev => ({ ...prev, cooldown_hours: parseInt(e.target.value) }))}
             className="mt-1"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Tempo mínimo entre execuções na mesma entidade
           </p>
         </div>

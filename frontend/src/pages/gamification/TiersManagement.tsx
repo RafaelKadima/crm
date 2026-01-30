@@ -132,7 +132,7 @@ export function TiersManagement() {
             <Trophy className="w-6 h-6 text-yellow-500" />
             Níveis (Tiers)
           </h2>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Configure os níveis de progressão dos vendedores
           </p>
         </div>
@@ -180,9 +180,9 @@ export function TiersManagement() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-4 flex items-center gap-4"
+              className="bg-muted/50 rounded-xl border border-border p-4 flex items-center gap-4"
             >
-              <div className="cursor-grab text-gray-500">
+              <div className="cursor-grab text-muted-foreground">
                 <GripVertical className="w-5 h-5" />
               </div>
 
@@ -204,17 +204,17 @@ export function TiersManagement() {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {tier.min_points.toLocaleString()} - {tier.max_points ? tier.max_points.toLocaleString() : '∞'} pontos
                 </p>
                 {tier.description && (
-                  <p className="text-xs text-gray-500 mt-1">{tier.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{tier.description}</p>
                 )}
               </div>
 
               {/* Barra visual */}
               <div className="hidden md:block w-32">
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-accent rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full"
                     style={{
@@ -229,7 +229,7 @@ export function TiersManagement() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => openModal(tier)}
-                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                  className="p-2 hover:bg-accent rounded-lg transition-colors"
                   title="Editar"
                 >
                   <Edit className="w-4 h-4" />
@@ -246,10 +246,10 @@ export function TiersManagement() {
           ))}
         </div>
       ) : (
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-8 text-center">
-          <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+        <div className="bg-muted/50 rounded-xl border border-border p-8 text-center">
+          <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <h3 className="text-lg font-medium mb-1">Nenhum tier configurado</h3>
-          <p className="text-gray-400 text-sm mb-4">
+          <p className="text-muted-foreground text-sm mb-4">
             Crie níveis de progressão para motivar sua equipe
           </p>
           <button
@@ -268,7 +268,7 @@ export function TiersManagement() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-muted rounded-xl border border-border p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
@@ -276,7 +276,7 @@ export function TiersManagement() {
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1 hover:bg-gray-700 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -284,19 +284,19 @@ export function TiersManagement() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nome do Tier</label>
+                <label className="block text-sm text-muted-foreground mb-1">Nome do Tier</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Bronze, Prata, Ouro..."
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Ícone</label>
+                <label className="block text-sm text-muted-foreground mb-2">Ícone</label>
                 <div className="flex flex-wrap gap-2">
                   {iconOptions.map((icon) => (
                     <button
@@ -306,7 +306,7 @@ export function TiersManagement() {
                       className={`w-10 h-10 text-xl rounded-lg transition-all ${
                         formData.icon === icon
                           ? 'bg-purple-600 scale-110'
-                          : 'bg-gray-700 hover:bg-gray-600'
+                          : 'bg-accent hover:bg-muted-foreground/20'
                       }`}
                     >
                       {icon}
@@ -316,7 +316,7 @@ export function TiersManagement() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Cor</label>
+                <label className="block text-sm text-muted-foreground mb-2">Cor</label>
                 <div className="flex flex-wrap gap-2">
                   {colorOptions.map((color) => (
                     <button
@@ -337,33 +337,33 @@ export function TiersManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Pontos Mínimos</label>
+                  <label className="block text-sm text-muted-foreground mb-1">Pontos Mínimos</label>
                   <input
                     type="number"
                     required
                     min={0}
                     value={formData.min_points}
                     onChange={(e) => setFormData({ ...formData, min_points: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Pontos Máximos</label>
+                  <label className="block text-sm text-muted-foreground mb-1">Pontos Máximos</label>
                   <input
                     type="number"
                     min={formData.min_points + 1}
                     value={formData.max_points}
                     onChange={(e) => setFormData({ ...formData, max_points: parseInt(e.target.value) || 0 })}
                     placeholder="Deixe vazio para ∞"
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">
+                <label className="block text-sm text-muted-foreground mb-1">
                   Multiplicador de Pontos
-                  <span className="text-xs text-gray-500 ml-2">
+                  <span className="text-xs text-muted-foreground ml-2">
                     (Bônus ao ganhar pontos neste tier)
                   </span>
                 </label>
@@ -374,24 +374,24 @@ export function TiersManagement() {
                   max={5}
                   value={formData.multiplier}
                   onChange={(e) => setFormData({ ...formData, multiplier: parseFloat(e.target.value) || 1 })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Descrição (opcional)</label>
+                <label className="block text-sm text-muted-foreground mb-1">Descrição (opcional)</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Descrição do tier e benefícios..."
                   rows={2}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none resize-none"
+                  className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none resize-none"
                 />
               </div>
 
               {/* Preview */}
-              <div className="bg-gray-900/50 rounded-lg p-4">
-                <p className="text-xs text-gray-500 mb-2">Preview:</p>
+              <div className="bg-background/50 rounded-lg p-4">
+                <p className="text-xs text-muted-foreground mb-2">Preview:</p>
                 <div className="flex items-center gap-3">
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
@@ -403,7 +403,7 @@ export function TiersManagement() {
                     <p className="font-semibold" style={{ color: formData.color }}>
                       {formData.name || 'Nome do Tier'}
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       {formData.min_points.toLocaleString()} - {formData.max_points ? formData.max_points.toLocaleString() : '∞'} pts
                     </p>
                   </div>
@@ -414,7 +414,7 @@ export function TiersManagement() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>

@@ -9,6 +9,7 @@ import {
   Medal,
   TrendingUp,
 } from 'lucide-react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { TiersManagement } from './TiersManagement'
 import { PointRulesManagement } from './PointRulesManagement'
 import { RewardsManagement } from './RewardsManagement'
@@ -33,15 +34,10 @@ export function GamificationAdminPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <TrendingUp className="w-8 h-8 text-purple-500" />
-          Gamificação
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Configure níveis, pontos, recompensas e conquistas para motivar sua equipe
-        </p>
-      </div>
+      <PageHeader
+        title="Gamificação"
+        subtitle="Configure níveis, pontos, recompensas e conquistas para motivar sua equipe"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar de navegação */}

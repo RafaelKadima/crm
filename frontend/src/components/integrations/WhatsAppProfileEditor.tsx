@@ -196,7 +196,7 @@ export function WhatsAppProfileEditor({
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
@@ -204,7 +204,7 @@ export function WhatsAppProfileEditor({
               {/* Foto de perfil */}
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
+                  <div className="w-20 h-20 rounded-full bg-accent flex items-center justify-center overflow-hidden">
                     {profile?.profile_picture_url ? (
                       <img
                         src={profile.profile_picture_url}
@@ -212,7 +212,7 @@ export function WhatsAppProfileEditor({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User className="w-10 h-10 text-gray-400" />
+                      <User className="w-10 h-10 text-muted-foreground" />
                     )}
                   </div>
                   <button
@@ -237,7 +237,7 @@ export function WhatsAppProfileEditor({
                 </div>
                 <div>
                   <p className="text-sm font-medium">Foto de Perfil</p>
-                  <p className="text-xs text-gray-400">JPEG ou PNG, max 5MB</p>
+                  <p className="text-xs text-muted-foreground">JPEG ou PNG, max 5MB</p>
                 </div>
               </div>
 
@@ -255,7 +255,7 @@ export function WhatsAppProfileEditor({
                   maxLength={139}
                   placeholder="Ex: Atendimento 24h"
                 />
-                <p className="text-xs text-gray-500 text-right">
+                <p className="text-xs text-muted-foreground text-right">
                   {formData.about?.length || 0}/139
                 </p>
               </div>
@@ -275,7 +275,7 @@ export function WhatsAppProfileEditor({
                   rows={3}
                   placeholder="Descreva seu negocio..."
                 />
-                <p className="text-xs text-gray-500 text-right">
+                <p className="text-xs text-muted-foreground text-right">
                   {formData.description?.length || 0}/512
                 </p>
               </div>
@@ -325,7 +325,7 @@ export function WhatsAppProfileEditor({
                       <Input
                         value={website}
                         readOnly
-                        className="flex-1 bg-gray-700/50"
+                        className="flex-1 bg-accent/50"
                       />
                       <button
                         type="button"
@@ -390,7 +390,7 @@ export function WhatsAppProfileEditor({
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-white transition-colors"
               >
                 Cancelar
               </button>

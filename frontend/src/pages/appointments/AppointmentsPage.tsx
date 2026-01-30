@@ -19,6 +19,7 @@ import {
   Eye,
   MoreVertical
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import type { Appointment } from '../../types';
 import NewAppointmentModal from './NewAppointmentModal';
 import AppointmentDetailsModal from './AppointmentDetailsModal';
@@ -34,7 +35,7 @@ const TYPE_LABELS: Record<string, { label: string; icon: React.ReactNode; color:
 const STATUS_LABELS: Record<string, { label: string; color: string; bgColor: string }> = {
   scheduled: { label: 'Agendado', color: 'text-blue-600', bgColor: 'bg-blue-100' },
   confirmed: { label: 'Confirmado', color: 'text-green-600', bgColor: 'bg-green-100' },
-  completed: { label: 'Realizado', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  completed: { label: 'Realizado', color: 'text-muted-foreground', bgColor: 'bg-gray-100' },
   cancelled: { label: 'Cancelado', color: 'text-red-600', bgColor: 'bg-red-100' },
   no_show: { label: 'Não Compareceu', color: 'text-orange-600', bgColor: 'bg-orange-100' },
   rescheduled: { label: 'Reagendado', color: 'text-purple-600', bgColor: 'bg-purple-100' },
@@ -112,25 +113,22 @@ export default function AppointmentsPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <CalendarDays className="w-8 h-8 text-cyan-400" />
-              Agendamentos
-            </h1>
-            <p className="text-slate-400 mt-1">
-              Gerencie reuniões, visitas e demonstrações
-            </p>
-          </div>
-          <button
-            onClick={() => setShowNewModal(true)}
-            className="mt-4 md:mt-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 
-                     text-white font-medium rounded-lg hover:from-cyan-600 hover:to-blue-600 
-                     transition-all shadow-lg shadow-cyan-500/25"
-          >
-            <Plus className="w-5 h-5" />
-            Novo Agendamento
-          </button>
+        <div className="mb-8">
+          <PageHeader
+            title="Agendamentos"
+            subtitle="Gerencie reuniões, visitas e demonstrações"
+            actions={
+              <button
+                onClick={() => setShowNewModal(true)}
+                className="mt-4 md:mt-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500
+                         text-white font-medium rounded-lg hover:from-cyan-600 hover:to-blue-600
+                         transition-all shadow-lg shadow-cyan-500/25"
+              >
+                <Plus className="w-5 h-5" />
+                Novo Agendamento
+              </button>
+            }
+          />
         </div>
 
         {/* Filters */}

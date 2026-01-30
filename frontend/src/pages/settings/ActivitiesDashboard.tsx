@@ -32,10 +32,10 @@ function ActivityCard({ activity, onClick }: ActivityCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`p-4 rounded-lg border cursor-pointer transition-colors hover:bg-gray-700/30 ${
+      className={`p-4 rounded-lg border cursor-pointer transition-colors hover:bg-accent/30 ${
         isOverdue
           ? 'bg-red-500/10 border-red-500/30'
-          : 'bg-gray-800/50 border-gray-700/50'
+          : 'bg-muted/50 border-border'
       }`}
       onClick={onClick}
     >
@@ -58,7 +58,7 @@ function ActivityCard({ activity, onClick }: ActivityCardProps) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
+          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
             <span className="truncate">{activity.lead?.name}</span>
             {activity.lead?.company && (
               <>
@@ -74,11 +74,11 @@ function ActivityCard({ activity, onClick }: ActivityCardProps) {
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: activity.stage.color }}
                 />
-                <span className="text-xs text-gray-500">{activity.stage.name}</span>
+                <span className="text-xs text-muted-foreground">{activity.stage.name}</span>
               </div>
             )}
             {activity.lead?.user_name && (
-              <div className="flex items-center gap-1 text-xs text-gray-500">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <User className="w-3 h-3" />
                 <span>{activity.lead.user_name}</span>
               </div>
@@ -92,7 +92,7 @@ function ActivityCard({ activity, onClick }: ActivityCardProps) {
               <span>{activity.days_overdue}d atrasado</span>
             </div>
           ) : dueDate ? (
-            <div className="flex items-center gap-1 text-gray-400 text-sm">
+            <div className="flex items-center gap-1 text-muted-foreground text-sm">
               <Clock className="w-4 h-4" />
               <span>
                 {formatDistanceToNow(dueDate, { locale: ptBR, addSuffix: true })}
@@ -162,7 +162,7 @@ export function ActivitiesDashboard() {
             <CalendarClock className="w-6 h-6 text-primary" />
             Dashboard de Atividades
           </h2>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Acompanhe prazos e atividades da equipe
           </p>
         </div>
@@ -171,7 +171,7 @@ export function ActivitiesDashboard() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors min-w-[180px]"
+              className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors min-w-[180px]"
             >
               <Users className="w-4 h-4" />
               <span className="flex-1 text-left truncate">
@@ -180,20 +180,20 @@ export function ActivitiesDashboard() {
               <ChevronDown className={`w-4 h-4 transition-transform ${showUserDropdown ? 'rotate-180' : ''}`} />
             </button>
             {showUserDropdown && (
-              <div className="absolute right-0 mt-2 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+              <div className="absolute right-0 mt-2 w-64 bg-muted border border-border rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
                 <button
                   onClick={() => {
                     setSelectedUserId(undefined)
                     setShowUserDropdown(false)
                   }}
-                  className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center gap-2 ${
+                  className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-center gap-2 ${
                     !selectedUserId ? 'bg-primary/20 text-primary' : ''
                   }`}
                 >
                   <Users className="w-4 h-4" />
                   <span>Todos os usuarios</span>
                 </button>
-                <div className="border-t border-gray-700" />
+                <div className="border-t border-border" />
                 {users.map((user: any) => (
                   <button
                     key={user.id}
@@ -201,14 +201,14 @@ export function ActivitiesDashboard() {
                       setSelectedUserId(user.id)
                       setShowUserDropdown(false)
                     }}
-                    className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center gap-2 ${
+                    className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-center gap-2 ${
                       selectedUserId === user.id ? 'bg-primary/20 text-primary' : ''
                     }`}
                   >
                     <User className="w-4 h-4" />
                     <div className="flex-1 min-w-0">
                       <p className="truncate font-medium">{user.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                   </button>
                 ))}
@@ -218,7 +218,7 @@ export function ActivitiesDashboard() {
           <button
             onClick={() => refetch()}
             disabled={isFetching}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
             Atualizar
@@ -270,13 +270,13 @@ export function ActivitiesDashboard() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-gray-500/10 border border-gray-500/30 rounded-xl p-4"
+          className="bg-gray-500/10 border border-border/30 rounded-xl p-4"
         >
-          <div className="flex items-center gap-2 text-gray-400 mb-2">
+          <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <User className="w-5 h-5" />
             <span className="text-sm font-medium">Pendentes</span>
           </div>
-          <p className="text-3xl font-bold text-gray-400">{summary?.pending || 0}</p>
+          <p className="text-3xl font-bold text-muted-foreground">{summary?.pending || 0}</p>
         </motion.div>
 
         <motion.div
@@ -294,13 +294,13 @@ export function ActivitiesDashboard() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-700">
+      <div className="flex gap-2 border-b border-border">
         <button
           onClick={() => setActiveTab('overdue')}
           className={`px-4 py-2 border-b-2 transition-colors ${
             activeTab === 'overdue'
               ? 'border-red-500 text-red-400'
-              : 'border-transparent text-gray-400 hover:text-white'
+              : 'border-transparent text-muted-foreground hover:text-white'
           }`}
         >
           <div className="flex items-center gap-2">
@@ -318,7 +318,7 @@ export function ActivitiesDashboard() {
           className={`px-4 py-2 border-b-2 transition-colors ${
             activeTab === 'today'
               ? 'border-amber-500 text-amber-400'
-              : 'border-transparent text-gray-400 hover:text-white'
+              : 'border-transparent text-muted-foreground hover:text-white'
           }`}
         >
           <div className="flex items-center gap-2">
@@ -346,7 +346,7 @@ export function ActivitiesDashboard() {
                 />
               ))
             ) : (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-muted-foreground">
                 <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-500" />
                 <p className="font-medium">Nenhuma atividade atrasada!</p>
                 <p className="text-sm">Sua equipe esta em dia.</p>
@@ -366,8 +366,8 @@ export function ActivitiesDashboard() {
                 />
               ))
             ) : (
-              <div className="text-center py-12 text-gray-500">
-                <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+              <div className="text-center py-12 text-muted-foreground">
+                <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                 <p className="font-medium">Nenhuma atividade para hoje</p>
                 <p className="text-sm">Verifique os proximos dias.</p>
               </div>

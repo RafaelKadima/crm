@@ -27,6 +27,7 @@ interface MessageAttachmentProps {
     audio_url?: string
     video_url?: string
     document_url?: string
+    sticker_url?: string
   }
   direction: 'inbound' | 'outbound'
   ticketId?: string | null
@@ -83,7 +84,7 @@ export function MessageAttachment({ metadata, direction, ticketId }: MessageAtta
   const [imageError, setImageError] = useState(false)
   const [proxyUrl, setProxyUrl] = useState<string | undefined>(undefined)
 
-  const originalMediaUrl = metadata.media_url || metadata.image_url || metadata.video_url || metadata.audio_url || metadata.document_url
+  const originalMediaUrl = metadata.sticker_url || metadata.media_url || metadata.image_url || metadata.video_url || metadata.audio_url || metadata.document_url
   const mediaFilePath = extractMediaPath(originalMediaUrl)
   const mediaType = metadata.media_type || detectMediaType(metadata)
   const fileName = metadata.file_name || 'Arquivo'
@@ -174,6 +175,39 @@ export function MessageAttachment({ metadata, direction, ticketId }: MessageAtta
 
   // Render based on media type
   switch (mediaType) {
+    case 'sticker':
+      return (
+        <div className="mt-1 mb-1">
+          {!imageError ? (
+            <img
+              src={mediaUrl}
+              alt="Sticker"
+              className={cn(
+                "max-w-[180px] max-h-[180px] transition-opacity",
+                isLoading ? "opacity-0" : "opacity-100"
+              )}
+              onLoad={() => setIsLoading(false)}
+              onError={() => {
+                setIsLoading(false)
+                setImageError(true)
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center p-4 bg-muted rounded-lg w-[180px] h-[180px]">
+              <div className="text-center">
+                <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-xs text-muted-foreground">Sticker indisponível</p>
+              </div>
+            </div>
+          )}
+          {isLoading && (
+            <div className="w-[180px] h-[180px] flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+        </div>
+      )
+
     case 'image':
       return (
         <div className="mt-2 mb-1">
@@ -356,16 +390,17 @@ export function MessageAttachment({ metadata, direction, ticketId }: MessageAtta
 }
 
 function detectMediaType(metadata: MessageAttachmentProps['metadata']): string {
+  if (metadata.sticker_url || metadata.media_type === 'sticker') return 'sticker'
   if (metadata.image_url) return 'image'
   if (metadata.video_url) return 'video'
   if (metadata.audio_url) return 'audio'
   if (metadata.document_url) return 'document'
-  
+
   const mimeType = metadata.mime_type?.toLowerCase() || ''
   if (mimeType.startsWith('image/')) return 'image'
   if (mimeType.startsWith('video/')) return 'video'
   if (mimeType.startsWith('audio/')) return 'audio'
-  
+
   return 'document'
 }
 

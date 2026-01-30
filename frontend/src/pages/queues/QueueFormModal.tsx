@@ -30,6 +30,7 @@ export function QueueFormModal({
     menu_option: 1,
     menu_label: '',
     welcome_message: '',
+    close_message: '',
     auto_distribute: true,
     is_active: true,
   })
@@ -55,6 +56,7 @@ export function QueueFormModal({
         menu_option: queue.menu_option,
         menu_label: queue.menu_label,
         welcome_message: queue.welcome_message || '',
+        close_message: queue.close_message || '',
         auto_distribute: queue.auto_distribute,
         is_active: queue.is_active,
       })
@@ -68,6 +70,7 @@ export function QueueFormModal({
         menu_option: 1,
         menu_label: '',
         welcome_message: '',
+        close_message: '',
         auto_distribute: true,
         is_active: true,
       })
@@ -112,6 +115,7 @@ export function QueueFormModal({
           menu_option: formData.menu_option,
           menu_label: formData.menu_label,
           welcome_message: formData.welcome_message || undefined,
+          close_message: formData.close_message || undefined,
           auto_distribute: formData.auto_distribute,
           is_active: formData.is_active,
         }
@@ -155,14 +159,14 @@ export function QueueFormModal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg border border-gray-800 overflow-hidden">
-              <div className="flex items-center justify-between p-5 border-b border-gray-800">
+            <div className="bg-background rounded-xl shadow-2xl w-full max-w-lg border border-border overflow-hidden">
+              <div className="flex items-center justify-between p-5 border-b border-border">
                 <h2 className="text-xl font-semibold">
                   {isEditing ? 'Editar Fila' : 'Nova Fila'}
                 </h2>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -176,8 +180,8 @@ export function QueueFormModal({
                     value={formData.channel_id}
                     onChange={(e) => handleChange('channel_id', e.target.value)}
                     disabled={isEditing}
-                    className={`w-full px-4 py-2 bg-gray-800 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.channel_id ? 'border-red-500' : 'border-gray-700'
+                    className={`w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.channel_id ? 'border-red-500' : 'border-border'
                     } ${isEditing ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     <option value="">Selecione um canal</option>
@@ -198,8 +202,8 @@ export function QueueFormModal({
                   <select
                     value={formData.pipeline_id}
                     onChange={(e) => handleChange('pipeline_id', e.target.value)}
-                    className={`w-full px-4 py-2 bg-gray-800 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.pipeline_id ? 'border-red-500' : 'border-gray-700'
+                    className={`w-full px-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.pipeline_id ? 'border-red-500' : 'border-border'
                     }`}
                   >
                     <option value="">Selecione um pipeline</option>
@@ -224,7 +228,7 @@ export function QueueFormModal({
                     value={formData.sdr_agent_id}
                     onChange={(e) => handleChange('sdr_agent_id', e.target.value)}
                     disabled={formData.sdr_disabled}
-                    className={`w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-4 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       formData.sdr_disabled ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
@@ -235,7 +239,7 @@ export function QueueFormModal({
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Agente de IA que atenderá os leads desta fila
                   </p>
 
@@ -313,8 +317,25 @@ export function QueueFormModal({
                     onChange={(e) => handleChange('welcome_message', e.target.value)}
                     placeholder="Mensagem enviada ao cliente quando ele escolhe esta fila"
                     rows={3}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    className="w-full px-4 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   />
+                </div>
+
+                {/* Mensagem de encerramento */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    Mensagem de Encerramento
+                  </label>
+                  <textarea
+                    value={formData.close_message}
+                    onChange={(e) => handleChange('close_message', e.target.value)}
+                    placeholder="Mensagem enviada automaticamente ao encerrar a conversa (opcional)"
+                    rows={3}
+                    className="w-full px-4 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Deixe em branco para não enviar mensagem ao encerrar
+                  </p>
                 </div>
 
                 {/* Toggles */}

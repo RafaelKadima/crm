@@ -17,6 +17,7 @@ import {
   Copy,
   ArrowRight
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -184,17 +185,10 @@ export default function AdsAgent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Wand2 className="w-7 h-7 text-purple-500" />
-            Agente de Campanhas
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Crie campanhas completas com IA em poucos minutos
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Agente de Campanhas"
+        subtitle="Crie campanhas completas com IA em poucos minutos"
+      />
 
       {/* Progress Steps */}
       <div className="flex items-center justify-center gap-2">
@@ -204,12 +198,12 @@ export default function AdsAgent() {
               w-10 h-10 rounded-full flex items-center justify-center font-semibold
               ${step >= s 
                 ? 'bg-purple-500 text-white' 
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}
+                : 'bg-gray-200 dark:bg-accent text-muted-foreground'}
             `}>
               {step > s ? <CheckCircle className="w-5 h-5" /> : s}
             </div>
             {s < 4 && (
-              <div className={`w-12 h-1 mx-2 ${step > s ? 'bg-purple-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
+              <div className={`w-12 h-1 mx-2 ${step > s ? 'bg-purple-500' : 'bg-gray-200 dark:bg-accent'}`} />
             )}
           </div>
         ))}
@@ -245,7 +239,7 @@ export default function AdsAgent() {
             <div className="space-y-2">
               <Label>Descrição do Produto *</Label>
               <textarea
-                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 min-h-[100px]"
+                className="w-full p-3 rounded-lg border border-gray-300 dark:border-border bg-white dark:bg-muted min-h-[100px]"
                 placeholder="Descreva seu produto/serviço em detalhes. O que é? Qual problema resolve? Quais os diferenciais?"
                 value={formData.product_description}
                 onChange={(e) => updateFormData('product_description', e.target.value)}
@@ -255,7 +249,7 @@ export default function AdsAgent() {
             <div className="space-y-2">
               <Label>Público-Alvo *</Label>
               <textarea
-                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 min-h-[80px]"
+                className="w-full p-3 rounded-lg border border-gray-300 dark:border-border bg-white dark:bg-muted min-h-[80px]"
                 placeholder="Descreva quem é seu cliente ideal. Ex: Empreendedores de 25-45 anos que querem aumentar vendas online..."
                 value={formData.target_audience}
                 onChange={(e) => updateFormData('target_audience', e.target.value)}
@@ -299,7 +293,7 @@ export default function AdsAgent() {
               <div className="space-y-2">
                 <Label>Conta de Anúncio *</Label>
                 <select
-                  className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  className="w-full p-3 rounded-lg border border-gray-300 dark:border-border bg-white dark:bg-muted"
                   value={formData.ad_account_id}
                   onChange={(e) => updateFormData('ad_account_id', e.target.value)}
                 >
@@ -343,14 +337,14 @@ export default function AdsAgent() {
                     className={`p-4 rounded-lg border-2 text-left transition-all ${
                       formData.objective === obj.value
                         ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                        : 'border-gray-200 dark:border-border hover:border-gray-300'
                     }`}
                   >
                     <obj.icon className={`w-6 h-6 mb-2 ${
-                      formData.objective === obj.value ? 'text-purple-500' : 'text-gray-400'
+                      formData.objective === obj.value ? 'text-purple-500' : 'text-muted-foreground'
                     }`} />
                     <p className="font-medium">{obj.label}</p>
-                    <p className="text-xs text-gray-500">{obj.description}</p>
+                    <p className="text-xs text-muted-foreground">{obj.description}</p>
                   </button>
                 ))}
               </div>
@@ -380,7 +374,7 @@ export default function AdsAgent() {
               
               <div className="space-y-2">
                 <Label>Investimento Total</Label>
-                <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div className="p-3 bg-gray-100 dark:bg-muted rounded-lg">
                   <p className="text-2xl font-bold text-purple-600">
                     R$ {(formData.daily_budget * formData.duration_days).toFixed(2)}
                   </p>
@@ -398,7 +392,7 @@ export default function AdsAgent() {
                     className={`px-4 py-2 rounded-full border-2 transition-all ${
                       formData.tone_of_voice === tone.value
                         ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                        : 'border-gray-200 dark:border-gray-700'
+                        : 'border-gray-200 dark:border-border'
                     }`}
                   >
                     {tone.emoji} {tone.label}
@@ -417,7 +411,7 @@ export default function AdsAgent() {
                     className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                       formData.call_to_action === cta
                         ? 'bg-purple-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200'
+                        : 'bg-gray-100 dark:bg-muted hover:bg-gray-200'
                     }`}
                   >
                     {cta}
@@ -455,7 +449,7 @@ export default function AdsAgent() {
             {generatedCopies.map((copy, index) => (
               <div 
                 key={index}
-                className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3"
+                className="p-4 border border-gray-200 dark:border-border rounded-lg space-y-3"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">{copy.variation_name}</h3>
@@ -472,7 +466,7 @@ export default function AdsAgent() {
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">Headline</p>
+                      <p className="text-xs text-muted-foreground mb-1">Headline</p>
                       <p className="font-medium">{copy.headline}</p>
                     </div>
                     <Button size="sm" variant="ghost" onClick={() => copyToClipboard(copy.headline)}>
@@ -482,8 +476,8 @@ export default function AdsAgent() {
                   
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">Texto Principal</p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{copy.primary_text}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Texto Principal</p>
+                      <p className="text-sm text-gray-700 dark:text-muted-foreground">{copy.primary_text}</p>
                     </div>
                     <Button size="sm" variant="ghost" onClick={() => copyToClipboard(copy.primary_text)}>
                       <Copy className="w-4 h-4" />
@@ -491,7 +485,7 @@ export default function AdsAgent() {
                   </div>
                   
                   <div className="flex items-center gap-4 text-sm">
-                    <span className="text-gray-500">Descrição: {copy.description}</span>
+                    <span className="text-muted-foreground">Descrição: {copy.description}</span>
                     <span className="text-purple-600">CTA: {copy.call_to_action}</span>
                   </div>
                 </div>
@@ -536,20 +530,20 @@ export default function AdsAgent() {
               <div className="space-y-3">
                 <h3 className="font-semibold">📊 Estratégia Gerada</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="text-xs text-gray-500">Objetivo</p>
+                  <div className="p-3 bg-gray-50 dark:bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground">Objetivo</p>
                     <p className="font-medium">{campaignResult.strategy.campaign_objective}</p>
                   </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="text-xs text-gray-500">Otimização</p>
+                  <div className="p-3 bg-gray-50 dark:bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground">Otimização</p>
                     <p className="font-medium">{campaignResult.strategy.optimization_goal}</p>
                   </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="text-xs text-gray-500">Copies Gerados</p>
+                  <div className="p-3 bg-gray-50 dark:bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground">Copies Gerados</p>
                     <p className="font-medium">{campaignResult.copies_generated}</p>
                   </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="text-xs text-gray-500">Status</p>
+                  <div className="p-3 bg-gray-50 dark:bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground">Status</p>
                     <p className="font-medium text-yellow-600">Pausada</p>
                   </div>
                 </div>

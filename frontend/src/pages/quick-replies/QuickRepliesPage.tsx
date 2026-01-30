@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -98,18 +99,16 @@ export function QuickRepliesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Respostas Rápidas</h1>
-          <p className="text-muted-foreground mt-1">
-            Crie mensagens prontas para usar no chat com atalhos
-          </p>
-        </div>
-        <Button onClick={handleCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Resposta
-        </Button>
-      </div>
+      <PageHeader
+        title="Respostas Rápidas"
+        subtitle="Crie mensagens prontas para usar no chat com atalhos"
+        actions={
+          <Button onClick={handleCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Resposta
+          </Button>
+        }
+      />
 
       {/* Info Card */}
       <Card className="bg-blue-500/10 border-blue-500/30">

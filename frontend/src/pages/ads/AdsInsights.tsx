@@ -10,6 +10,7 @@ import {
   Zap,
   Filter
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useAdInsights, useApplyInsight, useDismissInsight, type AdInsight } from '@/hooks/useAds';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -68,16 +69,10 @@ export default function AdsInsights() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Insights da IA
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Recomendações inteligentes para otimizar suas campanhas
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Insights da IA"
+        subtitle="Recomendações inteligentes para otimizar suas campanhas"
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -87,14 +82,14 @@ export default function AdsInsights() {
               <div className={`p-2 rounded-lg ${
                 counts.critical > 0 
                   ? 'bg-red-100 dark:bg-red-900/30' 
-                  : 'bg-gray-100 dark:bg-gray-800'
+                  : 'bg-gray-100 dark:bg-muted'
               }`}>
                 <AlertTriangle className={`w-5 h-5 ${
-                  counts.critical > 0 ? 'text-red-600' : 'text-gray-400'
+                  counts.critical > 0 ? 'text-red-600' : 'text-muted-foreground'
                 }`} />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Críticos</p>
+                <p className="text-xs text-muted-foreground">Críticos</p>
                 <p className={`text-xl font-bold ${
                   counts.critical > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'
                 }`}>
@@ -112,7 +107,7 @@ export default function AdsInsights() {
                 <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Total Pendentes</p>
+                <p className="text-xs text-muted-foreground">Total Pendentes</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">
                   {counts.total}
                 </p>
@@ -128,7 +123,7 @@ export default function AdsInsights() {
                 <Trophy className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Winners</p>
+                <p className="text-xs text-muted-foreground">Winners</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">
                   {counts.by_type?.winner_ad || 0}
                 </p>
@@ -144,7 +139,7 @@ export default function AdsInsights() {
                 <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Oportunidades</p>
+                <p className="text-xs text-muted-foreground">Oportunidades</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">
                   {counts.by_type?.opportunity || 0}
                 </p>
@@ -158,12 +153,12 @@ export default function AdsInsights() {
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4 items-center">
-            <Filter className="w-4 h-4 text-gray-400" />
+            <Filter className="w-4 h-4 text-muted-foreground" />
             
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
+              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
             >
               <option value="pending">Pendentes</option>
               <option value="">Todos</option>
@@ -174,7 +169,7 @@ export default function AdsInsights() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
+              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
             >
               <option value="">Todos os tipos</option>
               {Object.entries(insightTypeConfig).map(([key, config]) => (
@@ -185,7 +180,7 @@ export default function AdsInsights() {
             <select
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
+              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
             >
               <option value="">Todas as severidades</option>
               <option value="critical">Crítico</option>
@@ -218,7 +213,7 @@ export default function AdsInsights() {
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Tudo em ordem!
               </h3>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 Não há insights pendentes no momento. Continue monitorando suas campanhas.
               </p>
             </CardContent>

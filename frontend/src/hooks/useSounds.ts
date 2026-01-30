@@ -35,6 +35,7 @@ export type SoundType =
   | 'achievement'
   | 'deal-won'
   | 'notification'
+  | 'new-message'
   | 'click'
   | 'error'
   | 'success'
@@ -48,6 +49,7 @@ const SOUND_FILES: Record<SoundType, string> = {
   'achievement': '/sounds/achievement.mp3',
   'deal-won': '/sounds/deal-won.mp3',
   'notification': '/sounds/notification.mp3',
+  'new-message': '/sounds/notification.mp3',
   'click': '/sounds/click.mp3',
   'error': '/sounds/error.mp3',
   'success': '/sounds/success.mp3',
@@ -125,6 +127,7 @@ export function useSounds() {
     achievement: useCallback(() => play('achievement'), [play]),
     dealWon: useCallback(() => play('deal-won'), [play]),
     notification: useCallback(() => play('notification'), [play]),
+    newMessage: useCallback(() => play('new-message'), [play]),
     click: useCallback(() => play('click'), [play]),
     error: useCallback(() => play('error'), [play]),
     success: useCallback(() => play('success'), [play]),

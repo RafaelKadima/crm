@@ -57,7 +57,7 @@ export function SuperAdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Header */}
-      <div className="border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm">
+      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -66,12 +66,12 @@ export function SuperAdminDashboard() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">Super Admin</h1>
-                <p className="text-sm text-gray-400">Painel de Controle</p>
+                <p className="text-sm text-muted-foreground">Painel de Controle</p>
               </div>
             </div>
             <Link
               to="/"
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700/50 hover:bg-gray-700 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-accent/50 hover:bg-accent rounded-lg transition-colors"
             >
               <Shield className="w-4 h-4" />
               Voltar ao CRM
@@ -106,14 +106,14 @@ export function SuperAdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6"
+          className="bg-muted/50 rounded-xl border border-border p-6"
         >
           <h2 className="text-lg font-semibold mb-4">Distribuição por Plano</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(stats?.tenants_by_plan || {}).map(([plan, count]) => (
-              <div key={plan} className="bg-gray-700/30 rounded-lg p-4 text-center">
+              <div key={plan} className="bg-accent/30 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold">{count as number}</p>
-                <p className="text-sm text-gray-400 capitalize">{plan}</p>
+                <p className="text-sm text-muted-foreground capitalize">{plan}</p>
               </div>
             ))}
           </div>
@@ -125,9 +125,9 @@ export function SuperAdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-gray-800/50 rounded-xl border border-gray-700/50"
+            className="bg-muted/50 rounded-xl border border-border"
           >
-            <div className="p-6 border-b border-gray-700/50 flex items-center justify-between">
+            <div className="p-6 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-semibold">Empresas Recentes</h2>
               <Link
                 to="/super-admin/tenants"
@@ -141,7 +141,7 @@ export function SuperAdminDashboard() {
                 <Link
                   key={tenant.id}
                   to={`/super-admin/tenants/${tenant.id}`}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -149,7 +149,7 @@ export function SuperAdminDashboard() {
                     </div>
                     <div>
                       <p className="font-medium">{tenant.name}</p>
-                      <p className="text-xs text-gray-400 capitalize">{tenant.plan}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{tenant.plan}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -171,9 +171,9 @@ export function SuperAdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-gray-800/50 rounded-xl border border-gray-700/50"
+            className="bg-muted/50 rounded-xl border border-border"
           >
-            <div className="p-6 border-b border-gray-700/50 flex items-center justify-between">
+            <div className="p-6 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-semibold">Atividades Recentes</h2>
               <Link
                 to="/super-admin/logs"
@@ -184,12 +184,12 @@ export function SuperAdminDashboard() {
             </div>
             <div className="p-4 space-y-3">
               {stats?.recent_logs?.length === 0 ? (
-                <p className="text-center text-gray-400 py-4">Nenhuma atividade recente</p>
+                <p className="text-center text-muted-foreground py-4">Nenhuma atividade recente</p>
               ) : (
                 stats?.recent_logs?.map((log: any) => (
                   <div
                     key={log.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-gray-700/30"
+                    className="flex items-center justify-between p-3 rounded-lg bg-accent/30"
                   >
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-purple-500/20 rounded-lg">
@@ -197,10 +197,10 @@ export function SuperAdminDashboard() {
                       </div>
                       <div>
                         <p className="text-sm">{log.action}</p>
-                        <p className="text-xs text-gray-400">{log.user?.name}</p>
+                        <p className="text-xs text-muted-foreground">{log.user?.name}</p>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500">{formatDateTime(log.created_at)}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateTime(log.created_at)}</p>
                   </div>
                 ))
               )}
@@ -246,7 +246,7 @@ export function SuperAdminDashboard() {
             <Settings className="w-8 h-8" />
             <div>
               <p className="font-semibold">Configurações</p>
-              <p className="text-sm text-gray-300">Gerenciar sistema</p>
+              <p className="text-sm text-muted-foreground">Gerenciar sistema</p>
             </div>
             <ChevronRight className="w-5 h-5 ml-auto group-hover:translate-x-1 transition-transform" />
           </Link>
@@ -258,10 +258,10 @@ export function SuperAdminDashboard() {
 
 function StatCard({ stat }: { stat: any }) {
   return (
-    <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6 hover:border-gray-600/50 transition-colors">
+    <div className="bg-muted/50 rounded-xl border border-border p-6 hover:border-muted-foreground/20 transition-colors">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-gray-400">{stat.title}</p>
+          <p className="text-sm text-muted-foreground">{stat.title}</p>
           <p className="text-3xl font-bold mt-2">{stat.value.toLocaleString()}</p>
         </div>
         <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color}`}>

@@ -56,7 +56,7 @@ export default function MetricsChart({ data, height = 300 }: MetricsChartProps) 
   if (!data || data.length === 0) {
     return (
       <div 
-        className="flex items-center justify-center text-gray-500"
+        className="flex items-center justify-center text-muted-foreground"
         style={{ height }}
       >
         Sem dados para exibir

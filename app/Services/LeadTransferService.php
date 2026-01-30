@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\MessageDirectionEnum;
+use App\Enums\SenderTypeEnum;
 use App\Enums\TicketStatusEnum;
 use App\Models\Lead;
 use App\Models\LeadQueueOwner;
 use App\Models\Queue;
 use App\Models\Ticket;
+use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -121,6 +124,9 @@ class LeadTransferService
     public function closeConversation(Ticket $ticket, ?User $closedBy = null, ?string $reason = null): array
     {
         return DB::transaction(function () use ($ticket, $closedBy, $reason) {
+            // Enviar mensagem de encerramento antes de fechar (se configurada na fila)
+            $this->sendCloseMessage($ticket);
+
             $ticket->update([
                 'status' => TicketStatusEnum::CLOSED,
                 'closed_at' => now(),
@@ -129,12 +135,14 @@ class LeadTransferService
             // Reseta o queue_id do lead para que passe pelo menu de filas na próxima vez
             // A carteirização (lead_queue_owners) é mantida para redirecionar ao mesmo atendente
             // quando o lead escolher a mesma fila novamente
+            $previousQueueId = null;
             if ($ticket->lead) {
+                $previousQueueId = $ticket->lead->queue_id;
                 $ticket->lead->update(['queue_id' => null]);
-                
+
                 Log::info('Lead queue reset on conversation close', [
                     'lead_id' => $ticket->lead_id,
-                    'previous_queue_id' => $ticket->lead->getOriginal('queue_id'),
+                    'previous_queue_id' => $previousQueueId,
                 ]);
             }
 
@@ -151,6 +159,67 @@ class LeadTransferService
                 'ticket' => $ticket->fresh(),
             ];
         });
+    }
+
+    /**
+     * Envia mensagem automática de encerramento via canal do ticket.
+     */
+    protected function sendCloseMessage(Ticket $ticket): void
+    {
+        try {
+            $lead = $ticket->lead;
+            if (!$lead || !$lead->queue_id) return;
+
+            $queue = Queue::find($lead->queue_id);
+            if (!$queue || !$queue->close_message) return;
+
+            $channel = $ticket->channel;
+            $contact = $ticket->contact;
+            if (!$channel || !$contact) return;
+
+            // Salvar mensagem no banco
+            $message = TicketMessage::create([
+                'tenant_id' => $ticket->tenant_id,
+                'ticket_id' => $ticket->id,
+                'sender_type' => SenderTypeEnum::SYSTEM,
+                'direction' => MessageDirectionEnum::OUTBOUND,
+                'message' => $queue->close_message,
+                'sent_at' => now(),
+            ]);
+
+            // Enviar via canal (WhatsApp, Instagram, etc.)
+            $this->sendViaChannel($channel, $contact, $queue->close_message);
+
+            // Broadcast para atualizar chat em tempo real
+            event(new \App\Events\TicketMessageCreated($message, $ticket));
+
+            Log::info('Close message sent', [
+                'ticket_id' => $ticket->id,
+                'queue_id' => $queue->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send close message', [
+                'ticket_id' => $ticket->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Envia mensagem através do canal apropriado.
+     */
+    protected function sendViaChannel($channel, $contact, string $message): void
+    {
+        $channelType = $channel->type ?? $channel->provider_type ?? '';
+
+        if (str_contains($channelType, 'whatsapp') && $contact->phone) {
+            $whatsAppService = app(WhatsAppService::class);
+            $whatsAppService->loadFromChannel($channel);
+            $whatsAppService->sendTextMessage($contact->phone, $message);
+        } elseif (str_contains($channelType, 'instagram') && $contact->instagram_id) {
+            $instagramService = app(\App\Services\InstagramService::class);
+            $instagramService->sendMessage($channel, $contact->instagram_id, $message);
+        }
     }
 
     /**

@@ -12,6 +12,7 @@ import {
   ArrowDownRight,
   RefreshCw
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useAdsDashboard, useAdsRanking, useAdInsights } from '@/hooks/useAds';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -59,35 +60,30 @@ export default function AdsDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Ads Intelligence
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Visão geral das suas campanhas de anúncios
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <select
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm"
-          >
-            {periodOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Atualizar
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Ads Intelligence"
+        subtitle="Visão geral das suas campanhas de anúncios"
+        actions={
+          <div className="flex items-center gap-3">
+            <select
+              value={days}
+              onChange={(e) => setDays(Number(e.target.value))}
+              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+            >
+              {periodOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Atualizar
+            </Button>
+          </div>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -157,7 +153,7 @@ export default function AdsDashboard() {
                 <Eye className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Impressões</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground">Impressões</p>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white">
                   {formatNumber(dashboard?.totals.impressions || 0)}
                 </p>
@@ -173,7 +169,7 @@ export default function AdsDashboard() {
                 <MousePointer className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Cliques</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground">Cliques</p>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white">
                   {formatNumber(dashboard?.totals.clicks || 0)}
                 </p>
@@ -189,7 +185,7 @@ export default function AdsDashboard() {
                 <DollarSign className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">CPC</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground">CPC</p>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white">
                   {formatCurrency(dashboard?.totals.cpc || 0)}
                 </p>
@@ -205,7 +201,7 @@ export default function AdsDashboard() {
                 <Users className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Campanhas Ativas</p>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground">Campanhas Ativas</p>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white">
                   {dashboard?.counts.active_campaigns || 0}
                 </p>
@@ -243,7 +239,7 @@ export default function AdsDashboard() {
               {dashboard?.top_campaigns.map((campaign, index) => (
                 <div 
                   key={campaign.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-muted/50 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
                     <span className={`
@@ -251,7 +247,7 @@ export default function AdsDashboard() {
                       ${index === 0 ? 'bg-yellow-400 text-yellow-900' : 
                         index === 1 ? 'bg-gray-300 text-gray-700' :
                         index === 2 ? 'bg-orange-400 text-orange-900' :
-                        'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}
+                        'bg-gray-200 text-muted-foreground dark:bg-accent dark:text-muted-foreground'}
                     `}>
                       {index + 1}
                     </span>
@@ -259,7 +255,7 @@ export default function AdsDashboard() {
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[150px]">
                         {campaign.name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {formatCurrency(campaign.spend)}
                       </p>
                     </div>
@@ -271,7 +267,7 @@ export default function AdsDashboard() {
                     }`}>
                       {Number(campaign.roas || 0).toFixed(2)}x
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       {Number(campaign.conversions || 0)} conv.
                     </p>
                   </div>
@@ -279,7 +275,7 @@ export default function AdsDashboard() {
               ))}
               
               {(!dashboard?.top_campaigns || dashboard.top_campaigns.length === 0) && (
-                <p className="text-center text-gray-500 py-4">
+                <p className="text-center text-muted-foreground py-4">
                   Nenhuma campanha encontrada
                 </p>
               )}
@@ -310,7 +306,7 @@ export default function AdsDashboard() {
               ))}
               
               {(!insights?.data || insights.data.length === 0) && (
-                <p className="text-center text-gray-500 py-4">
+                <p className="text-center text-muted-foreground py-4">
                   Nenhum insight pendente
                 </p>
               )}
@@ -330,7 +326,7 @@ export default function AdsDashboard() {
               {ranking?.all?.slice(0, 5).map((ad, index) => (
                 <div 
                   key={ad.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-muted/50 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
                     <span className={`
@@ -345,7 +341,7 @@ export default function AdsDashboard() {
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[180px]">
                         {ad.name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         CTR: {Number(ad.ctr || 0).toFixed(2)}% | CPC: {formatCurrency(Number(ad.cpc || 0))}
                       </p>
                     </div>
@@ -361,7 +357,7 @@ export default function AdsDashboard() {
               ))}
               
               {(!ranking?.all || ranking.all.length === 0) && (
-                <p className="text-center text-gray-500 py-4">
+                <p className="text-center text-muted-foreground py-4">
                   Nenhum anúncio com score calculado
                 </p>
               )}

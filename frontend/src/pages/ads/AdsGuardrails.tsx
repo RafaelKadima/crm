@@ -20,6 +20,7 @@ import {
   Image,
   Users,
 } from 'lucide-react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -323,28 +324,23 @@ export default function AdsGuardrails() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Shield className="w-7 h-7 text-blue-600" />
-            Guardrails
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Configure regras de segurança para controlar as ações do agente de Ads
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {(!guardrailsData?.data || guardrailsData.data.length === 0) && (
-            <Button variant="outline" onClick={() => createDefaultsMutation.mutate()}>
-              Criar Padrões
+      <PageHeader
+        title="Guardrails"
+        subtitle="Configure regras de segurança para controlar as ações do agente de Ads"
+        actions={
+          <div className="flex gap-2">
+            {(!guardrailsData?.data || guardrailsData.data.length === 0) && (
+              <Button variant="outline" onClick={() => createDefaultsMutation.mutate()}>
+                Criar Padrões
+              </Button>
+            )}
+            <Button onClick={() => setIsModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Guardrail
             </Button>
-          )}
-          <Button onClick={() => setIsModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Guardrail
-          </Button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {/* Estatísticas */}
       <div className="grid grid-cols-4 gap-4">
@@ -356,7 +352,7 @@ export default function AdsGuardrails() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{guardrailsData?.data?.length || 0}</p>
-                <p className="text-xs text-gray-500">Total de Guardrails</p>
+                <p className="text-xs text-muted-foreground">Total de Guardrails</p>
               </div>
             </div>
           </CardContent>
@@ -372,7 +368,7 @@ export default function AdsGuardrails() {
                 <p className="text-2xl font-bold">
                   {guardrailsData?.data?.filter((g: Guardrail) => g.is_active).length || 0}
                 </p>
-                <p className="text-xs text-gray-500">Ativos</p>
+                <p className="text-xs text-muted-foreground">Ativos</p>
               </div>
             </div>
           </CardContent>
@@ -388,7 +384,7 @@ export default function AdsGuardrails() {
                 <p className="text-2xl font-bold">
                   {guardrailsData?.data?.filter((g: Guardrail) => g.action.type === 'block').length || 0}
                 </p>
-                <p className="text-xs text-gray-500">Bloqueios</p>
+                <p className="text-xs text-muted-foreground">Bloqueios</p>
               </div>
             </div>
           </CardContent>
@@ -404,7 +400,7 @@ export default function AdsGuardrails() {
                 <p className="text-2xl font-bold">
                   {guardrailsData?.data?.reduce((acc: number, g: Guardrail) => acc + g.trigger_count, 0) || 0}
                 </p>
-                <p className="text-xs text-gray-500">Acionamentos</p>
+                <p className="text-xs text-muted-foreground">Acionamentos</p>
               </div>
             </div>
           </CardContent>
@@ -415,13 +411,13 @@ export default function AdsGuardrails() {
       <div className="space-y-4">
         {isLoading ? (
           <Card>
-            <CardContent className="p-8 text-center text-gray-500">
+            <CardContent className="p-8 text-center text-muted-foreground">
               Carregando...
             </CardContent>
           </Card>
         ) : guardrailsData?.data?.length === 0 ? (
           <Card>
-            <CardContent className="p-8 text-center text-gray-500">
+            <CardContent className="p-8 text-center text-muted-foreground">
               <Shield className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>Nenhum guardrail configurado</p>
               <div className="flex gap-2 justify-center mt-4">
@@ -455,7 +451,7 @@ export default function AdsGuardrails() {
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-semibold">{guardrail.name}</h3>
                           {guardrail.is_system && (
-                            <Badge variant="outline" className="bg-gray-50 text-gray-600 text-xs">Sistema</Badge>
+                            <Badge variant="outline" className="bg-gray-50 text-muted-foreground text-xs">Sistema</Badge>
                           )}
                           <Badge variant="outline" className={`text-xs ${actionInfo.color}`}>
                             <ActionIcon className="w-3 h-3 mr-1" />
@@ -463,9 +459,9 @@ export default function AdsGuardrails() {
                           </Badge>
                         </div>
                         {guardrail.description && (
-                          <p className="text-sm text-gray-500 line-clamp-1">{guardrail.description}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-1">{guardrail.description}</p>
                         )}
-                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                           <span>Escopo: {SCOPES.find(s => s.value === guardrail.scope)?.label}</span>
                           <span>Prioridade: {guardrail.priority}</span>
                           <span>Acionado: {guardrail.trigger_count}x</span>
@@ -484,7 +480,7 @@ export default function AdsGuardrails() {
                         {guardrail.is_active ? (
                           <ToggleRight className="w-8 h-8 text-green-600" />
                         ) : (
-                          <ToggleLeft className="w-8 h-8 text-gray-400" />
+                          <ToggleLeft className="w-8 h-8 text-muted-foreground" />
                         )}
                       </button>
                       
@@ -631,7 +627,7 @@ export default function AdsGuardrails() {
                   className="w-1/3"
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Para listas, separe por vírgula. Ex: OUTCOME_SALES, OUTCOME_LEADS
               </p>
             </div>

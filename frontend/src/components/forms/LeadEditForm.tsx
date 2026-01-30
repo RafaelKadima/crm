@@ -215,7 +215,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
           <div>
             <Label htmlFor="email">Email</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
@@ -230,7 +230,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
           <div>
             <Label htmlFor="phone">Telefone</Label>
             <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="phone"
                 value={formData.phone}
@@ -254,7 +254,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
           <div className="col-span-2">
             <Label htmlFor="address">Endereço</Label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="address"
                 value={formData.address}
@@ -279,7 +279,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
           <div className="col-span-2">
             <Label htmlFor="product_id">Produto de Interesse</Label>
             <div className="relative">
-              <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <select
                 id="product_id"
                 value={formData.product_id}
@@ -296,7 +296,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
               </select>
             </div>
             {products.length === 0 && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Nenhum produto cadastrado. Cadastre produtos no menu Produtos.
               </p>
             )}
@@ -305,7 +305,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
           <div>
             <Label htmlFor="value">Valor (R$)</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="value"
                 type="number"
@@ -327,7 +327,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
           <div>
             <Label htmlFor="expected_close_date">Previsão de Fechamento</Label>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="expected_close_date"
                 type="date"
@@ -341,7 +341,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
           <div className="col-span-2">
             <Label htmlFor="owner_id">Responsável</Label>
             <div className="relative">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <select
                 id="owner_id"
                 value={formData.owner_id}

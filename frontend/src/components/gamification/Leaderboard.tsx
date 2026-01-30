@@ -14,7 +14,7 @@ interface LeaderboardProps {
 }
 
 const rankIcons = [Crown, Medal, Award]
-const rankColors = ['text-amber-500', 'text-gray-400', 'text-amber-700']
+const rankColors = ['text-amber-500', 'text-muted-foreground', 'text-amber-700']
 
 export function Leaderboard({
   limit = 10,

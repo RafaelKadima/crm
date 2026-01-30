@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supportAgentApi, SupportSession, ChatResponse, SupportAction } from '@/api/supportAgent'
+import { supportAgentApi, type SupportSession, type ChatResponse, type SupportAction } from '@/api/supportAgent'
 import { toast } from 'sonner'
 
 // Query Keys

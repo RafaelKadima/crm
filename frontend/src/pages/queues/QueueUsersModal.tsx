@@ -82,15 +82,15 @@ export function QueueUsersModal({ isOpen, onClose, queue }: QueueUsersModalProps
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-md border border-gray-800 overflow-hidden">
-              <div className="flex items-center justify-between p-5 border-b border-gray-800">
+            <div className="bg-background rounded-xl shadow-2xl w-full max-w-md border border-border overflow-hidden">
+              <div className="flex items-center justify-between p-5 border-b border-border">
                 <div>
                   <h2 className="text-xl font-semibold">Usuários da Fila</h2>
-                  <p className="text-sm text-gray-400 mt-1">{queue.name}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{queue.name}</p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -110,7 +110,7 @@ export function QueueUsersModal({ isOpen, onClose, queue }: QueueUsersModalProps
 
                 {/* Selected count */}
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">
+                  <span className="text-muted-foreground">
                     {selectedCount} usuário(s) selecionado(s)
                   </span>
                   {selectedCount > 0 && (
@@ -134,12 +134,12 @@ export function QueueUsersModal({ isOpen, onClose, queue }: QueueUsersModalProps
                         className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
                           isSelected
                             ? 'bg-blue-600/20 border border-blue-500/50'
-                            : 'bg-gray-800 border border-transparent hover:border-gray-700'
+                            : 'bg-muted border border-transparent hover:border-border'
                         }`}
                       >
                         <div className="text-left">
                           <p className="font-medium">{user.name}</p>
-                          <p className="text-xs text-gray-400">{user.email}</p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
                         {isSelected ? (
                           <UserMinus className="w-5 h-5 text-red-400" />
@@ -151,7 +151,7 @@ export function QueueUsersModal({ isOpen, onClose, queue }: QueueUsersModalProps
                   })}
 
                   {filteredUsers.length === 0 && (
-                    <p className="text-center text-gray-400 py-4">
+                    <p className="text-center text-muted-foreground py-4">
                       Nenhum usuário encontrado
                     </p>
                   )}

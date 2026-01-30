@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { User, Building2, Users, Bell, Palette, Paintbrush, Trophy, CalendarClock, MessageSquare, Bot, BarChart3 } from 'lucide-react'
 import { CompanySettingsPage } from './CompanySettingsPage'
@@ -35,12 +36,10 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Configurações</h1>
-        <p className="text-muted-foreground mt-1">
-          Gerencie suas preferências
-        </p>
-      </div>
+      <PageHeader
+        title="Configurações"
+        subtitle="Gerencie suas preferências"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar de navegação */}

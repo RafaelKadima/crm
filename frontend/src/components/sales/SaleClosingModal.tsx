@@ -255,35 +255,35 @@ export function SaleClosingModal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
           >
-            <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl border border-gray-800 overflow-hidden my-8">
+            <div className="bg-background rounded-xl shadow-2xl w-full max-w-2xl border border-border overflow-hidden my-8">
               {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-gray-800 bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+              <div className="flex items-center justify-between p-5 border-b border-border bg-gradient-to-r from-green-500/10 to-emerald-500/10">
                 <div>
                   <h2 className="text-xl font-semibold flex items-center gap-2">
                     <CheckCircle className="w-6 h-6 text-green-500" />
                     Fechar Venda
                   </h2>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Cliente: <span className="text-white">{leadName}</span>
                   </p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Mode Selector */}
-              <div className="p-4 border-b border-gray-800">
+              <div className="p-4 border-b border-border">
                 <div className="flex gap-2">
                   <button
                     onClick={() => setMode('simple')}
                     className={`flex-1 py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${
                       mode === 'simple'
                         ? 'bg-green-500/20 border-2 border-green-500 text-green-400'
-                        : 'bg-gray-800 border-2 border-gray-700 text-gray-400 hover:border-gray-600'
+                        : 'bg-muted border-2 border-border text-muted-foreground hover:border-border'
                     }`}
                   >
                     <DollarSign className="w-5 h-5" />
@@ -294,7 +294,7 @@ export function SaleClosingModal({
                     className={`flex-1 py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${
                       mode === 'detailed'
                         ? 'bg-green-500/20 border-2 border-green-500 text-green-400'
-                        : 'bg-gray-800 border-2 border-gray-700 text-gray-400 hover:border-gray-600'
+                        : 'bg-muted border-2 border-border text-muted-foreground hover:border-border'
                     }`}
                   >
                     <Package className="w-5 h-5" />
@@ -310,7 +310,7 @@ export function SaleClosingModal({
                   <div>
                     <label className="block text-sm font-medium mb-2">Valor Total da Venda *</label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
                         type="number"
                         step="0.01"
@@ -344,7 +344,7 @@ export function SaleClosingModal({
 
                       {/* Search Input */}
                       <div className="relative mb-3">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           value={searchQuery}
                           onChange={(e) => {
@@ -358,9 +358,9 @@ export function SaleClosingModal({
 
                         {/* Search Results */}
                         {showSearch && searchQuery.length >= 2 && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 max-h-48 overflow-y-auto">
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-muted border border-border rounded-lg shadow-xl z-10 max-h-48 overflow-y-auto">
                             {isSearching ? (
-                              <div className="p-4 text-center text-gray-400">
+                              <div className="p-4 text-center text-muted-foreground">
                                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                               </div>
                             ) : searchResults.length > 0 ? (
@@ -368,12 +368,12 @@ export function SaleClosingModal({
                                 <button
                                   key={product.id}
                                   onClick={() => addItem(product)}
-                                  className="w-full p-3 hover:bg-gray-700 text-left flex items-center justify-between transition-colors"
+                                  className="w-full p-3 hover:bg-accent text-left flex items-center justify-between transition-colors"
                                 >
                                   <div>
                                     <p className="font-medium">{product.name}</p>
                                     {product.sku && (
-                                      <p className="text-xs text-gray-400">SKU: {product.sku}</p>
+                                      <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
                                     )}
                                   </div>
                                   <span className="text-green-400 font-medium">
@@ -382,7 +382,7 @@ export function SaleClosingModal({
                                 </button>
                               ))
                             ) : (
-                              <div className="p-4 text-center text-gray-400">
+                              <div className="p-4 text-center text-muted-foreground">
                                 Nenhum produto encontrado
                               </div>
                             )}
@@ -396,7 +396,7 @@ export function SaleClosingModal({
                           {items.map((item, index) => (
                             <div
                               key={item.id}
-                              className="bg-gray-800/50 border border-gray-700 rounded-lg p-3"
+                              className="bg-muted/50 border border-border rounded-lg p-3"
                             >
                               <div className="flex items-start gap-3">
                                 <div className="flex-1 space-y-2">
@@ -413,7 +413,7 @@ export function SaleClosingModal({
                                   {/* Quantity, Price, Discount */}
                                   <div className="grid grid-cols-3 gap-2">
                                     <div>
-                                      <label className="text-xs text-gray-400">Qtd</label>
+                                      <label className="text-xs text-muted-foreground">Qtd</label>
                                       <Input
                                         type="number"
                                         min="0.01"
@@ -426,7 +426,7 @@ export function SaleClosingModal({
                                       />
                                     </div>
                                     <div>
-                                      <label className="text-xs text-gray-400">Preco Unit.</label>
+                                      <label className="text-xs text-muted-foreground">Preco Unit.</label>
                                       <Input
                                         type="number"
                                         min="0"
@@ -441,7 +441,7 @@ export function SaleClosingModal({
                                       />
                                     </div>
                                     <div>
-                                      <label className="text-xs text-gray-400">Desconto</label>
+                                      <label className="text-xs text-muted-foreground">Desconto</label>
                                       <Input
                                         type="number"
                                         min="0"
@@ -483,7 +483,7 @@ export function SaleClosingModal({
                       <div>
                         <label className="block text-sm font-medium mb-1.5">Valor Adicional</label>
                         <div className="relative">
-                          <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                          <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             type="number"
                             step="0.01"
@@ -511,16 +511,16 @@ export function SaleClosingModal({
                         <select
                           value={discountType}
                           onChange={(e) => setDiscountType(e.target.value as 'value' | 'percentage')}
-                          className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          className="px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                         >
                           <option value="value">R$</option>
                           <option value="percentage">%</option>
                         </select>
                         <div className="relative flex-1">
                           {discountType === 'percentage' ? (
-                            <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           ) : (
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           )}
                           <Input
                             type="number"
@@ -537,15 +537,15 @@ export function SaleClosingModal({
                 )}
 
                 {/* Payment Info */}
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-800">
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Forma de Pagamento</label>
                     <div className="relative">
-                      <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                      <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <select
                         value={paymentMethod}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                       >
                         <option value="">Selecione...</option>
                         {PAYMENT_METHODS.map((method) => (
@@ -559,7 +559,7 @@ export function SaleClosingModal({
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Parcelas</label>
                     <div className="relative">
-                      <Calculator className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                      <Calculator className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         type="number"
                         min="1"
@@ -576,13 +576,13 @@ export function SaleClosingModal({
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Observacoes</label>
                   <div className="relative">
-                    <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
+                    <FileText className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Observacoes sobre a venda..."
                       rows={2}
-                      className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                      className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                     />
                   </div>
                 </div>
@@ -596,16 +596,16 @@ export function SaleClosingModal({
               </div>
 
               {/* Footer with Total */}
-              <div className="p-5 border-t border-gray-800 bg-gray-800/50">
+              <div className="p-5 border-t border-border bg-muted/50">
                 {/* Summary */}
                 {mode === 'detailed' && (
                   <div className="mb-4 space-y-1 text-sm">
-                    <div className="flex justify-between text-gray-400">
+                    <div className="flex justify-between text-muted-foreground">
                       <span>Subtotal Produtos:</span>
                       <span>{formatCurrency(calculations.subtotalProducts)}</span>
                     </div>
                     {calculations.additionalValue > 0 && (
-                      <div className="flex justify-between text-gray-400">
+                      <div className="flex justify-between text-muted-foreground">
                         <span>Valor Adicional:</span>
                         <span>+ {formatCurrency(calculations.additionalValue)}</span>
                       </div>

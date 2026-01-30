@@ -191,13 +191,13 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="bg-white dark:bg-muted rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-border">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Criar Template do WhatsApp
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
               Passo {step} de 3 - {step === 1 ? 'Informações básicas' : step === 2 ? 'Conteúdo' : 'Botões'}
             </p>
           </div>
@@ -239,7 +239,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                   {validationErrors.name && (
                     <p className="text-sm text-red-500 mt-1">{validationErrors.name}</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Use apenas letras, números e underscores. Será convertido para snake_case.
                   </p>
                 </div>
@@ -251,13 +251,13 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                     id="category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value as WhatsAppTemplateCategory)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="UTILITY">Utilidade - Atualizações e notificações</option>
                     <option value="MARKETING">Marketing - Promoções e ofertas</option>
                     <option value="AUTHENTICATION">Autenticação - Códigos de verificação</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Templates de Marketing podem ter aprovação mais rigorosa.
                   </p>
                 </div>
@@ -269,7 +269,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                     id="language"
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="pt_BR">Português (Brasil)</option>
                     <option value="en_US">English (US)</option>
@@ -288,7 +288,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                   <select
                     value={headerType}
                     onChange={(e) => setHeaderType(e.target.value as 'NONE' | 'TEXT')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2"
                   >
                     <option value="NONE">Sem cabeçalho</option>
                     <option value="TEXT">Texto</option>
@@ -305,7 +305,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                       {validationErrors.headerText && (
                         <p className="text-sm text-red-500 mt-1">{validationErrors.headerText}</p>
                       )}
-                      <p className="text-xs text-gray-500 mt-1">{headerText.length}/60</p>
+                      <p className="text-xs text-muted-foreground mt-1">{headerText.length}/60</p>
                     </>
                   )}
                 </div>
@@ -320,12 +320,12 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                     placeholder="Olá {{1}}! Seu pedido {{2}} está a caminho."
                     rows={5}
                     maxLength={1024}
-                    className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none ${validationErrors.bodyText ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                    className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none ${validationErrors.bodyText ? 'border-red-500' : 'border-gray-300 dark:border-border'}`}
                   />
                   {validationErrors.bodyText && (
                     <p className="text-sm text-red-500 mt-1">{validationErrors.bodyText}</p>
                   )}
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
                     <span>Use {'{{1}}'}, {'{{2}}'}, etc para variáveis ({variableCount} encontrada{variableCount !== 1 ? 's' : ''})</span>
                     <span>{bodyText.length}/1024</span>
                   </div>
@@ -345,19 +345,19 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                   {validationErrors.footerText && (
                     <p className="text-sm text-red-500 mt-1">{validationErrors.footerText}</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">{footerText.length}/60</p>
+                  <p className="text-xs text-muted-foreground mt-1">{footerText.length}/60</p>
                 </div>
 
                 {/* Preview visual */}
-                <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Preview:</p>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm">
+                <div className="mt-6 p-4 bg-gray-100 dark:bg-accent rounded-lg">
+                  <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground mb-2">Preview:</p>
+                  <div className="bg-white dark:bg-muted rounded-lg p-3 shadow-sm">
                     {headerType === 'TEXT' && headerText && (
                       <p className="font-bold text-gray-900 dark:text-white mb-1">{headerText}</p>
                     )}
-                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{bodyText || 'Digite o corpo da mensagem...'}</p>
+                    <p className="text-gray-700 dark:text-muted-foreground whitespace-pre-wrap">{bodyText || 'Digite o corpo da mensagem...'}</p>
                     {footerText && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 italic">{footerText}</p>
+                      <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-2 italic">{footerText}</p>
                     )}
                   </div>
                 </div>
@@ -370,7 +370,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">Botões (opcional)</h3>
-                    <p className="text-sm text-gray-500">Adicione até 3 botões ao seu template</p>
+                    <p className="text-sm text-muted-foreground">Adicione até 3 botões ao seu template</p>
                   </div>
                   <Button
                     onClick={handleAddButton}
@@ -383,16 +383,16 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                 </div>
 
                 {buttons.length === 0 ? (
-                  <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="text-gray-500">Nenhum botão adicionado</p>
-                    <p className="text-sm text-gray-400 mt-1">Botões são opcionais</p>
+                  <div className="text-center py-8 bg-gray-50 dark:bg-muted rounded-lg">
+                    <p className="text-muted-foreground">Nenhum botão adicionado</p>
+                    <p className="text-sm text-muted-foreground mt-1">Botões são opcionais</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {buttons.map((button, index) => (
-                      <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div key={index} className="p-4 border border-gray-200 dark:border-border rounded-lg">
                         <div className="flex items-center justify-between mb-3">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Botão {index + 1}</span>
+                          <span className="font-medium text-gray-700 dark:text-muted-foreground">Botão {index + 1}</span>
                           <button
                             onClick={() => handleRemoveButton(index)}
                             className="text-red-500 hover:text-red-700 text-sm"
@@ -408,7 +408,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                             <select
                               value={button.type}
                               onChange={(e) => handleButtonChange(index, 'type', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white"
                             >
                               <option value="QUICK_REPLY">Resposta Rápida</option>
                               <option value="URL">Link (URL)</option>
@@ -487,10 +487,10 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                 {/* Preview JSON */}
                 {preview && (
                   <div className="mt-6">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-muted-foreground mb-2">
                       Payload que será enviado ao Meta:
                     </h4>
-                    <pre className="p-3 bg-gray-900 text-green-400 rounded-lg text-xs overflow-auto max-h-48">
+                    <pre className="p-3 bg-background text-green-400 rounded-lg text-xs overflow-auto max-h-48">
                       {JSON.stringify(preview.payload, null, 2)}
                     </pre>
                   </div>
@@ -500,7 +500,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-border flex justify-between">
             <div>
               {step > 1 && (
                 <Button variant="outline" onClick={handleBack}>

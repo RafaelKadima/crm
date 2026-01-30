@@ -117,8 +117,8 @@ export function BrandingSettingsPage() {
     description?: string
   }) => (
     <div className="space-y-1">
-      <label className="block text-sm font-medium text-gray-300">{label}</label>
-      {description && <p className="text-xs text-gray-500">{description}</p>}
+      <label className="block text-sm font-medium text-muted-foreground">{label}</label>
+      {description && <p className="text-xs text-muted-foreground">{description}</p>}
       <div className="flex items-center gap-2">
         <input
           type="color"
@@ -130,7 +130,7 @@ export function BrandingSettingsPage() {
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm font-mono"
+          className="flex-1 px-3 py-2 bg-accent border border-border rounded-lg text-sm font-mono"
         />
       </div>
     </div>
@@ -151,24 +151,24 @@ export function BrandingSettingsPage() {
     inputRef: React.RefObject<HTMLInputElement>
     type: 'light' | 'dark' | 'favicon'
   }) => (
-    <div className="bg-gray-700/30 rounded-xl p-4">
+    <div className="bg-accent/30 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-4 h-4 text-gray-400" />
+        <Icon className="w-4 h-4 text-muted-foreground" />
         <span className="font-medium text-sm">{title}</span>
       </div>
-      <p className="text-xs text-gray-500 mb-3">{description}</p>
+      <p className="text-xs text-muted-foreground mb-3">{description}</p>
 
       {currentUrl ? (
         <div className="space-y-2">
           <div className={`p-4 rounded-lg flex items-center justify-center ${
-            type === 'light' ? 'bg-white' : 'bg-gray-900'
+            type === 'light' ? 'bg-white' : 'bg-background'
           }`}>
             <img src={currentUrl} alt={title} className="max-h-16 max-w-full object-contain" />
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => inputRef.current?.click()}
-              className="flex-1 px-3 py-1.5 bg-gray-600 hover:bg-gray-500 rounded text-sm transition-colors"
+              className="flex-1 px-3 py-1.5 bg-muted-foreground/20 hover:bg-accent rounded text-sm transition-colors"
             >
               Alterar
             </button>
@@ -183,10 +183,10 @@ export function BrandingSettingsPage() {
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
-          className="w-full p-4 border-2 border-dashed border-gray-600 rounded-lg hover:border-gray-500 transition-colors"
+          className="w-full p-4 border-2 border-dashed border-border rounded-lg hover:border-border transition-colors"
         >
-          <Upload className="w-6 h-6 mx-auto mb-2 text-gray-500" />
-          <span className="text-sm text-gray-400">Clique para enviar</span>
+          <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Clique para enviar</span>
         </button>
       )}
 
@@ -220,13 +220,13 @@ export function BrandingSettingsPage() {
             <Paintbrush className="w-6 h-6 text-pink-500" />
             Branding da Empresa
           </h2>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Personalize a aparência do sistema com sua marca
           </p>
         </div>
         <button
           onClick={handleReset}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors text-sm"
         >
           <RotateCcw className="w-4 h-4" />
           Resetar
@@ -256,7 +256,7 @@ export function BrandingSettingsPage() {
       )}
 
       {/* Nome da Empresa */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Type className="w-5 h-5 text-blue-400" />
           Nome da Empresa
@@ -266,12 +266,12 @@ export function BrandingSettingsPage() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nome da sua empresa"
-          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-lg focus:border-blue-500 focus:outline-none"
+          className="w-full px-4 py-3 bg-accent border border-border rounded-lg text-lg focus:border-blue-500 focus:outline-none"
         />
       </div>
 
       {/* Logos */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Image className="w-5 h-5 text-purple-400" />
           Logos
@@ -305,7 +305,7 @@ export function BrandingSettingsPage() {
       </div>
 
       {/* Cores */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Palette className="w-5 h-5 text-amber-400" />
           Cores do Sistema
@@ -351,18 +351,18 @@ export function BrandingSettingsPage() {
       </div>
 
       {/* Tipografia e Estilos */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Type className="w-5 h-5 text-green-400" />
           Tipografia e Estilos
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Fonte Principal</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">Fonte Principal</label>
             <select
               value={branding.font_family}
               onChange={(e) => setBranding({ ...branding, font_family: e.target.value })}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+              className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
             >
               {fontOptions.map((font) => (
                 <option key={font} value={font} style={{ fontFamily: font }}>
@@ -372,7 +372,7 @@ export function BrandingSettingsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
               Arredondamento dos Botões (px)
             </label>
             <div className="flex items-center gap-4">
@@ -384,7 +384,7 @@ export function BrandingSettingsPage() {
                 onChange={(e) => setBranding({ ...branding, button_radius: e.target.value })}
                 className="flex-1"
               />
-              <span className="text-sm font-mono bg-gray-700 px-3 py-1 rounded">
+              <span className="text-sm font-mono bg-accent px-3 py-1 rounded">
                 {branding.button_radius}px
               </span>
             </div>
@@ -393,9 +393,9 @@ export function BrandingSettingsPage() {
       </div>
 
       {/* Preview */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4">Pré-visualização</h3>
-        <div className="rounded-lg overflow-hidden border border-gray-700">
+        <div className="rounded-lg overflow-hidden border border-border">
           {/* Mock Sidebar */}
           <div className="flex">
             <div
@@ -418,7 +418,7 @@ export function BrandingSettingsPage() {
               </nav>
             </div>
             {/* Mock Content */}
-            <div className="flex-1 bg-gray-900 p-6">
+            <div className="flex-1 bg-background p-6">
               <h4 className="text-xl font-bold mb-4" style={{ fontFamily: branding.font_family }}>
                 Dashboard
               </h4>

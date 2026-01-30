@@ -465,7 +465,7 @@ function HeaderPreview({ settings }: { settings: any }) {
       {settings.logo ? (
         <img src={settings.logo} alt="Logo" className="h-10 max-w-[150px] object-contain" />
       ) : (
-        <div className="h-8 w-24 bg-gray-300/50 rounded flex items-center justify-center text-xs text-gray-500">
+        <div className="h-8 w-24 bg-gray-300/50 rounded flex items-center justify-center text-xs text-muted-foreground">
           Logo
         </div>
       )}
@@ -524,7 +524,7 @@ function ImagePreview({ settings }: { settings: any }) {
         </div>
       ) : (
         <div className="bg-gray-100 rounded-lg p-8 flex items-center justify-center">
-          <div className="text-center text-gray-400">
+          <div className="text-center text-muted-foreground">
             <div className="h-16 w-16 mx-auto mb-2 bg-gray-200 rounded-lg flex items-center justify-center">
               <span className="text-2xl">🖼️</span>
             </div>
@@ -573,9 +573,9 @@ function VideoPreview({ settings }: { settings: any }) {
           />
         </div>
       ) : (
-        <div className="bg-gray-900 rounded-lg p-8 flex items-center justify-center aspect-video">
-          <div className="text-center text-gray-400">
-            <div className="h-16 w-16 mx-auto mb-2 bg-gray-800 rounded-full flex items-center justify-center">
+        <div className="bg-background rounded-lg p-8 flex items-center justify-center aspect-video">
+          <div className="text-center text-muted-foreground">
+            <div className="h-16 w-16 mx-auto mb-2 bg-muted rounded-full flex items-center justify-center">
               <span className="text-2xl">▶️</span>
             </div>
             <p className="text-sm">Adicione uma URL de vídeo</p>
@@ -607,7 +607,7 @@ function GalleryPreview({ settings }: { settings: any }) {
               {img.src ? (
                 <img src={img.src} alt={img.alt || ''} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <span>🖼️</span>
                 </div>
               )}
@@ -623,7 +623,7 @@ function GalleryPreview({ settings }: { settings: any }) {
         )}>
           {[1, 2, 3, 4, 5, 6].slice(0, columns * 2).map((i) => (
             <div key={i} className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-              <span className="text-gray-400">🖼️</span>
+              <span className="text-muted-foreground">🖼️</span>
             </div>
           ))}
         </div>
@@ -695,7 +695,7 @@ function ColumnsPreview({ settings }: { settings: any }) {
                 col.imageUrl ? (
                   <img src={col.imageUrl} alt="" className="w-full h-auto rounded" />
                 ) : (
-                  <div className="aspect-video bg-gray-200 rounded flex items-center justify-center text-gray-400">
+                  <div className="aspect-video bg-gray-200 rounded flex items-center justify-center text-muted-foreground">
                     🖼️
                   </div>
                 )
@@ -791,7 +791,7 @@ function SectionPreview({ settings }: { settings: any }) {
                   el.settings.src ? (
                     <img src={el.settings.src} alt="" className="max-w-full h-auto mx-auto rounded" />
                   ) : (
-                    <div className="h-32 bg-gray-200 rounded flex items-center justify-center text-gray-400">
+                    <div className="h-32 bg-gray-200 rounded flex items-center justify-center text-muted-foreground">
                       🖼️ Imagem
                     </div>
                   )

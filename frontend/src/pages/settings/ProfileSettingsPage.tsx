@@ -145,7 +145,7 @@ export function ProfileSettingsPage() {
           <User className="w-6 h-6 text-purple-500" />
           Meu Perfil
         </h2>
-        <p className="text-gray-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Gerencie suas informações pessoais e senha
         </p>
       </div>
@@ -174,19 +174,19 @@ export function ProfileSettingsPage() {
       )}
 
       {/* Card do Usuário */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="relative">
             <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
-            <button className="absolute bottom-0 right-0 p-1.5 bg-gray-700 hover:bg-gray-600 rounded-full border-2 border-gray-800 transition-colors">
+            <button className="absolute bottom-0 right-0 p-1.5 bg-accent hover:bg-accent rounded-full border-2 border-border transition-colors">
               <Camera className="w-3.5 h-3.5" />
             </button>
           </div>
           <div>
             <h3 className="text-xl font-semibold">{user?.name}</h3>
-            <p className="text-gray-400">{user?.email}</p>
+            <p className="text-muted-foreground">{user?.email}</p>
             <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-400">
               {roleLabels[user?.role || ''] || user?.role}
             </span>
@@ -195,48 +195,48 @@ export function ProfileSettingsPage() {
 
         {/* Formulário de Perfil */}
         <form onSubmit={handleProfileSubmit} className="space-y-4">
-          <h4 className="font-medium text-gray-300 border-b border-gray-700 pb-2">
+          <h4 className="font-medium text-muted-foreground border-b border-border pb-2">
             Informações Pessoais
           </h4>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Nome</label>
+              <label className="block text-sm text-muted-foreground mb-1">Nome</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
                   required
                   value={profileData.name}
                   onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Email</label>
+              <label className="block text-sm text-muted-foreground mb-1">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="email"
                   required
                   value={profileData.email}
                   onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-sm text-gray-400 mb-1">Telefone</label>
+              <label className="block text-sm text-muted-foreground mb-1">Telefone</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
                   value={profileData.phone}
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                   placeholder="(99) 99999-9999"
                 />
               </div>
@@ -245,67 +245,67 @@ export function ProfileSettingsPage() {
 
           {/* Campos Linx - apenas se tiver integracao ativa */}
           {hasLinxIntegration && (
-            <div className="mt-6 pt-4 border-t border-gray-700">
-              <h4 className="font-medium text-gray-300 mb-4 flex items-center gap-2">
+            <div className="mt-6 pt-4 border-t border-border">
+              <h4 className="font-medium text-muted-foreground mb-4 flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-blue-400" />
                 Dados de Integracao Linx
               </h4>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Preencha seus dados do sistema Linx para que os leads sejam enviados corretamente.
               </p>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">ID Empresa (Linx)</label>
+                  <label className="block text-sm text-muted-foreground mb-1">ID Empresa (Linx)</label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
                       type="text"
                       value={profileData.linx_empresa_id}
                       onChange={(e) => setProfileData({ ...profileData, linx_empresa_id: e.target.value })}
-                      className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                      className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                       placeholder="Ex: 123"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">ID Vendedor (Linx)</label>
+                  <label className="block text-sm text-muted-foreground mb-1">ID Vendedor (Linx)</label>
                   <div className="relative">
-                    <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
                       type="text"
                       value={profileData.linx_vendedor_id}
                       onChange={(e) => setProfileData({ ...profileData, linx_vendedor_id: e.target.value })}
-                      className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                      className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                       placeholder="Ex: 456"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">ID Loja (Linx)</label>
+                  <label className="block text-sm text-muted-foreground mb-1">ID Loja (Linx)</label>
                   <div className="relative">
-                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
                       type="text"
                       value={profileData.linx_loja_id}
                       onChange={(e) => setProfileData({ ...profileData, linx_loja_id: e.target.value })}
-                      className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                      className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                       placeholder="Ex: 789"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">ID Showroom (Linx)</label>
+                  <label className="block text-sm text-muted-foreground mb-1">ID Showroom (Linx)</label>
                   <div className="relative">
-                    <Warehouse className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Warehouse className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
                       type="text"
                       value={profileData.linx_showroom_id}
                       onChange={(e) => setProfileData({ ...profileData, linx_showroom_id: e.target.value })}
-                      className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                      className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                       placeholder="Ex: 101"
                     />
                   </div>
@@ -332,29 +332,29 @@ export function ProfileSettingsPage() {
       </div>
 
       {/* Alterar Senha */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+      <div className="bg-muted/50 rounded-xl border border-border p-6">
         <form onSubmit={handlePasswordSubmit} className="space-y-4">
-          <h4 className="font-medium text-gray-300 border-b border-gray-700 pb-2 flex items-center gap-2">
+          <h4 className="font-medium text-muted-foreground border-b border-border pb-2 flex items-center gap-2">
             <Lock className="w-4 h-4" />
             Alterar Senha
           </h4>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Senha Atual</label>
+              <label className="block text-sm text-muted-foreground mb-1">Senha Atual</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type={showPasswords.current ? 'text' : 'password'}
                   required
                   value={passwordData.current_password}
                   onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
-                  className="w-full pl-10 pr-10 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                  className="w-full pl-10 pr-10 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                 >
                   {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -362,22 +362,22 @@ export function ProfileSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Nova Senha</label>
+              <label className="block text-sm text-muted-foreground mb-1">Nova Senha</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type={showPasswords.new ? 'text' : 'password'}
                   required
                   minLength={8}
                   value={passwordData.new_password}
                   onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                  className="w-full pl-10 pr-10 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                  className="w-full pl-10 pr-10 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                   placeholder="Mínimo 8 caracteres"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                 >
                   {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -385,21 +385,21 @@ export function ProfileSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Confirmar Nova Senha</label>
+              <label className="block text-sm text-muted-foreground mb-1">Confirmar Nova Senha</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type={showPasswords.confirm ? 'text' : 'password'}
                   required
                   minLength={8}
                   value={passwordData.new_password_confirmation}
                   onChange={(e) => setPasswordData({ ...passwordData, new_password_confirmation: e.target.value })}
-                  className="w-full pl-10 pr-10 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                  className="w-full pl-10 pr-10 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                 >
                   {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageSquare,
@@ -281,18 +282,16 @@ export function ChannelsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Canais</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie seus canais de atendimento e configure a IA SDR
-          </p>
-        </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Canal
-        </Button>
-      </div>
+      <PageHeader
+        title="Canais"
+        subtitle="Gerencie seus canais de atendimento e configure a IA SDR"
+        actions={
+          <Button onClick={openCreateModal}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Canal
+          </Button>
+        }
+      />
 
       {/* Search */}
       <div className="relative max-w-md">
@@ -381,7 +380,7 @@ export function ChannelsPage() {
                             {channel.is_active ? (
                               <Power className="h-4 w-4 text-green-500" />
                             ) : (
-                              <PowerOff className="h-4 w-4 text-gray-400" />
+                              <PowerOff className="h-4 w-4 text-muted-foreground" />
                             )}
                           </Button>
                         </div>

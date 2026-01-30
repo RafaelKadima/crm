@@ -108,10 +108,10 @@ export function GamificationSettingsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="w-6 h-6 text-gray-400" />
+            <Settings className="w-6 h-6 text-muted-foreground" />
             Configurações
           </h2>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Ajustes gerais do sistema de gamificação
           </p>
         </div>
@@ -119,7 +119,7 @@ export function GamificationSettingsTab() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               Descartar
@@ -164,7 +164,7 @@ export function GamificationSettingsTab() {
 
       <div className="space-y-6">
         {/* Ativar/Desativar */}
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+        <div className="bg-muted/50 rounded-xl border border-border p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
@@ -172,7 +172,7 @@ export function GamificationSettingsTab() {
               </div>
               <div>
                 <h3 className="font-semibold">Sistema de Gamificação</h3>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Ativar ou desativar todo o sistema de gamificação
                 </p>
               </div>
@@ -180,7 +180,7 @@ export function GamificationSettingsTab() {
             <button
               onClick={() => handleChange('is_enabled', !formData.is_enabled)}
               className={`relative w-14 h-7 rounded-full transition-colors ${
-                formData.is_enabled ? 'bg-purple-600' : 'bg-gray-600'
+                formData.is_enabled ? 'bg-purple-600' : 'bg-muted-foreground/20'
               }`}
             >
               <div
@@ -193,14 +193,14 @@ export function GamificationSettingsTab() {
         </div>
 
         {/* Período de Reset */}
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+        <div className="bg-muted/50 rounded-xl border border-border p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
               <Calendar className="w-5 h-5 text-blue-400" />
             </div>
             <div>
               <h3 className="font-semibold">Período de Reset</h3>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Quando os pontos dos usuários serão zerados
               </p>
             </div>
@@ -213,25 +213,25 @@ export function GamificationSettingsTab() {
                 className={`p-4 rounded-lg border text-left transition-all ${
                   formData.reset_period === option.value
                     ? 'border-blue-500 bg-blue-500/20'
-                    : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                    : 'border-border bg-accent hover:border-border'
                 }`}
               >
                 <p className="font-medium text-sm">{option.label}</p>
-                <p className="text-xs text-gray-400 mt-1">{option.description}</p>
+                <p className="text-xs text-muted-foreground mt-1">{option.description}</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* Visibilidade */}
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+        <div className="bg-muted/50 rounded-xl border border-border p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
               <Eye className="w-5 h-5 text-green-400" />
             </div>
             <div>
               <h3 className="font-semibold">Visibilidade</h3>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 O que os usuários podem ver
               </p>
             </div>
@@ -239,43 +239,43 @@ export function GamificationSettingsTab() {
           <div className="space-y-4">
             <label className="flex items-center justify-between cursor-pointer">
               <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-gray-400" />
+                <Users className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Mostrar Leaderboard</p>
-                  <p className="text-xs text-gray-400">Ranking visível para todos</p>
+                  <p className="text-xs text-muted-foreground">Ranking visível para todos</p>
                 </div>
               </div>
               <input
                 type="checkbox"
                 checked={formData.show_leaderboard}
                 onChange={(e) => handleChange('show_leaderboard', e.target.checked)}
-                className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-purple-500 focus:ring-purple-500"
+                className="w-5 h-5 rounded border-border bg-accent text-purple-500 focus:ring-purple-500"
               />
             </label>
             <label className="flex items-center justify-between cursor-pointer">
               <div className="flex items-center gap-3">
                 {formData.show_points_to_users ? (
-                  <Eye className="w-5 h-5 text-gray-400" />
+                  <Eye className="w-5 h-5 text-muted-foreground" />
                 ) : (
-                  <EyeOff className="w-5 h-5 text-gray-400" />
+                  <EyeOff className="w-5 h-5 text-muted-foreground" />
                 )}
                 <div>
                   <p className="font-medium">Mostrar Pontos</p>
-                  <p className="text-xs text-gray-400">Usuários veem seus pontos</p>
+                  <p className="text-xs text-muted-foreground">Usuários veem seus pontos</p>
                 </div>
               </div>
               <input
                 type="checkbox"
                 checked={formData.show_points_to_users}
                 onChange={(e) => handleChange('show_points_to_users', e.target.checked)}
-                className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-purple-500 focus:ring-purple-500"
+                className="w-5 h-5 rounded border-border bg-accent text-purple-500 focus:ring-purple-500"
               />
             </label>
           </div>
 
           {formData.show_leaderboard && (
-            <div className="mt-4 pt-4 border-t border-gray-700/50">
-              <label className="block text-sm text-gray-400 mb-2">
+            <div className="mt-4 pt-4 border-t border-border">
+              <label className="block text-sm text-muted-foreground mb-2">
                 Tamanho do Leaderboard
               </label>
               <input
@@ -284,22 +284,22 @@ export function GamificationSettingsTab() {
                 max={50}
                 value={formData.leaderboard_size}
                 onChange={(e) => handleChange('leaderboard_size', parseInt(e.target.value) || 10)}
-                className="w-32 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                className="w-32 px-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
               />
-              <span className="text-sm text-gray-500 ml-2">usuários</span>
+              <span className="text-sm text-muted-foreground ml-2">usuários</span>
             </div>
           )}
         </div>
 
         {/* Notificações */}
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+        <div className="bg-muted/50 rounded-xl border border-border p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
               <Bell className="w-5 h-5 text-amber-400" />
             </div>
             <div>
               <h3 className="font-semibold">Notificações</h3>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Quando notificar os usuários
               </p>
             </div>
@@ -308,37 +308,37 @@ export function GamificationSettingsTab() {
             <label className="flex items-center justify-between cursor-pointer">
               <div>
                 <p className="font-medium">Mudança de Tier</p>
-                <p className="text-xs text-gray-400">Notificar quando subir de nível</p>
+                <p className="text-xs text-muted-foreground">Notificar quando subir de nível</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.notify_tier_change}
                 onChange={(e) => handleChange('notify_tier_change', e.target.checked)}
-                className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-purple-500 focus:ring-purple-500"
+                className="w-5 h-5 rounded border-border bg-accent text-purple-500 focus:ring-purple-500"
               />
             </label>
             <label className="flex items-center justify-between cursor-pointer">
               <div>
                 <p className="font-medium">Conquistas</p>
-                <p className="text-xs text-gray-400">Notificar ao desbloquear conquista</p>
+                <p className="text-xs text-muted-foreground">Notificar ao desbloquear conquista</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.notify_achievement}
                 onChange={(e) => handleChange('notify_achievement', e.target.checked)}
-                className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-purple-500 focus:ring-purple-500"
+                className="w-5 h-5 rounded border-border bg-accent text-purple-500 focus:ring-purple-500"
               />
             </label>
             <label className="flex items-center justify-between cursor-pointer">
               <div>
                 <p className="font-medium">Posição no Ranking</p>
-                <p className="text-xs text-gray-400">Notificar mudanças no ranking</p>
+                <p className="text-xs text-muted-foreground">Notificar mudanças no ranking</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.notify_leaderboard_change}
                 onChange={(e) => handleChange('notify_leaderboard_change', e.target.checked)}
-                className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-purple-500 focus:ring-purple-500"
+                className="w-5 h-5 rounded border-border bg-accent text-purple-500 focus:ring-purple-500"
               />
             </label>
           </div>
@@ -354,7 +354,7 @@ export function GamificationSettingsTab() {
         >
           <button
             onClick={handleReset}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors shadow-lg"
+            className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors shadow-lg"
           >
             <RotateCcw className="w-4 h-4" />
             Descartar

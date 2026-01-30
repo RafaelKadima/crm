@@ -15,7 +15,7 @@ import {
   useConnectInternalSession,
   useInternalStatus,
   useDisconnectInternalSession,
-  Channel,
+  type Channel,
 } from '@/hooks/useChannels'
 
 interface QRCodeModalProps {

@@ -74,14 +74,14 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
   // Formulário de correção
   if (showCorrectionForm) {
     return (
-      <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="mt-2 p-3 bg-gray-50 dark:bg-muted rounded-lg border border-gray-200 dark:border-border">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <span className="text-sm font-medium text-gray-700 dark:text-muted-foreground">
             Ajude a melhorar a resposta
           </span>
           <button
             onClick={() => setShowCorrectionForm(false)}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-muted-foreground hover:text-muted-foreground"
           >
             <X className="w-4 h-4" />
           </button>
@@ -89,13 +89,13 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
 
         <div className="space-y-2">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-muted-foreground mb-1">
               O que estava errado? (opcional)
             </label>
             <select
               value={feedbackReason}
               onChange={(e) => setFeedbackReason(e.target.value)}
-              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-border rounded bg-white dark:bg-accent"
             >
               <option value="">Selecione...</option>
               <option value="tom_inadequado">Tom inadequado</option>
@@ -109,7 +109,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
+            <label className="block text-xs text-muted-foreground mb-1">
               Como deveria ter respondido? (opcional)
             </label>
             <textarea
@@ -117,14 +117,14 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
               onChange={(e) => setCorrectedResponse(e.target.value)}
               placeholder="Digite a resposta ideal..."
               rows={3}
-              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 resize-none"
+              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-border rounded bg-white dark:bg-accent resize-none"
             />
           </div>
 
           <div className="flex justify-end gap-2">
             <button
               onClick={() => setShowCorrectionForm(false)}
-              className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              className="px-3 py-1 text-sm text-muted-foreground dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-accent rounded"
             >
               Cancelar
             </button>
@@ -148,7 +148,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
       <button
         onClick={handlePositiveFeedback}
         disabled={loading}
-        className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+        className="p-1 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
         title="Resposta boa"
       >
         <ThumbsUp className="w-3.5 h-3.5" />
@@ -156,7 +156,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
       <button
         onClick={handleNegativeFeedback}
         disabled={loading}
-        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+        className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
         title="Resposta pode melhorar"
       >
         <ThumbsDown className="w-3.5 h-3.5" />

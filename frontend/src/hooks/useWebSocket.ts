@@ -143,9 +143,35 @@ export function useTenantMessages(tenantId: string | null) {
       .listen('.message.created', (data: MessageEvent) => {
         console.log('📩 Nova mensagem no tenant:', data)
 
+        const isInbound = data.message.direction === 'inbound'
+
         // Só notifica mensagens RECEBIDAS (inbound), não as enviadas
-        if (data.lead_id && data.message.direction === 'inbound') {
+        if (data.lead_id && isInbound) {
           addUnreadMessage(data.lead_id, data.message.content)
+
+          // Tocar som de nova mensagem
+          try {
+            const audio = new Audio('/sounds/notification.mp3')
+            audio.volume = 0.5
+            audio.play().catch(() => {})
+          } catch {}
+
+          // Notificação do browser
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            try {
+              const notification = new Notification('Nova mensagem', {
+                body: data.message.content?.substring(0, 80) || 'Você recebeu uma nova mensagem',
+                icon: '/favicon.ico',
+                tag: `lead-${data.lead_id}`,
+                silent: true,
+              })
+              notification.onclick = () => {
+                window.focus()
+                notification.close()
+              }
+              setTimeout(() => notification.close(), 5000)
+            } catch {}
+          }
         }
 
         // Invalida o cache de leads para atualizar o Kanban
@@ -205,12 +231,32 @@ export function useWebSocket() {
         queryClient.invalidateQueries({ queryKey: ['lead', data.lead_id] })
       }
 
-      // Notificação do navegador (apenas para mensagens recebidas)
-      if (isInbound && Notification.permission === 'granted') {
-        new Notification('Nova mensagem', {
-          body: data.message.content.substring(0, 100),
-          icon: '/favicon.ico',
-        })
+      // Notificação do navegador + som (apenas para mensagens recebidas)
+      if (isInbound) {
+        // Tocar som de nova mensagem
+        try {
+          const audio = new Audio('/sounds/notification.mp3')
+          audio.volume = 0.5
+          audio.play().catch(() => {})
+        } catch {}
+
+        // Notificação do browser
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          try {
+            const contactName = data.message.content?.substring(0, 80) || 'Nova mensagem'
+            const notification = new Notification('Nova mensagem', {
+              body: contactName,
+              icon: '/favicon.ico',
+              tag: `lead-${data.lead_id}`,
+              silent: true,
+            })
+            notification.onclick = () => {
+              window.focus()
+              notification.close()
+            }
+            setTimeout(() => notification.close(), 5000)
+          } catch {}
+        }
       }
     })
 

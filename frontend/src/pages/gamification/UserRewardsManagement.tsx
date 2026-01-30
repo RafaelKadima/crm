@@ -83,7 +83,7 @@ export function UserRewardsManagement() {
             <Users className="w-6 h-6 text-blue-500" />
             Resgates de Prêmios
           </h2>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Gerencie os prêmios solicitados pelos usuários
           </p>
         </div>
@@ -118,49 +118,49 @@ export function UserRewardsManagement() {
             <Clock className="w-5 h-5 text-yellow-400" />
             <span className="text-2xl font-bold text-yellow-400">{counts.pending}</span>
           </div>
-          <p className="text-sm text-gray-400 mt-1">Pendentes</p>
+          <p className="text-sm text-muted-foreground mt-1">Pendentes</p>
         </div>
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-blue-400" />
             <span className="text-2xl font-bold text-blue-400">{counts.approved}</span>
           </div>
-          <p className="text-sm text-gray-400 mt-1">Aprovados</p>
+          <p className="text-sm text-muted-foreground mt-1">Aprovados</p>
         </div>
         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
           <div className="flex items-center gap-2">
             <Package className="w-5 h-5 text-green-400" />
             <span className="text-2xl font-bold text-green-400">{counts.delivered}</span>
           </div>
-          <p className="text-sm text-gray-400 mt-1">Entregues</p>
+          <p className="text-sm text-muted-foreground mt-1">Entregues</p>
         </div>
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
           <div className="flex items-center gap-2">
             <XCircle className="w-5 h-5 text-red-400" />
             <span className="text-2xl font-bold text-red-400">{counts.rejected}</span>
           </div>
-          <p className="text-sm text-gray-400 mt-1">Rejeitados</p>
+          <p className="text-sm text-muted-foreground mt-1">Rejeitados</p>
         </div>
       </div>
 
       {/* Filtros */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar por usuário ou prêmio..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:border-blue-500 focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg focus:border-blue-500 focus:outline-none"
           />
         </div>
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-gray-400" />
+          <Filter className="w-4 h-4 text-muted-foreground" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:border-blue-500 focus:outline-none"
+            className="px-4 py-2 bg-muted border border-border rounded-lg focus:border-blue-500 focus:outline-none"
           >
             {statusOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -177,16 +177,16 @@ export function UserRewardsManagement() {
           <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
         </div>
       ) : filteredRewards && filteredRewards.length > 0 ? (
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+        <div className="bg-muted/50 rounded-xl border border-border overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-700/50">
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Usuário</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Prêmio</th>
-                <th className="text-center px-6 py-4 text-sm font-medium text-gray-400">Pontos</th>
-                <th className="text-center px-6 py-4 text-sm font-medium text-gray-400">Data</th>
-                <th className="text-center px-6 py-4 text-sm font-medium text-gray-400">Status</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-gray-400">Ações</th>
+              <tr className="border-b border-border">
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Usuário</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Prêmio</th>
+                <th className="text-center px-6 py-4 text-sm font-medium text-muted-foreground">Pontos</th>
+                <th className="text-center px-6 py-4 text-sm font-medium text-muted-foreground">Data</th>
+                <th className="text-center px-6 py-4 text-sm font-medium text-muted-foreground">Status</th>
+                <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -199,7 +199,7 @@ export function UserRewardsManagement() {
                     key={userReward.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="border-b border-gray-700/30 hover:bg-gray-700/20"
+                    className="border-b border-border/30 hover:bg-accent/20"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export function UserRewardsManagement() {
                         </div>
                         <div>
                           <p className="font-medium">{userReward.user?.name || 'Usuário'}</p>
-                          <p className="text-xs text-gray-500">{userReward.user?.email}</p>
+                          <p className="text-xs text-muted-foreground">{userReward.user?.email}</p>
                         </div>
                       </div>
                     </td>
@@ -223,7 +223,7 @@ export function UserRewardsManagement() {
                         {userReward.points_spent?.toLocaleString() || 0}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-400">
+                    <td className="px-6 py-4 text-center text-sm text-muted-foreground">
                       {userReward.claimed_at
                         ? new Date(userReward.claimed_at).toLocaleDateString('pt-BR')
                         : '-'}
@@ -267,7 +267,7 @@ export function UserRewardsManagement() {
                           </button>
                         )}
                         {(userReward.status === 'delivered' || userReward.status === 'rejected') && (
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             {userReward.status === 'delivered' ? 'Concluído' : 'Finalizado'}
                           </span>
                         )}
@@ -280,10 +280,10 @@ export function UserRewardsManagement() {
           </table>
         </div>
       ) : (
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-8 text-center">
-          <Gift className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+        <div className="bg-muted/50 rounded-xl border border-border p-8 text-center">
+          <Gift className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <h3 className="text-lg font-medium mb-1">Nenhum resgate encontrado</h3>
-          <p className="text-gray-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             {statusFilter !== 'all'
               ? `Não há resgates com status "${statusOptions.find((s) => s.value === statusFilter)?.label}"`
               : 'Os resgates de prêmios aparecerão aqui'}

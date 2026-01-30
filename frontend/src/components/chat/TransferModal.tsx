@@ -86,16 +86,16 @@ export function TransferModal({
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           >
-            <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-md border border-gray-700">
+            <div className="bg-background rounded-lg shadow-xl w-full max-w-md border border-border">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <div className="flex items-center justify-between p-4 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-600/20 text-blue-400">
                     <ArrowRightLeft className="h-5 w-5" />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold">Transferir Conversa</h2>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       Escolha para quem transferir
                     </p>
                   </div>
@@ -123,7 +123,7 @@ export function TransferModal({
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
                           mode === 'user'
                             ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                            : 'border-gray-700 hover:bg-gray-800'
+                            : 'border-border hover:bg-muted'
                         }`}
                       >
                         <User className="h-4 w-4" />
@@ -137,7 +137,7 @@ export function TransferModal({
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
                           mode === 'queue'
                             ? 'bg-purple-600/20 border-purple-500 text-purple-400'
-                            : 'border-gray-700 hover:bg-gray-800'
+                            : 'border-border hover:bg-muted'
                         }`}
                       >
                         <Building className="h-4 w-4" />
@@ -147,8 +147,8 @@ export function TransferModal({
 
                     {/* Current Queue Info */}
                     {options?.current_queue && (
-                      <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-                        <p className="text-xs text-gray-400 mb-1">Fila atual</p>
+                      <div className="mb-4 p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Fila atual</p>
                         <p className="font-medium">{options.current_queue.name}</p>
                       </div>
                     )}
@@ -156,7 +156,7 @@ export function TransferModal({
                     {/* User Selection */}
                     {mode === 'user' && (
                       <div className="space-y-2 max-h-64 overflow-y-auto">
-                        <p className="text-sm text-gray-400 mb-2">
+                        <p className="text-sm text-muted-foreground mb-2">
                           Transferir para usuário da mesma fila:
                         </p>
                         {options?.same_queue_users && options.same_queue_users.length > 0 ? (
@@ -167,15 +167,15 @@ export function TransferModal({
                               className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
                                 selectedUserId === user.id
                                   ? 'bg-blue-600/20 border-blue-500'
-                                  : 'border-gray-700 hover:bg-gray-800'
+                                  : 'border-border hover:bg-muted'
                               }`}
                             >
-                              <div className="p-2 rounded-full bg-gray-700">
+                              <div className="p-2 rounded-full bg-accent">
                                 <User className="h-4 w-4" />
                               </div>
                               <div className="flex-1 text-left">
                                 <p className="font-medium">{user.name}</p>
-                                <p className="text-xs text-gray-400">{user.email}</p>
+                                <p className="text-xs text-muted-foreground">{user.email}</p>
                               </div>
                               {selectedUserId === user.id && (
                                 <CheckCircle className="h-5 w-5 text-blue-400" />
@@ -183,7 +183,7 @@ export function TransferModal({
                             </button>
                           ))
                         ) : (
-                          <p className="text-center text-gray-400 py-4">
+                          <p className="text-center text-muted-foreground py-4">
                             Nenhum outro usuário disponível na fila
                           </p>
                         )}
@@ -193,7 +193,7 @@ export function TransferModal({
                     {/* Queue Selection */}
                     {mode === 'queue' && (
                       <div className="space-y-2 max-h-64 overflow-y-auto">
-                        <p className="text-sm text-gray-400 mb-2">
+                        <p className="text-sm text-muted-foreground mb-2">
                           Transferir para outra fila:
                         </p>
                         {options?.other_queues && options.other_queues.length > 0 ? (
@@ -208,15 +208,15 @@ export function TransferModal({
                                 className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
                                   selectedQueueId === queue.id
                                     ? 'bg-purple-600/20 border-purple-500'
-                                    : 'border-gray-700 hover:bg-gray-800'
+                                    : 'border-border hover:bg-muted'
                                 }`}
                               >
-                                <div className="p-2 rounded-full bg-gray-700">
+                                <div className="p-2 rounded-full bg-accent">
                                   <Building className="h-4 w-4" />
                                 </div>
                                 <div className="flex-1 text-left">
                                   <p className="font-medium">{queue.name}</p>
-                                  <p className="text-xs text-gray-400">
+                                  <p className="text-xs text-muted-foreground">
                                     Pipeline: {queue.pipeline}
                                   </p>
                                   <div className="flex gap-2 mt-1 flex-wrap">
@@ -243,7 +243,7 @@ export function TransferModal({
                             )
                           })
                         ) : (
-                          <p className="text-center text-gray-400 py-4">
+                          <p className="text-center text-muted-foreground py-4">
                             Nenhuma outra fila disponível
                           </p>
                         )}
@@ -254,7 +254,7 @@ export function TransferModal({
               </div>
 
               {/* Footer */}
-              <div className="flex gap-3 p-4 border-t border-gray-700">
+              <div className="flex gap-3 p-4 border-t border-border">
                 <Button variant="outline" onClick={handleClose} className="flex-1">
                   Cancelar
                 </Button>

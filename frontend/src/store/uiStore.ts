@@ -3,12 +3,14 @@ import { persist } from 'zustand/middleware'
 
 interface UIState {
   sidebarCollapsed: boolean
+  mobileMenuOpen: boolean
   theme: 'light' | 'dark' | 'system'
   accentColor: string
   fontSize: 'small' | 'normal' | 'large'
   compactMode: boolean
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
+  setMobileMenuOpen: (open: boolean) => void
   setTheme: (theme: 'light' | 'dark' | 'system') => void
   setAccentColor: (color: string) => void
   setFontSize: (size: 'small' | 'normal' | 'large') => void
@@ -19,6 +21,7 @@ export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       sidebarCollapsed: false,
+      mobileMenuOpen: false,
       theme: 'dark',
       accentColor: 'blue',
       fontSize: 'normal',
@@ -30,6 +33,10 @@ export const useUIStore = create<UIState>()(
 
       setSidebarCollapsed: (collapsed) => set({
         sidebarCollapsed: collapsed,
+      }),
+
+      setMobileMenuOpen: (open) => set({
+        mobileMenuOpen: open,
       }),
 
       setTheme: (theme) => set({ theme }),

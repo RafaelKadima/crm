@@ -129,10 +129,10 @@ export function MetaWhatsAppCard() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden"
+      className="bg-muted/50 rounded-xl border border-border overflow-hidden"
     >
       {/* Header */}
-      <div className="p-6 border-b border-gray-700/50">
+      <div className="p-6 border-b border-border">
         <div className="flex items-start gap-4">
           <div className="p-3 rounded-xl bg-green-500">
             <MessageSquare className="w-6 h-6 text-white" />
@@ -146,7 +146,7 @@ export function MetaWhatsAppCard() {
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Conecte sua conta WhatsApp Business via Meta Cloud API
             </p>
           </div>
@@ -157,13 +157,13 @@ export function MetaWhatsAppCard() {
       <div className="p-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : !isConfigured ? (
           <div className="text-center py-6">
             <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
             <h4 className="font-medium mb-2">Configuracao necessaria</h4>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               As credenciais do Meta App (APP_ID e APP_SECRET) precisam ser configuradas no servidor.
             </p>
             <a
@@ -184,7 +184,7 @@ export function MetaWhatsAppCard() {
                 {integrations.map((integration) => (
                   <div
                     key={integration.id}
-                    className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg border border-gray-600/50"
+                    className="flex items-center justify-between p-4 bg-accent/30 rounded-lg border border-border"
                   >
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-green-500/20 rounded-lg">
@@ -198,7 +198,7 @@ export function MetaWhatsAppCard() {
                           {getStatusBadge(integration)}
                         </div>
                         {integration.verified_name && (
-                          <p className="text-sm text-gray-400 flex items-center gap-1">
+                          <p className="text-sm text-muted-foreground flex items-center gap-1">
                             <Shield className="w-3 h-3" />
                             {integration.verified_name}
                           </p>
@@ -211,7 +211,7 @@ export function MetaWhatsAppCard() {
                       {integration.status === 'active' && (
                         <button
                           onClick={() => setEditProfileId(integration.id)}
-                          className="p-2 hover:bg-gray-600 rounded-lg transition-colors text-gray-400 hover:text-white"
+                          className="p-2 hover:bg-muted-foreground/20 rounded-lg transition-colors text-muted-foreground hover:text-white"
                           title="Editar perfil do WhatsApp"
                         >
                           <Settings className="w-4 h-4" />
@@ -223,7 +223,7 @@ export function MetaWhatsAppCard() {
                         <button
                           onClick={() => handleRefreshToken(integration.id)}
                           disabled={refreshTokenMutation.isPending}
-                          className="p-2 hover:bg-gray-600 rounded-lg transition-colors text-yellow-400"
+                          className="p-2 hover:bg-muted-foreground/20 rounded-lg transition-colors text-yellow-400"
                           title="Renovar token"
                         >
                           {refreshTokenMutation.isPending ? (
@@ -250,7 +250,7 @@ export function MetaWhatsAppCard() {
                           </button>
                           <button
                             onClick={() => setConfirmDisconnect(null)}
-                            className="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded-lg text-sm transition-colors"
+                            className="px-3 py-1 bg-muted-foreground/20 hover:bg-accent rounded-lg text-sm transition-colors"
                           >
                             Cancelar
                           </button>
@@ -299,7 +299,7 @@ export function MetaWhatsAppCard() {
             </button>
 
             {/* Info */}
-            <p className="text-xs text-gray-500 text-center mt-4">
+            <p className="text-xs text-muted-foreground text-center mt-4">
               {isEmbeddedSignupConfigured
                 ? 'Um popup sera aberto para voce conectar sua conta WhatsApp Business'
                 : 'Voce sera redirecionado para o Facebook para autorizar o acesso ao WhatsApp Business'}

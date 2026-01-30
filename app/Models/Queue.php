@@ -29,6 +29,7 @@ class Queue extends Model
         'menu_option',
         'menu_label',
         'welcome_message',
+        'close_message',
         'auto_distribute',
         'is_active',
     ];

@@ -89,13 +89,13 @@ export function GroupsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Header */}
-      <div className="border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm">
+      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link
                 to="/super-admin"
-                className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+                className="p-2 hover:bg-accent/50 rounded-lg transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Link>
@@ -105,7 +105,7 @@ export function GroupsPage() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold">Grupos</h1>
-                  <p className="text-sm text-gray-400">Gerenciar grupos de empresas</p>
+                  <p className="text-sm text-muted-foreground">Gerenciar grupos de empresas</p>
                 </div>
               </div>
             </div>
@@ -124,19 +124,19 @@ export function GroupsPage() {
         {/* Filters */}
         <div className="flex flex-wrap gap-4 mb-6">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar grupo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:border-purple-500 focus:outline-none"
+              className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg focus:border-purple-500 focus:outline-none"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:border-purple-500 focus:outline-none"
+            className="px-4 py-2 bg-muted border border-border rounded-lg focus:border-purple-500 focus:outline-none"
           >
             <option value="">Todos os status</option>
             <option value="true">Ativos</option>
@@ -150,22 +150,22 @@ export function GroupsPage() {
             <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
           </div>
         ) : (
-          <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+          <div className="bg-muted/50 rounded-xl border border-border overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-700/50">
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Grupo</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Empresas</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Usuários</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Criado em</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium text-gray-400">Ações</th>
+                <tr className="border-b border-border">
+                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Grupo</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Empresas</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Usuários</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Criado em</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {data?.data?.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                       Nenhum grupo encontrado. Crie um novo grupo para começar.
                     </td>
                   </tr>
@@ -175,7 +175,7 @@ export function GroupsPage() {
                       key={group.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="border-b border-gray-700/30 hover:bg-gray-700/20 transition-colors"
+                      className="border-b border-border/30 hover:bg-accent/20 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -184,18 +184,18 @@ export function GroupsPage() {
                           </div>
                           <div>
                             <p className="font-medium">{group.name}</p>
-                            <p className="text-xs text-gray-400">{group.slug}</p>
+                            <p className="text-xs text-muted-foreground">{group.slug}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <div className="flex items-center gap-1 text-gray-300">
+                        <div className="flex items-center gap-1 text-muted-foreground">
                           <Building2 className="w-4 h-4" />
                           {group.tenants_count || 0}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <div className="flex items-center gap-1 text-gray-300">
+                        <div className="flex items-center gap-1 text-muted-foreground">
                           <Users className="w-4 h-4" />
                           {group.users_count || 0}
                         </div>
@@ -209,14 +209,14 @@ export function GroupsPage() {
                           {group.is_active ? 'Ativo' : 'Inativo'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-400">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {formatDateTime(group.created_at)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => navigate(`/super-admin/groups/${group.id}`)}
-                            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 hover:bg-accent rounded-lg transition-colors"
                             title="Ver detalhes"
                           >
                             <Edit className="w-4 h-4" />
@@ -249,22 +249,22 @@ export function GroupsPage() {
 
             {/* Pagination */}
             {data?.last_page > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700/50">
-                <p className="text-sm text-gray-400">
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+                <p className="text-sm text-muted-foreground">
                   Mostrando {data?.from} - {data?.to} de {data?.total}
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded disabled:opacity-50"
+                    className="px-3 py-1 bg-accent hover:bg-muted-foreground/20 rounded disabled:opacity-50"
                   >
                     Anterior
                   </button>
                   <button
                     onClick={() => setPage(p => Math.min(data?.last_page, p + 1))}
                     disabled={page === data?.last_page}
-                    className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded disabled:opacity-50"
+                    className="px-3 py-1 bg-accent hover:bg-muted-foreground/20 rounded disabled:opacity-50"
                   >
                     Próxima
                   </button>
@@ -290,11 +290,11 @@ export function GroupsPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-lg max-h-[90vh] overflow-hidden"
+              className="bg-muted rounded-xl border border-border w-full max-w-lg max-h-[90vh] overflow-hidden"
             >
-              <div className="p-6 border-b border-gray-700">
+              <div className="p-6 border-b border-border">
                 <h2 className="text-xl font-semibold">Novo Grupo</h2>
-                <p className="text-sm text-gray-400 mt-1">Crie um grupo para gerenciar múltiplas empresas</p>
+                <p className="text-sm text-muted-foreground mt-1">Crie um grupo para gerenciar múltiplas empresas</p>
               </div>
 
               <form onSubmit={handleCreateGroup} className="p-6 space-y-4 overflow-y-auto max-h-[60vh]">
@@ -305,7 +305,7 @@ export function GroupsPage() {
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
                     placeholder="Ex: Holding ABC"
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
                     required
                   />
                 </div>
@@ -317,33 +317,33 @@ export function GroupsPage() {
                     onChange={(e) => setNewGroupDescription(e.target.value)}
                     placeholder="Descrição opcional do grupo..."
                     rows={3}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-purple-500 focus:outline-none resize-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none resize-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Empresas (opcional)</label>
-                  <p className="text-xs text-gray-400 mb-2">Selecione as empresas que farão parte deste grupo</p>
-                  <div className="max-h-48 overflow-y-auto bg-gray-700/50 rounded-lg border border-gray-600">
+                  <p className="text-xs text-muted-foreground mb-2">Selecione as empresas que farão parte deste grupo</p>
+                  <div className="max-h-48 overflow-y-auto bg-accent/50 rounded-lg border border-border">
                     {tenantsData?.data?.map((tenant: any) => (
                       <label
                         key={tenant.id}
-                        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-600/50 cursor-pointer"
+                        className="flex items-center gap-3 px-4 py-2 hover:bg-muted-foreground/20 cursor-pointer"
                       >
                         <input
                           type="checkbox"
                           checked={selectedTenants.includes(tenant.id)}
                           onChange={() => toggleTenantSelection(tenant.id)}
-                          className="w-4 h-4 rounded border-gray-500 text-purple-500 focus:ring-purple-500 focus:ring-offset-0 bg-gray-700"
+                          className="w-4 h-4 rounded border-border text-purple-500 focus:ring-purple-500 focus:ring-offset-0 bg-accent"
                         />
                         <div>
                           <p className="text-sm font-medium">{tenant.name}</p>
-                          <p className="text-xs text-gray-400">{tenant.slug}</p>
+                          <p className="text-xs text-muted-foreground">{tenant.slug}</p>
                         </div>
                       </label>
                     ))}
                     {(!tenantsData?.data || tenantsData.data.length === 0) && (
-                      <p className="px-4 py-3 text-sm text-gray-400">Nenhuma empresa disponível</p>
+                      <p className="px-4 py-3 text-sm text-muted-foreground">Nenhuma empresa disponível</p>
                     )}
                   </div>
                   {selectedTenants.length > 0 && (
@@ -355,7 +355,7 @@ export function GroupsPage() {
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-lg transition-colors"
+                    className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-lg transition-colors"
                   >
                     Cancelar
                   </button>

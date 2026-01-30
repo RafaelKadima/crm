@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Progress } from '@/components/ui/Progress'
@@ -43,11 +44,11 @@ export function GoalsDashboard() {
       case 'critical':
         return 'text-red-600 bg-red-100'
       case 'draft':
-        return 'text-gray-600 bg-gray-100'
+        return 'text-muted-foreground bg-gray-100'
       case 'active':
         return 'text-blue-600 bg-blue-100'
       default:
-        return 'text-gray-600 bg-gray-100'
+        return 'text-muted-foreground bg-gray-100'
     }
   }
 
@@ -116,22 +117,20 @@ export function GoalsDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Metas e Indicadores</h1>
-          <p className="text-muted-foreground">
-            Acompanhe seu progresso e performance
-          </p>
-        </div>
-        {isAdmin && (
-          <Link to="/goals/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Meta
-            </Button>
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title="Metas e Indicadores"
+        subtitle="Acompanhe seu progresso e performance"
+        actions={
+          isAdmin ? (
+            <Link to="/goals/new">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Meta
+              </Button>
+            </Link>
+          ) : undefined
+        }
+      />
 
       {/* Summary Cards */}
       {isAdmin && dashboard && (
@@ -415,7 +414,7 @@ export function GoalsDashboard() {
                         <div className="flex items-start gap-4">
                           <div className={`p-2 rounded-lg ${kpr.status === 'draft' ? 'bg-gray-100' : 'bg-primary/10'}`}>
                             {kpr.status === 'draft' ? (
-                              <FileEdit className="h-5 w-5 text-gray-500" />
+                              <FileEdit className="h-5 w-5 text-muted-foreground" />
                             ) : (
                               getTypeIcon(kpr.type)
                             )}

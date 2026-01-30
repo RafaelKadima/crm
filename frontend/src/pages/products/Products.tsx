@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -92,18 +93,16 @@ export function ProductsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Produtos</h1>
-          <p className="text-muted-foreground mt-1">
-            {products.length} produtos cadastrados
-          </p>
-        </div>
-        <Button onClick={handleCreateNew}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Produto
-        </Button>
-      </div>
+      <PageHeader
+        title="Produtos"
+        subtitle={`${products.length} produtos cadastrados`}
+        actions={
+          <Button onClick={handleCreateNew}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Produto
+          </Button>
+        }
+      />
 
       {/* Search */}
       <div className="flex gap-3">

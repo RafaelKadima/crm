@@ -91,7 +91,7 @@ function isMediaPlaceholder(content: string, metadata?: MessageMetadata): boolea
   if (!metadata) return false
 
   // If there's no media_url or audio_url, show the content
-  const hasMedia = metadata.media_url || metadata.audio_url || metadata.image_url || metadata.video_url
+  const hasMedia = metadata.media_url || metadata.audio_url || metadata.image_url || metadata.video_url || metadata.sticker_url
   if (!hasMedia) return false
 
   // Standard placeholders from WhatsApp webhook processing
@@ -659,7 +659,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
       {/* Messages Area */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3"
+        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1 chat-messages-bg"
       >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
@@ -670,7 +670,13 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
             <p>Nenhuma mensagem ainda</p>
           </div>
         ) : (
-          messages.map((msg, index) => (
+          messages.map((msg, index) => {
+            const prevMsg = index > 0 ? messages[index - 1] : null
+            const nextMsg = index < messages.length - 1 ? messages[index + 1] : null
+            const isFirstInGroup = prevMsg?.direction !== msg.direction
+            const isLastInGroup = nextMsg?.direction !== msg.direction
+
+            return (
             <motion.div
               key={msg.id}
               initial={{ opacity: 0, y: 10 }}
@@ -678,7 +684,8 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
               transition={{ delay: index * 0.02 }}
               className={cn(
                 'flex',
-                msg.direction === 'outbound' ? 'justify-end' : 'justify-start'
+                msg.direction === 'outbound' ? 'justify-end' : 'justify-start',
+                isFirstInGroup && index > 0 && 'mt-3'
               )}
             >
               <div
@@ -699,14 +706,16 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
                   }
                 }}
                 className={cn(
-                  'max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm',
+                  'max-w-[85%] rounded-xl px-3.5 py-2',
                   msg.direction === 'outbound'
-                    ? 'bg-primary text-primary-foreground rounded-br-md'
-                    : 'bg-muted rounded-bl-md cursor-pointer hover:bg-muted/80 transition-colors'
+                    ? 'chat-bubble-outbound'
+                    : 'bg-muted text-foreground border border-border cursor-pointer hover:border-primary/30 transition-colors',
+                  msg.direction === 'outbound' && isLastInGroup && 'rounded-br-sm',
+                  msg.direction === 'inbound' && isLastInGroup && 'rounded-bl-sm'
                 )}
               >
                 {/* Attachment */}
-                {msg.metadata && (msg.metadata.media_url || msg.metadata.image_url || msg.metadata.audio_url) && (
+                {msg.metadata && (msg.metadata.media_url || msg.metadata.image_url || msg.metadata.audio_url || msg.metadata.sticker_url) && (
                   <MessageAttachment
                     metadata={msg.metadata}
                     direction={msg.direction}
@@ -740,9 +749,26 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
                     <Bot className="h-3 w-3 opacity-60" />
                   )}
                 </div>
+                {/* Reactions */}
+                {msg.metadata?.reactions && (msg.metadata.reactions as Array<{emoji: string}>).length > 0 && (
+                  <div className={cn(
+                    'flex gap-1 -mt-0.5',
+                    msg.direction === 'outbound' ? 'justify-end' : 'justify-start'
+                  )}>
+                    {(msg.metadata.reactions as Array<{emoji: string; from: string}>).map((r, i) => (
+                      <span
+                        key={i}
+                        className="text-sm bg-muted border border-border rounded-full px-1.5 py-0.5 shadow-sm"
+                        title={r.from}
+                      >
+                        {r.emoji}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
-          ))
+          )})
         )}
         <div ref={messagesEndRef} />
       </div>

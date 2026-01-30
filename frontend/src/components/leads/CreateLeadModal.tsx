@@ -118,13 +118,13 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-md border border-gray-800 overflow-hidden">
+            <div className="bg-background rounded-xl shadow-2xl w-full max-w-md border border-border overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-gray-800">
+              <div className="flex items-center justify-between p-5 border-b border-border">
                 <h2 className="text-xl font-semibold">Novo Lead</h2>
                 <button
                   onClick={handleClose}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -138,7 +138,7 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
                     <p className="text-sm text-blue-400">
                       Pipeline: <span className="font-medium">{pipeline.name}</span>
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       O lead será criado no estágio "{stages[0]?.name}"
                     </p>
                   </div>
@@ -148,7 +148,7 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Nome *</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       value={formData.name}
                       onChange={(e) => handleChange('name', e.target.value)}
@@ -163,7 +163,7 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Telefone *</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       value={formData.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
@@ -172,14 +172,14 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
                     />
                   </div>
                   {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
-                  <p className="text-xs text-gray-500 mt-1">Formato: código do país + DDD + número</p>
+                  <p className="text-xs text-muted-foreground mt-1">Formato: código do país + DDD + número</p>
                 </div>
 
                 {/* Email */}
                 <div>
                   <label className="block text-sm font-medium mb-1.5">E-mail</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       type="email"
                       value={formData.email}
@@ -195,7 +195,7 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Empresa</label>
                   <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       value={formData.company}
                       onChange={(e) => handleChange('company', e.target.value)}
@@ -209,12 +209,12 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Canal de comunicação *</label>
                   <div className="relative">
-                    <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <select
                       value={formData.channel_id}
                       onChange={(e) => handleChange('channel_id', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-2 bg-gray-800 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.channel_id ? 'border-red-500' : 'border-gray-700'
+                      className={`w-full pl-10 pr-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.channel_id ? 'border-red-500' : 'border-border'
                       }`}
                     >
                       <option value="">Selecione um canal</option>
@@ -232,7 +232,7 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Valor estimado</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       type="number"
                       value={formData.value}

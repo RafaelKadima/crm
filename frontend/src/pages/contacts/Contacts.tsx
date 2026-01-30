@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { Plus, Search, Phone, Mail, Building2, MoreHorizontal, Loader2, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -55,18 +56,16 @@ export function ContactsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Contatos</h1>
-          <p className="text-muted-foreground mt-1">
-            {contactsData?.total || 0} contatos cadastrados
-          </p>
-        </div>
-        <Button onClick={handleNewContact}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Contato
-        </Button>
-      </div>
+      <PageHeader
+        title="Contatos"
+        subtitle={`${contactsData?.total || 0} contatos cadastrados`}
+        actions={
+          <Button onClick={handleNewContact}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Contato
+          </Button>
+        }
+      />
 
       {/* Search */}
       <div className="relative max-w-md">
@@ -151,13 +150,13 @@ export function ContactsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center py-16"
         >
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center">
-            <UserPlus className="w-8 h-8 text-gray-500" />
+          <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+            <UserPlus className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-medium text-gray-300 mb-2">
+          <h3 className="text-lg font-medium text-muted-foreground mb-2">
             {searchQuery ? 'Nenhum contato encontrado' : 'Nenhum contato cadastrado'}
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-muted-foreground mb-6">
             {searchQuery
               ? 'Tente buscar por outro termo'
               : 'Comece adicionando seu primeiro contato'
@@ -174,7 +173,7 @@ export function ContactsPage() {
 
       {/* Pagination */}
       {contactsData && contactsData.last_page > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-gray-700/50">
+        <div className="flex items-center justify-between pt-4 border-t border-border">
           <p className="text-sm text-muted-foreground">
             Mostrando {contactsData.from || 0} - {contactsData.to || 0} de {contactsData.total || 0} contatos
           </p>

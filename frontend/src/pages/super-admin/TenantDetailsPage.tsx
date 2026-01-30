@@ -249,13 +249,13 @@ export function TenantDetailsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Header */}
-      <div className="border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm">
+      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link
                 to="/super-admin/tenants"
-                className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+                className="p-2 hover:bg-accent/50 rounded-lg transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Link>
@@ -265,7 +265,7 @@ export function TenantDetailsPage() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold">{tenant.name}</h1>
-                  <p className="text-sm text-gray-400">ID: {tenant.id}</p>
+                  <p className="text-sm text-muted-foreground">ID: {tenant.id}</p>
                 </div>
               </div>
             </div>
@@ -285,40 +285,40 @@ export function TenantDetailsPage() {
       {/* Stats */}
       <div className="max-w-6xl mx-auto px-6 py-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-4">
+          <div className="bg-muted/50 rounded-xl border border-border p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500/20 rounded-lg">
                 <Users className="w-5 h-5 text-blue-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{tenantData.stats?.users_count || 0}</p>
-                <p className="text-sm text-gray-400">Usuários</p>
+                <p className="text-sm text-muted-foreground">Usuários</p>
               </div>
             </div>
           </div>
-          <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-4">
+          <div className="bg-muted/50 rounded-xl border border-border p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-500/20 rounded-lg">
                 <TrendingUp className="w-5 h-5 text-green-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{tenantData.stats?.leads_count || 0}</p>
-                <p className="text-sm text-gray-400">Leads</p>
+                <p className="text-sm text-muted-foreground">Leads</p>
               </div>
             </div>
           </div>
-          <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-4">
+          <div className="bg-muted/50 rounded-xl border border-border p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-500/20 rounded-lg">
                 <User className="w-5 h-5 text-purple-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{tenantData.stats?.contacts_count || 0}</p>
-                <p className="text-sm text-gray-400">Contatos</p>
+                <p className="text-sm text-muted-foreground">Contatos</p>
               </div>
             </div>
           </div>
-          <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-4">
+          <div className="bg-muted/50 rounded-xl border border-border p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/20 rounded-lg">
                 <Calendar className="w-5 h-5 text-amber-400" />
@@ -327,7 +327,7 @@ export function TenantDetailsPage() {
                 <p className="text-sm font-medium">
                   {new Date(tenant.created_at).toLocaleDateString('pt-BR')}
                 </p>
-                <p className="text-sm text-gray-400">Data Criação</p>
+                <p className="text-sm text-muted-foreground">Data Criação</p>
               </div>
             </div>
           </div>
@@ -346,7 +346,7 @@ export function TenantDetailsPage() {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 activeTab === tab.id
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                  : 'bg-accent/50 text-muted-foreground hover:bg-accent'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -385,36 +385,36 @@ export function TenantDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
           >
             <form onSubmit={handleSaveInfo} className="space-y-6">
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+              <div className="bg-muted/50 rounded-xl border border-border p-6">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-blue-400" />
                   Dados da Empresa
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Nome da Empresa</label>
+                    <label className="block text-sm text-muted-foreground mb-1">Nome da Empresa</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                      className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Slug (URL)</label>
+                    <label className="block text-sm text-muted-foreground mb-1">Slug (URL)</label>
                     <input
                       type="text"
                       value={formData.slug}
                       onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                      className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Plano</label>
+                    <label className="block text-sm text-muted-foreground mb-1">Plano</label>
                     <select
                       value={formData.plan}
                       onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                      className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                     >
                       {plans?.map((plan: any) => (
                         <option key={plan.value} value={plan.value}>
@@ -424,12 +424,12 @@ export function TenantDetailsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">WhatsApp</label>
+                    <label className="block text-sm text-muted-foreground mb-1">WhatsApp</label>
                     <input
                       type="text"
                       value={formData.whatsapp_number}
                       onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                      className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                       placeholder="5511999999999"
                     />
                   </div>
@@ -441,7 +441,7 @@ export function TenantDetailsPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, ia_enabled: !formData.ia_enabled })}
                       className={`relative w-12 h-6 rounded-full transition-colors ${
-                        formData.ia_enabled ? 'bg-blue-600' : 'bg-gray-600'
+                        formData.ia_enabled ? 'bg-blue-600' : 'bg-muted-foreground/20'
                       }`}
                     >
                       <div
@@ -458,7 +458,7 @@ export function TenantDetailsPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
                       className={`relative w-12 h-6 rounded-full transition-colors ${
-                        formData.is_active ? 'bg-green-600' : 'bg-gray-600'
+                        formData.is_active ? 'bg-green-600' : 'bg-muted-foreground/20'
                       }`}
                     >
                       <div
@@ -475,7 +475,7 @@ export function TenantDetailsPage() {
               <div className="flex justify-end gap-4">
                 <Link
                   to="/super-admin/tenants"
-                  className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="px-6 py-2 bg-accent hover:bg-accent rounded-lg transition-colors"
                 >
                   Cancelar
                 </Link>
@@ -507,12 +507,12 @@ export function TenantDetailsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+            <div className="bg-muted/50 rounded-xl border border-border p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-400" />
                 Módulos e Funcionalidades
               </h2>
-              <p className="text-gray-400 text-sm mb-6">
+              <p className="text-muted-foreground text-sm mb-6">
                 Selecione os módulos e funcionalidades que esta empresa terá acesso. Clique em "Configurar funções" para escolher quais funcionalidades de cada módulo estarão disponíveis.
               </p>
 
@@ -526,17 +526,17 @@ export function TenantDetailsPage() {
                   const allSelected = allFunctions.length === selectedFuncs.length && selectedFuncs.length > 0
 
                   return (
-                    <div key={key} className="border border-gray-700/50 rounded-lg overflow-hidden">
+                    <div key={key} className="border border-border rounded-lg overflow-hidden">
                       {/* Header do módulo */}
                       <div className={`flex items-center justify-between p-4 ${
-                        selectedFeatures[key] ? 'bg-blue-500/10' : 'bg-gray-700/30'
+                        selectedFeatures[key] ? 'bg-blue-500/10' : 'bg-accent/30'
                       }`}>
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
                             onClick={() => toggleFeature(key)}
                             className={`p-2 rounded-lg transition-colors ${
-                              selectedFeatures[key] ? 'bg-blue-500/30' : 'bg-gray-600/30'
+                              selectedFeatures[key] ? 'bg-blue-500/30' : 'bg-border'
                             }`}
                           >
                             {selectedFeatures[key] ? (
@@ -547,7 +547,7 @@ export function TenantDetailsPage() {
                           </button>
                           <div>
                             <p className="font-medium">{feature.name}</p>
-                            <p className="text-xs text-gray-400">{feature.description}</p>
+                            <p className="text-xs text-muted-foreground">{feature.description}</p>
                           </div>
                         </div>
 
@@ -555,7 +555,7 @@ export function TenantDetailsPage() {
                           <button
                             type="button"
                             onClick={() => toggleModuleExpanded(key)}
-                            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors"
                           >
                             {isExpanded ? 'Ocultar funções' : 'Configurar funções'}
                             <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -565,9 +565,9 @@ export function TenantDetailsPage() {
 
                       {/* Sub-funções (colapsáveis) */}
                       {hasFunctions && selectedFeatures[key] && isExpanded && (
-                        <div className="border-t border-gray-700/50 p-4 bg-gray-800/30">
+                        <div className="border-t border-border p-4 bg-muted/30">
                           <div className="flex items-center justify-between mb-3">
-                            <p className="text-sm text-gray-400">Selecione as funcionalidades:</p>
+                            <p className="text-sm text-muted-foreground">Selecione as funcionalidades:</p>
                             <button
                               type="button"
                               onClick={() => toggleAllFunctions(key)}
@@ -584,7 +584,7 @@ export function TenantDetailsPage() {
                                 className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
                                   selectedFuncs.includes(funcKey)
                                     ? 'bg-blue-500/20 border border-blue-500/50'
-                                    : 'bg-gray-700/20 border border-gray-600/30 hover:border-gray-500'
+                                    : 'bg-accent/20 border border-border hover:border-muted-foreground/30'
                                 }`}
                               >
                                 <input
@@ -594,14 +594,14 @@ export function TenantDetailsPage() {
                                   className="hidden"
                                 />
                                 <div className={`w-4 h-4 rounded flex items-center justify-center ${
-                                  selectedFuncs.includes(funcKey) ? 'bg-blue-500' : 'bg-gray-600'
+                                  selectedFuncs.includes(funcKey) ? 'bg-blue-500' : 'bg-muted-foreground/20'
                                 }`}>
                                   {selectedFuncs.includes(funcKey) && <Check className="w-3 h-3 text-white" />}
                                 </div>
                                 <div>
                                   <span className="text-sm">{funcData.name}</span>
                                   {funcData.description && (
-                                    <p className="text-xs text-gray-500">{funcData.description}</p>
+                                    <p className="text-xs text-muted-foreground">{funcData.description}</p>
                                   )}
                                 </div>
                               </label>
@@ -650,7 +650,7 @@ export function TenantDetailsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+            <div className="bg-muted/50 rounded-xl border border-border p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
                   <Users className="w-5 h-5 text-purple-400" />
@@ -670,7 +670,7 @@ export function TenantDetailsPage() {
                   {tenant.users.map((user: any) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg"
+                      className="flex items-center justify-between p-4 bg-accent/30 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
@@ -678,7 +678,7 @@ export function TenantDetailsPage() {
                         </div>
                         <div>
                           <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-gray-400 flex items-center gap-2">
+                          <p className="text-sm text-muted-foreground flex items-center gap-2">
                             <Mail className="w-3 h-3" />
                             {user.email}
                           </p>
@@ -690,7 +690,7 @@ export function TenantDetailsPage() {
                             ? 'bg-purple-500/20 text-purple-400'
                             : user.role === 'gestor'
                             ? 'bg-blue-500/20 text-blue-400'
-                            : 'bg-gray-500/20 text-gray-400'
+                            : 'bg-gray-500/20 text-muted-foreground'
                         }`}>
                           {user.role}
                         </span>
@@ -707,8 +707,8 @@ export function TenantDetailsPage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400 mb-4">
+                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground mb-4">
                     Nenhum usuário cadastrado nesta empresa.
                   </p>
                   <button
@@ -739,17 +739,17 @@ export function TenantDetailsPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-md overflow-hidden"
+              className="bg-muted rounded-xl border border-border w-full max-w-md overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <div className="flex items-center justify-between p-4 border-b border-border">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Plus className="w-5 h-5 text-blue-400" />
                   Novo Usuário
                 </h3>
                 <button
                   onClick={() => setShowCreateUserModal(false)}
-                  className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
+                  className="p-1 hover:bg-accent rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -757,31 +757,31 @@ export function TenantDetailsPage() {
 
               <form onSubmit={handleCreateUser} className="p-4 space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Nome *</label>
+                  <label className="block text-sm text-muted-foreground mb-1">Nome *</label>
                   <input
                     type="text"
                     value={newUserData.name}
                     onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
                     required
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                     placeholder="Nome completo"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">E-mail *</label>
+                  <label className="block text-sm text-muted-foreground mb-1">E-mail *</label>
                   <input
                     type="email"
                     value={newUserData.email}
                     onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
                     required
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                     placeholder="usuario@empresa.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Senha *</label>
+                  <label className="block text-sm text-muted-foreground mb-1">Senha *</label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
@@ -789,13 +789,13 @@ export function TenantDetailsPage() {
                       onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
                       required
                       minLength={6}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none pr-10"
+                      className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none pr-10"
                       placeholder="Mínimo 6 caracteres"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-600 rounded"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-accent rounded"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -803,11 +803,11 @@ export function TenantDetailsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Função *</label>
+                  <label className="block text-sm text-muted-foreground mb-1">Função *</label>
                   <select
                     value={newUserData.role}
                     onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                   >
                     <option value="admin">Administrador</option>
                     <option value="gestor">Gestor</option>
@@ -816,12 +816,12 @@ export function TenantDetailsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Telefone</label>
+                  <label className="block text-sm text-muted-foreground mb-1">Telefone</label>
                   <input
                     type="text"
                     value={newUserData.phone}
                     onChange={(e) => setNewUserData({ ...newUserData, phone: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                     placeholder="5511999999999"
                   />
                 </div>
@@ -830,7 +830,7 @@ export function TenantDetailsPage() {
                   <button
                     type="button"
                     onClick={() => setShowCreateUserModal(false)}
-                    className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                    className="flex-1 px-4 py-2 bg-accent hover:bg-accent rounded-lg transition-colors"
                   >
                     Cancelar
                   </button>

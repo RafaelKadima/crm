@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
+import type { ReactNode } from 'react'
 import { PointsPopupManager } from '@/components/effects/PointsPopup'
 import { TierUpCelebration } from '@/components/effects/TierUpCelebration'
 import { AchievementQueue } from '@/components/effects/AchievementUnlock'

@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -127,21 +128,17 @@ export default function AdsAgentChat() {
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Bot className="w-7 h-7 text-purple-500" />
-            Agente de Campanhas
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Converse com a IA para criar e gerenciar campanhas
-          </p>
-        </div>
-        
-        <Button variant="outline" size="sm" onClick={clearChat}>
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Limpar Chat
-        </Button>
+      <div className="mb-4">
+        <PageHeader
+          title="Agente de Campanhas"
+          subtitle="Converse com a IA para criar e gerenciar campanhas"
+          actions={
+            <Button variant="outline" size="sm" onClick={clearChat}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Limpar Chat
+            </Button>
+          }
+        />
       </div>
 
       {/* Chat Area */}
@@ -155,7 +152,7 @@ export default function AdsAgentChat() {
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Olá! Sou seu assistente de campanhas.
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
+              <p className="text-muted-foreground dark:text-muted-foreground max-w-md mb-6">
                 Posso ajudar você a criar campanhas, gerenciar criativos, 
                 verificar status e muito mais. O que você precisa?
               </p>
@@ -166,7 +163,7 @@ export default function AdsAgentChat() {
                   <button
                     key={cmd}
                     onClick={() => handleQuickCommand(cmd)}
-                    className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-purple-100 dark:hover:bg-purple-900/30 transition text-gray-700 dark:text-gray-300"
+                    className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-muted rounded-full hover:bg-purple-100 dark:hover:bg-purple-900/30 transition text-gray-700 dark:text-muted-foreground"
                   >
                     {cmd}
                   </button>
@@ -206,7 +203,7 @@ export default function AdsAgentChat() {
                       'rounded-2xl px-4 py-2',
                       message.role === 'user'
                         ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                        : 'bg-gray-100 dark:bg-muted text-gray-900 dark:text-white'
                     )}>
                       {message.role === 'assistant' ? (
                         <MarkdownRenderer content={message.content} />
@@ -220,7 +217,7 @@ export default function AdsAgentChat() {
                       <div className="mt-2">
                         <button
                           onClick={() => setShowSteps(showSteps === message.id ? null : message.id)}
-                          className="text-xs text-gray-500 hover:text-purple-500 flex items-center gap-1"
+                          className="text-xs text-muted-foreground hover:text-purple-500 flex items-center gap-1"
                         >
                           <Wrench className="w-3 h-3" />
                           {message.steps.length} ação(ões) executada(s)
@@ -235,13 +232,13 @@ export default function AdsAgentChat() {
                             {message.steps.map((step, i) => (
                               <div
                                 key={i}
-                                className="text-xs bg-gray-50 dark:bg-gray-900 rounded-lg p-2 border border-gray-200 dark:border-gray-700"
+                                className="text-xs bg-gray-50 dark:bg-background rounded-lg p-2 border border-gray-200 dark:border-border"
                               >
                                 <div className="flex items-center gap-1 font-medium text-purple-600">
                                   <CheckCircle className="w-3 h-3" />
                                   {step.tool}
                                 </div>
-                                <div className="mt-1 text-gray-600 dark:text-gray-400 truncate">
+                                <div className="mt-1 text-muted-foreground dark:text-muted-foreground truncate">
                                   {step.output}
                                 </div>
                               </div>
@@ -256,7 +253,7 @@ export default function AdsAgentChat() {
                       <div className="mt-1 flex gap-2">
                         <button
                           onClick={() => copyToClipboard(message.content)}
-                          className="text-xs text-gray-400 hover:text-gray-600"
+                          className="text-xs text-muted-foreground hover:text-muted-foreground"
                         >
                           <Copy className="w-3 h-3" />
                         </button>
@@ -264,7 +261,7 @@ export default function AdsAgentChat() {
                     )}
                     
                     {/* Timestamp */}
-                    <span className="text-[10px] text-gray-400 mt-1">
+                    <span className="text-[10px] text-muted-foreground mt-1">
                       {message.timestamp.toLocaleTimeString('pt-BR', { 
                         hour: '2-digit', 
                         minute: '2-digit' 
@@ -280,8 +277,8 @@ export default function AdsAgentChat() {
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                     <Bot className="w-4 h-4 text-white" />
                   </div>
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2">
-                    <div className="flex items-center gap-2 text-gray-500">
+                  <div className="bg-gray-100 dark:bg-muted rounded-2xl px-4 py-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Pensando...
                     </div>
@@ -296,13 +293,13 @@ export default function AdsAgentChat() {
         
         {/* Quick suggestions */}
         {messages.length > 0 && (
-          <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
+          <div className="px-4 py-2 border-t border-gray-200 dark:border-border">
             <div className="flex gap-2 overflow-x-auto pb-2">
               {QUICK_COMMANDS.slice(0, 3).map(cmd => (
                 <button
                   key={cmd}
                   onClick={() => handleQuickCommand(cmd)}
-                  className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded-full whitespace-nowrap hover:bg-purple-100 dark:hover:bg-purple-900/30 transition"
+                  className="px-3 py-1 text-xs bg-gray-100 dark:bg-muted rounded-full whitespace-nowrap hover:bg-purple-100 dark:hover:bg-purple-900/30 transition"
                 >
                   {cmd}
                 </button>
@@ -312,7 +309,7 @@ export default function AdsAgentChat() {
         )}
         
         {/* Input */}
-        <CardContent className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <CardContent className="p-4 border-t border-gray-200 dark:border-border">
           <form
             onSubmit={(e) => {
               e.preventDefault()
