@@ -205,14 +205,14 @@ function NavItemLink({
       to={item.path}
       className={cn(
         'group items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
-        'hover:bg-white/5',
-        isActive && 'text-white nav-active',
+        'hover:bg-sidebar-accent/5',
+        isActive && 'text-sidebar-accent nav-active',
         item.hideOnMobile ? 'hidden md:flex' : 'flex'
       )}
     >
       <item.icon className={cn(
         'h-[18px] w-[18px] shrink-0 transition-colors',
-        isActive ? 'text-white' : 'text-muted-foreground group-hover:text-white/80'
+        isActive ? 'text-sidebar-accent' : 'text-muted-foreground group-hover:text-sidebar-accent/80'
       )} />
       <AnimatePresence mode="wait">
         {!isCollapsed && (
@@ -222,7 +222,7 @@ function NavItemLink({
             exit={{ opacity: 0, width: 0 }}
             className={cn(
               'text-sm whitespace-nowrap',
-              isActive ? 'text-white font-medium' : 'text-foreground/70'
+              isActive ? 'text-sidebar-accent font-medium' : 'text-sidebar-foreground/70'
             )}
           >
             {item.label}
@@ -248,7 +248,7 @@ function SectionLabel({ label, isCollapsed }: { label: string; isCollapsed: bool
 function SeparatorLine({ isCollapsed }: { isCollapsed: boolean }) {
   return (
     <div className={cn('my-2', isCollapsed ? 'mx-3' : 'mx-3')}>
-      <div className="h-px bg-white/5" />
+      <div className="h-px bg-sidebar-accent/5" />
     </div>
   )
 }
@@ -291,12 +291,12 @@ function CollapsibleGroup({
         onClick={onToggle}
         className={cn(
           'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
-          'hover:bg-white/5 text-left'
+          'hover:bg-sidebar-accent/5 text-left'
         )}
       >
         <Icon className={cn(
           'h-[18px] w-[18px] shrink-0 transition-colors',
-          hasActiveItem ? 'text-white' : 'text-muted-foreground'
+          hasActiveItem ? 'text-sidebar-accent' : 'text-muted-foreground'
         )} />
         <AnimatePresence mode="wait">
           {!isCollapsed && (
@@ -307,7 +307,7 @@ function CollapsibleGroup({
                 exit={{ opacity: 0, width: 0 }}
                 className={cn(
                   'text-sm whitespace-nowrap flex-1',
-                  hasActiveItem ? 'text-white font-medium' : 'text-foreground/70'
+                  hasActiveItem ? 'text-sidebar-accent font-medium' : 'text-sidebar-foreground/70'
                 )}
               >
                 {label}
@@ -336,7 +336,7 @@ function CollapsibleGroup({
           >
             <ul className={cn(
               'mt-0.5 space-y-0.5',
-              !isCollapsed && 'ml-4 pl-3 border-l border-white/8'
+              !isCollapsed && 'ml-4 pl-3 border-l border-sidebar-accent/10'
             )}>
               {items.map((item) => (
                 <li key={item.path}>
@@ -448,7 +448,8 @@ export function Sidebar() {
         mobileMenuOpen ? 'flex' : 'hidden md:flex'
       )}
       style={{
-        borderRight: '1px solid rgba(255, 255, 255, 0.06)',
+        borderRight: '1px solid var(--color-sidebar-accent, rgba(255, 255, 255, 0.06))',
+        borderRightColor: 'color-mix(in srgb, var(--color-sidebar-accent) 6%, transparent)',
       }}
       onClick={(e) => {
         // Close mobile menu when clicking a link
@@ -458,7 +459,7 @@ export function Sidebar() {
       }}
     >
       {/* Logo */}
-      <div className="relative h-16 flex items-center justify-between px-4 border-b border-white/5">
+      <div className="relative h-16 flex items-center justify-between px-4 border-b border-sidebar-accent/5">
         <AnimatePresence mode="wait">
           {logoUrl ? (
             <motion.div
@@ -487,8 +488,8 @@ export function Sidebar() {
           onClick={toggleSidebar}
           className={cn(
             'p-2 rounded-lg transition-all duration-200',
-            'hover:bg-white/5 hover:text-white',
-            'border border-transparent hover:border-white/10'
+            'hover:bg-sidebar-accent/5 hover:text-sidebar-accent',
+            'border border-transparent hover:border-sidebar-accent/10'
           )}
         >
           {sidebarCollapsed ? (
@@ -501,13 +502,13 @@ export function Sidebar() {
 
       {/* Tenant Info */}
       {tenant && !sidebarCollapsed && (
-        <div className="relative px-4 py-3 border-b border-white/5">
+        <div className="relative px-4 py-3 border-b border-sidebar-accent/5">
           <p className="text-xs text-muted-foreground">Empresa</p>
           <p className="text-sm font-medium truncate">{tenant.name}</p>
           {featuresData?.plan_label && (
             <span className={cn(
               'inline-flex items-center mt-1 px-2 py-0.5 rounded-md text-xs font-medium',
-              'bg-white/10 text-white/80 border border-white/10'
+              'bg-sidebar-accent/10 text-sidebar-accent/80 border border-sidebar-accent/10'
             )}>
               {featuresData.plan_label}
             </span>
@@ -579,7 +580,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="relative p-4 border-t border-white/5">
+      <div className="relative p-4 border-t border-sidebar-accent/5">
         <div className={cn(
           'text-xs font-mono',
           sidebarCollapsed ? 'text-center' : ''
@@ -587,8 +588,8 @@ export function Sidebar() {
           <span className="text-muted-foreground">
             {sidebarCollapsed ? 'v1' : (
               <>
-                <span className="text-white">OmniFy</span>
-                <span className="text-white/50">HUB</span>
+                <span className="text-sidebar-accent">OmniFy</span>
+                <span className="text-sidebar-accent/50">HUB</span>
                 <span className="text-muted-foreground ml-2">v1.0.0</span>
               </>
             )}

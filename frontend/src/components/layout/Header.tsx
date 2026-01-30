@@ -59,7 +59,7 @@ export function Header() {
         !sidebarCollapsed && "md:left-[280px]"
       )}
       style={{
-        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        borderBottom: '1px solid var(--color-border)',
       }}
     >
       <div className="h-full flex items-center justify-between px-3 sm:px-6">
@@ -82,13 +82,13 @@ export function Header() {
           <div className="hidden md:block relative">
             <Search className={cn(
               "absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 transition-colors duration-200",
-              searchFocused ? "text-white" : "text-muted-foreground"
+              searchFocused ? "text-foreground" : "text-muted-foreground"
             )} />
             <Input
               placeholder="Buscar..."
               className={cn(
                 "pl-9 w-44 h-9 text-sm bg-card/50 transition-all duration-200",
-                "border-white/5 focus:border-white/20 focus:w-56",
+                "border-border focus:border-foreground/20 focus:w-56",
                 "placeholder:text-muted-foreground/60"
               )}
               onFocus={() => setSearchFocused(true)}
@@ -106,8 +106,8 @@ export function Header() {
             onClick={toggleTheme}
             className={cn(
               "relative overflow-hidden transition-all duration-200",
-              "hover:bg-white/5 hover:text-white",
-              "border border-transparent hover:border-white/10"
+              "hover:bg-accent hover:text-foreground",
+              "border border-transparent hover:border-border"
             )}
           >
             <AnimatePresence mode="wait">
@@ -119,7 +119,7 @@ export function Header() {
                   exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Sun className="h-5 w-5 text-white/80" />
+                  <Sun className="h-5 w-5 text-foreground/80" />
                 </motion.div>
               ) : (
                 <motion.div
@@ -143,8 +143,8 @@ export function Header() {
             title={soundEnabled ? 'Desativar sons' : 'Ativar sons'}
             className={cn(
               "relative transition-all duration-300",
-              "hover:bg-white/5 hover:text-white",
-              "border border-transparent hover:border-white/10",
+              "hover:bg-accent hover:text-foreground",
+              "border border-transparent hover:border-border",
               soundEnabled && "text-amber-400",
               !soundEnabled && "text-muted-foreground/50",
               soundAnimating && "scale-110"
@@ -196,14 +196,14 @@ export function Header() {
               onClick={() => setShowNotifications(!showNotifications)}
               className={cn(
                 "relative transition-all duration-200",
-                "hover:bg-white/5 hover:text-white",
-                "border border-transparent hover:border-white/10",
-                showNotifications && "bg-white/5 border-white/10"
+                "hover:bg-accent hover:text-foreground",
+                "border border-transparent hover:border-border",
+                showNotifications && "bg-accent border-border"
               )}
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-white/80"
-                style={{ boxShadow: '0 0 8px rgba(255, 255, 255, 0.4)' }}
+              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-primary"
+                style={{ boxShadow: '0 0 8px var(--color-primary)' }}
               />
             </Button>
 
@@ -215,12 +215,12 @@ export function Header() {
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   className="absolute right-0 mt-2 w-80 rounded-xl overflow-hidden futuristic-card"
                 >
-                  <div className="p-4 border-b border-white/5">
-                    <h3 className="font-display font-semibold text-white">Notificações</h3>
+                  <div className="p-4 border-b border-border">
+                    <h3 className="font-display font-semibold text-foreground">Notificações</h3>
                   </div>
                   <div className="p-4 text-center text-sm text-muted-foreground">
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/5 flex items-center justify-center">
-                      <Bell className="h-6 w-6 text-white/30" />
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
+                      <Bell className="h-6 w-6 text-muted-foreground/30" />
                     </div>
                     Nenhuma notificação
                   </div>
@@ -235,8 +235,8 @@ export function Header() {
               onClick={() => setShowUserMenu(!showUserMenu)}
               className={cn(
                 "flex items-center gap-3 p-2 rounded-xl transition-all duration-200",
-                "hover:bg-white/5 border border-transparent hover:border-white/10",
-                showUserMenu && "bg-white/5 border-white/10"
+                "hover:bg-white/5 border border-transparent hover:border-border",
+                showUserMenu && "bg-accent border-border"
               )}
             >
               <div className="relative">
@@ -275,13 +275,13 @@ export function Header() {
                       }}
                       className={cn(
                         "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-200",
-                        "hover:bg-white/5 hover:text-white"
+                        "hover:bg-accent hover:text-foreground"
                       )}
                     >
                       <User className="h-4 w-4" />
                       <span className="text-sm">Meu Perfil</span>
                     </button>
-                    <div className="my-1 border-t border-white/5" />
+                    <div className="my-1 border-t border-border" />
                     <button
                       onClick={handleLogout}
                       className={cn(
