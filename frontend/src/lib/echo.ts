@@ -34,7 +34,7 @@ if (WEBSOCKET_ENABLED) {
     wssPort: wsPort,
     forceTLS: forceTLS,
     disableStats: true,
-    enabledTransports: forceTLS ? ['wss'] : ['ws', 'wss'],
+    enabledTransports: ['ws'],
     cluster: 'mt1',
     // Autorização para canais privados
     authorizer: (channel: { name: string }) => ({
