@@ -2,6 +2,35 @@ import { useEffect, useCallback } from 'react'
 import echo from '@/lib/echo'
 import { useNotificationStore } from '@/store/notificationStore'
 import { useQueryClient } from '@tanstack/react-query'
+import { useSoundSettings } from '@/hooks/useSounds'
+
+/**
+ * Toca um som de notificação usando Web Audio API (sem arquivo externo)
+ */
+function playNotificationSound(volume: number) {
+  try {
+    const ctx = new AudioContext()
+    const oscillator = ctx.createOscillator()
+    const gain = ctx.createGain()
+
+    oscillator.connect(gain)
+    gain.connect(ctx.destination)
+
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(880, ctx.currentTime)
+    oscillator.frequency.setValueAtTime(1100, ctx.currentTime + 0.1)
+
+    gain.gain.setValueAtTime(volume * 0.3, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+
+    oscillator.start(ctx.currentTime)
+    oscillator.stop(ctx.currentTime + 0.4)
+
+    oscillator.onended = () => ctx.close()
+  } catch {
+    // Silently fail
+  }
+}
 
 interface MessageEvent {
   message: {
@@ -121,6 +150,8 @@ export function useLeadMessages(
 export function useTenantMessages(tenantId: string | null) {
   const { addUnreadMessage } = useNotificationStore()
   const queryClient = useQueryClient()
+  const soundEnabled = useSoundSettings((s) => s.enabled)
+  const soundVolume = useSoundSettings((s) => s.volume)
 
   useEffect(() => {
     if (!tenantId || !echo) {
@@ -149,12 +180,10 @@ export function useTenantMessages(tenantId: string | null) {
         if (data.lead_id && isInbound) {
           addUnreadMessage(data.lead_id, data.message.content)
 
-          // Tocar som de nova mensagem
-          try {
-            const audio = new Audio('/sounds/notification.mp3')
-            audio.volume = 0.5
-            audio.play().catch(() => {})
-          } catch {}
+          // Tocar som de nova mensagem (se habilitado)
+          if (soundEnabled) {
+            playNotificationSound(soundVolume)
+          }
 
           // Notificação do browser
           if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
@@ -192,7 +221,7 @@ export function useTenantMessages(tenantId: string | null) {
       console.log('🔌 Desconectando do canal tenant:', tenantId)
       echo?.leave(`tenant.${tenantId}`)
     }
-  }, [tenantId, addUnreadMessage, queryClient])
+  }, [tenantId, addUnreadMessage, queryClient, soundEnabled, soundVolume])
 }
 
 /**
@@ -202,6 +231,8 @@ export function useTenantMessages(tenantId: string | null) {
 export function useWebSocket() {
   const { addUnreadMessage } = useNotificationStore()
   const queryClient = useQueryClient()
+  const soundEnabled = useSoundSettings((s) => s.enabled)
+  const soundVolume = useSoundSettings((s) => s.volume)
 
   const connectToTenant = useCallback((tenantId: string) => {
     if (!echo) {
@@ -233,12 +264,10 @@ export function useWebSocket() {
 
       // Notificação do navegador + som (apenas para mensagens recebidas)
       if (isInbound) {
-        // Tocar som de nova mensagem
-        try {
-          const audio = new Audio('/sounds/notification.mp3')
-          audio.volume = 0.5
-          audio.play().catch(() => {})
-        } catch {}
+        // Tocar som de nova mensagem (se habilitado)
+        if (soundEnabled) {
+          playNotificationSound(soundVolume)
+        }
 
         // Notificação do browser
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
@@ -263,7 +292,7 @@ export function useWebSocket() {
     return () => {
       echo?.leave(`tenant.${tenantId}`)
     }
-  }, [addUnreadMessage, queryClient])
+  }, [addUnreadMessage, queryClient, soundEnabled, soundVolume])
 
   const disconnectAll = useCallback(() => {
     echo?.disconnect()

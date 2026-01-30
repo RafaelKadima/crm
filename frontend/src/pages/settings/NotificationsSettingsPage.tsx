@@ -15,6 +15,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useSoundSettings } from '@/hooks/useSounds'
 
 interface NotificationSetting {
   key: string
@@ -88,8 +89,26 @@ export function NotificationsSettingsPage() {
   const [settings, setSettings] = useState<NotificationSetting[]>(defaultSettings)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [globalSound, setGlobalSound] = useState(true)
   const { permission, isSupported, requestPermission } = useNotifications()
+  const { enabled: globalSound, volume, toggle: toggleSound, setVolume } = useSoundSettings()
+
+  const testSound = () => {
+    try {
+      const ctx = new AudioContext()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(880, ctx.currentTime)
+      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1)
+      gain.gain.setValueAtTime(volume * 0.3, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+      osc.start(ctx.currentTime)
+      osc.stop(ctx.currentTime + 0.4)
+      osc.onended = () => ctx.close()
+    } catch {}
+  }
 
   const toggleSetting = (key: string, field: 'email' | 'push' | 'sound') => {
     setSettings(prev =>
@@ -184,19 +203,49 @@ export function NotificationsSettingsPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setGlobalSound(!globalSound)}
-            className={`relative w-14 h-7 rounded-full transition-colors ${
-              globalSound ? 'bg-green-600' : 'bg-muted-foreground/20'
-            }`}
-          >
-            <div
-              className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${
-                globalSound ? 'translate-x-8' : 'translate-x-1'
+          <div className="flex items-center gap-3">
+            {globalSound && (
+              <button
+                onClick={testSound}
+                className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md transition-colors"
+              >
+                Testar
+              </button>
+            )}
+            <button
+              onClick={toggleSound}
+              className={`relative w-14 h-7 rounded-full transition-colors ${
+                globalSound ? 'bg-green-600' : 'bg-muted-foreground/20'
               }`}
-            />
-          </button>
+            >
+              <div
+                className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${
+                  globalSound ? 'translate-x-8' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
         </div>
+
+        {/* Volume slider */}
+        {globalSound && (
+          <div className="mt-4 pt-4 border-t border-border/30">
+            <div className="flex items-center gap-4">
+              <VolumeX className="w-4 h-4 text-muted-foreground shrink-0" />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                className="flex-1 h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer accent-green-500"
+              />
+              <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground w-8">{Math.round(volume * 100)}%</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabela de Notificações */}
