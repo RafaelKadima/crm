@@ -114,8 +114,8 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
         type: formData.type,
         description: formData.description || null,
         due_at: formData.due_at,
-        contact_id: formData.contact_id || null,
-        lead_id: formData.lead_id || null,
+        contact_id: formData.contact_id || undefined,
+        lead_id: formData.lead_id || undefined,
         assigned_user_id: user?.id, // Atribui ao usuário logado
       }
 

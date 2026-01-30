@@ -71,8 +71,8 @@ export function TasksPage() {
     )
   })
 
-  const pendingCount = tasks.filter((t: Task) => t.status === 'pending').length
-  const completedCount = tasks.filter((t: Task) => t.status === 'done').length
+  const pendingCount = tasks.filter((t: Task) => t.status === 'pendente').length
+  const completedCount = tasks.filter((t: Task) => t.status === 'concluida').length
 
   const toggleTask = (e: React.MouseEvent, taskId: string) => {
     e.stopPropagation()
@@ -157,7 +157,7 @@ export function TasksPage() {
         {filteredTasks.map((task: Task, index: number) => {
           const Icon = typeIcons[task.type] || CheckCircle
           const colorClass = typeColors[task.type] || typeColors.outros
-          const isCompleted = task.status === 'done'
+          const isCompleted = task.status === 'concluida'
 
           return (
             <motion.div

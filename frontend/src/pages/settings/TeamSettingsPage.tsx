@@ -85,7 +85,7 @@ export function TeamSettingsPage() {
       if (editingUser) {
         await updateUser.mutateAsync({
           id: editingUser.id,
-          data: formData.password ? formData : { ...formData, password: undefined },
+          data: formData.password ? formData as any : { ...formData, password: undefined } as any,
         })
         setSuccess('Usuário atualizado com sucesso!')
       } else {

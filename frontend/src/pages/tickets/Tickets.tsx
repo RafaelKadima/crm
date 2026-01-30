@@ -113,7 +113,7 @@ export function TicketsPage() {
     }
 
     // Caso contrário, monta um objeto lead a partir do ticket
-    const lead: Lead = {
+    const lead = {
       id: ticket.lead_id || ticket.id,
       tenant_id: ticket.tenant_id,
       contact_id: ticket.contact_id,
@@ -130,7 +130,7 @@ export function TicketsPage() {
       created_at: ticket.created_at,
       updated_at: ticket.updated_at,
     }
-    setSelectedLead(lead)
+    setSelectedLead(lead as Lead)
     setIsModalOpen(true)
   }
 
