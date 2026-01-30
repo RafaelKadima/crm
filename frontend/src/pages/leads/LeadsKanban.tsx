@@ -150,7 +150,7 @@ export function LeadsKanbanPage() {
 
   // Função para determinar o status do lead baseado no ticket
   const getLeadStatus = (lead: Lead): 'pending' | 'open' | 'closed' => {
-    const latestTicket = lead.tickets?.[0]
+    const latestTicket = (lead as any).tickets?.[0]
     
     // Lead sem ticket = pendente (novo lead que chegou, sem mensagem ainda)
     if (!latestTicket) {

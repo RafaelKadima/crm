@@ -68,7 +68,7 @@ export function CompanySettingsPage() {
 
     try {
       const response = await api.put('/tenant/settings', formData)
-      setTenant(response.data.tenant)
+      // Tenant updated on server
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err: any) {

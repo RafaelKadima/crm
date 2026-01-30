@@ -403,7 +403,7 @@ export function ReportsPage() {
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px',
                       }}
-                      formatter={(value: any, name: string) => [
+                      formatter={(value: any, name: any) => [
                         name === 'value' ? `${value} leads` : formatCurrency(value),
                         name === 'value' ? 'Leads' : 'Valor'
                       ]}

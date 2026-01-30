@@ -151,7 +151,7 @@ export function ActivityEffectivenessPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Lift Geral</p>
                   <p className="text-2xl font-bold">
-                    {effectiveness?.summary?.overall_lift > 0 ? '+' : ''}
+                    {(effectiveness?.summary?.overall_lift || 0) > 0 ? '+' : ''}
                     {effectiveness?.summary?.overall_lift?.toFixed(1) || 0}%
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -426,7 +426,7 @@ export function ActivityEffectivenessPage() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
                     }}
-                    formatter={(value: any, name: string) => [
+                    formatter={(value: any, name: any) => [
                       `${Number(value).toFixed(1)}%`,
                       name === 'impact' ? 'Impacto' : name === 'conversao' ? 'Com Atividade' : 'Sem Atividade',
                     ]}

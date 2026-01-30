@@ -56,7 +56,7 @@ export function QueueFormModal({
         menu_option: queue.menu_option,
         menu_label: queue.menu_label,
         welcome_message: queue.welcome_message || '',
-        close_message: queue.close_message || '',
+        close_message: (queue as any).close_message || '',
         auto_distribute: queue.auto_distribute,
         is_active: queue.is_active,
       })

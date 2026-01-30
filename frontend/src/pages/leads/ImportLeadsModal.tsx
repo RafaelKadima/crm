@@ -40,7 +40,7 @@ export function ImportLeadsModal({ isOpen, onClose }: ImportLeadsModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { user } = useAuthStore()
-  const isAdmin = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'super_admin'
+  const isAdmin = user?.role === 'admin' || user?.role === 'gestor' || (user?.role as string) === 'super_admin'
 
   const { data: usersData } = useUsers()
   const sellers = (usersData?.data || []).filter((u: any) => 
