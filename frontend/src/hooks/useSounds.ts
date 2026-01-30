@@ -15,7 +15,7 @@ export const useSoundSettings = create<SoundSettingsState>()(
   persist(
     (set) => ({
       enabled: true,
-      volume: 0.5,
+      volume: 0.8,
       setEnabled: (enabled) => set({ enabled }),
       setVolume: (volume) => set({ volume: Math.max(0, Math.min(1, volume)) }),
       toggle: () => set((state) => ({ enabled: !state.enabled })),

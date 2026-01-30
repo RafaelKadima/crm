@@ -10,23 +10,31 @@ import { useSoundSettings } from '@/hooks/useSounds'
 function playNotificationSound(volume: number) {
   try {
     const ctx = new AudioContext()
-    const oscillator = ctx.createOscillator()
     const gain = ctx.createGain()
-
-    oscillator.connect(gain)
     gain.connect(ctx.destination)
 
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(880, ctx.currentTime)
-    oscillator.frequency.setValueAtTime(1100, ctx.currentTime + 0.1)
+    // Primeiro tom (ding)
+    const osc1 = ctx.createOscillator()
+    osc1.connect(gain)
+    osc1.type = 'sine'
+    osc1.frequency.setValueAtTime(880, ctx.currentTime)
+    osc1.start(ctx.currentTime)
+    osc1.stop(ctx.currentTime + 0.15)
 
-    gain.gain.setValueAtTime(volume * 0.3, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+    // Segundo tom (mais agudo)
+    const osc2 = ctx.createOscillator()
+    osc2.connect(gain)
+    osc2.type = 'sine'
+    osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.15)
+    osc2.start(ctx.currentTime + 0.15)
+    osc2.stop(ctx.currentTime + 0.35)
 
-    oscillator.start(ctx.currentTime)
-    oscillator.stop(ctx.currentTime + 0.4)
+    // Volume: usar o valor diretamente (0-1)
+    gain.gain.setValueAtTime(volume * 0.8, ctx.currentTime)
+    gain.gain.setValueAtTime(volume * 0.8, ctx.currentTime + 0.15)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
 
-    oscillator.onended = () => ctx.close()
+    osc2.onended = () => ctx.close()
   } catch {
     // Silently fail
   }
