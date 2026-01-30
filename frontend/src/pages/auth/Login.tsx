@@ -41,34 +41,33 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Futuristic Background - Monochrome */}
+      {/* Background */}
       <div className="absolute inset-0 bg-background">
         {/* Grid Pattern */}
-        <div 
+        <div
           className="absolute inset-0 opacity-40"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
+              linear-gradient(var(--color-border) 1px, transparent 1px),
+              linear-gradient(90deg, var(--color-border) 1px, transparent 1px)
             `,
             backgroundSize: '60px 60px',
+            opacity: 0.15,
           }}
         />
-        
-        {/* Gradient Orbs - Subtle White/Gray */}
-        <motion.div 
-          className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%)' }}
-          animate={{ 
+
+        {/* Gradient Orbs */}
+        <motion.div
+          className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl bg-foreground/5"
+          animate={{
             scale: [1, 1.1, 1],
             opacity: [0.3, 0.5, 0.3],
           }}
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
         />
-        <motion.div 
-          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%)' }}
-          animate={{ 
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl bg-foreground/3"
+          animate={{
             scale: [1.1, 1, 1.1],
             opacity: [0.3, 0.5, 0.3],
           }}
@@ -76,8 +75,8 @@ export function LoginPage() {
         />
 
         {/* Animated Scan Lines */}
-        <motion.div 
-          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
+        <motion.div
+          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground/10 to-transparent"
           initial={{ top: '0%' }}
           animate={{ top: '100%' }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
@@ -91,16 +90,13 @@ export function LoginPage() {
         className="w-full max-w-md relative z-10"
       >
         <Card className={cn(
-          "border-0 shadow-2xl overflow-hidden",
-          "bg-card/60 backdrop-blur-xl",
+          "border shadow-2xl overflow-hidden",
+          "bg-card/80 backdrop-blur-xl border-border",
           "futuristic-card"
         )}>
           {/* Top Gradient Border */}
-          <div 
-            className="absolute top-0 left-0 right-0 h-px"
-            style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), rgba(255,255,255,0.1), transparent)',
-            }}
+          <div
+            className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
           />
 
           <CardHeader className="text-center pb-2 pt-8">
@@ -121,9 +117,9 @@ export function LoginPage() {
               transition={{ delay: 0.3 }}
             >
               <CardTitle className="text-2xl font-display tracking-[0.15em]">
-                <span className="text-white">OMNI</span>
-                <span className="text-white/50">FY</span>
-                <span className="text-white/30 font-normal text-lg ml-2 tracking-[0.2em]">HUB</span>
+                <span className="text-foreground">OMNI</span>
+                <span className="text-foreground/50">FY</span>
+                <span className="text-foreground/30 font-normal text-lg ml-2 tracking-[0.2em]">HUB</span>
               </CardTitle>
               <CardDescription className="mt-2 text-muted-foreground">
                 Entre com suas credenciais para acessar o sistema
@@ -158,8 +154,8 @@ export function LoginPage() {
                   placeholder="seu@email.com"
                   {...register('email')}
                   className={cn(
-                    "bg-background/50 border-white/10",
-                    "focus:border-white/30 focus:ring-white/10",
+                    "bg-background/50 border-border",
+                    "focus:border-foreground/30 focus:ring-foreground/10",
                     "placeholder:text-muted-foreground/50",
                     errors.email && 'border-destructive focus:border-destructive'
                   )}
@@ -182,8 +178,8 @@ export function LoginPage() {
                     placeholder="••••••••"
                     {...register('password')}
                     className={cn(
-                      "bg-background/50 border-white/10 pr-10",
-                      "focus:border-white/30 focus:ring-white/10",
+                      "bg-background/50 border-border pr-10",
+                      "focus:border-foreground/30 focus:ring-foreground/10",
                       "placeholder:text-muted-foreground/50",
                       errors.password && 'border-destructive focus:border-destructive'
                     )}
@@ -191,7 +187,7 @@ export function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -206,14 +202,14 @@ export function LoginPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className={cn(
                     "w-full mt-2 relative overflow-hidden",
-                    "bg-white text-background",
-                    "hover:bg-white/90",
+                    "bg-foreground text-background",
+                    "hover:bg-foreground/90",
                     "font-semibold",
-                    "shadow-lg shadow-white/10",
+                    "shadow-lg shadow-foreground/10",
                     "transition-all duration-300"
                   )}
                   disabled={loginMutation.isPending}
@@ -226,10 +222,10 @@ export function LoginPage() {
                       Acessar Sistema
                     </>
                   )}
-                  
+
                   {/* Button Shine Effect */}
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-transparent"
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-background/10 to-transparent"
                     initial={{ x: '-100%' }}
                     animate={{ x: '200%' }}
                     transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
@@ -239,38 +235,35 @@ export function LoginPage() {
             </form>
 
             {/* Value Proposition */}
-            <motion.div 
-              className="mt-6 pt-5 border-t border-white/5"
+            <motion.div
+              className="mt-6 pt-5 border-t border-border/50"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
             >
               <p className="text-center text-xs text-muted-foreground leading-relaxed">
-                <span className="text-white/60 font-medium">Visão 360° do seu negócio.</span>
+                <span className="text-foreground/60 font-medium">Visão 360° do seu negócio.</span>
                 <br />
-                <span className="text-white/40">CRM inteligente • SDR Autônomo • Ads automatizados</span>
+                <span className="text-foreground/40">CRM inteligente • SDR Autônomo • Ads automatizados</span>
               </p>
             </motion.div>
           </CardContent>
 
           {/* Bottom Gradient Border */}
-          <div 
-            className="absolute bottom-0 left-0 right-0 h-px"
-            style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), rgba(255,255,255,0.2), transparent)',
-            }}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent"
           />
         </Card>
 
         {/* Version Tag */}
-        <motion.p 
+        <motion.p
           className="text-center mt-6 text-xs text-muted-foreground font-mono tracking-wider"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          <span className="text-white/80">OmniFy</span>
-          <span className="text-white/40">HUB</span>
+          <span className="text-foreground/80">OmniFy</span>
+          <span className="text-foreground/40">HUB</span>
           <span className="ml-2 opacity-40">v1.0.0</span>
         </motion.p>
       </motion.div>
