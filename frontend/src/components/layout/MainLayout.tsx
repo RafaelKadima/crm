@@ -28,7 +28,7 @@ export function MainLayout() {
         className={cn("pt-16 flex-1 flex flex-col min-h-0 max-md:!ml-0")}
       >
         {/* Content wrapper with safe-area padding */}
-        <div className="flex-1 flex flex-col min-h-0 p-3 sm:p-5 md:p-8">
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-3 sm:p-5 md:p-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
