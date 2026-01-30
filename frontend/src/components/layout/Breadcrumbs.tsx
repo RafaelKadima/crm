@@ -89,7 +89,7 @@ export function Breadcrumbs() {
 
   if (!entry || pathname === '/') {
     return (
-      <div className="flex items-center gap-2 text-sm">
+      <div className="hidden md:flex items-center gap-2 text-sm">
         <Home className="h-4 w-4 text-muted-foreground" />
         <span className="text-foreground font-medium">Dashboard</span>
       </div>
@@ -97,7 +97,7 @@ export function Breadcrumbs() {
   }
 
   return (
-    <nav className="flex items-center gap-1.5 text-sm">
+    <nav className="hidden md:flex items-center gap-1.5 text-sm">
       <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
         <Home className="h-4 w-4" />
       </Link>
