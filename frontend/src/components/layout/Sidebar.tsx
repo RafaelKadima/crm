@@ -74,6 +74,7 @@ const navEntries: NavEntry[] = [
     label: 'Atendimento',
     items: [
       { icon: Kanban, label: 'Leads', path: '/leads', permissions: ['leads.view_own', 'leads.view_all'] },
+      { icon: MessageSquare, label: 'Conversas', path: '/conversas' },
       { icon: Users, label: 'Contatos', path: '/contacts', permission: 'contacts.view' },
       { icon: CheckSquare, label: 'Tarefas', path: '/tasks', permissions: ['tasks.view_own', 'tasks.view_all'] },
       { icon: CalendarDays, label: 'Agendamentos', path: '/appointments', feature: 'appointments', featureFunction: 'appointments.list', permission: 'appointments.view' },

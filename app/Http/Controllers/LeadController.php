@@ -424,4 +424,60 @@ class LeadController extends Controller
             'policy_mode' => 'fallback',
         ]);
     }
+
+    /**
+     * Busca mensagens de TODOS os tickets do lead (histórico completo).
+     * Retorna mensagens ordenadas cronologicamente com separadores de ticket.
+     */
+    public function messages(Request $request, Lead $lead): JsonResponse
+    {
+        $perPage = $request->get('per_page', 50);
+        $page = $request->get('page', 1);
+
+        // Busca todos os ticket IDs do lead, ordenados por criação
+        $ticketIds = $lead->tickets()
+            ->orderBy('created_at', 'asc')
+            ->pluck('id');
+
+        if ($ticketIds->isEmpty()) {
+            return response()->json([
+                'data' => [],
+                'tickets' => [],
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => $perPage,
+                'total' => 0,
+                'has_more' => false,
+            ]);
+        }
+
+        // Busca mensagens de todos os tickets, mais recentes primeiro (para paginação)
+        $messages = \App\Models\TicketMessage::whereIn('ticket_id', $ticketIds)
+            ->orderByDesc('sent_at')
+            ->paginate($perPage);
+
+        // Busca info dos tickets para separadores no frontend
+        $tickets = $lead->tickets()
+            ->select('id', 'lead_id', 'contact_id', 'channel_id', 'status', 'created_at', 'updated_at')
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($ticket) {
+                return [
+                    'id' => $ticket->id,
+                    'status' => $ticket->status,
+                    'created_at' => $ticket->created_at,
+                    'updated_at' => $ticket->updated_at,
+                ];
+            });
+
+        return response()->json([
+            'data' => $messages->items(),
+            'tickets' => $tickets,
+            'current_page' => $messages->currentPage(),
+            'last_page' => $messages->lastPage(),
+            'per_page' => $messages->perPage(),
+            'total' => $messages->total(),
+            'has_more' => $messages->hasMorePages(),
+        ]);
+    }
 }

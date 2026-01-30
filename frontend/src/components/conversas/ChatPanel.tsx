@@ -74,6 +74,14 @@ interface Message {
   created_at: string
   status?: 'sending' | 'sent' | 'delivered' | 'read'
   metadata?: MessageMetadata
+  ticket_id?: string
+}
+
+interface TicketInfo {
+  id: string
+  status: string
+  created_at: string
+  updated_at: string
 }
 
 const channelIcons: Record<string, typeof MessageSquare> = {
@@ -137,6 +145,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
   const [isTogglingIa, setIsTogglingIa] = useState(false)
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
+  const [ticketHistory, setTicketHistory] = useState<TicketInfo[]>([])
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false)
   const [showQuickReplies, setShowQuickReplies] = useState(false)
@@ -227,6 +236,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
   const loadMessages = async () => {
     setIsLoading(true)
     try {
+      // Busca lead para obter ticket ativo (para envio de mensagens)
       const response = await api.get(`/leads/${lead.id}`)
       const leadData = response.data
 
@@ -236,24 +246,29 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
         setTicketId(ticket.id)
         setTicketStatus(ticket.status === 'closed' ? 'closed' : 'open')
         setIaEnabled(ticket.ia_enabled !== false)
-
-        const messagesResponse = await api.get(`/tickets/${ticket.id}/messages?page=1`)
-        const rawMessages = messagesResponse.data.data || []
-
-        // Mapeia campos da API para o formato do frontend
-        const mappedMessages: Message[] = rawMessages.map((m: any) => ({
-          id: m.id,
-          content: m.message || m.content || '',
-          sender_type: m.sender_type,
-          direction: m.direction,
-          created_at: m.sent_at || m.created_at,
-          status: m.status,
-          metadata: m.metadata,
-        }))
-
-        setMessages(mappedMessages.reverse())
-        processedMessageIds.current = new Set(mappedMessages.map((m) => m.id))
       }
+
+      // Busca mensagens de TODOS os tickets do lead (histórico completo)
+      const messagesResponse = await api.get(`/leads/${lead.id}/messages?page=1&per_page=50`)
+      const { data: rawMessages, tickets } = messagesResponse.data
+
+      if (tickets) {
+        setTicketHistory(tickets)
+      }
+
+      const mappedMessages: Message[] = (rawMessages || []).map((m: any) => ({
+        id: m.id,
+        content: m.message || m.content || '',
+        sender_type: m.sender_type,
+        direction: m.direction,
+        created_at: m.sent_at || m.created_at,
+        status: m.status,
+        metadata: m.metadata,
+        ticket_id: m.ticket_id,
+      }))
+
+      setMessages(mappedMessages.reverse())
+      processedMessageIds.current = new Set(mappedMessages.map((m) => m.id))
     } catch (error) {
       console.error('Error loading messages:', error)
     } finally {
@@ -283,6 +298,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
       created_at: rawMessage.sent_at || rawMessage.created_at,
       status: rawMessage.status || 'sent',
       metadata: rawMessage.metadata,
+      ticket_id: rawMessage.ticket_id || event.ticket_id,
     }
 
     // Verifica se já processamos essa mensagem
@@ -676,7 +692,31 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
             const isFirstInGroup = prevMsg?.direction !== msg.direction
             const isLastInGroup = nextMsg?.direction !== msg.direction
 
+            // Separador de ticket: quando muda o ticket_id entre mensagens
+            const showTicketSeparator = prevMsg && msg.ticket_id && prevMsg.ticket_id && msg.ticket_id !== prevMsg.ticket_id
+            const ticketInfo = showTicketSeparator ? ticketHistory.find(t => t.id === msg.ticket_id) : null
+            const prevTicketInfo = showTicketSeparator ? ticketHistory.find(t => t.id === prevMsg?.ticket_id) : null
+            const ticketIndex = msg.ticket_id ? ticketHistory.findIndex(t => t.id === msg.ticket_id) : -1
+
             return (
+            <>
+            {showTicketSeparator && (
+              <div key={`separator-${msg.ticket_id}`} className="flex items-center gap-3 my-4 px-2">
+                <div className="flex-1 h-px bg-border" />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/80 border border-border text-xs text-muted-foreground">
+                  <RotateCcw className="w-3 h-3" />
+                  <span>
+                    {prevTicketInfo?.status === 'closed' ? 'Conversa encerrada' : 'Ticket anterior'}
+                    {' — '}
+                    Ticket #{ticketIndex + 1}
+                    {ticketInfo?.created_at && (
+                      <> · {new Date(ticketInfo.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</>
+                    )}
+                  </span>
+                </div>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            )}
             <motion.div
               key={msg.id}
               initial={{ opacity: 0, y: 10 }}
@@ -768,6 +808,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
                 )}
               </div>
             </motion.div>
+            </>
           )})
         )}
         <div ref={messagesEndRef} />

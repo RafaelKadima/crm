@@ -94,6 +94,14 @@ interface Message {
   created_at: string
   status?: 'sending' | 'sent' | 'delivered' | 'read'
   metadata?: MessageMetadata
+  ticket_id?: string
+}
+
+interface TicketInfo {
+  id: string
+  status: string
+  created_at: string
+  updated_at: string
 }
 
 const channelIcons: Record<string, typeof MessageSquare> = {
@@ -124,6 +132,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   const [hasMoreMessages, setHasMoreMessages] = useState(true)
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
+  const [ticketHistory, setTicketHistory] = useState<TicketInfo[]>([])
   const [ticketStatus, setTicketStatus] = useState<'open' | 'closed'>('open')
   const [iaEnabled, setIaEnabled] = useState(true)
   const [isTogglingIa, setIsTogglingIa] = useState(false)
@@ -248,7 +257,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       direction: data.message.direction,
       created_at: data.message.sent_at || data.message.created_at,
       status: 'delivered',
-      metadata: data.message.metadata, // Include media metadata
+      metadata: data.message.metadata,
+      ticket_id: data.message.ticket_id || data.ticket_id,
     }
     setMessages((prev) => {
       // Evita duplicatas por ID
@@ -401,10 +411,10 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
   const nextStage = getNextStage()
 
-  // Carrega mensagens com paginação (lazy load)
+  // Carrega mensagens com paginação (lazy load) - busca de TODOS os tickets do lead
   const loadMessages = async (page: number = 1, append: boolean = false) => {
     if (!lead) return
-    
+
     if (page === 1) {
       setIsLoading(true)
     } else {
@@ -412,53 +422,51 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
     }
 
     try {
-      let currentTicketId = ticketId
-
-      // SEMPRE busca o ticket na página 1 para garantir que é o ticket correto do lead atual
-      // Isso evita usar o ticketId de um lead anterior quando trocamos de conversa
-      if (!currentTicketId || page === 1) {
+      // Na página 1, busca lead para obter ticket ativo (para envio de mensagens)
+      if (page === 1) {
         const leadResponse = await api.get(`/leads/${lead.id}`)
         const leadData = leadResponse.data
-        
+
         if (leadData.tickets && leadData.tickets.length > 0) {
           const ticket = leadData.tickets[0]
-          currentTicketId = ticket.id
-          setTicketId(currentTicketId)
+          setTicketId(ticket.id)
           setTicketStatus(ticket.status === 'closed' ? 'closed' : 'open')
-          // Carrega status da IA
-          setIaEnabled(ticket.ia_enabled !== false) // Default true se não definido
+          setIaEnabled(ticket.ia_enabled !== false)
         } else {
           setTicketId(null)
-          setMessages([])
-          setHasMoreMessages(false)
-          return
+          setTicketStatus('closed')
         }
       }
-      
-      // Busca mensagens paginadas do ticket
-      const messagesResponse = await api.get(`/tickets/${currentTicketId}/messages`, {
-        params: { page, per_page: 30 }
+
+      // Busca mensagens de TODOS os tickets do lead (histórico completo)
+      const messagesResponse = await api.get(`/leads/${lead.id}/messages`, {
+        params: { page, per_page: 50 }
       })
-      
-      const { data: ticketMessages, has_more } = messagesResponse.data
-      
-      const formattedMessages = ticketMessages.map((m: any) => ({
+
+      const { data: allMessages, tickets, has_more } = messagesResponse.data
+
+      // Salva info dos tickets para separadores
+      if (page === 1 && tickets) {
+        setTicketHistory(tickets)
+      }
+
+      const formattedMessages = allMessages.map((m: any) => ({
         id: m.id,
         content: m.message,
         sender_type: m.sender_type,
         direction: m.direction,
         created_at: m.sent_at || m.created_at,
         status: 'delivered',
-        metadata: m.metadata, // Include media metadata
+        metadata: m.metadata,
+        ticket_id: m.ticket_id,
       })).reverse() // Reverte para ordem cronológica
-      
+
       if (append) {
-        // Adiciona mensagens antigas no início
         setMessages(prev => [...formattedMessages, ...prev])
       } else {
         setMessages(formattedMessages)
       }
-      
+
       setHasMoreMessages(has_more)
       setCurrentPage(page)
     } catch (error) {
@@ -1438,7 +1446,31 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       const isFirstInGroup = !isSameDirectionAsPrev
                       const isLastInGroup = !isSameDirectionAsNext
 
+                      // Separador de ticket: quando muda o ticket_id entre mensagens
+                      const showTicketSeparator = prevMsg && msg.ticket_id && prevMsg.ticket_id && msg.ticket_id !== prevMsg.ticket_id
+                      const ticketInfo = showTicketSeparator ? ticketHistory.find(t => t.id === msg.ticket_id) : null
+                      const prevTicketInfo = showTicketSeparator ? ticketHistory.find(t => t.id === prevMsg?.ticket_id) : null
+                      const ticketIndex = msg.ticket_id ? ticketHistory.findIndex(t => t.id === msg.ticket_id) : -1
+
                       return (
+                      <>
+                      {showTicketSeparator && (
+                        <div key={`separator-${msg.ticket_id}`} className="flex items-center gap-3 my-4 px-2">
+                          <div className="flex-1 h-px bg-border" />
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/80 border border-border text-xs text-muted-foreground">
+                            <RotateCcw className="w-3 h-3" />
+                            <span>
+                              {prevTicketInfo?.status === 'closed' ? 'Conversa encerrada' : 'Ticket anterior'}
+                              {' — '}
+                              Ticket #{ticketIndex + 1}
+                              {ticketInfo?.created_at && (
+                                <> · {new Date(ticketInfo.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex-1 h-px bg-border" />
+                        </div>
+                      )}
                       <motion.div
                         key={msg.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -1557,6 +1589,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                           )}
                         </div>
                       </motion.div>
+                      </>
                     )})}
                     <div ref={messagesEndRef} />
                   </>

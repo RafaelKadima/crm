@@ -175,6 +175,9 @@ Route::middleware('auth:api')->group(function () {
             Route::put('{lead}/stage', [LeadController::class, 'updateStage']);
             Route::put('{lead}/assign', [LeadController::class, 'assign']);
 
+            // Mensagens de todos os tickets do lead (histórico completo)
+            Route::get('{lead}/messages', [LeadController::class, 'messages']);
+
             // MCP - Lead Score e Sugestão de Ação
             Route::get('{lead}/score', [LeadController::class, 'getScore']);
             Route::post('{lead}/suggest-action', [LeadController::class, 'suggestAction']);
