@@ -68,7 +68,7 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   //   return <Navigate to="/" replace />
   // }
 
-  return <div className="h-screen overflow-y-auto">{children}</div>
+  return <div className="fixed inset-0 overflow-y-auto">{children}</div>
 }
 
 function AppRoutes() {
