@@ -58,17 +58,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuthStore()
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
-  
+
   // TODO: Verificar se é super admin
   // if (!user?.is_super_admin) {
   //   return <Navigate to="/" replace />
   // }
-  
-  return <>{children}</>
+
+  return <div className="h-screen overflow-y-auto">{children}</div>
 }
 
 function AppRoutes() {
