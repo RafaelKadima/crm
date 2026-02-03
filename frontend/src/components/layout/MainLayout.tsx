@@ -9,7 +9,7 @@ export function MainLayout() {
   const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       <Sidebar />
       <Header />
 
