@@ -199,27 +199,73 @@ class MetaOAuthService
             ->get("https://graph.facebook.com/{$this->apiVersion}/me/businesses");
 
         if (!$businessesResponse->successful()) {
+            Log::error('Failed to fetch businesses', [
+                'response' => $businessesResponse->json(),
+            ]);
             throw new \Exception('Failed to fetch businesses: ' . ($businessesResponse->json()['error']['message'] ?? 'Unknown error'));
         }
 
         $businesses = $businessesResponse->json()['data'] ?? [];
 
+        Log::info('Discovered businesses', [
+            'count' => count($businesses),
+            'businesses' => collect($businesses)->pluck('id', 'name')->toArray(),
+        ]);
+
         if (empty($businesses)) {
             throw new \Exception('No businesses found for this account');
         }
 
-        // Usa o primeiro business (ou pode implementar seleção)
-        $businessId = $businesses[0]['id'];
+        // Tenta encontrar WABAs em todos os businesses
+        $wabas = [];
+        $businessId = null;
 
-        // 2. Busca as WABAs do business
-        $wabasResponse = Http::withToken($accessToken)
-            ->get("https://graph.facebook.com/{$this->apiVersion}/{$businessId}/owned_whatsapp_business_accounts");
+        foreach ($businesses as $business) {
+            $bId = $business['id'];
 
-        if (!$wabasResponse->successful()) {
-            throw new \Exception('Failed to fetch WABAs: ' . ($wabasResponse->json()['error']['message'] ?? 'Unknown error'));
+            // Tenta owned_whatsapp_business_accounts
+            $wabasResponse = Http::withToken($accessToken)
+                ->get("https://graph.facebook.com/{$this->apiVersion}/{$bId}/owned_whatsapp_business_accounts");
+
+            $ownedWabas = $wabasResponse->successful() ? ($wabasResponse->json()['data'] ?? []) : [];
+
+            Log::info("Business {$bId} owned WABAs", ['count' => count($ownedWabas)]);
+
+            if (!empty($ownedWabas)) {
+                $wabas = $ownedWabas;
+                $businessId = $bId;
+                break;
+            }
+
+            // Fallback: tenta client_whatsapp_business_accounts (para Embedded Signup)
+            $clientWabasResponse = Http::withToken($accessToken)
+                ->get("https://graph.facebook.com/{$this->apiVersion}/{$bId}/client_whatsapp_business_accounts");
+
+            $clientWabas = $clientWabasResponse->successful() ? ($clientWabasResponse->json()['data'] ?? []) : [];
+
+            Log::info("Business {$bId} client WABAs", ['count' => count($clientWabas)]);
+
+            if (!empty($clientWabas)) {
+                $wabas = $clientWabas;
+                $businessId = $bId;
+                break;
+            }
         }
 
-        $wabas = $wabasResponse->json()['data'] ?? [];
+        // Último fallback: tenta via /me/whatsapp_business_accounts (permissão direta)
+        if (empty($wabas)) {
+            Log::info('Trying /me/whatsapp_business_accounts as last resort');
+
+            $directWabasResponse = Http::withToken($accessToken)
+                ->get("https://graph.facebook.com/{$this->apiVersion}/me/whatsapp_business_accounts");
+
+            if ($directWabasResponse->successful()) {
+                $wabas = $directWabasResponse->json()['data'] ?? [];
+                $businessId = $businesses[0]['id'] ?? null;
+
+                Log::info('Direct WABAs found', ['count' => count($wabas)]);
+            }
+        }
 
         if (empty($wabas)) {
             throw new \Exception('No WhatsApp Business Accounts found');
