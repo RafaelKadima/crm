@@ -198,6 +198,7 @@ export function useFacebookSDK(appId: string, version = 'v21.0') {
 export function useMetaEmbeddedSignup() {
   const queryClient = useQueryClient()
   const [sessionInfo, setSessionInfo] = useState<SessionInfoData | null>(null)
+  const sessionInfoRef = useRef<SessionInfoData | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
   // Mutation para enviar dados para o backend
@@ -219,6 +220,7 @@ export function useMetaEmbeddedSignup() {
       queryClient.invalidateQueries({ queryKey: ['meta-status'] })
       toast.success(data.message || 'WhatsApp conectado com sucesso!')
       setSessionInfo(null)
+      sessionInfoRef.current = null
     },
     onError: (error: any) => {
       toast.error(
@@ -245,7 +247,8 @@ export function useMetaEmbeddedSignup() {
       if (event.data?.type === 'WA_EMBEDDED_SIGNUP') {
         const data = event.data.data as SessionInfoData
         setSessionInfo(data)
-        console.log('Embedded Signup sessionInfo received:', data)
+        sessionInfoRef.current = data
+        console.log('[EmbeddedSignup] sessionInfo received:', JSON.stringify(data))
       }
     }
 
@@ -273,6 +276,8 @@ export function useMetaEmbeddedSignup() {
       }
 
       setIsProcessing(true)
+      // Limpa sessionInfo anterior
+      sessionInfoRef.current = null
 
       try {
         const loginOptions = {
@@ -290,24 +295,25 @@ export function useMetaEmbeddedSignup() {
 
         window.FB.login(
           (response: FBLoginResponse) => {
+            // Usa ref para pegar o valor mais recente do sessionInfo
+            const currentSessionInfo = sessionInfoRef.current
             console.log('[EmbeddedSignup] FB.login response:', JSON.stringify(response))
+            console.log('[EmbeddedSignup] sessionInfo at callback:', JSON.stringify(currentSessionInfo))
 
             if (response.authResponse) {
               if (response.authResponse.accessToken) {
-                // Embedded Signup retorna accessToken diretamente via SDK
-                console.log('[EmbeddedSignup] Got accessToken, sending to backend...')
+                console.log('[EmbeddedSignup] Got accessToken, sending to backend with sessionInfo...')
                 processSignupMutation.mutate({
                   access_token: response.authResponse.accessToken,
-                  waba_id: sessionInfo?.waba_id,
-                  phone_number_id: sessionInfo?.phone_number_id,
+                  waba_id: currentSessionInfo?.waba_id,
+                  phone_number_id: currentSessionInfo?.phone_number_id,
                 })
               } else if (response.authResponse.code) {
-                // Fallback: code direto no authResponse
                 console.log('[EmbeddedSignup] Got code, sending to backend...')
                 processSignupMutation.mutate({
                   code: response.authResponse.code,
-                  waba_id: sessionInfo?.waba_id,
-                  phone_number_id: sessionInfo?.phone_number_id,
+                  waba_id: currentSessionInfo?.waba_id,
+                  phone_number_id: currentSessionInfo?.phone_number_id,
                 })
               } else {
                 setIsProcessing(false)
@@ -333,7 +339,7 @@ export function useMetaEmbeddedSignup() {
         toast.error('Erro ao abrir popup do Facebook')
       }
     },
-    [processSignupMutation, sessionInfo]
+    [processSignupMutation]
   )
 
   return {
