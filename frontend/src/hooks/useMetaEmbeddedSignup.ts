@@ -273,10 +273,26 @@ export function useMetaEmbeddedSignup() {
       setIsProcessing(true)
 
       try {
+        const loginOptions = {
+          config_id: config.configId,
+          response_type: 'code',
+          override_default_response_type: true,
+          extras: {
+            setup: {},
+            featureType: '',
+            sessionInfoVersion: '3',
+          },
+        }
+
+        console.log('[EmbeddedSignup] Calling FB.login with options:', JSON.stringify(loginOptions))
+
         window.FB.login(
           (response: FBLoginResponse) => {
+            console.log('[EmbeddedSignup] FB.login response:', JSON.stringify(response))
+
             if (response.authResponse?.code) {
               // Sucesso - envia para o backend
+              console.log('[EmbeddedSignup] Got code, sending to backend...')
               processSignupMutation.mutate({
                 code: response.authResponse.code,
                 waba_id: sessionInfo?.waba_id,
@@ -286,21 +302,14 @@ export function useMetaEmbeddedSignup() {
               // Usuário cancelou ou erro
               setIsProcessing(false)
               if (response.status === 'unknown') {
-                console.log('User closed the login popup')
+                console.log('[EmbeddedSignup] User closed the login popup')
               } else {
-                toast.error('Falha na autenticacao com o Facebook')
+                console.error('[EmbeddedSignup] Login failed with status:', response.status)
+                toast.error('Falha na autenticacao com o Facebook. Verifique o console para mais detalhes.')
               }
             }
           },
-          {
-            config_id: config.configId,
-            response_type: 'code',
-            override_default_response_type: true,
-            extras: {
-              sessionInfoVersion: '3',
-              version: 'v3',
-            },
-          }
+          loginOptions
         )
       } catch (e) {
         console.error('Error calling FB.login:', e)
