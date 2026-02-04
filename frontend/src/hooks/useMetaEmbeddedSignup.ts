@@ -298,7 +298,7 @@ export function useMetaEmbeddedSignup() {
             override_default_response_type: true,
             extras: {
               sessionInfoVersion: '3',
-              version: '2',
+              version: 'v3',
             },
           }
         )
