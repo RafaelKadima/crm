@@ -15,6 +15,7 @@ export interface MetaIntegration {
   status_color: string
   expires_at: string | null
   days_until_expiration: number | null
+  is_coexistence: boolean
   is_expiring_soon: boolean
   needs_reauth: boolean
   scopes: string[] | null

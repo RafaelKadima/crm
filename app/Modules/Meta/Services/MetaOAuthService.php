@@ -421,7 +421,8 @@ class MetaOAuthService
         string $tenantId,
         string $code,
         ?string $wabaId = null,
-        ?string $phoneNumberId = null
+        ?string $phoneNumberId = null,
+        bool $isCoexistence = false
     ): MetaIntegration {
         Log::info('Processing Embedded Signup', [
             'tenant_id' => $tenantId,
@@ -475,11 +476,13 @@ class MetaOAuthService
                 'access_token' => $accessToken,
                 'expires_at' => $expiresAt,
                 'status' => MetaIntegrationStatusEnum::ACTIVE,
+                'is_coexistence' => $isCoexistence,
                 'scopes' => $this->scopes,
                 'metadata' => [
                     'connected_at' => now()->toIso8601String(),
                     'app_id' => $this->appId,
-                    'signup_method' => 'embedded',
+                    'signup_method' => $isCoexistence ? 'embedded_coexistence' : 'embedded',
+                    'is_coexistence' => $isCoexistence,
                 ],
             ]
         );
@@ -489,6 +492,7 @@ class MetaOAuthService
             'integration_id' => $integration->id,
             'phone_number_id' => $phoneNumberId,
             'display_phone_number' => $displayPhoneNumber,
+            'is_coexistence' => $isCoexistence,
         ]);
 
         return $integration;
@@ -501,7 +505,8 @@ class MetaOAuthService
         string $tenantId,
         string $accessToken,
         ?string $wabaId = null,
-        ?string $phoneNumberId = null
+        ?string $phoneNumberId = null,
+        bool $isCoexistence = false
     ): MetaIntegration {
         Log::info('Processing Embedded Signup with direct access_token', [
             'tenant_id' => $tenantId,
@@ -559,11 +564,13 @@ class MetaOAuthService
                 'access_token' => $accessToken,
                 'expires_at' => $expiresAt,
                 'status' => MetaIntegrationStatusEnum::ACTIVE,
+                'is_coexistence' => $isCoexistence,
                 'scopes' => $this->scopes,
                 'metadata' => [
                     'connected_at' => now()->toIso8601String(),
                     'app_id' => $this->appId,
-                    'signup_method' => 'embedded_direct_token',
+                    'signup_method' => $isCoexistence ? 'embedded_coexistence' : 'embedded_direct_token',
+                    'is_coexistence' => $isCoexistence,
                 ],
             ]
         );
@@ -574,6 +581,7 @@ class MetaOAuthService
             'waba_id' => $wabaId,
             'phone_number_id' => $phoneNumberId,
             'display_phone_number' => $displayPhoneNumber,
+            'is_coexistence' => $isCoexistence,
         ]);
 
         return $integration;

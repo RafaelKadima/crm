@@ -14,6 +14,8 @@ import {
   Shield,
   Plus,
   Settings,
+  Smartphone,
+  Info,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -29,6 +31,7 @@ import {
   useMetaEmbeddedSignup,
 } from '@/hooks/useMetaEmbeddedSignup'
 import { Badge } from '@/components/ui/Badge'
+import { Switch } from '@/components/ui/Switch'
 import { WhatsAppProfileEditor } from './WhatsAppProfileEditor'
 
 export function MetaWhatsAppCard() {
@@ -40,6 +43,7 @@ export function MetaWhatsAppCard() {
 
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null)
   const [editProfileId, setEditProfileId] = useState<string | null>(null)
+  const [coexistenceMode, setCoexistenceMode] = useState(false)
 
   // Embedded Signup - carrega SDK se configurado
   const appId = status?.app_id || ''
@@ -55,6 +59,7 @@ export function MetaWhatsAppCard() {
       startEmbeddedSignup({
         appId,
         configId,
+        featureType: coexistenceMode ? 'whatsapp_business_app_onboarding' : '',
       })
     } else {
       // Fallback para OAuth redirect
@@ -196,6 +201,12 @@ export function MetaWhatsAppCard() {
                             {integration.display_phone_number || integration.phone_number_id}
                           </span>
                           {getStatusBadge(integration)}
+                          {integration.is_coexistence && (
+                            <Badge variant="outline" className="flex items-center gap-1 text-blue-400 border-blue-400/30">
+                              <Smartphone className="w-3 h-3" />
+                              Coexistencia
+                            </Badge>
+                          )}
                         </div>
                         {integration.verified_name && (
                           <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -270,6 +281,39 @@ export function MetaWhatsAppCard() {
               </div>
             )}
 
+            {/* Toggle Coexistencia */}
+            {isEmbeddedSignupConfigured && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm font-medium">Modo Coexistencia</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 ml-6">
+                      Conecte um numero ja em uso no WhatsApp Business App mantendo o App funcionando
+                    </p>
+                  </div>
+                  <Switch
+                    checked={coexistenceMode}
+                    onCheckedChange={setCoexistenceMode}
+                  />
+                </div>
+                {coexistenceMode && (
+                  <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-blue-300 space-y-1">
+                        <p>O numero deve estar em uso no WhatsApp Business App ha pelo menos 7 dias.</p>
+                        <p>Mensagens enviadas pelo App serao sincronizadas com o CRM automaticamente.</p>
+                        <p>Selo azul (OBA) nao e suportado no modo coexistencia.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Botao conectar */}
             <button
               onClick={handleConnect}
@@ -286,12 +330,21 @@ export function MetaWhatsAppCard() {
                   {hasIntegrations ? (
                     <>
                       <Plus className="w-5 h-5" />
-                      Adicionar outro numero
+                      {coexistenceMode ? 'Adicionar numero existente' : 'Adicionar outro numero'}
                     </>
                   ) : (
                     <>
-                      <MessageSquare className="w-5 h-5" />
-                      Conectar WhatsApp
+                      {coexistenceMode ? (
+                        <>
+                          <Smartphone className="w-5 h-5" />
+                          Conectar numero existente
+                        </>
+                      ) : (
+                        <>
+                          <MessageSquare className="w-5 h-5" />
+                          Conectar WhatsApp
+                        </>
+                      )}
                     </>
                   )}
                 </>

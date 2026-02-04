@@ -112,6 +112,7 @@ class MetaAuthController extends Controller
                 'verified_name',
                 'expires_at',
                 'status',
+                'is_coexistence',
                 'created_at',
                 'updated_at',
             ])
@@ -128,6 +129,7 @@ class MetaAuthController extends Controller
                     'status' => $integration->status->value,
                     'status_label' => $integration->status->label(),
                     'status_color' => $integration->status->color(),
+                    'is_coexistence' => $integration->is_coexistence ?? false,
                     'expires_at' => $integration->expires_at?->toIso8601String(),
                     'days_until_expiration' => $integration->daysUntilExpiration(),
                     'is_expiring_soon' => $integration->isExpiringSoon(),
@@ -170,6 +172,7 @@ class MetaAuthController extends Controller
                 'days_until_expiration' => $integration->daysUntilExpiration(),
                 'is_expiring_soon' => $integration->isExpiringSoon(),
                 'needs_reauth' => $integration->needsReauth(),
+                'is_coexistence' => $integration->is_coexistence ?? false,
                 'scopes' => $integration->scopes,
                 'metadata' => $integration->metadata,
                 'token_info' => $tokenInfo,
@@ -328,6 +331,7 @@ class MetaAuthController extends Controller
             'access_token' => 'nullable|string',
             'waba_id' => 'nullable|string',
             'phone_number_id' => 'nullable|string',
+            'is_coexistence' => 'nullable|boolean',
         ]);
 
         if (!$request->get('code') && !$request->get('access_token')) {
@@ -347,20 +351,24 @@ class MetaAuthController extends Controller
         try {
             $tenantId = auth()->user()->tenant_id;
 
+            $isCoexistence = $request->boolean('is_coexistence', false);
+
             if ($request->get('access_token')) {
                 // Access token recebido diretamente do Facebook SDK
                 $integration = $this->oauthService->processEmbeddedSignupWithToken(
                     tenantId: $tenantId,
                     accessToken: $request->get('access_token'),
                     wabaId: $request->get('waba_id'),
-                    phoneNumberId: $request->get('phone_number_id')
+                    phoneNumberId: $request->get('phone_number_id'),
+                    isCoexistence: $isCoexistence
                 );
             } else {
                 $integration = $this->oauthService->processEmbeddedSignup(
                     tenantId: $tenantId,
                     code: $request->get('code'),
                     wabaId: $request->get('waba_id'),
-                    phoneNumberId: $request->get('phone_number_id')
+                    phoneNumberId: $request->get('phone_number_id'),
+                    isCoexistence: $isCoexistence
                 );
             }
 
@@ -417,6 +425,7 @@ class MetaAuthController extends Controller
                     'display_phone_number' => $integration->display_phone_number,
                     'verified_name' => $integration->verified_name,
                     'status' => $integration->status->value,
+                    'is_coexistence' => $integration->is_coexistence ?? false,
                     'expires_at' => $integration->expires_at?->toIso8601String(),
                     'channel' => $channel ? [
                         'id' => $channel->id,

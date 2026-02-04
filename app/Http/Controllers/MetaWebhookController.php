@@ -111,6 +111,11 @@ class MetaWebhookController extends Controller
         $metaIntegration = MetaIntegration::findActiveByPhoneNumberId($phoneNumberId);
 
         if ($metaIntegration) {
+            // Verificar se é echo de coexistence antes de processar
+            if ($metaIntegration->is_coexistence && $this->isCoexistenceEcho($payload)) {
+                return $this->processCoexistenceEcho($payload, $metaIntegration);
+            }
+
             return $this->processWithMetaIntegration($payload, $metaIntegration);
         }
 
@@ -127,6 +132,70 @@ class MetaWebhookController extends Controller
         $this->whatsAppService->processIncomingWebhook($payload, $channel);
 
         return response()->json(['status' => 'success', 'platform' => 'whatsapp']);
+    }
+
+    /**
+     * Verifica se a mensagem é um echo de coexistence.
+     * Em modo coexistence, mensagens enviadas pelo WhatsApp Business App
+     * são ecoadas via webhook. Detectamos comparando o remetente com o
+     * display_phone_number do business (mensagem originada do próprio número).
+     */
+    protected function isCoexistenceEcho(array $payload): bool
+    {
+        $value = $payload['entry'][0]['changes'][0]['value'] ?? [];
+        $messages = $value['messages'] ?? [];
+        $metadata = $value['metadata'] ?? [];
+        $displayPhoneNumber = $metadata['display_phone_number'] ?? null;
+
+        if (!$displayPhoneNumber || empty($messages)) {
+            return false;
+        }
+
+        // Normaliza o display_phone_number removendo caracteres não numéricos
+        $normalizedBusiness = preg_replace('/\D/', '', $displayPhoneNumber);
+
+        foreach ($messages as $message) {
+            $from = preg_replace('/\D/', '', $message['from'] ?? '');
+            if ($from === $normalizedBusiness) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Processa echo de coexistence: salva como mensagem outgoing no ticket.
+     * Mensagens enviadas pelo operador via WhatsApp Business App são salvas
+     * com direction = 'outgoing' para manter visibilidade completa da conversa.
+     */
+    protected function processCoexistenceEcho(array $payload, MetaIntegration $integration): JsonResponse
+    {
+        Log::info('WhatsApp webhook: processing coexistence echo', [
+            'integration_id' => $integration->id,
+            'tenant_id' => $integration->tenant_id,
+        ]);
+
+        // Encontra o Channel vinculado
+        $channel = Channel::withoutGlobalScopes()
+            ->where('tenant_id', $integration->tenant_id)
+            ->where('type', ChannelTypeEnum::WHATSAPP)
+            ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
+            ->first();
+
+        if ($channel) {
+            $this->whatsAppService->processCoexistenceEcho($payload, $channel);
+        } else {
+            Log::warning('WhatsApp webhook: coexistence echo but no Channel found', [
+                'integration_id' => $integration->id,
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'platform' => 'whatsapp',
+            'source' => 'coexistence_echo',
+        ]);
     }
 
     /**

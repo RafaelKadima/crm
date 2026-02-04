@@ -638,6 +638,113 @@ class WhatsAppService implements WhatsAppProviderInterface
     }
 
     /**
+     * Processa echo de coexistence: mensagens enviadas pelo WhatsApp Business App
+     * são salvas como mensagens outgoing no ticket existente.
+     * Não cria ticket novo, não aciona AI agent.
+     */
+    public function processCoexistenceEcho(array $payload, Channel $channel): ?TicketMessage
+    {
+        $entry = $payload['entry'][0] ?? null;
+        if (!$entry) return null;
+
+        $changes = $entry['changes'][0] ?? null;
+        if (!$changes || $changes['field'] !== 'messages') return null;
+
+        $value = $changes['value'] ?? null;
+        if (!$value) return null;
+
+        // Status updates não são echoes
+        if (isset($value['statuses'])) {
+            $this->processStatusUpdate($value['statuses'][0]);
+            return null;
+        }
+
+        $message = $value['messages'][0] ?? null;
+        if (!$message) return null;
+
+        $messageType = $message['type'];
+        $messageId = $message['id'];
+
+        // Ignora reactions em echoes
+        if ($messageType === 'reaction') {
+            return null;
+        }
+
+        // O echo veio do próprio número do business, mas precisamos encontrar
+        // o contato destinatário. Em echoes, o 'to' contém o destinatário
+        // ou precisamos usar o contexto do ticket mais recente.
+        // Na prática, o webhook do echo tem o 'contacts' com o destinatário.
+        $contactInfo = $value['contacts'][0] ?? null;
+        $recipientPhone = $contactInfo['wa_id'] ?? ($message['to'] ?? null);
+
+        if (!$recipientPhone) {
+            Log::warning('Coexistence echo: no recipient phone found', [
+                'message_id' => $messageId,
+            ]);
+            return null;
+        }
+
+        // Encontra o contato destinatário
+        $formattedPhone = $this->formatPhoneNumber($recipientPhone);
+        $contact = Contact::where('tenant_id', $channel->tenant_id)
+            ->where('phone', $formattedPhone)
+            ->first();
+
+        if (!$contact) {
+            Log::info('Coexistence echo: contact not found, skipping', [
+                'phone' => $formattedPhone,
+            ]);
+            return null;
+        }
+
+        // Encontra ticket aberto para o contato
+        $ticket = Ticket::where('tenant_id', $channel->tenant_id)
+            ->where('contact_id', $contact->id)
+            ->where('channel_id', $channel->id)
+            ->whereNotIn('status', [TicketStatusEnum::CLOSED])
+            ->first();
+
+        if (!$ticket) {
+            Log::info('Coexistence echo: no open ticket found, skipping', [
+                'contact_id' => $contact->id,
+            ]);
+            return null;
+        }
+
+        // Extrai conteúdo da mensagem
+        $content = $this->extractMessageContent($message);
+        $metadata = $this->extractMediaMetadata($message, $channel) ?? [];
+        $metadata['whatsapp_message_id'] = $messageId;
+        $metadata['coexistence_echo'] = true;
+
+        // Salva como mensagem outgoing (enviada pelo operador via App)
+        $ticketMessage = TicketMessage::create([
+            'tenant_id' => $channel->tenant_id,
+            'ticket_id' => $ticket->id,
+            'sender_type' => SenderTypeEnum::USER,
+            'sender_id' => null,
+            'direction' => MessageDirectionEnum::OUTBOUND,
+            'message' => $content,
+            'metadata' => $metadata,
+            'sent_at' => now(),
+        ]);
+
+        // Atualiza ticket
+        $ticket->update(['updated_at' => now()]);
+
+        // Broadcast para frontend em tempo real
+        event(new TicketMessageCreated($ticketMessage, $ticket));
+
+        Log::info('Coexistence echo saved as outgoing message', [
+            'ticket_id' => $ticket->id,
+            'message_id' => $ticketMessage->id,
+            'contact_id' => $contact->id,
+        ]);
+
+        return $ticketMessage;
+    }
+
+    /**
      * Encontra ou cria contato
      */
     protected function findOrCreateContact(Channel $channel, string $phone, ?array $contactInfo): Contact

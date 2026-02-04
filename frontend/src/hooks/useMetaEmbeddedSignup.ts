@@ -50,12 +50,15 @@ interface FBLoginOptions {
 interface SessionInfoData {
   waba_id?: string
   phone_number_id?: string
+  is_coexistence?: boolean
+  is_wa_login_user?: boolean
 }
 
 interface EmbeddedSignupConfig {
   appId: string
   configId: string
   version?: string
+  featureType?: 'whatsapp_business_app_onboarding' | ''
 }
 
 interface EmbeddedSignupResponse {
@@ -208,6 +211,7 @@ export function useMetaEmbeddedSignup() {
       access_token?: string
       waba_id?: string
       phone_number_id?: string
+      is_coexistence?: boolean
     }) => {
       const response = await api.post<EmbeddedSignupResponse>(
         '/meta/embedded-signup',
@@ -245,10 +249,18 @@ export function useMetaEmbeddedSignup() {
 
       // Processa mensagens do Embedded Signup
       if (event.data?.type === 'WA_EMBEDDED_SIGNUP') {
+        const eventName = event.data.event as string
         const data = event.data.data as SessionInfoData
-        setSessionInfo(data)
-        sessionInfoRef.current = data
-        console.log('[EmbeddedSignup] sessionInfo received:', JSON.stringify(data))
+
+        // Detectar se é coexistence (número do WhatsApp Business App)
+        const isCoexistence =
+          eventName === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING' ||
+          (eventName === 'FINISH' && data.is_wa_login_user === true)
+
+        const enrichedData = { ...data, is_coexistence: isCoexistence }
+        setSessionInfo(enrichedData)
+        sessionInfoRef.current = enrichedData
+        console.log('[EmbeddedSignup] sessionInfo received:', JSON.stringify(enrichedData), 'event:', eventName, 'coexistence:', isCoexistence)
       }
     }
 
@@ -286,7 +298,7 @@ export function useMetaEmbeddedSignup() {
           override_default_response_type: true,
           extras: {
             setup: {},
-            featureType: '',
+            featureType: config.featureType || '',
             sessionInfoVersion: '3',
           },
         }
@@ -307,6 +319,7 @@ export function useMetaEmbeddedSignup() {
                   access_token: response.authResponse.accessToken,
                   waba_id: currentSessionInfo?.waba_id,
                   phone_number_id: currentSessionInfo?.phone_number_id,
+                  is_coexistence: currentSessionInfo?.is_coexistence || false,
                 })
               } else if (response.authResponse.code) {
                 console.log('[EmbeddedSignup] Got code, sending to backend...')
@@ -314,6 +327,7 @@ export function useMetaEmbeddedSignup() {
                   code: response.authResponse.code,
                   waba_id: currentSessionInfo?.waba_id,
                   phone_number_id: currentSessionInfo?.phone_number_id,
+                  is_coexistence: currentSessionInfo?.is_coexistence || false,
                 })
               } else {
                 setIsProcessing(false)
@@ -360,7 +374,7 @@ export function useMetaEmbeddedSignupWithSDK(appId: string, configId: string) {
     error: signupError,
   } = useMetaEmbeddedSignup()
 
-  const handleConnect = useCallback(() => {
+  const handleConnect = useCallback((featureType?: 'whatsapp_business_app_onboarding' | '') => {
     if (!isSDKLoaded) {
       toast.error('Aguarde o carregamento do Facebook SDK')
       return
@@ -369,6 +383,7 @@ export function useMetaEmbeddedSignupWithSDK(appId: string, configId: string) {
     startEmbeddedSignup({
       appId,
       configId,
+      featureType: featureType || '',
     })
   }, [isSDKLoaded, startEmbeddedSignup, appId, configId])
 

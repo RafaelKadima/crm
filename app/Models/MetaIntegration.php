@@ -29,6 +29,7 @@ class MetaIntegration extends Model
         'access_token',
         'expires_at',
         'status',
+        'is_coexistence',
         'scopes',
         'metadata',
     ];
@@ -53,6 +54,7 @@ class MetaIntegration extends Model
             'access_token' => 'encrypted',
             'expires_at' => 'datetime',
             'status' => MetaIntegrationStatusEnum::class,
+            'is_coexistence' => 'boolean',
             'scopes' => 'array',
             'metadata' => 'array',
         ];
@@ -172,6 +174,14 @@ class MetaIntegration extends Model
     {
         return $query->where('status', MetaIntegrationStatusEnum::ACTIVE)
             ->where('expires_at', '<=', Carbon::now()->addDays($daysThreshold));
+    }
+
+    /**
+     * Scope para integrações em modo coexistence.
+     */
+    public function scopeCoexistence($query)
+    {
+        return $query->where('is_coexistence', true);
     }
 
     /**
