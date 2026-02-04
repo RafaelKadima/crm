@@ -278,14 +278,45 @@ class MetaOAuthService
         $phonesResponse = Http::withToken($accessToken)
             ->get("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}/phone_numbers");
 
+        Log::info("WABA {$wabaId} phone_numbers response", [
+            'status' => $phonesResponse->status(),
+            'body' => $phonesResponse->json(),
+        ]);
+
         if (!$phonesResponse->successful()) {
-            throw new \Exception('Failed to fetch phone numbers: ' . ($phonesResponse->json()['error']['message'] ?? 'Unknown error'));
+            Log::warning("Failed to fetch phone numbers, trying WABA details", [
+                'waba_id' => $wabaId,
+                'error' => $phonesResponse->json(),
+            ]);
         }
 
-        $phones = $phonesResponse->json()['data'] ?? [];
+        $phones = $phonesResponse->successful() ? ($phonesResponse->json()['data'] ?? []) : [];
 
         if (empty($phones)) {
-            throw new \Exception('No phone numbers found in WABA');
+            // Tenta buscar info da WABA diretamente para ver se tem phone_number_id
+            $wabaInfoResponse = Http::withToken($accessToken)
+                ->get("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}", [
+                    'fields' => 'id,name,phone_numbers,on_behalf_of_business_info,owner_business_info',
+                ]);
+
+            Log::info("WABA {$wabaId} info response", [
+                'status' => $wabaInfoResponse->status(),
+                'body' => $wabaInfoResponse->json(),
+            ]);
+
+            // Retorna WABA sem phone number - será preenchido depois
+            Log::warning('No phone numbers found in WABA, creating integration without phone', [
+                'waba_id' => $wabaId,
+                'business_id' => $businessId,
+            ]);
+
+            return [
+                'business_id' => $businessId,
+                'waba_id' => $wabaId,
+                'phone_number_id' => null,
+                'display_phone_number' => null,
+                'verified_name' => $wabaInfoResponse->json()['name'] ?? null,
+            ];
         }
 
         // Usa o primeiro phone number
@@ -510,14 +541,19 @@ class MetaOAuthService
         }
 
         // Cria ou atualiza a integração
+        $matchCriteria = ['tenant_id' => $tenantId];
+        if ($phoneNumberId) {
+            $matchCriteria['phone_number_id'] = $phoneNumberId;
+        } else {
+            $matchCriteria['waba_id'] = $wabaId;
+        }
+
         $integration = MetaIntegration::withoutGlobalScopes()->updateOrCreate(
-            [
-                'tenant_id' => $tenantId,
-                'phone_number_id' => $phoneNumberId,
-            ],
+            $matchCriteria,
             [
                 'business_id' => $businessId,
                 'waba_id' => $wabaId,
+                'phone_number_id' => $phoneNumberId,
                 'display_phone_number' => $displayPhoneNumber,
                 'verified_name' => $verifiedName,
                 'access_token' => $accessToken,
@@ -535,6 +571,7 @@ class MetaOAuthService
         Log::info('Meta Embedded Signup (direct token) integration created/updated', [
             'tenant_id' => $tenantId,
             'integration_id' => $integration->id,
+            'waba_id' => $wabaId,
             'phone_number_id' => $phoneNumberId,
             'display_phone_number' => $displayPhoneNumber,
         ]);

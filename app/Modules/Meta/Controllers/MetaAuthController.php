@@ -364,39 +364,47 @@ class MetaAuthController extends Controller
                 );
             }
 
-            // Auto-criar Channel se ainda não existir para este phone_number_id
-            $channel = Channel::withoutGlobalScopes()
-                ->where('tenant_id', $tenantId)
-                ->where('type', 'whatsapp')
-                ->where('provider_type', 'meta')
-                ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
-                ->first();
+            // Auto-criar Channel se temos phone_number_id
+            $channel = null;
+            if ($integration->phone_number_id) {
+                $channel = Channel::withoutGlobalScopes()
+                    ->where('tenant_id', $tenantId)
+                    ->where('type', 'whatsapp')
+                    ->where('provider_type', 'meta')
+                    ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
+                    ->first();
 
-            if (!$channel) {
-                $channelName = $integration->verified_name
-                    ? "WhatsApp - {$integration->verified_name}"
-                    : "WhatsApp - {$integration->display_phone_number}";
+                if (!$channel) {
+                    $channelName = $integration->verified_name
+                        ? "WhatsApp - {$integration->verified_name}"
+                        : "WhatsApp - {$integration->display_phone_number}";
 
-                $channel = Channel::create([
-                    'tenant_id' => $tenantId,
-                    'name' => $channelName,
-                    'type' => 'whatsapp',
-                    'provider_type' => 'meta',
-                    'identifier' => $integration->display_phone_number ?? $integration->phone_number_id,
-                    'config' => [
-                        'phone_number_id' => $integration->phone_number_id,
-                        'waba_id' => $integration->waba_id,
-                        'access_token' => $integration->access_token,
-                        'business_account_id' => $integration->business_id,
-                    ],
-                    'is_active' => true,
-                    'ia_mode' => 'none',
-                ]);
+                    $channel = Channel::create([
+                        'tenant_id' => $tenantId,
+                        'name' => $channelName,
+                        'type' => 'whatsapp',
+                        'provider_type' => 'meta',
+                        'identifier' => $integration->display_phone_number ?? $integration->phone_number_id,
+                        'config' => [
+                            'phone_number_id' => $integration->phone_number_id,
+                            'waba_id' => $integration->waba_id,
+                            'access_token' => $integration->access_token,
+                            'business_account_id' => $integration->business_id,
+                        ],
+                        'is_active' => true,
+                        'ia_mode' => 'none',
+                    ]);
 
-                Log::info('Channel auto-created from Embedded Signup', [
-                    'channel_id' => $channel->id,
+                    Log::info('Channel auto-created from Embedded Signup', [
+                        'channel_id' => $channel->id,
+                        'integration_id' => $integration->id,
+                        'tenant_id' => $tenantId,
+                    ]);
+                }
+            } else {
+                Log::warning('No phone_number_id available, channel not auto-created', [
                     'integration_id' => $integration->id,
-                    'tenant_id' => $tenantId,
+                    'waba_id' => $integration->waba_id,
                 ]);
             }
 
