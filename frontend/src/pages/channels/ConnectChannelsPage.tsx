@@ -21,12 +21,15 @@ import {
   ExternalLink,
   Bot,
   ArrowRight,
+  Smartphone,
+  Info,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Switch } from '@/components/ui/Switch'
 import {
   useMetaStatus,
   useMetaIntegrations,
@@ -106,6 +109,7 @@ export function ConnectChannelsPage() {
   const [qrChannel, setQrChannel] = useState<Channel | null>(null)
   const [isQRModalOpen, setIsQRModalOpen] = useState(false)
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null)
+  const [coexistenceMode, setCoexistenceMode] = useState(false)
 
   // Meta hooks
   const { data: metaStatus, isLoading: loadingStatus } = useMetaStatus()
@@ -138,7 +142,11 @@ export function ConnectChannelsPage() {
       return
     }
 
-    startEmbeddedSignup({ appId, configId })
+    startEmbeddedSignup({
+      appId,
+      configId,
+      featureType: coexistenceMode ? 'whatsapp_business_app_onboarding' : '',
+    })
   }
 
   const handleConnectQR = () => {
@@ -247,6 +255,39 @@ export function ConnectChannelsPage() {
         </div>
       ) : (
         <>
+          {/* Coexistence Toggle */}
+          {isEmbeddedSignupConfigured && (
+            <div>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-blue-400" />
+                    <span className="font-medium">Modo Coexistencia</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1 ml-6">
+                    Conecte um numero ja em uso no WhatsApp Business App mantendo o App funcionando
+                  </p>
+                </div>
+                <Switch
+                  checked={coexistenceMode}
+                  onCheckedChange={setCoexistenceMode}
+                />
+              </div>
+              {coexistenceMode && (
+                <div className="mt-2 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-blue-300 space-y-1">
+                      <p>O numero deve estar em uso no WhatsApp Business App ha pelo menos 7 dias.</p>
+                      <p>Mensagens enviadas pelo App serao sincronizadas com o CRM automaticamente.</p>
+                      <p>Selo azul (OBA) nao e suportado no modo coexistencia.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Canal Types Grid */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Adicionar novo canal</h3>
@@ -384,6 +425,12 @@ export function ConnectChannelsPage() {
                             <Badge variant="outline" className="text-xs">
                               Meta Cloud API
                             </Badge>
+                            {integration.is_coexistence && (
+                              <Badge variant="outline" className="flex items-center gap-1 text-xs text-blue-400 border-blue-400/30">
+                                <Smartphone className="w-3 h-3" />
+                                Coexistencia
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                             {integration.display_phone_number && (
