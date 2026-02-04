@@ -157,7 +157,7 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
 }
 
 // Hook para carregar o Facebook SDK
-export function useFacebookSDK(appId: string, version = 'v19.0') {
+export function useFacebookSDK(appId: string, version = 'v21.0') {
   const [isLoaded, setIsLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const initAttempted = useRef(false)
