@@ -418,6 +418,85 @@ class MetaOAuthService
     }
 
     /**
+     * Processa Embedded Signup com access_token já obtido diretamente do SDK.
+     */
+    public function processEmbeddedSignupWithToken(
+        string $tenantId,
+        string $accessToken,
+        ?string $wabaId = null,
+        ?string $phoneNumberId = null
+    ): MetaIntegration {
+        Log::info('Processing Embedded Signup with direct access_token', [
+            'tenant_id' => $tenantId,
+            'waba_id' => $wabaId,
+            'phone_number_id' => $phoneNumberId,
+        ]);
+
+        // Tenta obter long-lived token
+        try {
+            $tokenData = $this->exchangeForLongLivedToken($accessToken);
+            $accessToken = $tokenData['access_token'];
+            $expiresAt = isset($tokenData['expires_in'])
+                ? Carbon::now()->addSeconds($tokenData['expires_in'])
+                : null;
+        } catch (\Exception $e) {
+            Log::warning('Failed to exchange for long-lived token, using short-lived', [
+                'error' => $e->getMessage(),
+            ]);
+            $expiresAt = Carbon::now()->addHours(1);
+        }
+
+        // Se não recebemos waba_id ou phone_number_id, descobrimos automaticamente
+        if (empty($wabaId) || empty($phoneNumberId)) {
+            $businessData = $this->discoverWhatsAppBusiness($accessToken);
+            $wabaId = $businessData['waba_id'];
+            $phoneNumberId = $businessData['phone_number_id'];
+            $displayPhoneNumber = $businessData['display_phone_number'];
+            $verifiedName = $businessData['verified_name'];
+            $businessId = $businessData['business_id'];
+        } else {
+            $phoneDetails = $this->getPhoneNumberDetails($accessToken, $phoneNumberId);
+            $displayPhoneNumber = $phoneDetails['display_phone_number'] ?? null;
+            $verifiedName = $phoneDetails['verified_name'] ?? null;
+
+            $wabaDetails = $this->getWabaDetails($accessToken, $wabaId);
+            $businessId = $wabaDetails['owner_business_info']['id'] ?? null;
+        }
+
+        // Cria ou atualiza a integração
+        $integration = MetaIntegration::withoutGlobalScopes()->updateOrCreate(
+            [
+                'tenant_id' => $tenantId,
+                'phone_number_id' => $phoneNumberId,
+            ],
+            [
+                'business_id' => $businessId,
+                'waba_id' => $wabaId,
+                'display_phone_number' => $displayPhoneNumber,
+                'verified_name' => $verifiedName,
+                'access_token' => $accessToken,
+                'expires_at' => $expiresAt,
+                'status' => MetaIntegrationStatusEnum::ACTIVE,
+                'scopes' => $this->scopes,
+                'metadata' => [
+                    'connected_at' => now()->toIso8601String(),
+                    'app_id' => $this->appId,
+                    'signup_method' => 'embedded_direct_token',
+                ],
+            ]
+        );
+
+        Log::info('Meta Embedded Signup (direct token) integration created/updated', [
+            'tenant_id' => $tenantId,
+            'integration_id' => $integration->id,
+            'phone_number_id' => $phoneNumberId,
+            'display_phone_number' => $displayPhoneNumber,
+        ]);
+
+        return $integration;
+    }
+
+    /**
      * Troca o code por token para Embedded Signup.
      * Usa redirect_uri configurado pois Meta exige que seja idêntico ao usado no dialog.
      */

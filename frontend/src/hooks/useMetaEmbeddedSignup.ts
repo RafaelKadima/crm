@@ -25,10 +25,11 @@ declare global {
 interface FBLoginResponse {
   status: string
   authResponse?: {
-    code: string
+    code?: string
     accessToken?: string
     userID?: string
     expiresIn?: number
+    signedRequest?: string
   }
 }
 
@@ -202,7 +203,8 @@ export function useMetaEmbeddedSignup() {
   // Mutation para enviar dados para o backend
   const processSignupMutation = useMutation({
     mutationFn: async (data: {
-      code: string
+      code?: string
+      access_token?: string
       waba_id?: string
       phone_number_id?: string
     }) => {
@@ -290,14 +292,45 @@ export function useMetaEmbeddedSignup() {
           (response: FBLoginResponse) => {
             console.log('[EmbeddedSignup] FB.login response:', JSON.stringify(response))
 
-            if (response.authResponse?.code) {
-              // Sucesso - envia para o backend
-              console.log('[EmbeddedSignup] Got code, sending to backend...')
-              processSignupMutation.mutate({
-                code: response.authResponse.code,
-                waba_id: sessionInfo?.waba_id,
-                phone_number_id: sessionInfo?.phone_number_id,
-              })
+            if (response.authResponse) {
+              // Tenta obter o code de várias fontes
+              let code = response.authResponse.code
+
+              // Se não tem code direto, tenta extrair do signedRequest
+              if (!code && response.authResponse.signedRequest) {
+                try {
+                  const parts = response.authResponse.signedRequest.split('.')
+                  if (parts.length === 2) {
+                    const payload = JSON.parse(atob(parts[1]))
+                    code = payload.code
+                    console.log('[EmbeddedSignup] Extracted code from signedRequest')
+                  }
+                } catch (e) {
+                  console.error('[EmbeddedSignup] Failed to parse signedRequest:', e)
+                }
+              }
+
+              if (code) {
+                // Sucesso - envia code para o backend
+                console.log('[EmbeddedSignup] Got code, sending to backend...')
+                processSignupMutation.mutate({
+                  code,
+                  waba_id: sessionInfo?.waba_id,
+                  phone_number_id: sessionInfo?.phone_number_id,
+                })
+              } else if (response.authResponse.accessToken) {
+                // Fallback - envia accessToken diretamente
+                console.log('[EmbeddedSignup] Got accessToken, sending to backend...')
+                processSignupMutation.mutate({
+                  access_token: response.authResponse.accessToken,
+                  waba_id: sessionInfo?.waba_id,
+                  phone_number_id: sessionInfo?.phone_number_id,
+                })
+              } else {
+                setIsProcessing(false)
+                console.error('[EmbeddedSignup] No code or accessToken in response')
+                toast.error('Resposta incompleta do Facebook. Tente novamente.')
+              }
             } else {
               // Usuário cancelou ou erro
               setIsProcessing(false)

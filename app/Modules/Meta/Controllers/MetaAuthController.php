@@ -324,10 +324,18 @@ class MetaAuthController extends Controller
     public function embeddedSignupCallback(Request $request): JsonResponse
     {
         $request->validate([
-            'code' => 'required|string',
+            'code' => 'nullable|string',
+            'access_token' => 'nullable|string',
             'waba_id' => 'nullable|string',
             'phone_number_id' => 'nullable|string',
         ]);
+
+        if (!$request->get('code') && !$request->get('access_token')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Either code or access_token is required.',
+            ], 422);
+        }
 
         if (!$this->oauthService->isEmbeddedSignupConfigured()) {
             return response()->json([
@@ -339,12 +347,22 @@ class MetaAuthController extends Controller
         try {
             $tenantId = auth()->user()->tenant_id;
 
-            $integration = $this->oauthService->processEmbeddedSignup(
-                tenantId: $tenantId,
-                code: $request->get('code'),
-                wabaId: $request->get('waba_id'),
-                phoneNumberId: $request->get('phone_number_id')
-            );
+            if ($request->get('access_token')) {
+                // Access token recebido diretamente do Facebook SDK
+                $integration = $this->oauthService->processEmbeddedSignupWithToken(
+                    tenantId: $tenantId,
+                    accessToken: $request->get('access_token'),
+                    wabaId: $request->get('waba_id'),
+                    phoneNumberId: $request->get('phone_number_id')
+                );
+            } else {
+                $integration = $this->oauthService->processEmbeddedSignup(
+                    tenantId: $tenantId,
+                    code: $request->get('code'),
+                    wabaId: $request->get('waba_id'),
+                    phoneNumberId: $request->get('phone_number_id')
+                );
+            }
 
             // Auto-criar Channel se ainda não existir para este phone_number_id
             $channel = Channel::withoutGlobalScopes()
