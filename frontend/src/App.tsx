@@ -20,6 +20,7 @@ import { LandingPagesPage } from '@/pages/landing-pages/LandingPages'
 import { PublicLandingPage } from '@/pages/landing-pages/PublicLandingPage'
 import { LandingPageBuilder } from '@/pages/landing-pages/LandingPageBuilder'
 import { ChannelsPage } from '@/pages/channels/Channels'
+import { ConnectChannelsPage } from '@/pages/channels/ConnectChannelsPage'
 import { QueuesPage } from '@/pages/queues'
 import { SdrHubPage, SdrAgentConfig } from '@/pages/sdr'
 import { AppointmentsPage, ScheduleConfigPage } from '@/pages/appointments'
@@ -167,6 +168,7 @@ function AppRoutes() {
         <Route path="settings/*" element={<SettingsPage />} />
         <Route path="groups" element={<GroupsPage />} />
         <Route path="channels" element={<ChannelsPage />} />
+        <Route path="connect-channels" element={<ConnectChannelsPage />} />
         <Route path="queues" element={<QueuesPage />} />
         <Route path="integrations" element={<IntegrationsPage />} />
         <Route path="products" element={<ProductsPage />} />

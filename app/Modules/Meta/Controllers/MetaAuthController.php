@@ -3,6 +3,7 @@
 namespace App\Modules\Meta\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Channel;
 use App\Models\MetaIntegration;
 use App\Modules\Meta\Services\MetaOAuthService;
 use App\Modules\Meta\Services\MetaProfileService;
@@ -345,9 +346,45 @@ class MetaAuthController extends Controller
                 phoneNumberId: $request->get('phone_number_id')
             );
 
+            // Auto-criar Channel se ainda não existir para este phone_number_id
+            $channel = Channel::withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->where('type', 'whatsapp')
+                ->where('provider_type', 'meta')
+                ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
+                ->first();
+
+            if (!$channel) {
+                $channelName = $integration->verified_name
+                    ? "WhatsApp - {$integration->verified_name}"
+                    : "WhatsApp - {$integration->display_phone_number}";
+
+                $channel = Channel::create([
+                    'tenant_id' => $tenantId,
+                    'name' => $channelName,
+                    'type' => 'whatsapp',
+                    'provider_type' => 'meta',
+                    'identifier' => $integration->display_phone_number ?? $integration->phone_number_id,
+                    'config' => [
+                        'phone_number_id' => $integration->phone_number_id,
+                        'waba_id' => $integration->waba_id,
+                        'access_token' => $integration->access_token,
+                        'business_account_id' => $integration->business_id,
+                    ],
+                    'is_active' => true,
+                    'ia_mode' => 'none',
+                ]);
+
+                Log::info('Channel auto-created from Embedded Signup', [
+                    'channel_id' => $channel->id,
+                    'integration_id' => $integration->id,
+                    'tenant_id' => $tenantId,
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'WhatsApp connected successfully via Embedded Signup',
+                'message' => 'WhatsApp conectado com sucesso via Cadastro Incorporado',
                 'data' => [
                     'id' => $integration->id,
                     'phone_number_id' => $integration->phone_number_id,
@@ -355,6 +392,12 @@ class MetaAuthController extends Controller
                     'verified_name' => $integration->verified_name,
                     'status' => $integration->status->value,
                     'expires_at' => $integration->expires_at?->toIso8601String(),
+                    'channel' => $channel ? [
+                        'id' => $channel->id,
+                        'name' => $channel->name,
+                        'identifier' => $channel->identifier,
+                        'is_active' => $channel->is_active,
+                    ] : null,
                 ],
             ]);
 

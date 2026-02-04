@@ -33,6 +33,7 @@ import {
   TrendingUp,
   Trophy,
   History,
+  Plug,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -169,6 +170,9 @@ const navEntries: NavEntry[] = [
   },
 
   { type: 'separator' },
+
+  // Canais - item direto
+  { type: 'item', item: { icon: Plug, label: 'Canais', path: '/connect-channels' } },
 
   // Configurações - item direto
   { type: 'item', item: { icon: Settings, label: 'Configurações', path: '/settings', permission: 'settings.view' } },
