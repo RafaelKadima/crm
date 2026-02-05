@@ -332,6 +332,7 @@ class MetaAuthController extends Controller
             'waba_id' => 'nullable|string',
             'phone_number_id' => 'nullable|string',
             'is_coexistence' => 'nullable|boolean',
+            'page_url' => 'nullable|string|url',
         ]);
 
         if (!$request->get('code') && !$request->get('access_token')) {
@@ -368,7 +369,8 @@ class MetaAuthController extends Controller
                     code: $request->get('code'),
                     wabaId: $request->get('waba_id'),
                     phoneNumberId: $request->get('phone_number_id'),
-                    isCoexistence: $isCoexistence
+                    isCoexistence: $isCoexistence,
+                    pageUrl: $request->get('page_url')
                 );
             }
 

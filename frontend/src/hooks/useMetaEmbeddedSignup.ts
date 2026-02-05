@@ -212,6 +212,7 @@ export function useMetaEmbeddedSignup() {
       waba_id?: string
       phone_number_id?: string
       is_coexistence?: boolean
+      page_url?: string
     }) => {
       const response = await api.post<EmbeddedSignupResponse>(
         '/meta/embedded-signup',
@@ -328,6 +329,7 @@ export function useMetaEmbeddedSignup() {
                   waba_id: currentSessionInfo?.waba_id,
                   phone_number_id: currentSessionInfo?.phone_number_id,
                   is_coexistence: currentSessionInfo?.is_coexistence || false,
+                  page_url: window.location.href,
                 })
               } else {
                 setIsProcessing(false)
