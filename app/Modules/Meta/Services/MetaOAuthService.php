@@ -593,16 +593,14 @@ class MetaOAuthService
      */
     protected function exchangeCodeForTokenEmbedded(string $code): array
     {
+        // Embedded Signup uses FB.login popup (not a redirect), so redirect_uri is not needed
         $params = [
             'client_id' => $this->appId,
             'client_secret' => $this->appSecret,
             'code' => $code,
-            'redirect_uri' => $this->redirectUri,
         ];
 
-        Log::info('Embedded Signup: Exchanging code for token', [
-            'redirect_uri' => $this->redirectUri,
-        ]);
+        Log::info('Embedded Signup: Exchanging code for token (no redirect_uri for popup flow)');
 
         $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", $params);
 
