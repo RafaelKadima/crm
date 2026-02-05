@@ -240,11 +240,19 @@ export function useMetaEmbeddedSignup() {
   // Escuta mensagens do popup do Facebook
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Verifica se a mensagem é do Facebook
-      if (
-        event.origin !== 'https://www.facebook.com' &&
-        event.origin !== 'https://web.facebook.com'
-      ) {
+      // Log all object messages for debugging
+      if (event.data && typeof event.data === 'object' && event.data.type) {
+        console.log('[EmbeddedSignup] postMessage received:', {
+          origin: event.origin,
+          type: event.data?.type,
+          event: event.data?.event,
+          hasData: !!event.data?.data,
+          keys: Object.keys(event.data),
+        })
+      }
+
+      // Aceitar mensagens de qualquer subdomínio do Facebook
+      if (!event.origin.includes('facebook.com')) {
         return
       }
 

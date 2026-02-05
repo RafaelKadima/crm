@@ -27,6 +27,7 @@ ssl: ## Configura SSL (HTTPS)
 deploy: ## Deploy/atualização em produção
 	@echo "$(GREEN)🚀 Iniciando deploy...$(RESET)"
 	git pull origin main
+	cd frontend && npm run build && cd ..
 	docker compose build
 	docker compose up -d
 	docker compose exec -T php php artisan migrate --force

@@ -216,9 +216,8 @@ class MetaOAuthService
             throw new \Exception('No businesses found for this account');
         }
 
-        // Tenta encontrar WABAs em todos os businesses
-        $wabas = [];
-        $businessId = null;
+        // Coleta TODOS os WABAs de TODOS os businesses
+        $allWabas = [];
 
         foreach ($businesses as $business) {
             $bId = $business['id'];
@@ -231,13 +230,11 @@ class MetaOAuthService
 
             Log::info("Business {$bId} owned WABAs", ['count' => count($ownedWabas)]);
 
-            if (!empty($ownedWabas)) {
-                $wabas = $ownedWabas;
-                $businessId = $bId;
-                break;
+            foreach ($ownedWabas as $waba) {
+                $allWabas[] = ['waba' => $waba, 'business_id' => $bId];
             }
 
-            // Fallback: tenta client_whatsapp_business_accounts (para Embedded Signup)
+            // Também tenta client_whatsapp_business_accounts (para Embedded Signup)
             $clientWabasResponse = Http::withToken($accessToken)
                 ->get("https://graph.facebook.com/{$this->apiVersion}/{$bId}/client_whatsapp_business_accounts");
 
@@ -245,89 +242,84 @@ class MetaOAuthService
 
             Log::info("Business {$bId} client WABAs", ['count' => count($clientWabas)]);
 
-            if (!empty($clientWabas)) {
-                $wabas = $clientWabas;
-                $businessId = $bId;
-                break;
+            foreach ($clientWabas as $waba) {
+                $allWabas[] = ['waba' => $waba, 'business_id' => $bId];
             }
         }
 
         // Último fallback: tenta via /me/whatsapp_business_accounts (permissão direta)
-        if (empty($wabas)) {
+        if (empty($allWabas)) {
             Log::info('Trying /me/whatsapp_business_accounts as last resort');
 
             $directWabasResponse = Http::withToken($accessToken)
                 ->get("https://graph.facebook.com/{$this->apiVersion}/me/whatsapp_business_accounts");
 
             if ($directWabasResponse->successful()) {
-                $wabas = $directWabasResponse->json()['data'] ?? [];
-                $businessId = $businesses[0]['id'] ?? null;
+                $directWabas = $directWabasResponse->json()['data'] ?? [];
+                $fallbackBusinessId = $businesses[0]['id'] ?? null;
 
-                Log::info('Direct WABAs found', ['count' => count($wabas)]);
+                Log::info('Direct WABAs found', ['count' => count($directWabas)]);
+
+                foreach ($directWabas as $waba) {
+                    $allWabas[] = ['waba' => $waba, 'business_id' => $fallbackBusinessId];
+                }
             }
         }
 
-        if (empty($wabas)) {
+        if (empty($allWabas)) {
             throw new \Exception('No WhatsApp Business Accounts found');
         }
 
-        // Usa a primeira WABA
-        $wabaId = $wabas[0]['id'];
+        Log::info('Total WABAs collected', ['count' => count($allWabas)]);
 
-        // 3. Busca os phone numbers da WABA
-        $phonesResponse = Http::withToken($accessToken)
-            ->get("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}/phone_numbers");
+        // Itera cada WABA buscando phone numbers até encontrar um com phones
+        $firstWabaEntry = $allWabas[0];
 
-        Log::info("WABA {$wabaId} phone_numbers response", [
-            'status' => $phonesResponse->status(),
-            'body' => $phonesResponse->json(),
+        foreach ($allWabas as $entry) {
+            $wabaId = $entry['waba']['id'];
+            $businessId = $entry['business_id'];
+
+            $phonesResponse = Http::withToken($accessToken)
+                ->get("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}/phone_numbers");
+
+            $phones = $phonesResponse->successful() ? ($phonesResponse->json()['data'] ?? []) : [];
+
+            Log::info("WABA {$wabaId} phone_numbers", ['count' => count($phones)]);
+
+            if (!empty($phones)) {
+                $phone = $phones[0];
+
+                return [
+                    'business_id' => $businessId,
+                    'waba_id' => $wabaId,
+                    'phone_number_id' => $phone['id'],
+                    'display_phone_number' => $phone['display_phone_number'] ?? null,
+                    'verified_name' => $phone['verified_name'] ?? null,
+                ];
+            }
+        }
+
+        // Nenhum WABA tem phone numbers — retorna primeiro WABA sem phone
+        $wabaId = $firstWabaEntry['waba']['id'];
+        $businessId = $firstWabaEntry['business_id'];
+
+        $wabaInfoResponse = Http::withToken($accessToken)
+            ->get("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}", [
+                'fields' => 'id,name,on_behalf_of_business_info,owner_business_info',
+            ]);
+
+        Log::warning('No phone numbers found in any WABA', [
+            'waba_id' => $wabaId,
+            'business_id' => $businessId,
+            'total_wabas_checked' => count($allWabas),
         ]);
-
-        if (!$phonesResponse->successful()) {
-            Log::warning("Failed to fetch phone numbers, trying WABA details", [
-                'waba_id' => $wabaId,
-                'error' => $phonesResponse->json(),
-            ]);
-        }
-
-        $phones = $phonesResponse->successful() ? ($phonesResponse->json()['data'] ?? []) : [];
-
-        if (empty($phones)) {
-            // Tenta buscar info da WABA diretamente para ver se tem phone_number_id
-            $wabaInfoResponse = Http::withToken($accessToken)
-                ->get("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}", [
-                    'fields' => 'id,name,phone_numbers,on_behalf_of_business_info,owner_business_info',
-                ]);
-
-            Log::info("WABA {$wabaId} info response", [
-                'status' => $wabaInfoResponse->status(),
-                'body' => $wabaInfoResponse->json(),
-            ]);
-
-            // Retorna WABA sem phone number - será preenchido depois
-            Log::warning('No phone numbers found in WABA, creating integration without phone', [
-                'waba_id' => $wabaId,
-                'business_id' => $businessId,
-            ]);
-
-            return [
-                'business_id' => $businessId,
-                'waba_id' => $wabaId,
-                'phone_number_id' => null,
-                'display_phone_number' => null,
-                'verified_name' => $wabaInfoResponse->json()['name'] ?? null,
-            ];
-        }
-
-        // Usa o primeiro phone number
-        $phone = $phones[0];
 
         return [
             'business_id' => $businessId,
             'waba_id' => $wabaId,
-            'phone_number_id' => $phone['id'],
-            'display_phone_number' => $phone['display_phone_number'] ?? null,
-            'verified_name' => $phone['verified_name'] ?? null,
+            'phone_number_id' => null,
+            'display_phone_number' => null,
+            'verified_name' => $wabaInfoResponse->json()['name'] ?? null,
         ];
     }
 
@@ -546,13 +538,8 @@ class MetaOAuthService
             $businessId = $wabaDetails['owner_business_info']['id'] ?? null;
         }
 
-        // Cria ou atualiza a integração
-        $matchCriteria = ['tenant_id' => $tenantId];
-        if ($phoneNumberId) {
-            $matchCriteria['phone_number_id'] = $phoneNumberId;
-        } else {
-            $matchCriteria['waba_id'] = $wabaId;
-        }
+        // Cria ou atualiza a integração (usa waba_id para evitar duplicatas)
+        $matchCriteria = ['tenant_id' => $tenantId, 'waba_id' => $wabaId];
 
         $integration = MetaIntegration::withoutGlobalScopes()->updateOrCreate(
             $matchCriteria,
