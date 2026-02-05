@@ -295,7 +295,7 @@ export function useMetaEmbeddedSignup() {
       try {
         const loginOptions = {
           config_id: config.configId,
-          response_type: 'code',
+          response_type: 'token',
           override_default_response_type: true,
           extras: {
             setup: {},
