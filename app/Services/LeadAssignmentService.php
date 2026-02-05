@@ -89,6 +89,15 @@ class LeadAssignmentService
         // Atribui o lead ao usuário
         $lead->assignTo($nextUser);
 
+        // Sincroniza o ticket se existir (para visibilidade imediata)
+        if ($lead->ticket && !$lead->ticket->assigned_user_id) {
+            $lead->ticket->update(['assigned_user_id' => $nextUser->id]);
+            Log::info('Ticket assigned_user_id synced with lead owner', [
+                'ticket_id' => $lead->ticket->id,
+                'user_id' => $nextUser->id,
+            ]);
+        }
+
         // Se o lead está em uma fila, salva a carteirização
         if ($queueId) {
             $queue = Queue::find($queueId);
