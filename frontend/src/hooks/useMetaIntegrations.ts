@@ -56,6 +56,7 @@ const metaApi = {
 
 /**
  * Verifica status da configuração OAuth
+ * Sem cache para sempre buscar valores atualizados do servidor
  */
 export function useMetaStatus() {
   return useQuery({
@@ -64,6 +65,8 @@ export function useMetaStatus() {
       const response = await metaApi.getStatus()
       return response.data.data
     },
+    staleTime: 0,
+    gcTime: 0,
   })
 }
 
