@@ -78,14 +78,29 @@ interface EmbeddedSignupResponse {
 let fbSDKInitialized = false
 let fbSDKLoading = false
 let fbInitCallbacks: ((success: boolean) => void)[] = []
+let fbCurrentAppId: string | null = null
 
 // Função para carregar o SDK do Facebook
 function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
   return new Promise((resolve) => {
-    // Se já está inicializado, resolve imediatamente
-    if (fbSDKInitialized && window.FB) {
+    // Se já inicializado COM O MESMO appId, resolve imediatamente
+    if (fbSDKInitialized && window.FB && fbCurrentAppId === appId) {
+      console.log('[EmbeddedSignup] SDK already initialized with appId:', appId)
       resolve(true)
       return
+    }
+
+    // Se appId mudou, resetar estado e forçar reinicialização
+    if (fbSDKInitialized && fbCurrentAppId && fbCurrentAppId !== appId) {
+      console.log('[EmbeddedSignup] App ID changed from', fbCurrentAppId, 'to', appId, '- reinitializing SDK')
+      fbSDKInitialized = false
+      fbSDKLoading = false
+      fbCurrentAppId = null
+      const oldScript = document.getElementById('facebook-jssdk')
+      if (oldScript) {
+        oldScript.remove()
+      }
+      delete (window as any).FB
     }
 
     // Se está carregando, adiciona callback
@@ -97,12 +112,14 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
     // Se FB já existe mas não foi inicializado
     if (window.FB) {
       try {
+        console.log('[EmbeddedSignup] FB.init with appId:', appId)
         window.FB.init({
           appId,
           xfbml: true,
           version,
         })
         fbSDKInitialized = true
+        fbCurrentAppId = appId
         resolve(true)
       } catch (e) {
         console.error('Error initializing FB SDK:', e)
@@ -118,12 +135,14 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
     // Define callback para quando o SDK carregar
     window.fbAsyncInit = function () {
       try {
+        console.log('[EmbeddedSignup] FB.init with appId:', appId)
         window.FB.init({
           appId,
           xfbml: true,
           version,
         })
         fbSDKInitialized = true
+        fbCurrentAppId = appId
         // Notifica todos os callbacks
         fbInitCallbacks.forEach((cb) => cb(true))
         fbInitCallbacks = []
@@ -138,8 +157,8 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
     // Verifica se o script já existe
     const existingScript = document.getElementById('facebook-jssdk')
     if (existingScript) {
-      // Script existe, mas SDK não está pronto - espera
-      return
+      // Script existe mas appId pode ter mudado - remover e recarregar
+      existingScript.remove()
     }
 
     // Carrega o script do SDK
@@ -312,7 +331,7 @@ export function useMetaEmbeddedSignup() {
           },
         }
 
-        console.log('[EmbeddedSignup] Calling FB.login with options:', JSON.stringify(loginOptions))
+        console.log('[EmbeddedSignup] Calling FB.login with appId:', config.appId, 'configId:', config.configId, 'options:', JSON.stringify(loginOptions))
 
         window.FB.login(
           (response: FBLoginResponse) => {
