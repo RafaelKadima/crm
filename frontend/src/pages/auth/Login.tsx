@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,18 +11,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Spinner } from '@/components/ui/Spinner'
 import { useLogin } from '@/hooks/useAuth'
 import { OmnifyLogo } from '@/components/OmnifyLogo'
+import { LanguageSelector } from '@/components/LanguageSelector'
 import { cn } from '@/lib/utils'
 
-const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+const createLoginSchema = (t: (key: string) => string) => z.object({
+  email: z.string().email(t('validation.email')),
+  password: z.string().min(6, t('validation.minLength').replace('{{min}}', '6')),
 })
 
-type LoginForm = z.infer<typeof loginSchema>
+type LoginForm = z.infer<ReturnType<typeof createLoginSchema>>
 
 export function LoginPage() {
+  const { t } = useTranslation()
   const [showPassword, setShowPassword] = useState(false)
   const loginMutation = useLogin()
+  const loginSchema = createLoginSchema(t)
 
   const {
     register,
@@ -37,7 +41,7 @@ export function LoginPage() {
 
   const errorMessage = loginMutation.error?.response?.data?.message ||
     loginMutation.error?.response?.data?.errors?.email?.[0] ||
-    (loginMutation.error ? 'Erro ao fazer login' : '')
+    (loginMutation.error ? t('auth.loginError') : '')
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -122,7 +126,7 @@ export function LoginPage() {
                 <span className="text-foreground/30 font-normal text-lg ml-2 tracking-[0.2em]">HUB</span>
               </CardTitle>
               <CardDescription className="mt-2 text-muted-foreground">
-                Entre com suas credenciais para acessar o sistema
+                {t('auth.loginSubtitle')}
               </CardDescription>
             </motion.div>
           </CardHeader>
@@ -148,10 +152,10 @@ export function LoginPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <label className="text-sm font-medium text-foreground/80">Email</label>
+                <label className="text-sm font-medium text-foreground/80">{t('auth.email')}</label>
                 <Input
                   type="email"
-                  placeholder="seu@email.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   {...register('email')}
                   className={cn(
                     "bg-background/50 border-border",
@@ -171,7 +175,7 @@ export function LoginPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <label className="text-sm font-medium text-foreground/80">Senha</label>
+                <label className="text-sm font-medium text-foreground/80">{t('auth.password')}</label>
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
@@ -219,7 +223,7 @@ export function LoginPage() {
                   ) : (
                     <>
                       <LogIn className="h-4 w-4 mr-2" />
-                      Acessar Sistema
+                      {t('auth.login')}
                     </>
                   )}
 
@@ -242,9 +246,9 @@ export function LoginPage() {
               transition={{ delay: 0.7 }}
             >
               <p className="text-center text-xs text-muted-foreground leading-relaxed">
-                <span className="text-foreground/60 font-medium">Visão 360° do seu negócio.</span>
+                <span className="text-foreground/60 font-medium">{t('auth.valuePropTitle')}</span>
                 <br />
-                <span className="text-foreground/40">CRM inteligente • SDR Autônomo • Ads automatizados</span>
+                <span className="text-foreground/40">{t('auth.valuePropSubtitle')}</span>
               </p>
             </motion.div>
           </CardContent>
@@ -255,12 +259,20 @@ export function LoginPage() {
           />
         </Card>
 
-        {/* Version Tag */}
-        <motion.p
-          className="text-center mt-6 text-xs text-muted-foreground font-mono tracking-wider"
+        {/* Language Selector & Version Tag */}
+        <motion.div
+          className="flex items-center justify-center gap-4 mt-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
+        >
+          <LanguageSelector variant="inline" />
+        </motion.div>
+        <motion.p
+          className="text-center mt-4 text-xs text-muted-foreground font-mono tracking-wider"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9 }}
         >
           <span className="text-foreground/80">OmniFy</span>
           <span className="text-foreground/40">HUB</span>
