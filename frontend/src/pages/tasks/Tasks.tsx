@@ -1,15 +1,16 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
-import { 
-  Plus, 
-  Search, 
-  CheckCircle, 
-  Circle, 
-  Calendar, 
-  Phone, 
-  Mail, 
-  Video, 
+import {
+  Plus,
+  Search,
+  CheckCircle,
+  Circle,
+  Calendar,
+  Phone,
+  Mail,
+  Video,
   Loader2,
   ListTodo,
   MessageCircle,
@@ -40,15 +41,8 @@ const typeColors: Record<string, string> = {
   other: 'text-muted-foreground bg-gray-500/20',
 }
 
-const typeLabels: Record<string, string> = {
-  call: 'Ligação',
-  whatsapp: 'WhatsApp',
-  meeting: 'Reunião',
-  follow_up: 'Follow-up',
-  other: 'Outro',
-}
-
 export function TasksPage() {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -106,12 +100,12 @@ export function TasksPage() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Tarefas"
-        subtitle={`${pendingCount} pendentes • ${completedCount} concluídas`}
+        title={t('tasks.title')}
+        subtitle={`${pendingCount} ${t('tasks.pending')} • ${completedCount} ${t('tasks.completed')}`}
         actions={
           <Button onClick={handleNewTask}>
             <Plus className="h-4 w-4 mr-2" />
-            Nova Tarefa
+            {t('tasks.newTask')}
           </Button>
         }
       />
@@ -121,7 +115,7 @@ export function TasksPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar tarefas..."
+            placeholder={t('tasks.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -133,21 +127,21 @@ export function TasksPage() {
             size="sm"
             onClick={() => setStatusFilter('all')}
           >
-            Todas
+            {t('tasks.all')}
           </Button>
           <Button
             variant={statusFilter === 'pending' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setStatusFilter('pending')}
           >
-            Pendentes
+            {t('tasks.pendingFilter')}
           </Button>
           <Button
             variant={statusFilter === 'done' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setStatusFilter('done')}
           >
-            Concluídas
+            {t('tasks.completedFilter')}
           </Button>
         </div>
       </div>
@@ -204,12 +198,12 @@ export function TasksPage() {
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className={cn("gap-1.5 border-0", colorClass)}
                       >
                         <Icon className="h-3.5 w-3.5" />
-                        {typeLabels[task.type] || task.type}
+                        {t(`tasks.types.${task.type}`, { defaultValue: task.type })}
                       </Badge>
                       {((task as any).due_at || task.due_date) && (
                         <div className={cn(
@@ -242,18 +236,18 @@ export function TasksPage() {
             <ListTodo className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-medium text-muted-foreground mb-2">
-            {searchQuery ? 'Nenhuma tarefa encontrada' : 'Nenhuma tarefa cadastrada'}
+            {searchQuery ? t('tasks.noTaskFound') : t('tasks.noTaskRegistered')}
           </h3>
           <p className="text-muted-foreground mb-6">
-            {searchQuery 
-              ? 'Tente buscar por outro termo' 
-              : 'Comece adicionando sua primeira tarefa'
+            {searchQuery
+              ? t('tasks.tryAnotherSearch')
+              : t('tasks.startAddingFirst')
             }
           </p>
           {!searchQuery && (
             <Button onClick={handleNewTask}>
               <Plus className="h-4 w-4 mr-2" />
-              Criar Tarefa
+              {t('tasks.createTask')}
             </Button>
           )}
         </motion.div>

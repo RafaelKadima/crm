@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -41,6 +42,7 @@ import type { QuickReply } from '@/types'
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react'
 
 export function QuickRepliesPage() {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedReply, setSelectedReply] = useState<QuickReply | null>(null)
@@ -85,7 +87,7 @@ export function QuickRepliesPage() {
   const confirmDelete = async () => {
     if (replyToDelete) {
       await deleteMutation.mutateAsync(replyToDelete.id)
-      toast.success('Resposta rápida removida')
+      toast.success(t('quickReplies.replyRemoved'))
       setIsDeleteModalOpen(false)
       setReplyToDelete(null)
     }
@@ -93,19 +95,19 @@ export function QuickRepliesPage() {
 
   const handleCopyShortcut = (shortcut: string) => {
     navigator.clipboard.writeText(shortcut)
-    toast.success('Atalho copiado!')
+    toast.success(t('quickReplies.shortcutCopied'))
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Respostas Rápidas"
-        subtitle="Crie mensagens prontas para usar no chat com atalhos"
+        title={t('quickReplies.title')}
+        subtitle={t('quickReplies.subtitle')}
         actions={
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
-            Nova Resposta
+            {t('quickReplies.newReply')}
           </Button>
         }
       />
@@ -116,10 +118,9 @@ export function QuickRepliesPage() {
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
             <div className="text-sm">
-              <p className="font-medium text-blue-400 mb-1">Como usar:</p>
+              <p className="font-medium text-blue-400 mb-1">{t('quickReplies.howToUse')}</p>
               <p className="text-muted-foreground">
-                Digite o atalho no chat (ex: <code className="px-1 bg-muted rounded">/ola</code>) para inserir a mensagem automaticamente.
-                Use variáveis como <code className="px-1 bg-muted rounded">{'{nome_cliente}'}</code> para personalizar.
+                {t('quickReplies.howToUseDescription')}
               </p>
             </div>
           </div>
@@ -130,7 +131,7 @@ export function QuickRepliesPage() {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por título, atalho ou conteúdo..."
+          placeholder={t('quickReplies.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -147,17 +148,17 @@ export function QuickRepliesPage() {
           <CardContent className="py-12 text-center">
             <MessageSquareText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-medium mb-2">
-              {searchQuery ? 'Nenhuma resposta encontrada' : 'Nenhuma resposta rápida'}
+              {searchQuery ? t('quickReplies.noReplyFound') : t('quickReplies.noQuickReply')}
             </h3>
             <p className="text-muted-foreground mb-4">
               {searchQuery
-                ? 'Tente buscar por outro termo'
-                : 'Crie sua primeira resposta rápida para agilizar o atendimento'}
+                ? t('quickReplies.tryAnotherSearch')
+                : t('quickReplies.createFirstReply')}
             </p>
             {!searchQuery && (
               <Button onClick={handleCreate}>
                 <Plus className="h-4 w-4 mr-2" />
-                Criar Resposta
+                {t('quickReplies.createReply')}
               </Button>
             )}
           </CardContent>
@@ -192,7 +193,7 @@ export function QuickRepliesPage() {
                           variant="secondary"
                           className="shrink-0 cursor-pointer hover:bg-primary/20"
                           onClick={() => handleCopyShortcut(reply.shortcut)}
-                          title="Clique para copiar"
+                          title={t('quickReplies.clickToCopy')}
                         >
                           <Hash className="h-3 w-3 mr-1" />
                           {reply.shortcut}
@@ -200,7 +201,7 @@ export function QuickRepliesPage() {
                         {!reply.is_active && (
                           <Badge variant="outline" className="text-orange-500 border-orange-500/30">
                             <EyeOff className="h-3 w-3 mr-1" />
-                            Inativa
+                            {t('quickReplies.inactiveLabel')}
                           </Badge>
                         )}
                       </div>
@@ -213,13 +214,13 @@ export function QuickRepliesPage() {
                         <div className="flex items-center gap-1 mt-2">
                           <Sparkles className="h-3 w-3 text-purple-500" />
                           <span className="text-xs text-purple-400">
-                            Variáveis: {reply.variables.join(', ')}
+                            {t('quickReplies.variablesLabel')}: {reply.variables.join(', ')}
                           </span>
                         </div>
                       )}
 
                       <p className="text-xs text-muted-foreground/60 mt-2">
-                        Usado {reply.use_count} {reply.use_count === 1 ? 'vez' : 'vezes'}
+                        {t('quickReplies.usedTimes', { count: reply.use_count })}
                       </p>
                     </div>
 
@@ -259,10 +260,10 @@ export function QuickRepliesPage() {
         onSave={async (data) => {
           if (selectedReply) {
             await updateMutation.mutateAsync({ id: selectedReply.id, data })
-            toast.success('Resposta atualizada')
+            toast.success(t('quickReplies.replyUpdated'))
           } else {
             await createMutation.mutateAsync(data)
-            toast.success('Resposta criada')
+            toast.success(t('quickReplies.replyCreated'))
           }
           setIsModalOpen(false)
         }}
@@ -273,17 +274,17 @@ export function QuickRepliesPage() {
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent size="sm">
           <DialogHeader>
-            <DialogTitle>Excluir Resposta Rápida</DialogTitle>
+            <DialogTitle>{t('quickReplies.deleteTitle')}</DialogTitle>
           </DialogHeader>
           <DialogBody>
             <p className="text-muted-foreground">
-              Tem certeza que deseja excluir a resposta{' '}
+              {t('quickReplies.deleteConfirm')}{' '}
               <strong>"{replyToDelete?.title}"</strong>?
             </p>
           </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -295,7 +296,7 @@ export function QuickRepliesPage() {
               ) : (
                 <Trash2 className="h-4 w-4 mr-2" />
               )}
-              Excluir
+              {t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -322,6 +323,7 @@ function QuickReplyModal({
   onSave,
   isLoading,
 }: QuickReplyModalProps) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isActive, setIsActive] = useState(true)
@@ -377,7 +379,7 @@ function QuickReplyModal({
       <DialogContent size="lg" className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {reply ? 'Editar Resposta Rápida' : 'Nova Resposta Rápida'}
+            {reply ? t('quickReplies.edit') : t('quickReplies.new')}
           </DialogTitle>
         </DialogHeader>
 
@@ -385,7 +387,7 @@ function QuickReplyModal({
           <DialogBody className="space-y-4">
             {/* Title */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Título *</label>
+              <label className="text-sm font-medium">{t('quickReplies.titleLabel')} *</label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -402,7 +404,7 @@ function QuickReplyModal({
             {/* Content */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Mensagem *</label>
+                <label className="text-sm font-medium">{t('quickReplies.messageLabel')} *</label>
                 <div className="flex gap-1">
                   <Button
                     type="button"
@@ -412,7 +414,7 @@ function QuickReplyModal({
                     className="h-7 text-xs"
                   >
                     <Sparkles className="h-3 w-3 mr-1" />
-                    Variáveis
+                    {t('quickReplies.variablesLabel')}
                   </Button>
                   <Button
                     type="button"
@@ -421,7 +423,7 @@ function QuickReplyModal({
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     className="h-7 text-xs"
                   >
-                    😊 Emoji
+                    😊 {t('quickReplies.emojiLabel')}
                   </Button>
                 </div>
               </div>
@@ -437,7 +439,7 @@ function QuickReplyModal({
                   >
                     <div className="p-3 bg-muted rounded-lg space-y-2 mb-2">
                       <p className="text-xs font-medium text-muted-foreground">
-                        Clique para inserir:
+                        {t('quickReplies.clickToInsert')}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {Object.entries(variables).map(([key, desc]) => (
@@ -494,13 +496,13 @@ function QuickReplyModal({
                 onChange={(e) => setIsActive(e.target.checked)}
                 className="rounded"
               />
-              <span className="text-sm">Ativa</span>
+              <span className="text-sm">{t('quickReplies.activeLabel')}</span>
             </label>
 
             {/* Preview */}
             {content && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Preview:</label>
+                <label className="text-sm font-medium text-muted-foreground">{t('quickReplies.previewLabel')}:</label>
                 <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                   <p className="text-sm whitespace-pre-wrap">{content}</p>
                 </div>
@@ -510,7 +512,7 @@ function QuickReplyModal({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isLoading || !title || !content}>
               {isLoading ? (
@@ -518,7 +520,7 @@ function QuickReplyModal({
               ) : (
                 <MessageSquareText className="h-4 w-4 mr-2" />
               )}
-              {reply ? 'Salvar' : 'Criar'}
+              {reply ? t('common.save') : t('common.create')}
             </Button>
           </DialogFooter>
         </form>

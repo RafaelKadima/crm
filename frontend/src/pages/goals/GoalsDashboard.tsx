@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -25,6 +26,7 @@ import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/lib/utils'
 
 export function GoalsDashboard() {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const isAdmin = user?.role === 'admin' || user?.role === 'gestor'
 
@@ -55,23 +57,23 @@ export function GoalsDashboard() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'ahead':
-        return 'Acima da Meta'
+        return t('goals.status.ahead')
       case 'on_track':
-        return 'No Ritmo'
+        return t('goals.status.onTrack')
       case 'behind':
-        return 'Atrasado'
+        return t('goals.status.behind')
       case 'critical':
-        return 'Critico'
+        return t('goals.status.critical')
       case 'pending':
-        return 'Pendente'
+        return t('goals.status.pending')
       case 'draft':
-        return 'Rascunho'
+        return t('goals.status.draft')
       case 'active':
-        return 'Ativa'
+        return t('goals.status.active')
       case 'completed':
-        return 'Concluida'
+        return t('goals.status.completed')
       case 'cancelled':
-        return 'Cancelada'
+        return t('goals.status.cancelled')
       default:
         return status
     }
@@ -93,13 +95,13 @@ export function GoalsDashboard() {
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'revenue':
-        return 'Faturamento'
+        return t('goals.types.revenue')
       case 'deals':
-        return 'Negocios'
+        return t('goals.types.deals')
       case 'activities':
-        return 'Atividades'
+        return t('goals.types.activities')
       default:
-        return 'Personalizado'
+        return t('goals.types.custom')
     }
   }
 
@@ -118,14 +120,14 @@ export function GoalsDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Metas e Indicadores"
-        subtitle="Acompanhe seu progresso e performance"
+        title={t('goals.title')}
+        subtitle={t('goals.subtitle')}
         actions={
           isAdmin ? (
             <Link to="/goals/new">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Nova Meta
+                {t('goals.newGoal')}
               </Button>
             </Link>
           ) : undefined
@@ -139,7 +141,7 @@ export function GoalsDashboard() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Metas Ativas</p>
+                  <p className="text-sm text-muted-foreground">{t('goals.activeGoals')}</p>
                   <p className="text-2xl font-bold">{dashboard.summary?.total_kprs || 0}</p>
                 </div>
                 <Target className="h-8 w-8 text-primary" />
@@ -151,7 +153,7 @@ export function GoalsDashboard() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Meta Total</p>
+                  <p className="text-sm text-muted-foreground">{t('goals.totalTarget')}</p>
                   <p className="text-2xl font-bold">
                     {formatCurrency(dashboard.summary?.total_target || 0)}
                   </p>
@@ -165,7 +167,7 @@ export function GoalsDashboard() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Realizado</p>
+                  <p className="text-sm text-muted-foreground">{t('goals.achieved')}</p>
                   <p className="text-2xl font-bold">
                     {formatCurrency(dashboard.summary?.total_current || 0)}
                   </p>
@@ -179,7 +181,7 @@ export function GoalsDashboard() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Progresso Geral</p>
+                  <p className="text-sm text-muted-foreground">{t('goals.overallProgress')}</p>
                   <p className="text-2xl font-bold">
                     {Number(dashboard.summary?.overall_progress || 0).toFixed(1)}%
                   </p>
@@ -197,9 +199,9 @@ export function GoalsDashboard() {
 
       <Tabs defaultValue={isAdmin ? 'all-goals' : 'my-goals'} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="my-goals">Minhas Metas</TabsTrigger>
-          <TabsTrigger value="kpis">Indicadores (KPIs)</TabsTrigger>
-          {isAdmin && <TabsTrigger value="all-goals">Todas as Metas</TabsTrigger>}
+          <TabsTrigger value="my-goals">{t('goals.myGoals')}</TabsTrigger>
+          <TabsTrigger value="kpis">{t('goals.indicators')}</TabsTrigger>
+          {isAdmin && <TabsTrigger value="all-goals">{t('goals.allGoals')}</TabsTrigger>}
         </TabsList>
 
         {/* My Goals Tab */}
@@ -208,9 +210,9 @@ export function GoalsDashboard() {
             <Card>
               <CardContent className="py-10 text-center">
                 <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold">Nenhuma meta atribuida</h3>
+                <h3 className="text-lg font-semibold">{t('goals.noGoalAssigned')}</h3>
                 <p className="text-muted-foreground">
-                  Voce nao tem metas atribuidas no momento.
+                  {t('goals.noGoalAssignedMessage')}
                 </p>
               </CardContent>
             </Card>
@@ -222,12 +224,12 @@ export function GoalsDashboard() {
                   <CardContent className="py-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Seu Progresso Geral</p>
+                        <p className="text-sm text-muted-foreground">{t('goals.yourOverallProgress')}</p>
                         <p className="text-3xl font-bold">
                           {Number(myProgress.summary.overall_progress || 0).toFixed(1)}%
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {formatCurrency(myProgress.summary.total_current)} de{' '}
+                          {formatCurrency(myProgress.summary.total_current)} {t('goals.of')}{' '}
                           {formatCurrency(myProgress.summary.total_targets)}
                         </p>
                       </div>
@@ -260,7 +262,7 @@ export function GoalsDashboard() {
                               {getStatusLabel(assignment.track_status)}
                             </Badge>
                             <span className="text-sm text-muted-foreground">
-                              {assignment.kpr?.remaining_days} dias restantes
+                              {assignment.kpr?.remaining_days} {t('goals.daysRemaining')}
                             </span>
                           </div>
                         </div>
@@ -281,7 +283,7 @@ export function GoalsDashboard() {
                     />
                     <div className="flex items-center justify-between mt-3 text-sm">
                       <span className="text-muted-foreground">
-                        Faltam: {formatCurrency(assignment.remaining_value)}
+                        {t('goals.remaining')}: {formatCurrency(assignment.remaining_value)}
                       </span>
                       <div className="flex items-center gap-1">
                         {assignment.trend?.direction === 'up' ? (
@@ -316,9 +318,9 @@ export function GoalsDashboard() {
             <Card>
               <CardContent className="py-10 text-center">
                 <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold">Nenhum KPI configurado</h3>
+                <h3 className="text-lg font-semibold">{t('goals.noKpiConfigured')}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Os indicadores de performance ainda nao foram configurados.
+                  {t('goals.noKpiConfiguredMessage')}
                 </p>
               </CardContent>
             </Card>
@@ -356,7 +358,7 @@ export function GoalsDashboard() {
                       {kpiItem.kpi.target_value && (
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">
-                            Meta: {kpiItem.kpi.target_value}
+                            {t('goals.target')}: {kpiItem.kpi.target_value}
                             {kpiItem.kpi.unit}
                           </span>
                           {kpiItem.is_on_target ? (
@@ -375,7 +377,7 @@ export function GoalsDashboard() {
                           }`}
                         >
                           {Number(kpiItem.variation) > 0 ? '+' : ''}
-                          {Number(kpiItem.variation).toFixed(1)}% vs periodo anterior
+                          {Number(kpiItem.variation).toFixed(1)}% {t('goals.vsPreviousPeriod')}
                         </p>
                       )}
                     </div>
@@ -393,14 +395,14 @@ export function GoalsDashboard() {
               <Card>
                 <CardContent className="py-10 text-center">
                   <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold">Nenhuma meta criada</h3>
+                  <h3 className="text-lg font-semibold">{t('goals.noGoalCreated')}</h3>
                   <p className="text-muted-foreground mb-4">
-                    Crie sua primeira meta para comecar a acompanhar os resultados.
+                    {t('goals.noGoalCreatedMessage')}
                   </p>
                   <Link to="/goals/new">
                     <Button>
                       <Plus className="h-4 w-4 mr-2" />
-                      Criar Meta
+                      {t('goals.createGoal')}
                     </Button>
                   </Link>
                 </CardContent>
@@ -427,9 +429,9 @@ export function GoalsDashboard() {
                             <div className="flex items-center gap-2 mt-2">
                               <Badge variant="outline" className={getStatusColor(kpr.status)}>
                                 {kpr.status === 'draft' ? (
-                                  <><FileEdit className="h-3 w-3 mr-1" /> Rascunho</>
+                                  <><FileEdit className="h-3 w-3 mr-1" /> {t('goals.status.draft')}</>
                                 ) : kpr.status === 'active' ? (
-                                  <><Play className="h-3 w-3 mr-1" /> Ativa</>
+                                  <><Play className="h-3 w-3 mr-1" /> {t('goals.status.active')}</>
                                 ) : (
                                   getStatusLabel(kpr.status)
                                 )}
@@ -440,7 +442,7 @@ export function GoalsDashboard() {
                                 </Badge>
                               )}
                               <span className="text-sm text-muted-foreground">
-                                {kpr.assignments_count || 0} vendedor(es)
+                                {kpr.assignments_count || 0} {t('goals.sellers')}
                               </span>
                             </div>
                           </div>
@@ -452,7 +454,7 @@ export function GoalsDashboard() {
                             </p>
                             {kpr.status === 'active' && (
                               <p className="text-sm text-muted-foreground">
-                                {Number(kpr.current_progress || 0).toFixed(1)}% atingido
+                                {Number(kpr.current_progress || 0).toFixed(1)}% {t('goals.achieved')}
                               </p>
                             )}
                           </div>

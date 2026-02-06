@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { User, Building2, Users, Bell, Palette, Paintbrush, Trophy, CalendarClock, MessageSquare, Bot, BarChart3 } from 'lucide-react'
@@ -16,29 +17,30 @@ import { GtmSettingsPage } from './GtmSettingsPage'
 
 type SettingsTab = 'profile' | 'company' | 'team' | 'notifications' | 'appearance' | 'branding' | 'gamification' | 'activities' | 'channels' | 'ai-automation' | 'gtm'
 
-const settingsSections = [
-  { icon: User, title: 'Perfil', description: 'Suas informacoes pessoais', tab: 'profile' as SettingsTab },
-  { icon: Building2, title: 'Empresa', description: 'Dados da empresa', tab: 'company' as SettingsTab },
-  { icon: Paintbrush, title: 'Identidade Visual', description: 'Logo, cores e marca', tab: 'branding' as SettingsTab },
-  { icon: MessageSquare, title: 'Canais & Integracoes', description: 'WhatsApp, Instagram, Filas', tab: 'channels' as SettingsTab },
-  { icon: Bot, title: 'IA & Automacao', description: 'Uso de IA e configs', tab: 'ai-automation' as SettingsTab },
-  { icon: BarChart3, title: 'Google Tag Manager', description: 'Rastreamento e eventos GTM', tab: 'gtm' as SettingsTab },
-  { icon: CalendarClock, title: 'Atividades', description: 'Prazos e atrasos', tab: 'activities' as SettingsTab },
-  { icon: Trophy, title: 'Gamificacao', description: 'Pontos, tiers e recompensas', tab: 'gamification' as SettingsTab },
-  { icon: Users, title: 'Equipe', description: 'Gerenciar usuarios', tab: 'team' as SettingsTab },
-  { icon: Bell, title: 'Notificacoes', description: 'Preferencias de alertas', tab: 'notifications' as SettingsTab },
-  { icon: Palette, title: 'Aparencia', description: 'Tema e personalizacao', tab: 'appearance' as SettingsTab },
-]
-
 export function SettingsPage() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
+
+  const settingsSections = [
+    { icon: User, title: t('settings.profile'), description: t('settings.profileDesc'), tab: 'profile' as SettingsTab },
+    { icon: Building2, title: t('settings.company'), description: t('settings.companyDesc'), tab: 'company' as SettingsTab },
+    { icon: Paintbrush, title: t('settings.branding'), description: t('settings.brandingDesc'), tab: 'branding' as SettingsTab },
+    { icon: MessageSquare, title: t('settings.channelsIntegrations'), description: t('settings.channelsIntegrationsDesc'), tab: 'channels' as SettingsTab },
+    { icon: Bot, title: t('settings.aiAutomation'), description: t('settings.aiAutomationDesc'), tab: 'ai-automation' as SettingsTab },
+    { icon: BarChart3, title: t('settings.gtm'), description: t('settings.gtmDesc'), tab: 'gtm' as SettingsTab },
+    { icon: CalendarClock, title: t('settings.activities'), description: t('settings.activitiesDesc'), tab: 'activities' as SettingsTab },
+    { icon: Trophy, title: t('settings.gamification'), description: t('settings.gamificationDesc'), tab: 'gamification' as SettingsTab },
+    { icon: Users, title: t('settings.team'), description: t('settings.teamDesc'), tab: 'team' as SettingsTab },
+    { icon: Bell, title: t('settings.notifications'), description: t('settings.notificationsDesc'), tab: 'notifications' as SettingsTab },
+    { icon: Palette, title: t('settings.appearance'), description: t('settings.appearanceDesc'), tab: 'appearance' as SettingsTab },
+  ]
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Configurações"
-        subtitle="Gerencie suas preferências"
+        title={t('settings.title')}
+        subtitle={t('settings.subtitle')}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

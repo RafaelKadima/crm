@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -44,6 +45,7 @@ import type { Product, ProductImage } from '@/types'
 const MAX_PRODUCT_IMAGES = 4
 
 export function ProductsPage() {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -94,12 +96,12 @@ export function ProductsPage() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Produtos"
-        subtitle={`${products.length} produtos cadastrados`}
+        title={t('products.title')}
+        subtitle={`${products.length} ${t('products.registered')}`}
         actions={
           <Button onClick={handleCreateNew}>
             <Plus className="h-4 w-4 mr-2" />
-            Novo Produto
+            {t('products.newProduct')}
           </Button>
         }
       />
@@ -109,7 +111,7 @@ export function ProductsPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, SKU..."
+            placeholder={t('products.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -125,13 +127,13 @@ export function ProductsPage() {
       ) : products.length === 0 ? (
         <div className="text-center py-12">
           <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium">Nenhum produto cadastrado</h3>
+          <h3 className="text-lg font-medium">{t('products.noProductRegistered')}</h3>
           <p className="text-muted-foreground mt-1">
-            Comece adicionando seu primeiro produto
+            {t('products.startAddingFirst')}
           </p>
           <Button onClick={handleCreateNew} className="mt-4">
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar Produto
+            {t('products.addProduct')}
           </Button>
         </div>
       ) : (
@@ -162,7 +164,7 @@ export function ProductsPage() {
                   <div className="absolute top-2 left-2">
                     {!product.is_active && (
                       <Badge variant="secondary" className="bg-red-500/90 text-white">
-                        Inativo
+                        {t('products.inactive')}
                       </Badge>
                     )}
                     {product.promotional_price && product.promotional_price < product.price && (
@@ -197,21 +199,21 @@ export function ProductsPage() {
                               className="w-full px-4 py-2 text-sm text-left hover:bg-muted flex items-center gap-2"
                             >
                               <Edit className="h-4 w-4" />
-                              Editar
+                              {t('common.edit')}
                             </button>
                             <button
                               onClick={() => handleDuplicate(product)}
                               className="w-full px-4 py-2 text-sm text-left hover:bg-muted flex items-center gap-2"
                             >
                               <Copy className="h-4 w-4" />
-                              Duplicar
+                              {t('products.duplicate')}
                             </button>
                             <button
                               onClick={() => handleDelete(product)}
                               className="w-full px-4 py-2 text-sm text-left hover:bg-muted flex items-center gap-2 text-red-600"
                             >
                               <Trash2 className="h-4 w-4" />
-                              Excluir
+                              {t('common.delete')}
                             </button>
                           </motion.div>
                         )}
@@ -256,7 +258,7 @@ export function ProductsPage() {
                       product.stock > 0 ? "text-amber-600" :
                       "text-red-600"
                     )}>
-                      {product.stock > 0 ? `${product.stock} em estoque` : 'Sem estoque'}
+                      {product.stock > 0 ? `${product.stock} ${t('products.inStock')}` : t('products.noStock')}
                     </p>
                   )}
                 </CardContent>
@@ -288,20 +290,20 @@ export function ProductsPage() {
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent size="sm">
           <DialogHeader>
-            <DialogTitle>Excluir Produto</DialogTitle>
+            <DialogTitle>{t('products.deleteTitle')}</DialogTitle>
           </DialogHeader>
           <DialogBody>
             <p>
-              Tem certeza que deseja excluir o produto{' '}
+              {t('products.deleteConfirm')}{' '}
               <strong>{productToDelete?.name}</strong>?
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Esta ação não pode ser desfeita.
+              {t('products.deleteWarning')}
             </p>
           </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -313,7 +315,7 @@ export function ProductsPage() {
               ) : (
                 <Trash2 className="h-4 w-4 mr-2" />
               )}
-              Excluir
+              {t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -334,6 +336,7 @@ interface ProductModalProps {
 }
 
 function ProductModal({ product, categories, open, onOpenChange, onSave, isLoading }: ProductModalProps) {
+  const { t } = useTranslation()
   // Initialize state with product data (key prop forces remount when product changes)
   const [formData, setFormData] = useState<Partial<Product>>(() =>
     product ? {
@@ -434,7 +437,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg" className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{product ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
+          <DialogTitle>{product ? t('products.editProduct') : t('products.newProduct')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
@@ -442,7 +445,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
             {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Nome *</label>
+                <label className="text-sm font-medium">{t('products.name')} *</label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -451,24 +454,24 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">SKU</label>
+                <label className="text-sm font-medium">{t('products.sku')}</label>
                 <Input
                   value={formData.sku || ''}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  placeholder="Código do produto"
+                  placeholder={t('products.sku')}
                 />
               </div>
             </div>
 
             {/* Category */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Categoria</label>
+              <label className="text-sm font-medium">{t('products.category')}</label>
               <select
                 value={formData.category_id || ''}
                 onChange={(e) => setFormData({ ...formData, category_id: e.target.value || undefined })}
                 className="w-full px-3 py-2 border rounded-lg bg-background"
               >
-                <option value="">Sem categoria</option>
+                <option value="">{t('products.noCategory')}</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
@@ -479,20 +482,20 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
 
             {/* Description */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Descrição curta</label>
+              <label className="text-sm font-medium">{t('products.shortDescription')}</label>
               <Input
                 value={formData.short_description || ''}
                 onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
-                placeholder="Breve descrição do produto"
+                placeholder={t('products.shortDescription')}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Descrição completa</label>
+              <label className="text-sm font-medium">{t('products.fullDescription')}</label>
               <textarea
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrição detalhada do produto"
+                placeholder={t('products.fullDescription')}
                 className="w-full px-3 py-2 border rounded-lg bg-background min-h-[100px] resize-y"
               />
             </div>
@@ -500,7 +503,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
             {/* Prices */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Preço *</label>
+                <label className="text-sm font-medium">{t('products.price')} *</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -515,7 +518,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Preço promocional</label>
+                <label className="text-sm font-medium">{t('products.promotionalPrice')}</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -534,7 +537,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Estoque</label>
+                <label className="text-sm font-medium">{t('products.stock')}</label>
                 <Input
                   type="number"
                   min="0"
@@ -554,7 +557,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                   className="rounded"
                 />
-                <span className="text-sm">Ativo</span>
+                <span className="text-sm">{t('products.active')}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -563,7 +566,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                   onChange={(e) => setFormData({ ...formData, show_on_landing_page: e.target.checked })}
                   className="rounded"
                 />
-                <span className="text-sm">Exibir na Landing Page</span>
+                <span className="text-sm">{t('products.showOnLandingPage')}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -572,7 +575,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                   onChange={(e) => setFormData({ ...formData, track_stock: e.target.checked })}
                   className="rounded"
                 />
-                <span className="text-sm">Controlar estoque</span>
+                <span className="text-sm">{t('products.trackStock')}</span>
               </label>
             </div>
 
@@ -582,15 +585,15 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <ImageIcon className="h-5 w-5" />
                   <div>
-                    <p className="text-sm font-medium">Imagens do produto</p>
-                    <p className="text-xs">Salve o produto primeiro para adicionar imagens</p>
+                    <p className="text-sm font-medium">{t('products.productImages')}</p>
+                    <p className="text-xs">{t('products.saveFirst')}</p>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Imagens</label>
+                  <label className="text-sm font-medium">{t('products.images')}</label>
                   <span className={cn(
                     "text-xs font-medium px-2 py-0.5 rounded",
                     images.length >= MAX_PRODUCT_IMAGES
@@ -651,7 +654,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                       ) : (
                         <>
                           <Upload className="h-6 w-6 mb-1" />
-                          <span className="text-xs">Adicionar</span>
+                          <span className="text-xs">{t('products.add')}</span>
                         </>
                       )}
                     </button>
@@ -666,7 +669,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
                   className="hidden"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Clique na estrela para definir a imagem principal
+                  {t('products.setMainImage')}
                 </p>
               </div>
             )}
@@ -674,7 +677,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? (
@@ -682,7 +685,7 @@ function ProductModal({ product, categories, open, onOpenChange, onSave, isLoadi
               ) : (
                 <Package className="h-4 w-4 mr-2" />
               )}
-              {product ? 'Salvar' : 'Criar Produto'}
+              {product ? t('common.save') : t('products.createProduct')}
             </Button>
           </DialogFooter>
         </form>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import {
   Bot,
@@ -32,6 +33,7 @@ interface SdrAgent {
 }
 
 export const SdrHubPage: React.FC = () => {
+  const { t } = useTranslation();
   const [agents, setAgents] = useState<SdrAgent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,8 +55,8 @@ export const SdrHubPage: React.FC = () => {
   const menuItems = [
     {
       id: 'create',
-      title: 'Criar Novo SDR',
-      description: 'Configure um novo agente SDR com IA',
+      title: t('sdr.createNewSdr'),
+      description: t('sdr.createNewSdrDesc'),
       icon: Plus,
       color: 'from-green-500 to-emerald-600',
       link: '/sdr/create',
@@ -64,24 +66,24 @@ export const SdrHubPage: React.FC = () => {
   const agentMenuItems = (agentId: string) => [
     {
       id: 'config',
-      title: 'Configurações',
-      description: 'Personalidade, conhecimento e comportamento',
+      title: t('sdr.settings'),
+      description: t('sdr.settingsDesc'),
       icon: Settings,
       color: 'from-blue-500 to-indigo-600',
       link: `/sdr/${agentId}/config`,
     },
     {
       id: 'learning',
-      title: 'Dashboard de Aprendizado',
-      description: 'Métricas, feedbacks e padrões detectados',
+      title: t('sdr.learningDashboard'),
+      description: t('sdr.learningDashboardDesc'),
       icon: Brain,
       color: 'from-purple-500 to-violet-600',
       link: `/sdr/${agentId}/learning`,
     },
     {
       id: 'faqs',
-      title: 'FAQs Automáticas',
-      description: 'Perguntas detectadas para aprovação',
+      title: t('sdr.autoFaqs'),
+      description: t('sdr.autoFaqsDesc'),
       icon: HelpCircle,
       color: 'from-amber-500 to-orange-600',
       link: `/sdr/${agentId}/questions`,
@@ -101,8 +103,8 @@ export const SdrHubPage: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <PageHeader
-          title="Central SDR"
-          subtitle="Gerencie seus agentes SDR com Inteligência Artificial"
+          title={t('sdr.title')}
+          subtitle={t('sdr.subtitle')}
         />
       </div>
 
@@ -115,7 +117,7 @@ export const SdrHubPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{agents.length}</p>
-              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Agentes SDR</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">{t('sdr.sdrAgents')}</p>
             </div>
           </div>
         </div>
@@ -128,7 +130,7 @@ export const SdrHubPage: React.FC = () => {
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {agents.filter(a => a.is_active).length}
               </p>
-              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Ativos</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">{t('sdr.active')}</p>
             </div>
           </div>
         </div>
@@ -139,7 +141,7 @@ export const SdrHubPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">--</p>
-              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Conversas Hoje</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">{t('sdr.conversationsToday')}</p>
             </div>
           </div>
         </div>
@@ -150,7 +152,7 @@ export const SdrHubPage: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">--</p>
-              <p className="text-sm text-muted-foreground dark:text-muted-foreground">Taxa de Sucesso</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">{t('sdr.successRate')}</p>
             </div>
           </div>
         </div>
@@ -168,8 +170,8 @@ export const SdrHubPage: React.FC = () => {
                 <Plus className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold">Criar Novo Agente SDR</h3>
-                <p className="text-green-100">Configure um novo assistente com IA para qualificar leads</p>
+                <h3 className="text-xl font-semibold">{t('sdr.createNewAgent')}</h3>
+                <p className="text-green-100">{t('sdr.createNewAgentDesc')}</p>
               </div>
             </div>
             <ChevronRight className="w-6 h-6" />
@@ -182,7 +184,7 @@ export const SdrHubPage: React.FC = () => {
         <div className="space-y-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
-            Seus Agentes SDR
+            {t('sdr.yourAgents')}
           </h2>
 
           {agents.map((agent) => (
@@ -208,7 +210,7 @@ export const SdrHubPage: React.FC = () => {
                             : 'bg-gray-100 text-muted-foreground dark:bg-accent dark:text-muted-foreground'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${agent.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                          {agent.is_active ? 'Ativo' : 'Inativo'}
+                          {agent.is_active ? t('sdr.active') : t('sdr.inactive')}
                         </span>
                         {agent.personality && (
                           <span className="text-xs text-muted-foreground dark:text-muted-foreground">
@@ -253,17 +255,17 @@ export const SdrHubPage: React.FC = () => {
         <div className="text-center py-12 bg-white dark:bg-muted rounded-xl border border-gray-200 dark:border-border">
           <Bot className="w-16 h-16 text-muted-foreground dark:text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Nenhum Agente SDR Configurado
+            {t('sdr.noAgentConfigured')}
           </h3>
           <p className="text-muted-foreground dark:text-muted-foreground mb-6 max-w-md mx-auto">
-            Crie seu primeiro agente SDR com IA para automatizar a qualificação de leads via WhatsApp
+            {t('sdr.noAgentConfiguredDesc')}
           </p>
           <Link
             to="/sdr/create"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
-            Criar Primeiro Agente
+            {t('sdr.createFirstAgent')}
           </Link>
         </div>
       )}
@@ -273,28 +275,28 @@ export const SdrHubPage: React.FC = () => {
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-5 border border-blue-100 dark:border-blue-800">
           <div className="flex items-center gap-3 mb-3">
             <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h4 className="font-medium text-gray-900 dark:text-white">Respostas Instantâneas</h4>
+            <h4 className="font-medium text-gray-900 dark:text-white">{t('sdr.instantResponses')}</h4>
           </div>
           <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-            Responda leads 24/7 com IA treinada no seu negócio
+            {t('sdr.instantResponsesDesc')}
           </p>
         </div>
         <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-5 border border-purple-100 dark:border-purple-800">
           <div className="flex items-center gap-3 mb-3">
             <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            <h4 className="font-medium text-gray-900 dark:text-white">Aprendizado Contínuo</h4>
+            <h4 className="font-medium text-gray-900 dark:text-white">{t('sdr.continuousLearning')}</h4>
           </div>
           <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-            O agente aprende com cada conversa e feedback
+            {t('sdr.continuousLearningDesc')}
           </p>
         </div>
         <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl p-5 border border-amber-100 dark:border-amber-800">
           <div className="flex items-center gap-3 mb-3">
             <Users className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            <h4 className="font-medium text-gray-900 dark:text-white">Qualificação Inteligente</h4>
+            <h4 className="font-medium text-gray-900 dark:text-white">{t('sdr.smartQualification')}</h4>
           </div>
           <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-            Identifica leads quentes e agenda reuniões automaticamente
+            {t('sdr.smartQualificationDesc')}
           </p>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUserSchedules, useSetWeekSchedule, type ScheduleData } from '../../hooks/useAppointments';
 import { useUsers } from '../../hooks/useUsers';
 import { useAuth } from '../../hooks/useAuth';
@@ -17,14 +18,14 @@ import {
 import { PageHeader } from '@/components/layout/PageHeader';
 import type { UserSchedule } from '../../types';
 
-const DAYS = [
-  { value: 0, label: 'Domingo', short: 'Dom' },
-  { value: 1, label: 'Segunda-feira', short: 'Seg' },
-  { value: 2, label: 'Terça-feira', short: 'Ter' },
-  { value: 3, label: 'Quarta-feira', short: 'Qua' },
-  { value: 4, label: 'Quinta-feira', short: 'Qui' },
-  { value: 5, label: 'Sexta-feira', short: 'Sex' },
-  { value: 6, label: 'Sábado', short: 'Sáb' },
+const DAY_KEYS = [
+  { value: 0, labelKey: 'sunday', shortKey: 'sun' },
+  { value: 1, labelKey: 'monday', shortKey: 'mon' },
+  { value: 2, labelKey: 'tuesday', shortKey: 'tue' },
+  { value: 3, labelKey: 'wednesday', shortKey: 'wed' },
+  { value: 4, labelKey: 'thursday', shortKey: 'thu' },
+  { value: 5, labelKey: 'friday', shortKey: 'fri' },
+  { value: 6, labelKey: 'saturday', shortKey: 'sat' },
 ];
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
@@ -55,10 +56,17 @@ const DEFAULT_SCHEDULE: Omit<DaySchedule, 'day_of_week'> = {
 };
 
 export default function ScheduleConfigPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<string>(user?.id || '');
   const [schedules, setSchedules] = useState<DaySchedule[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+
+  const DAYS = DAY_KEYS.map(day => ({
+    value: day.value,
+    label: t(`appointments.days.${day.labelKey}`),
+    short: t(`appointments.days.${day.shortKey}`),
+  }));
 
   const { data: usersData } = useUsers();
   const { data: schedulesData, isLoading, refetch } = useUserSchedules(selectedUserId);
@@ -162,8 +170,8 @@ export default function ScheduleConfigPage() {
         {/* Header */}
         <div className="mb-8">
           <PageHeader
-            title="Configuração de Agenda"
-            subtitle="Configure os horários de disponibilidade para agendamentos"
+            title={t('appointments.scheduleConfig')}
+            subtitle={t('appointments.scheduleConfigSubtitle')}
             actions={
               isAdmin ? (
                 <div className="mt-4 md:mt-0">
@@ -173,7 +181,7 @@ export default function ScheduleConfigPage() {
                     className="bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5
                              focus:ring-2 focus:ring-cyan-500 focus:border-transparent min-w-[200px]"
                   >
-                    <option value="">Selecione um usuário</option>
+                    <option value="">{t('appointments.selectUser')}</option>
                     {users.map((u) => (
                       <option key={u.id} value={u.id}>
                         {u.name} ({u.role})
@@ -194,9 +202,9 @@ export default function ScheduleConfigPage() {
         ) : !selectedUserId ? (
           <div className="bg-slate-800/30 rounded-xl p-12 text-center border border-slate-700/50">
             <User className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-white mb-2">Selecione um usuário</h3>
+            <h3 className="text-xl font-medium text-white mb-2">{t('appointments.selectUser')}</h3>
             <p className="text-slate-400">
-              Escolha um usuário para configurar sua agenda
+              {t('appointments.selectUserDesc')}
             </p>
           </div>
         ) : (
@@ -243,7 +251,7 @@ export default function ScheduleConfigPage() {
                             onClick={() => copyToAll(day.value)}
                             className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
                           >
-                            Copiar para todos
+                            {t('appointments.copyToAll')}
                           </button>
                         )}
                       </div>
@@ -254,7 +262,7 @@ export default function ScheduleConfigPage() {
                           <div>
                             <label className="block text-xs text-slate-400 mb-1">
                               <Clock className="w-3 h-3 inline mr-1" />
-                              Início
+                              {t('appointments.start')}
                             </label>
                             <select
                               value={schedule.start_time}
@@ -272,7 +280,7 @@ export default function ScheduleConfigPage() {
                           <div>
                             <label className="block text-xs text-slate-400 mb-1">
                               <Clock className="w-3 h-3 inline mr-1" />
-                              Fim
+                              {t('appointments.end')}
                             </label>
                             <select
                               value={schedule.end_time}
@@ -290,7 +298,7 @@ export default function ScheduleConfigPage() {
                           <div>
                             <label className="block text-xs text-slate-400 mb-1">
                               <Coffee className="w-3 h-3 inline mr-1" />
-                              Almoço (início)
+                              {t('appointments.breakStart')}
                             </label>
                             <select
                               value={schedule.break_start}
@@ -298,7 +306,7 @@ export default function ScheduleConfigPage() {
                               className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg 
                                        px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                             >
-                              <option value="">Sem intervalo</option>
+                              <option value="">{t('appointments.noBreak')}</option>
                               {TIME_OPTIONS.map(time => (
                                 <option key={time} value={time}>{time}</option>
                               ))}
@@ -309,7 +317,7 @@ export default function ScheduleConfigPage() {
                           <div>
                             <label className="block text-xs text-slate-400 mb-1">
                               <Coffee className="w-3 h-3 inline mr-1" />
-                              Almoço (fim)
+                              {t('appointments.breakEnd')}
                             </label>
                             <select
                               value={schedule.break_end}
@@ -330,7 +338,7 @@ export default function ScheduleConfigPage() {
                           <div>
                             <label className="block text-xs text-slate-400 mb-1">
                               <Calendar className="w-3 h-3 inline mr-1" />
-                              Duração do slot
+                              {t('appointments.slotDuration')}
                             </label>
                             <select
                               value={schedule.slot_duration}
@@ -355,7 +363,7 @@ export default function ScheduleConfigPage() {
             <div className="bg-slate-800/30 rounded-xl p-6 border border-slate-700/50">
               <h3 className="text-white font-medium mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-cyan-400" />
-                Resumo da Semana
+                {t('appointments.weekSummary')}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {DAYS.map((day) => {
@@ -389,7 +397,7 @@ export default function ScheduleConfigPage() {
                          hover:bg-slate-800/50 rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
-                Descartar alterações
+                {t('appointments.discardChanges')}
               </button>
 
               <button
@@ -403,12 +411,12 @@ export default function ScheduleConfigPage() {
                 {saveMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Salvando...
+                    {t('appointments.saving')}
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    Salvar Agenda
+                    {t('appointments.saveSchedule')}
                   </>
                 )}
               </button>
@@ -417,7 +425,7 @@ export default function ScheduleConfigPage() {
             {saveMutation.isSuccess && (
               <div className="flex items-center gap-2 p-4 bg-green-500/20 border border-green-500/30 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-green-400" />
-                <span className="text-green-400">Agenda salva com sucesso!</span>
+                <span className="text-green-400">{t('appointments.scheduleSaved')}</span>
               </div>
             )}
           </div>

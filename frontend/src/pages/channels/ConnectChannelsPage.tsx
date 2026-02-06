@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageSquare,
@@ -62,50 +63,51 @@ interface ChannelType {
   available: boolean
 }
 
-const channelTypes: ChannelType[] = [
-  {
-    id: 'whatsapp-meta',
-    name: 'WhatsApp Business',
-    description: 'Conecte via API oficial da Meta. Suporta templates, mensagens em massa e atendimento automatizado.',
-    icon: MessageSquare,
-    color: 'text-green-500',
-    bgColor: 'bg-green-500',
-    borderColor: 'border-green-500/30',
-    available: true,
-  },
-  {
-    id: 'whatsapp-internal',
-    name: 'WhatsApp (QR Code)',
-    description: 'Conexão via QR Code sem custos da API Meta. Ideal para testes e pequenas operações.',
-    icon: QrCode,
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-500',
-    borderColor: 'border-orange-500/30',
-    available: true,
-  },
-  {
-    id: 'instagram',
-    name: 'Instagram Direct',
-    description: 'Receba e responda mensagens do Instagram Direct diretamente no CRM.',
-    icon: Instagram,
-    color: 'text-pink-500',
-    bgColor: 'bg-gradient-to-br from-purple-500 to-pink-500',
-    borderColor: 'border-pink-500/30',
-    available: false,
-  },
-  {
-    id: 'webchat',
-    name: 'Webchat',
-    description: 'Widget de chat para seu site. Capture leads e atenda visitantes em tempo real.',
-    icon: Globe,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500',
-    borderColor: 'border-blue-500/30',
-    available: false,
-  },
-]
-
 export function ConnectChannelsPage() {
+  const { t } = useTranslation()
+
+  const channelTypes: ChannelType[] = [
+    {
+      id: 'whatsapp-meta',
+      name: 'WhatsApp Business',
+      description: t('channels.whatsappMetaDesc'),
+      icon: MessageSquare,
+      color: 'text-green-500',
+      bgColor: 'bg-green-500',
+      borderColor: 'border-green-500/30',
+      available: true,
+    },
+    {
+      id: 'whatsapp-internal',
+      name: 'WhatsApp (QR Code)',
+      description: t('channels.whatsappQrDesc'),
+      icon: QrCode,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500',
+      borderColor: 'border-orange-500/30',
+      available: true,
+    },
+    {
+      id: 'instagram',
+      name: 'Instagram Direct',
+      description: t('channels.instagramDesc'),
+      icon: Instagram,
+      color: 'text-pink-500',
+      bgColor: 'bg-gradient-to-br from-purple-500 to-pink-500',
+      borderColor: 'border-pink-500/30',
+      available: false,
+    },
+    {
+      id: 'webchat',
+      name: 'Webchat',
+      description: t('channels.webchatDesc'),
+      icon: Globe,
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-500',
+      borderColor: 'border-blue-500/30',
+      available: false,
+    },
+  ]
   const [qrChannel, setQrChannel] = useState<Channel | null>(null)
   const [isQRModalOpen, setIsQRModalOpen] = useState(false)
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null)
@@ -133,12 +135,12 @@ export function ConnectChannelsPage() {
   // Handlers
   const handleConnectWhatsApp = () => {
     if (!isEmbeddedSignupConfigured) {
-      toast.error('Cadastro incorporado não configurado. Verifique as credenciais da Meta no servidor.')
+      toast.error(t('channels.embeddedSignupNotConfigured'))
       return
     }
 
     if (!isSDKLoaded) {
-      toast.error('Aguarde o carregamento do Facebook SDK...')
+      toast.error(t('channels.waitingFacebookSdk'))
       return
     }
 
@@ -152,25 +154,25 @@ export function ConnectChannelsPage() {
   const handleConnectQR = () => {
     // Para QR, precisamos de um canal interno criado primeiro
     // Navegar para a página de canais para criar um canal interno
-    toast.info('Para conectar via QR Code, crie um canal WhatsApp Interno na página de canais.')
+    toast.info(t('channels.qrCodeInstructions'))
   }
 
   const handleDisconnectMeta = async (id: string) => {
     try {
       await disconnectMutation.mutateAsync(id)
-      toast.success('Integração desconectada')
+      toast.success(t('channels.integrationDisconnected'))
       setConfirmDisconnect(null)
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Erro ao desconectar')
+      toast.error(error.response?.data?.message || t('channels.errorDisconnecting'))
     }
   }
 
   const handleRefreshToken = async (id: string) => {
     try {
       await refreshTokenMutation.mutateAsync(id)
-      toast.success('Token renovado com sucesso')
+      toast.success(t('channels.tokenRefreshed'))
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Erro ao renovar token')
+      toast.error(error.response?.data?.message || t('channels.errorRefreshingToken'))
     }
   }
 
@@ -178,17 +180,17 @@ export function ConnectChannelsPage() {
     try {
       await toggleActive.mutateAsync(channel.id)
     } catch (error) {
-      toast.error('Erro ao alterar status do canal')
+      toast.error(t('channels.errorChangingStatus'))
     }
   }
 
   const handleDeleteChannel = async (channel: Channel) => {
-    if (!confirm(`Deseja excluir o canal "${channel.name}"?`)) return
+    if (!confirm(t('channels.confirmDeleteChannel', { name: channel.name }))) return
     try {
       await deleteChannel.mutateAsync(channel.id)
-      toast.success('Canal excluído')
+      toast.success(t('channels.channelDeleted'))
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Erro ao excluir canal')
+      toast.error(error.response?.data?.message || t('channels.errorDeletingChannel'))
     }
   }
 
@@ -198,14 +200,14 @@ export function ConnectChannelsPage() {
         return (
           <Badge variant="warning" className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            Expira em {integration.days_until_expiration}d
+            {t('channels.status.expiresIn', { days: integration.days_until_expiration })}
           </Badge>
         )
       }
       return (
         <Badge variant="success" className="flex items-center gap-1">
           <CheckCircle className="w-3 h-3" />
-          Ativo
+          {t('channels.status.active')}
         </Badge>
       )
     }
@@ -213,7 +215,7 @@ export function ConnectChannelsPage() {
       return (
         <Badge variant="destructive" className="flex items-center gap-1">
           <XCircle className="w-3 h-3" />
-          Expirado
+          {t('channels.status.expired')}
         </Badge>
       )
     }
@@ -221,7 +223,7 @@ export function ConnectChannelsPage() {
       return (
         <Badge variant="warning" className="flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" />
-          Reautorizar
+          {t('channels.status.reauth')}
         </Badge>
       )
     }
@@ -237,13 +239,13 @@ export function ConnectChannelsPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Conectar Canais"
-        subtitle="Conecte seus canais de comunicação ao CRM para centralizar o atendimento"
+        title={t('channels.connectChannels')}
+        subtitle={t('channels.connectSubtitle')}
         actions={
           <Link to="/channels">
             <Button variant="outline">
               <Settings className="h-4 w-4 mr-2" />
-              Gerenciar Canais
+              {t('channels.manageChannels')}
             </Button>
           </Link>
         }
@@ -262,10 +264,10 @@ export function ConnectChannelsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <Smartphone className="w-4 h-4 text-blue-400" />
-                    <span className="font-medium">Modo Coexistencia</span>
+                    <span className="font-medium">{t('channels.coexistenceMode')}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1 ml-6">
-                    Conecte um numero ja em uso no WhatsApp Business App mantendo o App funcionando
+                    {t('channels.coexistenceModeDesc')}
                   </p>
                 </div>
                 <Switch
@@ -278,9 +280,9 @@ export function ConnectChannelsPage() {
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-blue-300 space-y-1">
-                      <p>O numero deve estar em uso no WhatsApp Business App ha pelo menos 7 dias.</p>
-                      <p>Mensagens enviadas pelo App serao sincronizadas com o CRM automaticamente.</p>
-                      <p>Selo azul (OBA) nao e suportado no modo coexistencia.</p>
+                      <p>{t('channels.coexistenceInfo1')}</p>
+                      <p>{t('channels.coexistenceInfo2')}</p>
+                      <p>{t('channels.coexistenceInfo3')}</p>
                     </div>
                   </div>
                 </div>
@@ -290,7 +292,7 @@ export function ConnectChannelsPage() {
 
           {/* Canal Types Grid */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Adicionar novo canal</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('channels.addNewChannel')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {channelTypes.map((type, index) => (
                 <motion.div
@@ -335,18 +337,18 @@ export function ConnectChannelsPage() {
                             {type.id === 'whatsapp-meta' && isEmbeddedProcessing ? (
                               <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Processando...
+                                {t('common.processing')}
                               </>
                             ) : (
                               <>
                                 <Plus className="h-4 w-4 mr-2" />
-                                Conectar
+                                {t('channels.connect')}
                               </>
                             )}
                           </Button>
                         ) : (
                           <Badge variant="secondary" className="w-full justify-center py-1.5">
-                            Em breve
+                            {t('common.comingSoon')}
                           </Badge>
                         )}
                       </div>
@@ -363,10 +365,10 @@ export function ConnectChannelsPage() {
               <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-amber-700 dark:text-amber-400">
-                  Cadastro incorporado não configurado
+                  {t('channels.embeddedSignupNotConfiguredTitle')}
                 </p>
                 <p className="text-sm text-amber-600 dark:text-amber-500 mt-1">
-                  O META_CONFIG_ID precisa ser configurado no servidor para habilitar a conexão via popup da Meta.
+                  {t('channels.embeddedSignupNotConfiguredMessage')}
                 </p>
               </div>
             </div>
@@ -377,17 +379,17 @@ export function ConnectChannelsPage() {
               <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-amber-700 dark:text-amber-400">
-                  Credenciais Meta não configuradas
+                  {t('channels.metaCredentialsNotConfigured')}
                 </p>
                 <p className="text-sm text-amber-600 dark:text-amber-500 mt-1">
-                  Configure META_APP_ID e META_APP_SECRET no servidor para conectar canais WhatsApp Business.{' '}
+                  {t('channels.metaCredentialsMessage')}{' '}
                   <a
                     href="https://developers.facebook.com/apps"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline inline-flex items-center gap-1"
                   >
-                    Criar Meta App <ExternalLink className="w-3 h-3" />
+                    {t('channels.createMetaApp')} <ExternalLink className="w-3 h-3" />
                   </a>
                 </p>
               </div>
@@ -397,7 +399,7 @@ export function ConnectChannelsPage() {
           {/* Connected Channels Section */}
           {hasConnectedChannels && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Canais conectados</h3>
+              <h3 className="text-lg font-semibold mb-4">{t('channels.connectedChannels')}</h3>
               <div className="space-y-3">
                 {/* Meta Integrations */}
                 {metaIntegrations && metaIntegrations.map((integration) => {
@@ -428,7 +430,7 @@ export function ConnectChannelsPage() {
                             {integration.is_coexistence && (
                               <Badge variant="outline" className="flex items-center gap-1 text-xs text-blue-400 border-blue-400/30">
                                 <Smartphone className="w-3 h-3" />
-                                Coexistencia
+                                {t('channels.coexistence')}
                               </Badge>
                             )}
                           </div>
@@ -449,7 +451,7 @@ export function ConnectChannelsPage() {
                           {linkedChannel && (
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="secondary" className="text-xs">
-                                Canal: {linkedChannel.name}
+                                {t('channels.channel')}: {linkedChannel.name}
                               </Badge>
                               {linkedChannel.ia_mode !== 'none' && (
                                 <Badge className="text-xs bg-purple-500 text-white">
@@ -498,7 +500,7 @@ export function ConnectChannelsPage() {
                               {disconnectMutation.isPending ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
-                                'Confirmar'
+                                t('common.confirm')
                               )}
                             </Button>
                             <Button
@@ -506,7 +508,7 @@ export function ConnectChannelsPage() {
                               size="sm"
                               onClick={() => setConfirmDisconnect(null)}
                             >
-                              Cancelar
+                              {t('common.cancel')}
                             </Button>
                           </div>
                         ) : (
@@ -515,7 +517,7 @@ export function ConnectChannelsPage() {
                             size="sm"
                             onClick={() => setConfirmDisconnect(integration.id)}
                             className="text-destructive hover:text-destructive"
-                            title="Desconectar"
+                            title={t('channels.disconnect')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -543,10 +545,10 @@ export function ConnectChannelsPage() {
                           {channel.is_active ? (
                             <Badge variant="success" className="flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" />
-                              Ativo
+                              {t('channels.status.active')}
                             </Badge>
                           ) : (
-                            <Badge variant="secondary">Inativo</Badge>
+                            <Badge variant="secondary">{t('channels.status.inactive')}</Badge>
                           )}
                           <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
                             QR Code
@@ -554,12 +556,12 @@ export function ConnectChannelsPage() {
                           {channel.config?.internal_connected ? (
                             <Badge className="bg-green-500 text-white text-xs">
                               <Wifi className="h-3 w-3 mr-1" />
-                              Conectado
+                              {t('channels.status.connected')}
                             </Badge>
                           ) : (
                             <Badge variant="secondary" className="text-xs">
                               <WifiOff className="h-3 w-3 mr-1" />
-                              Desconectado
+                              {t('channels.status.disconnected')}
                             </Badge>
                           )}
                         </div>
@@ -579,10 +581,10 @@ export function ConnectChannelsPage() {
                         }}
                       >
                         <QrCode className="h-4 w-4 mr-1" />
-                        {channel.config?.internal_connected ? 'Reconectar' : 'Conectar'}
+                        {channel.config?.internal_connected ? t('channels.reconnect') : t('channels.connect')}
                       </Button>
                       <Link to="/channels">
-                        <Button variant="ghost" size="sm" title="Configurar">
+                        <Button variant="ghost" size="sm" title={t('channels.configure')}>
                           <Settings className="h-4 w-4" />
                         </Button>
                       </Link>
@@ -590,7 +592,7 @@ export function ConnectChannelsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleToggleChannel(channel)}
-                        title={channel.is_active ? 'Desativar' : 'Ativar'}
+                        title={channel.is_active ? t('channels.deactivate') : t('channels.activate')}
                         className={channel.is_active ? 'text-green-500' : 'text-muted-foreground'}
                       >
                         {channel.is_active ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
@@ -619,10 +621,10 @@ export function ConnectChannelsPage() {
                             {channel.is_active ? (
                               <Badge variant="success" className="flex items-center gap-1">
                                 <CheckCircle className="w-3 h-3" />
-                                Ativo
+                                {t('channels.status.active')}
                               </Badge>
                             ) : (
-                              <Badge variant="secondary">Inativo</Badge>
+                              <Badge variant="secondary">{t('channels.status.inactive')}</Badge>
                             )}
                             <Badge variant="outline" className="text-xs">
                               Meta Cloud API
@@ -636,7 +638,7 @@ export function ConnectChannelsPage() {
 
                       <div className="flex items-center gap-2">
                         <Link to="/channels">
-                          <Button variant="ghost" size="sm" title="Configurar">
+                          <Button variant="ghost" size="sm" title={t('channels.configure')}>
                             <Settings className="h-4 w-4" />
                           </Button>
                         </Link>
@@ -653,9 +655,9 @@ export function ConnectChannelsPage() {
               <div className="p-4 bg-muted rounded-full w-fit mx-auto mb-4">
                 <MessageSquare className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold text-lg">Nenhum canal conectado</h3>
+              <h3 className="font-semibold text-lg">{t('channels.noChannelConnected')}</h3>
               <p className="text-muted-foreground mt-1 max-w-md mx-auto">
-                Conecte seu primeiro canal de comunicação para começar a centralizar o atendimento no CRM.
+                {t('channels.connectFirstChannel')}
               </p>
             </div>
           )}
@@ -669,9 +671,9 @@ export function ConnectChannelsPage() {
               <div className="flex items-center gap-3">
                 <Settings className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 <div>
-                  <p className="font-medium">Gerenciar Canais</p>
+                  <p className="font-medium">{t('channels.manageChannels')}</p>
                   <p className="text-sm text-muted-foreground">
-                    Configure tokens, IA SDR e filas de atendimento
+                    {t('channels.manageChannelsDesc')}
                   </p>
                 </div>
               </div>
@@ -685,9 +687,9 @@ export function ConnectChannelsPage() {
               <div className="flex items-center gap-3">
                 <MessageSquare className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 <div>
-                  <p className="font-medium">Templates WhatsApp</p>
+                  <p className="font-medium">{t('channels.whatsappTemplates')}</p>
                   <p className="text-sm text-muted-foreground">
-                    Gerencie seus templates de mensagem aprovados pela Meta
+                    {t('channels.whatsappTemplatesDesc')}
                   </p>
                 </div>
               </div>

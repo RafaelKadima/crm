@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppointments, useCancelAppointment, useConfirmAppointment, useCompleteAppointment, useNoShowAppointment } from '../../hooks/useAppointments';
 import { useUsers } from '../../hooks/useUsers';
 import { format, parseISO, isToday, isTomorrow, isPast } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { 
   CalendarDays, 
   Clock, 
@@ -24,30 +25,33 @@ import type { Appointment } from '../../types';
 import NewAppointmentModal from './NewAppointmentModal';
 import AppointmentDetailsModal from './AppointmentDetailsModal';
 
-const TYPE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  meeting: { label: 'Reunião', icon: <Video className="w-4 h-4" />, color: 'bg-blue-500' },
-  visit: { label: 'Visita', icon: <Building className="w-4 h-4" />, color: 'bg-purple-500' },
-  demo: { label: 'Demo', icon: <Eye className="w-4 h-4" />, color: 'bg-green-500' },
-  follow_up: { label: 'Follow-up', icon: <Phone className="w-4 h-4" />, color: 'bg-orange-500' },
-  other: { label: 'Outro', icon: <CalendarDays className="w-4 h-4" />, color: 'bg-gray-500' },
-};
-
-const STATUS_LABELS: Record<string, { label: string; color: string; bgColor: string }> = {
-  scheduled: { label: 'Agendado', color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  confirmed: { label: 'Confirmado', color: 'text-green-600', bgColor: 'bg-green-100' },
-  completed: { label: 'Realizado', color: 'text-muted-foreground', bgColor: 'bg-gray-100' },
-  cancelled: { label: 'Cancelado', color: 'text-red-600', bgColor: 'bg-red-100' },
-  no_show: { label: 'Não Compareceu', color: 'text-orange-600', bgColor: 'bg-orange-100' },
-  rescheduled: { label: 'Reagendado', color: 'text-purple-600', bgColor: 'bg-purple-100' },
-};
-
 export default function AppointmentsPage() {
+  const { t, i18n } = useTranslation();
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [userFilter, setUserFilter] = useState<string>('');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+
+  const TYPE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+    meeting: { label: t('appointments.types.meeting'), icon: <Video className="w-4 h-4" />, color: 'bg-blue-500' },
+    visit: { label: t('appointments.types.visit'), icon: <Building className="w-4 h-4" />, color: 'bg-purple-500' },
+    demo: { label: t('appointments.types.demo'), icon: <Eye className="w-4 h-4" />, color: 'bg-green-500' },
+    follow_up: { label: t('appointments.types.follow_up'), icon: <Phone className="w-4 h-4" />, color: 'bg-orange-500' },
+    other: { label: t('appointments.types.other'), icon: <CalendarDays className="w-4 h-4" />, color: 'bg-gray-500' },
+  };
+
+  const STATUS_LABELS: Record<string, { label: string; color: string; bgColor: string }> = {
+    scheduled: { label: t('appointments.status.scheduled'), color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    confirmed: { label: t('appointments.status.confirmed'), color: 'text-green-600', bgColor: 'bg-green-100' },
+    completed: { label: t('appointments.status.completed'), color: 'text-muted-foreground', bgColor: 'bg-gray-100' },
+    cancelled: { label: t('appointments.status.cancelled'), color: 'text-red-600', bgColor: 'bg-red-100' },
+    no_show: { label: t('appointments.status.noShow'), color: 'text-orange-600', bgColor: 'bg-orange-100' },
+    rescheduled: { label: t('appointments.status.rescheduled'), color: 'text-purple-600', bgColor: 'bg-purple-100' },
+  };
 
   const { data: appointmentsData, isLoading } = useAppointments({
     status: statusFilter || undefined,
@@ -66,9 +70,9 @@ export default function AppointmentsPage() {
 
   const formatDate = (dateStr: string) => {
     const date = parseISO(dateStr);
-    if (isToday(date)) return 'Hoje';
-    if (isTomorrow(date)) return 'Amanhã';
-    return format(date, "dd 'de' MMMM", { locale: ptBR });
+    if (isToday(date)) return t('appointments.today');
+    if (isTomorrow(date)) return t('appointments.tomorrow');
+    return format(date, i18n.language === 'pt-BR' ? "dd 'de' MMMM" : "MMMM dd", { locale: dateLocale });
   };
 
   const formatTime = (dateStr: string) => {
@@ -80,19 +84,19 @@ export default function AppointmentsPage() {
   };
 
   const handleCancel = async (id: string) => {
-    const reason = prompt('Motivo do cancelamento:');
+    const reason = prompt(t('appointments.cancelReason'));
     if (reason !== null) {
       await cancelMutation.mutateAsync({ id, reason });
     }
   };
 
   const handleComplete = async (id: string) => {
-    const outcome = prompt('Resultado do agendamento:');
+    const outcome = prompt(t('appointments.outcomePrompt'));
     await completeMutation.mutateAsync({ id, outcome: outcome || undefined });
   };
 
   const handleNoShow = async (id: string) => {
-    if (confirm('Marcar como não compareceu?')) {
+    if (confirm(t('appointments.confirmNoShow'))) {
       await noShowMutation.mutateAsync(id);
     }
   };
@@ -115,8 +119,8 @@ export default function AppointmentsPage() {
         {/* Header */}
         <div className="mb-8">
           <PageHeader
-            title="Agendamentos"
-            subtitle="Gerencie reuniões, visitas e demonstrações"
+            title={t('appointments.title')}
+            subtitle={t('appointments.subtitle')}
             actions={
               <button
                 onClick={() => setShowNewModal(true)}
@@ -125,7 +129,7 @@ export default function AppointmentsPage() {
                          transition-all shadow-lg shadow-cyan-500/25"
               >
                 <Plus className="w-5 h-5" />
-                Novo Agendamento
+                {t('appointments.newAppointment')}
               </button>
             }
           />
@@ -135,7 +139,7 @@ export default function AppointmentsPage() {
         <div className="bg-slate-800/50 backdrop-blur rounded-xl p-4 mb-6 border border-slate-700/50">
           <div className="flex items-center gap-2 mb-3 text-slate-400">
             <Filter className="w-4 h-4" />
-            <span className="text-sm font-medium">Filtros</span>
+            <span className="text-sm font-medium">{t('appointments.filters')}</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <select
@@ -144,7 +148,7 @@ export default function AppointmentsPage() {
               className="bg-slate-700/50 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm
                        focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
             >
-              <option value="">Todos os status</option>
+              <option value="">{t('appointments.allStatuses')}</option>
               {Object.entries(STATUS_LABELS).map(([key, { label }]) => (
                 <option key={key} value={key}>{label}</option>
               ))}
@@ -156,7 +160,7 @@ export default function AppointmentsPage() {
               className="bg-slate-700/50 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm
                        focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
             >
-              <option value="">Todos os tipos</option>
+              <option value="">{t('appointments.allTypes')}</option>
               {Object.entries(TYPE_LABELS).map(([key, { label }]) => (
                 <option key={key} value={key}>{label}</option>
               ))}
@@ -168,7 +172,7 @@ export default function AppointmentsPage() {
               className="bg-slate-700/50 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm
                        focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
             >
-              <option value="">Todos os vendedores</option>
+              <option value="">{t('appointments.allSellers')}</option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>{user.name}</option>
               ))}
@@ -178,20 +182,20 @@ export default function AppointmentsPage() {
               <button
                 onClick={() => setViewMode('list')}
                 className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                          ${viewMode === 'list' 
-                            ? 'bg-cyan-500 text-white' 
+                          ${viewMode === 'list'
+                            ? 'bg-cyan-500 text-white'
                             : 'bg-slate-700/50 text-slate-400 hover:text-white'}`}
               >
-                Lista
+                {t('appointments.list')}
               </button>
               <button
                 onClick={() => setViewMode('calendar')}
                 className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                          ${viewMode === 'calendar' 
-                            ? 'bg-cyan-500 text-white' 
+                          ${viewMode === 'calendar'
+                            ? 'bg-cyan-500 text-white'
                             : 'bg-slate-700/50 text-slate-400 hover:text-white'}`}
               >
-                Calendário
+                {t('appointments.calendar')}
               </button>
             </div>
           </div>
@@ -205,17 +209,17 @@ export default function AppointmentsPage() {
         ) : appointments.length === 0 ? (
           <div className="bg-slate-800/30 rounded-xl p-12 text-center border border-slate-700/50">
             <CalendarDays className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-white mb-2">Nenhum agendamento</h3>
+            <h3 className="text-xl font-medium text-white mb-2">{t('appointments.noAppointments')}</h3>
             <p className="text-slate-400 mb-6">
-              Comece criando seu primeiro agendamento
+              {t('appointments.startCreating')}
             </p>
             <button
               onClick={() => setShowNewModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg 
+              className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg
                        hover:bg-cyan-600 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Criar Agendamento
+              {t('appointments.createAppointment')}
             </button>
           </div>
         ) : (
@@ -230,12 +234,12 @@ export default function AppointmentsPage() {
                       {formatDate(groupedAppointments[date][0].scheduled_at)}
                     </span>
                     <span className="text-slate-500 text-sm">
-                      ({format(parseISO(date), 'EEEE', { locale: ptBR })})
+                      ({format(parseISO(date), 'EEEE', { locale: dateLocale })})
                     </span>
                   </div>
                   <div className="flex-1 h-px bg-slate-700/50"></div>
                   <span className="text-slate-500 text-sm">
-                    {groupedAppointments[date].length} agendamento(s)
+                    {groupedAppointments[date].length} {t('appointments.appointmentsCount')}
                   </span>
                 </div>
 
@@ -282,7 +286,7 @@ export default function AppointmentsPage() {
                                 {isOverdue && (
                                   <span className="flex items-center gap-1 text-orange-400 text-xs">
                                     <AlertCircle className="w-3 h-3" />
-                                    Atrasado
+                                    {t('appointments.overdue')}
                                   </span>
                                 )}
                               </div>
@@ -323,14 +327,14 @@ export default function AppointmentsPage() {
                                 <button
                                   onClick={() => handleConfirm(appointment.id)}
                                   className="p-2 text-green-400 hover:bg-green-500/20 rounded-lg transition-colors"
-                                  title="Confirmar"
+                                  title={t('common.confirm')}
                                 >
                                   <CheckCircle className="w-5 h-5" />
                                 </button>
                                 <button
                                   onClick={() => handleCancel(appointment.id)}
                                   className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                                  title="Cancelar"
+                                  title={t('common.cancel')}
                                 >
                                   <XCircle className="w-5 h-5" />
                                 </button>
@@ -347,13 +351,13 @@ export default function AppointmentsPage() {
                                     onClick={() => handleComplete(appointment.id)}
                                     className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700/50"
                                   >
-                                    Marcar como realizado
+                                    {t('appointments.markAsCompleted')}
                                   </button>
                                   <button
                                     onClick={() => handleNoShow(appointment.id)}
                                     className="w-full px-3 py-2 text-left text-sm text-orange-400 hover:bg-slate-700/50"
                                   >
-                                    Não compareceu
+                                    {t('appointments.noShow')}
                                   </button>
                                 </div>
                               </div>

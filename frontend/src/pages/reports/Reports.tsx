@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
@@ -46,6 +47,7 @@ const channelColors: Record<string, string> = {
 }
 
 export function ReportsPage() {
+  const { t } = useTranslation()
   // State para filtros
   const [filters, setFilters] = useState({
     pipeline_id: '',
@@ -162,8 +164,8 @@ export function ReportsPage() {
       {/* Header com Filtros */}
       <div className="flex flex-col gap-4">
         <PageHeader
-          title="Relatórios"
-          subtitle="Análise de performance e métricas em tempo real"
+          title={t('reports.title')}
+          subtitle={t('reports.subtitle')}
         />
 
         {/* Filtros */}
@@ -172,7 +174,7 @@ export function ReportsPage() {
             <div className="flex flex-wrap items-end gap-4">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Filter className="h-4 w-4" />
-                <span className="text-sm font-medium">Filtros:</span>
+                <span className="text-sm font-medium">{t('reports.filters')}:</span>
               </div>
 
               {/* Pipeline */}
@@ -183,10 +185,10 @@ export function ReportsPage() {
                   onValueChange={(v) => setFilters({ ...filters, pipeline_id: v === 'all' ? '' : v })}
                 >
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Todos" />
+                    <SelectValue placeholder={t('reports.all')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos os Pipelines</SelectItem>
+                    <SelectItem value="all">{t('reports.allPipelines')}</SelectItem>
                     {pipelines?.map((p: any) => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                     ))}
@@ -196,7 +198,7 @@ export function ReportsPage() {
 
               {/* Data Inicial */}
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Data Inicial</Label>
+                <Label className="text-xs">{t('reports.startDate')}</Label>
                 <Input
                   type="date"
                   value={filters.date_from}
@@ -207,7 +209,7 @@ export function ReportsPage() {
 
               {/* Data Final */}
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Data Final</Label>
+                <Label className="text-xs">{t('reports.endDate')}</Label>
                 <Input
                   type="date"
                   value={filters.date_to}
@@ -218,7 +220,7 @@ export function ReportsPage() {
 
               {/* Agrupamento */}
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Agrupar por</Label>
+                <Label className="text-xs">{t('reports.groupBy')}</Label>
                 <Select
                   value={filters.group_by}
                   onValueChange={(v) => setFilters({ ...filters, group_by: v as 'day' | 'week' | 'month' })}
@@ -227,9 +229,9 @@ export function ReportsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="day">Dia</SelectItem>
-                    <SelectItem value="week">Semana</SelectItem>
-                    <SelectItem value="month">Mês</SelectItem>
+                    <SelectItem value="day">{t('reports.day')}</SelectItem>
+                    <SelectItem value="week">{t('reports.week')}</SelectItem>
+                    <SelectItem value="month">{t('reports.month')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -248,7 +250,7 @@ export function ReportsPage() {
                   <Target className="h-6 w-6 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total de Leads</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.totalLeads')}</p>
                   <p className="text-2xl font-bold">{totals.total_leads || 0}</p>
                 </div>
               </div>
@@ -264,7 +266,7 @@ export function ReportsPage() {
                   <TrendingUp className="h-6 w-6 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Taxa de Conversão</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.conversionRate')}</p>
                   <p className="text-2xl font-bold">{totals.conversion_rate || 0}%</p>
                 </div>
               </div>
@@ -280,7 +282,7 @@ export function ReportsPage() {
                   <DollarSign className="h-6 w-6 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Valor Total</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.totalValue')}</p>
                   <p className="text-2xl font-bold">{formatCurrency(totals.total_value || 0)}</p>
                 </div>
               </div>
@@ -296,7 +298,7 @@ export function ReportsPage() {
                   <Users className="h-6 w-6 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Leads Ganhos</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.wonLeads')}</p>
                   <p className="text-2xl font-bold text-green-400">{totals.won_leads || 0}</p>
                 </div>
               </div>
@@ -315,9 +317,9 @@ export function ReportsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-400" />
-              Evolução do Funil
+              {t('reports.funnelEvolution')}
               <span className="text-sm font-normal text-muted-foreground ml-2">
-                (por {filters.group_by === 'day' ? 'dia' : filters.group_by === 'week' ? 'semana' : 'mês'})
+                ({t('reports.per')} {filters.group_by === 'day' ? t('reports.day').toLowerCase() : filters.group_by === 'week' ? t('reports.week').toLowerCase() : t('reports.month').toLowerCase()})
               </span>
             </CardTitle>
           </CardHeader>
@@ -368,7 +370,7 @@ export function ReportsPage() {
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                Nenhum dado disponível para o período selecionado
+                {t('reports.noDataForPeriod')}
               </div>
             )}
           </CardContent>
@@ -387,7 +389,7 @@ export function ReportsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-blue-400" />
-                Funil de Vendas
+                {t('reports.salesFunnel')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -405,7 +407,7 @@ export function ReportsPage() {
                       }}
                       formatter={(value: any, name: any) => [
                         name === 'value' ? `${value} leads` : formatCurrency(value),
-                        name === 'value' ? 'Leads' : 'Valor'
+                        name === 'value' ? 'Leads' : t('reports.value')
                       ]}
                     />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]}>
@@ -417,7 +419,7 @@ export function ReportsPage() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  Nenhum dado disponível
+                  {t('reports.noDataAvailable')}
                 </div>
               )}
             </CardContent>
@@ -434,7 +436,7 @@ export function ReportsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-purple-400" />
-                Leads por Canal
+                {t('reports.leadsByChannel')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -461,13 +463,13 @@ export function ReportsPage() {
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px',
                       }}
-                      formatter={(value: any) => [`${value} leads`, 'Quantidade']}
+                      formatter={(value: any) => [`${value} leads`, t('reports.quantity')]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  Nenhum dado disponível
+                  {t('reports.noDataAvailable')}
                 </div>
               )}
             </CardContent>
@@ -485,7 +487,7 @@ export function ReportsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-green-400" />
-                Produtividade por Vendedor
+                {t('reports.productivityBySeller')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -504,13 +506,13 @@ export function ReportsPage() {
                     />
                     <Legend />
                     <Bar dataKey="leads" fill="#3b82f6" name="Leads" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="conversoes" fill="#22c55e" name="Conversões" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="conversoes" fill="#22c55e" name={t('reports.conversions')} radius={[4, 4, 0, 0]} />
                     <Bar dataKey="tickets" fill="#8b5cf6" name="Tickets" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  Nenhum vendedor encontrado
+                  {t('reports.noSellerFound')}
                 </div>
               )}
             </CardContent>
@@ -527,20 +529,20 @@ export function ReportsPage() {
         >
           <Card>
             <CardHeader>
-              <CardTitle>Detalhamento por Vendedor</CardTitle>
+              <CardTitle>{t('reports.detailBySeller')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-medium">Vendedor</th>
+                      <th className="text-left py-3 px-4 font-medium">{t('reports.seller')}</th>
                       <th className="text-center py-3 px-4 font-medium">Leads</th>
-                      <th className="text-center py-3 px-4 font-medium">Ganhos</th>
-                      <th className="text-center py-3 px-4 font-medium">Perdidos</th>
-                      <th className="text-center py-3 px-4 font-medium">Conversão</th>
+                      <th className="text-center py-3 px-4 font-medium">{t('reports.won')}</th>
+                      <th className="text-center py-3 px-4 font-medium">{t('reports.lost')}</th>
+                      <th className="text-center py-3 px-4 font-medium">{t('reports.conversion')}</th>
                       <th className="text-center py-3 px-4 font-medium">Tickets</th>
-                      <th className="text-right py-3 px-4 font-medium">Valor Total</th>
+                      <th className="text-right py-3 px-4 font-medium">{t('reports.totalValue')}</th>
                     </tr>
                   </thead>
                   <tbody>
