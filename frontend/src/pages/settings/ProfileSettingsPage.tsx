@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
   User,
@@ -22,6 +23,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useIntegrations } from '@/hooks/useIntegrations'
 
 export function ProfileSettingsPage() {
+  const { t } = useTranslation()
   const { user, setAuth, token, tenant } = useAuthStore()
   const { data: integrations } = useIntegrations()
 
@@ -88,10 +90,10 @@ export function ProfileSettingsPage() {
         setAuth(token, response.data.user, tenant)
       }
       
-      setSuccess('Perfil atualizado com sucesso!')
+      setSuccess(t('profilePage.profileUpdated'))
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Erro ao atualizar perfil')
+      setError(err?.response?.data?.message || t('profilePage.profileUpdateError'))
     } finally {
       setSavingProfile(false)
     }
@@ -101,12 +103,12 @@ export function ProfileSettingsPage() {
     e.preventDefault()
     
     if (passwordData.new_password !== passwordData.new_password_confirmation) {
-      setError('As senhas não coincidem')
+      setError(t('profilePage.passwordsDoNotMatch'))
       return
     }
 
     if (passwordData.new_password.length < 8) {
-      setError('A nova senha deve ter pelo menos 8 caracteres')
+      setError(t('profilePage.passwordMinLength'))
       return
     }
 
@@ -117,7 +119,7 @@ export function ProfileSettingsPage() {
     try {
       await api.post('/profile/change-password', passwordData)
       
-      setSuccess('Senha alterada com sucesso!')
+      setSuccess(t('profilePage.passwordChanged'))
       setPasswordData({
         current_password: '',
         new_password: '',
@@ -125,17 +127,14 @@ export function ProfileSettingsPage() {
       })
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Erro ao alterar senha')
+      setError(err?.response?.data?.message || t('profilePage.passwordChangeError'))
     } finally {
       setChangingPassword(false)
     }
   }
 
-  const roleLabels: Record<string, string> = {
-    admin: 'Administrador',
-    gestor: 'Gestor',
-    vendedor: 'Vendedor',
-    marketing: 'Marketing',
+  const getRoleLabel = (role: string) => {
+    return t(`profilePage.roles.${role}`, { defaultValue: role })
   }
 
   return (
@@ -143,10 +142,10 @@ export function ProfileSettingsPage() {
       <div>
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <User className="w-6 h-6 text-purple-500" />
-          Meu Perfil
+          {t('profilePage.title')}
         </h2>
         <p className="text-muted-foreground mt-1">
-          Gerencie suas informações pessoais e senha
+          {t('profilePage.subtitle')}
         </p>
       </div>
 
@@ -188,7 +187,7 @@ export function ProfileSettingsPage() {
             <h3 className="text-xl font-semibold">{user?.name}</h3>
             <p className="text-muted-foreground">{user?.email}</p>
             <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-400">
-              {roleLabels[user?.role || ''] || user?.role}
+              {getRoleLabel(user?.role || '')}
             </span>
           </div>
         </div>
@@ -196,12 +195,12 @@ export function ProfileSettingsPage() {
         {/* Formulário de Perfil */}
         <form onSubmit={handleProfileSubmit} className="space-y-4">
           <h4 className="font-medium text-muted-foreground border-b border-border pb-2">
-            Informações Pessoais
+            {t('profilePage.personalInfo')}
           </h4>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Nome</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.name')}</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
@@ -215,7 +214,7 @@ export function ProfileSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Email</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
@@ -229,7 +228,7 @@ export function ProfileSettingsPage() {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-sm text-muted-foreground mb-1">Telefone</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.phone')}</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
@@ -237,7 +236,7 @@ export function ProfileSettingsPage() {
                   value={profileData.phone}
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
-                  placeholder="(99) 99999-9999"
+                  placeholder={t('profilePage.phonePlaceholder')}
                 />
               </div>
             </div>
@@ -248,15 +247,15 @@ export function ProfileSettingsPage() {
             <div className="mt-6 pt-4 border-t border-border">
               <h4 className="font-medium text-muted-foreground mb-4 flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-blue-400" />
-                Dados de Integracao Linx
+                {t('profilePage.linx.title')}
               </h4>
               <p className="text-sm text-muted-foreground mb-4">
-                Preencha seus dados do sistema Linx para que os leads sejam enviados corretamente.
+                {t('profilePage.linx.description')}
               </p>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm text-muted-foreground mb-1">ID Empresa (Linx)</label>
+                  <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.linx.empresaId')}</label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
@@ -270,7 +269,7 @@ export function ProfileSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-muted-foreground mb-1">ID Vendedor (Linx)</label>
+                  <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.linx.vendedorId')}</label>
                   <div className="relative">
                     <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
@@ -284,7 +283,7 @@ export function ProfileSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-muted-foreground mb-1">ID Loja (Linx)</label>
+                  <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.linx.lojaId')}</label>
                   <div className="relative">
                     <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
@@ -298,7 +297,7 @@ export function ProfileSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-muted-foreground mb-1">ID Showroom (Linx)</label>
+                  <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.linx.showroomId')}</label>
                   <div className="relative">
                     <Warehouse className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
@@ -325,7 +324,7 @@ export function ProfileSettingsPage() {
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              Salvar Perfil
+              {t('profilePage.saveProfile')}
             </button>
           </div>
         </form>
@@ -336,12 +335,12 @@ export function ProfileSettingsPage() {
         <form onSubmit={handlePasswordSubmit} className="space-y-4">
           <h4 className="font-medium text-muted-foreground border-b border-border pb-2 flex items-center gap-2">
             <Lock className="w-4 h-4" />
-            Alterar Senha
+            {t('profilePage.changePassword')}
           </h4>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Senha Atual</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.currentPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
@@ -362,7 +361,7 @@ export function ProfileSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Nova Senha</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.newPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
@@ -372,7 +371,7 @@ export function ProfileSettingsPage() {
                   value={passwordData.new_password}
                   onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
                   className="w-full pl-10 pr-10 py-2 bg-accent border border-border rounded-lg focus:border-purple-500 focus:outline-none"
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={t('profilePage.minCharacters')}
                 />
                 <button
                   type="button"
@@ -385,7 +384,7 @@ export function ProfileSettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Confirmar Nova Senha</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('profilePage.confirmNewPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
@@ -418,7 +417,7 @@ export function ProfileSettingsPage() {
               ) : (
                 <Lock className="w-4 h-4" />
               )}
-              Alterar Senha
+              {t('profilePage.changePassword')}
             </button>
           </div>
         </form>

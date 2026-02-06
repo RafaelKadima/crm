@@ -236,6 +236,16 @@ export function LoginPage() {
                   />
                 </Button>
               </motion.div>
+
+              {/* Language Selector - Below Button */}
+              <motion.div
+                className="flex items-center justify-center gap-2 mt-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.65 }}
+              >
+                <LanguageSelector variant="inline" />
+              </motion.div>
             </form>
 
             {/* Value Proposition */}
@@ -259,15 +269,7 @@ export function LoginPage() {
           />
         </Card>
 
-        {/* Language Selector & Version Tag */}
-        <motion.div
-          className="flex items-center justify-center gap-4 mt-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          <LanguageSelector variant="inline" />
-        </motion.div>
+        {/* Version Tag */}
         <motion.p
           className="text-center mt-4 text-xs text-muted-foreground font-mono tracking-wider"
           initial={{ opacity: 0 }}

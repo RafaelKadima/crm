@@ -32,7 +32,7 @@ export function LanguageSelector({
             key={lang.code}
             onClick={() => changeLanguage(lang.code)}
             className={cn(
-              'flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-lg',
+              'flex items-center gap-1.5 px-3 py-2 rounded-lg',
               'transition-all duration-200 border',
               isActive
                 ? 'bg-foreground/10 border-foreground/20 scale-110'
@@ -40,7 +40,7 @@ export function LanguageSelector({
             )}
             title={lang.code === 'pt-BR' ? 'Português (Brasil)' : 'English (US)'}
           >
-            <span className="text-xl">{lang.flag}</span>
+            <span className="text-3xl">{lang.flag}</span>
             {showLabel && (
               <span className={cn(
                 'text-xs font-medium',

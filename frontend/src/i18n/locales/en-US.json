@@ -130,7 +130,10 @@
     "loginSuccess": "Login successful!",
     "loginError": "Invalid email or password",
     "logoutSuccess": "Logout successful",
-    "sessionExpired": "Your session has expired. Please log in again."
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "emailPlaceholder": "your@email.com",
+    "valuePropTitle": "360° view of your business.",
+    "valuePropSubtitle": "Intelligent CRM • Autonomous SDR • Automated Ads"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -156,6 +159,31 @@
     "bi": "BI & Analytics",
     "content": "Content",
     "goals": "Goals"
+  },
+  "sidebar": {
+    "service": "Service",
+    "marketing": "Marketing",
+    "sales": "Sales",
+    "goalsKpis": "Goals & KPIs",
+    "sdrAI": "SDR with AI",
+    "aiAgents": "AI Agents",
+    "adsIntelligence": "Ads Intelligence",
+    "createCampaign": "Create Campaign",
+    "chatWithAgent": "Chat with Agent",
+    "creatives": "Creatives",
+    "campaigns": "Campaigns",
+    "insights": "Insights",
+    "automations": "Automations",
+    "contentCreator": "Content Creator",
+    "creators": "Creators",
+    "viralSearch": "Viral Search",
+    "biAnalytics": "BI Analytics",
+    "aiAnalyst": "AI Analyst",
+    "pendingActions": "Pending Actions",
+    "administration": "Administration",
+    "superAdmin": "Super Admin",
+    "supportHistory": "Support History",
+    "company": "Company"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -545,6 +573,41 @@
     "gamificationDesc": "Points, tiers and rewards",
     "saved": "Settings saved successfully",
     "saveError": "Error saving settings"
+  },
+  "profilePage": {
+    "title": "My Profile",
+    "subtitle": "Manage your personal information and password",
+    "profileUpdated": "Profile updated successfully!",
+    "profileUpdateError": "Error updating profile",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "passwordMinLength": "New password must be at least 8 characters",
+    "passwordChanged": "Password changed successfully!",
+    "passwordChangeError": "Error changing password",
+    "personalInfo": "Personal Information",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "phonePlaceholder": "(99) 99999-9999",
+    "saveProfile": "Save Profile",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "minCharacters": "Minimum 8 characters",
+    "roles": {
+      "admin": "Administrator",
+      "gestor": "Manager",
+      "vendedor": "Salesperson",
+      "marketing": "Marketing"
+    },
+    "linx": {
+      "title": "Linx Integration Data",
+      "description": "Fill in your Linx system data so that leads are sent correctly.",
+      "empresaId": "Company ID (Linx)",
+      "vendedorId": "Seller ID (Linx)",
+      "lojaId": "Store ID (Linx)",
+      "showroomId": "Showroom ID (Linx)"
+    }
   },
   "channels": {
     "title": "Channels",
