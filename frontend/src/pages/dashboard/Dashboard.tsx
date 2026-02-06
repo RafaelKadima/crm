@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   Users,
   TrendingUp,
@@ -36,6 +37,7 @@ const item = {
 }
 
 export function DashboardPage() {
+  const { t } = useTranslation()
   const { data: stats, isLoading: statsLoading } = useDashboardStats()
   const { data: recentLeads, isLoading: leadsLoading } = useRecentLeads()
   const { data: recentTasks, isLoading: tasksLoading } = useRecentTasks()
@@ -43,7 +45,7 @@ export function DashboardPage() {
 
   const statCards = [
     {
-      title: 'Total de Leads',
+      title: t('dashboard.totalLeads'),
       value: stats?.total_leads || 0,
       change: '+12.5%',
       trend: 'up' as const,
@@ -51,7 +53,7 @@ export function DashboardPage() {
       color: 'bg-blue-500',
     },
     {
-      title: 'Conversões',
+      title: t('dashboard.conversionRate'),
       value: stats?.leads_won || 0,
       change: `${stats?.conversion_rate?.toFixed(1) || 0}%`,
       trend: 'up' as const,
@@ -59,7 +61,7 @@ export function DashboardPage() {
       color: 'bg-green-500',
     },
     {
-      title: 'Tickets Abertos',
+      title: t('dashboard.openTickets'),
       value: stats?.total_tickets || 0,
       change: '-3.1%',
       trend: 'down' as const,
@@ -67,7 +69,7 @@ export function DashboardPage() {
       color: 'bg-yellow-500',
     },
     {
-      title: 'Tarefas Pendentes',
+      title: t('dashboard.pendingTasks'),
       value: stats?.total_tasks || 0,
       change: '+22.4%',
       trend: 'up' as const,
@@ -86,8 +88,8 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Dashboard"
-        subtitle="Visão geral do seu CRM"
+        title={t('dashboard.title')}
+        subtitle={t('dashboard.overview')}
       />
 
       {/* Stats Grid */}
@@ -153,12 +155,12 @@ export function DashboardPage() {
               {pipelines && (pipelines as Pipeline[]).length > 0 ? (
                 <div className="space-y-4">
                   {(pipelines as Pipeline[]).slice(0, 3).map((pipeline) => (
-                    <PipelineWidget key={pipeline.id} pipeline={pipeline} />
+                    <PipelineWidget key={pipeline.id} pipeline={pipeline} t={t} />
                   ))}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8 text-sm">
-                  Nenhum pipeline configurado
+                  {t('empty.pipelines')}
                 </p>
               )}
             </CardContent>
@@ -175,7 +177,7 @@ export function DashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                Atividade Recente
+                {t('dashboard.recentActivity')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -203,7 +205,7 @@ export function DashboardPage() {
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8 text-sm">
-                  Nenhuma atividade recente
+                  {t('empty.recentActivity')}
                 </p>
               )}
             </CardContent>
@@ -221,7 +223,7 @@ export function DashboardPage() {
         >
           <Card>
             <CardHeader>
-              <CardTitle>Leads Recentes</CardTitle>
+              <CardTitle>{t('dashboard.recentLeads')}</CardTitle>
             </CardHeader>
             <CardContent>
               {leadsLoading ? (
@@ -241,10 +243,10 @@ export function DashboardPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">
-                          {lead.contact?.name || 'Sem nome'}
+                          {lead.contact?.name || t('leads.noName')}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {lead.channel?.name || 'Direto'}
+                          {lead.channel?.name || t('leads.direct')}
                         </p>
                       </div>
                       <div className="text-right">
@@ -262,7 +264,7 @@ export function DashboardPage() {
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
-                  Nenhum lead encontrado
+                  {t('empty.leads')}
                 </p>
               )}
             </CardContent>
@@ -277,7 +279,7 @@ export function DashboardPage() {
         >
           <Card>
             <CardHeader>
-              <CardTitle>Tarefas Pendentes</CardTitle>
+              <CardTitle>{t('dashboard.pendingTasks')}</CardTitle>
             </CardHeader>
             <CardContent>
               {tasksLoading ? (
@@ -301,14 +303,14 @@ export function DashboardPage() {
                         </p>
                       </div>
                       <Badge variant="outline">
-                        {task.due_date ? formatDateTime(task.due_date) : 'Sem data'}
+                        {task.due_date ? formatDateTime(task.due_date) : t('tasks.noDate')}
                       </Badge>
                     </div>
                   ))}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
-                  Nenhuma tarefa pendente
+                  {t('empty.tasks')}
                 </p>
               )}
             </CardContent>
@@ -321,7 +323,7 @@ export function DashboardPage() {
 
 // ─── Pipeline Widget ──────────────────────────────────────────────
 
-function PipelineWidget({ pipeline }: { pipeline: Pipeline }) {
+function PipelineWidget({ pipeline, t }: { pipeline: Pipeline; t: (key: string) => string }) {
   const stages = pipeline.stages || []
   const totalStages = stages.length
 
@@ -331,7 +333,7 @@ function PipelineWidget({ pipeline }: { pipeline: Pipeline }) {
         <p className="text-sm font-medium">{pipeline.name}</p>
         {pipeline.is_default && (
           <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-            Padrão
+            {t('common.default')}
           </Badge>
         )}
       </div>
@@ -353,7 +355,7 @@ function PipelineWidget({ pipeline }: { pipeline: Pipeline }) {
           ))}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">Nenhum estágio</p>
+        <p className="text-xs text-muted-foreground">{t('empty.stages')}</p>
       )}
     </div>
   )

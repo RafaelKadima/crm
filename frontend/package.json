@@ -24,6 +24,8 @@
     "date-fns": "^4.1.0",
     "emoji-picker-react": "^4.16.1",
     "framer-motion": "^12.23.25",
+    "i18next": "^25.8.4",
+    "i18next-browser-languagedetector": "^8.2.0",
     "laravel-echo": "^2.2.6",
     "lucide-react": "^0.555.0",
     "pusher-js": "^8.4.0",
@@ -31,6 +33,7 @@
     "react-dom": "^19.2.0",
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.67.0",
+    "react-i18next": "^16.5.4",
     "react-markdown": "^9.1.0",
     "react-router-dom": "^7.9.6",
     "recharts": "^3.5.1",
@@ -55,6 +58,6 @@
     "tailwindcss": "^4.1.17",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.3.1"
   }
 }

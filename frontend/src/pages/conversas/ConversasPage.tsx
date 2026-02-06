@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageSquare } from 'lucide-react'
@@ -13,6 +14,7 @@ import { LeadInfoSidebar } from '@/components/conversas/LeadInfoSidebar'
 import type { Lead } from '@/types'
 
 export function ConversasPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const { user } = useAuthStore()
   const { activeLeadId, setActiveLead } = useActiveConversation()
@@ -118,15 +120,16 @@ export function ConversasPage() {
 }
 
 function EmptyState() {
+  const { t } = useTranslation()
   return (
     <div className="flex-1 flex items-center justify-center bg-muted/10">
       <div className="text-center">
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/30 flex items-center justify-center">
           <MessageSquare className="w-10 h-10 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Nenhuma conversa selecionada</h3>
+        <h3 className="text-xl font-semibold mb-2">{t('empty.noConversationSelected')}</h3>
         <p className="text-muted-foreground max-w-sm">
-          Selecione uma conversa na lista ao lado para começar a atender
+          {t('empty.selectConversationToStart')}
         </p>
       </div>
     </div>

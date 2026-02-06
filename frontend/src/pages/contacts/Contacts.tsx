@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { Plus, Search, Phone, Mail, Building2, MoreHorizontal, Loader2, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -12,6 +13,7 @@ import { ContactModal } from './ContactModal'
 import type { Contact } from '@/types'
 
 export function ContactsPage() {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
@@ -57,12 +59,12 @@ export function ContactsPage() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Contatos"
-        subtitle={`${contactsData?.total || 0} contatos cadastrados`}
+        title={t('contacts.title')}
+        subtitle={`${contactsData?.total || 0} ${t('contacts.registered')}`}
         actions={
           <Button onClick={handleNewContact}>
             <Plus className="h-4 w-4 mr-2" />
-            Novo Contato
+            {t('contacts.newContact')}
           </Button>
         }
       />
@@ -71,7 +73,7 @@ export function ContactsPage() {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar contatos..."
+          placeholder={t('contacts.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -154,18 +156,18 @@ export function ContactsPage() {
             <UserPlus className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-medium text-muted-foreground mb-2">
-            {searchQuery ? 'Nenhum contato encontrado' : 'Nenhum contato cadastrado'}
+            {searchQuery ? t('empty.noContactsFound') : t('empty.noContactsRegistered')}
           </h3>
           <p className="text-muted-foreground mb-6">
             {searchQuery
-              ? 'Tente buscar por outro termo'
-              : 'Comece adicionando seu primeiro contato'
+              ? t('empty.tryAnotherSearch')
+              : t('empty.startAddingFirstContact')
             }
           </p>
           {!searchQuery && (
             <Button onClick={handleNewContact}>
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar Contato
+              {t('contacts.addContact')}
             </Button>
           )}
         </motion.div>
@@ -175,7 +177,7 @@ export function ContactsPage() {
       {contactsData && contactsData.last_page > 1 && (
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <p className="text-sm text-muted-foreground">
-            Mostrando {contactsData.from || 0} - {contactsData.to || 0} de {contactsData.total || 0} contatos
+            {t('pagination.showing')} {contactsData.from || 0} - {contactsData.to || 0} {t('pagination.of')} {contactsData.total || 0} {t('contacts.contactsLabel')}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -185,10 +187,10 @@ export function ContactsPage() {
               disabled={page === 1}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Anterior
+              {t('common.previous')}
             </Button>
             <span className="text-sm text-muted-foreground px-2">
-              Página {page} de {contactsData.last_page}
+              {t('pagination.page')} {page} {t('pagination.of')} {contactsData.last_page}
             </span>
             <Button
               variant="outline"
@@ -196,7 +198,7 @@ export function ContactsPage() {
               onClick={() => setPage(p => Math.min(contactsData.last_page, p + 1))}
               disabled={page === contactsData.last_page}
             >
-              Próxima
+              {t('pagination.next')}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>

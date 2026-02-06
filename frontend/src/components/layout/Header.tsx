@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
@@ -21,10 +22,12 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { UserPointsBadge } from '@/components/gamification/UserPointsBadge'
+import { LanguageSelector } from '@/components/LanguageSelector'
 import { Breadcrumbs } from './Breadcrumbs'
 import { useSoundSettings } from '@/hooks/useSounds'
 
 export function Header() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
   const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
@@ -85,7 +88,7 @@ export function Header() {
               searchFocused ? "text-foreground" : "text-muted-foreground"
             )} />
             <Input
-              placeholder="Buscar..."
+              placeholder={t('common.search') + '...'}
               className={cn(
                 "pl-9 w-44 h-9 text-sm bg-card/50 transition-all duration-200",
                 "border-border focus:border-foreground/20 focus:w-56",
@@ -98,6 +101,9 @@ export function Header() {
 
           {/* Gamification Points Badge */}
           <UserPointsBadge className="hidden md:block" />
+
+          {/* Language Selector */}
+          <LanguageSelector showLabel={false} />
 
           {/* Theme Toggle */}
           <Button
@@ -140,7 +146,7 @@ export function Header() {
             variant="ghost"
             size="icon"
             onClick={handleToggleSound}
-            title={soundEnabled ? 'Desativar sons' : 'Ativar sons'}
+            title={soundEnabled ? t('common.disabled') : t('common.enabled')}
             className={cn(
               "relative transition-all duration-300",
               "hover:bg-accent hover:text-foreground",
@@ -216,13 +222,13 @@ export function Header() {
                   className="absolute right-0 mt-2 w-80 rounded-xl overflow-hidden futuristic-card"
                 >
                   <div className="p-4 border-b border-border">
-                    <h3 className="font-display font-semibold text-foreground">Notificações</h3>
+                    <h3 className="font-display font-semibold text-foreground">{t('settings.notifications')}</h3>
                   </div>
                   <div className="p-4 text-center text-sm text-muted-foreground">
                     <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
                       <Bell className="h-6 w-6 text-muted-foreground/30" />
                     </div>
-                    Nenhuma notificação
+                    {t('common.noData')}
                   </div>
                 </motion.div>
               )}
@@ -279,7 +285,7 @@ export function Header() {
                       )}
                     >
                       <User className="h-4 w-4" />
-                      <span className="text-sm">Meu Perfil</span>
+                      <span className="text-sm">{t('common.profile')}</span>
                     </button>
                     <div className="my-1 border-t border-border" />
                     <button
@@ -290,7 +296,7 @@ export function Header() {
                       )}
                     >
                       <LogOut className="h-4 w-4" />
-                      <span className="text-sm">Sair</span>
+                      <span className="text-sm">{t('common.logout')}</span>
                     </button>
                   </div>
                 </motion.div>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -24,14 +25,15 @@ import type { Lead, PipelineStage } from '@/types'
 // Filtros de status de conversa
 type TicketFilterType = 'all' | 'pending' | 'open' | 'closed'
 
-const ticketFilterTabs: { key: TicketFilterType; label: string; icon: any; color: string; description: string }[] = [
-  { key: 'all', label: 'Todos', icon: Inbox, color: 'text-muted-foreground', description: 'Todos os leads' },
-  { key: 'pending', label: 'Pendentes', icon: Bell, color: 'text-amber-400', description: 'Aguardando atendimento' },
-  { key: 'open', label: 'Em Atendimento', icon: MessageCircle, color: 'text-blue-400', description: 'Conversas ativas' },
-  { key: 'closed', label: 'Encerrados', icon: CheckCircle2, color: 'text-green-400', description: 'Conversas finalizadas' },
-]
-
 export function LeadsKanbanPage() {
+  const { t } = useTranslation()
+
+  const ticketFilterTabs: { key: TicketFilterType; label: string; icon: any; color: string; description: string }[] = [
+    { key: 'all', label: t('common.all'), icon: Inbox, color: 'text-muted-foreground', description: t('leads.allLeads') },
+    { key: 'pending', label: t('leads.pendingLabel'), icon: Bell, color: 'text-amber-400', description: t('leads.awaitingService') },
+    { key: 'open', label: t('leads.inServiceLabel'), icon: MessageCircle, color: 'text-blue-400', description: t('leads.activeConversations') },
+    { key: 'closed', label: t('leads.closedLabel'), icon: CheckCircle2, color: 'text-green-400', description: t('leads.finishedConversations') },
+  ]
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('') // Busca com debounce para API
@@ -336,12 +338,12 @@ export function LeadsKanbanPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-4">
           <PageHeader
-            title="Leads"
+            title={t('leads.title')}
             subtitle={`${filteredLeads.length} ${
-              ticketFilter === 'pending' ? 'pendentes' :
-              ticketFilter === 'open' ? 'em atendimento' :
-              ticketFilter === 'closed' ? 'encerrados' :
-              'no funil'
+              ticketFilter === 'pending' ? t('leads.pending') :
+              ticketFilter === 'open' ? t('leads.inService') :
+              ticketFilter === 'closed' ? t('leads.closed') :
+              t('leads.inFunnel')
             }`}
           />
           
@@ -352,7 +354,7 @@ export function LeadsKanbanPage() {
                 onClick={() => setShowPipelineSelector(!showPipelineSelector)}
                 className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-accent rounded-lg transition-colors"
               >
-                <span className="font-medium">{currentPipeline?.name || 'Selecionar Pipeline'}</span>
+                <span className="font-medium">{currentPipeline?.name || t('leads.selectPipeline')}</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${showPipelineSelector ? 'rotate-180' : ''}`} />
               </button>
               
@@ -376,11 +378,11 @@ export function LeadsKanbanPage() {
                       >
                         <div>
                           <p className="font-medium">{pipeline.name}</p>
-                          <p className="text-xs text-muted-foreground">{pipeline.stages?.length || 0} estágios</p>
+                          <p className="text-xs text-muted-foreground">{pipeline.stages?.length || 0} {t('leads.stages')}</p>
                         </div>
                         {pipeline.is_default && (
                           <span className="text-xs bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded">
-                            Padrão
+                            {t('common.default')}
                           </span>
                         )}
                       </button>
@@ -397,7 +399,7 @@ export function LeadsKanbanPage() {
                         className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/30 rounded-lg text-sm transition-colors"
                       >
                         <Settings2 className="w-4 h-4" />
-                        Gerenciar Pipelines
+                        {t('leads.managePipelines')}
                       </button>
                     </div>
                   )}
@@ -444,7 +446,7 @@ export function LeadsKanbanPage() {
               onClick={() => setIsPipelineManagerOpen(true)}
             >
               <Settings2 className="h-4 w-4 mr-2" />
-              Gerenciar
+              {t('common.manage')}
             </Button>
           )}
           
@@ -462,7 +464,7 @@ export function LeadsKanbanPage() {
                 className="relative"
               >
                 <Bell className="h-4 w-4 mr-2 text-green-500" />
-                <span className="text-green-600 font-medium">{totalUnread} nova{totalUnread > 1 ? 's' : ''}</span>
+                <span className="text-green-600 font-medium">{totalUnread} {t('leads.newMessages', { count: totalUnread })}</span>
                 <span className="absolute -top-1 -right-1 h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
@@ -472,11 +474,11 @@ export function LeadsKanbanPage() {
           )}
           <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
-            Importar
+            {t('common.import')}
           </Button>
           <Button onClick={() => setIsCreateLeadOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Novo Lead
+            {t('leads.newLead')}
           </Button>
         </div>
       </div>
@@ -520,7 +522,7 @@ export function LeadsKanbanPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, telefone..."
+            placeholder={t('leads.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -540,7 +542,7 @@ export function LeadsKanbanPage() {
             />
           ) : (
             <div className="text-center py-12 text-muted-foreground">
-              Nenhum estágio configurado no pipeline
+              {t('leads.noStagesConfigured')}
             </div>
           )
         ) : (
