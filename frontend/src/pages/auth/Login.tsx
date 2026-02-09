@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -269,17 +270,25 @@ export function LoginPage() {
           />
         </Card>
 
-        {/* Version Tag */}
-        <motion.p
-          className="text-center mt-4 text-xs text-muted-foreground font-mono tracking-wider"
+        {/* Version Tag & Legal Links */}
+        <motion.div
+          className="text-center mt-4 space-y-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9 }}
         >
-          <span className="text-foreground/80">OmniFy</span>
-          <span className="text-foreground/40">HUB</span>
-          <span className="ml-2 opacity-40">v1.0.0</span>
-        </motion.p>
+          <p className="text-xs text-muted-foreground font-mono tracking-wider">
+            <span className="text-foreground/80">OmniFy</span>
+            <span className="text-foreground/40">HUB</span>
+            <span className="ml-2 opacity-40">v1.0.0</span>
+          </p>
+          <Link
+            to="/privacy"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {t('auth.privacyPolicy')}
+          </Link>
+        </motion.div>
       </motion.div>
     </div>
   )
