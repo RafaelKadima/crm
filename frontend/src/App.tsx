@@ -37,6 +37,10 @@ import { ContentDashboard, ContentAgentChat, ContentCreators, ViralVideoSearch, 
 import { GoalsDashboard, GoalForm } from '@/pages/goals'
 import { QuickRepliesPage } from '@/pages/quick-replies/QuickRepliesPage'
 import { ConversasPage } from '@/pages/conversas/ConversasPage'
+import { PrivacyPolicyPage } from '@/pages/legal/PrivacyPolicyPage'
+import { TermsOfUsePage } from '@/pages/legal/TermsOfUsePage'
+import { PrivacyPolicyEnPage } from '@/pages/legal/PrivacyPolicyEnPage'
+import { TermsOfUseEnPage } from '@/pages/legal/TermsOfUseEnPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,9 +83,21 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       
-      {/* Rota pública da Landing Page */}
+      {/* Public Routes - Legal Pages */}
       <Route path="/lp/:slug" element={<PublicLandingPage />} />
-      
+      {/* Privacy Policy - Portuguese */}
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/politica-privacidade" element={<PrivacyPolicyPage />} />
+      {/* Privacy Policy - English (for Meta App Review) */}
+      <Route path="/privacy-en" element={<PrivacyPolicyEnPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyEnPage />} />
+      {/* Terms of Use - Portuguese */}
+      <Route path="/terms" element={<TermsOfUsePage />} />
+      <Route path="/termos-de-uso" element={<TermsOfUsePage />} />
+      {/* Terms of Use - English (for Meta App Review) */}
+      <Route path="/terms-en" element={<TermsOfUseEnPage />} />
+      <Route path="/terms-of-use" element={<TermsOfUseEnPage />} />
+
       {/* Super Admin Routes */}
       <Route
         path="/super-admin"
