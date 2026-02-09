@@ -770,19 +770,55 @@ class WhatsAppService implements WhatsAppProviderInterface
 
     /**
      * Encontra ou cria ticket
+     *
+     * Comportamento:
+     * 1. Busca ticket aberto existente
+     * 2. Se não encontrar, busca ticket FECHADO e REABRE
+     * 3. Só cria novo ticket se não existir nenhum para o contato/canal
      */
     protected function findOrCreateTicket(Channel $channel, Contact $contact): Ticket
     {
         // SEMPRE garantir que existe um lead para o contato
         $lead = $this->findOrCreateLead($channel, $contact);
 
-        // Find open ticket for this contact
+        // 1. Primeiro busca ticket ABERTO para este contato
         $ticket = Ticket::where('tenant_id', $channel->tenant_id)
             ->where('contact_id', $contact->id)
             ->where('channel_id', $channel->id)
             ->whereNotIn('status', [TicketStatusEnum::CLOSED])
             ->first();
 
+        // 2. Se não tem aberto, busca ticket FECHADO para REABRIR
+        if (!$ticket) {
+            $closedTicket = Ticket::where('tenant_id', $channel->tenant_id)
+                ->where('contact_id', $contact->id)
+                ->where('channel_id', $channel->id)
+                ->where('status', TicketStatusEnum::CLOSED)
+                ->orderByDesc('closed_at')
+                ->first();
+
+            if ($closedTicket) {
+                // REABRIR o ticket fechado
+                $closedTicket->update([
+                    'status' => TicketStatusEnum::OPEN,
+                    'closed_at' => null,
+                    'lead_id' => $lead->id, // Garante associação com lead
+                ]);
+
+                Log::info('Ticket reopened from WhatsApp message', [
+                    'ticket_id' => $closedTicket->id,
+                    'lead_id' => $lead->id,
+                    'previous_status' => 'closed',
+                ]);
+
+                // Disparar evento de reabertura para notificar frontend
+                event(new \App\Events\TicketReopened($closedTicket));
+
+                $ticket = $closedTicket;
+            }
+        }
+
+        // 3. Se ainda não tem ticket, cria novo
         if (!$ticket) {
             $ticket = Ticket::create([
                 'tenant_id' => $channel->tenant_id,

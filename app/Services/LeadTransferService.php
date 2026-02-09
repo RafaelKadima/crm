@@ -210,7 +210,10 @@ class LeadTransferService
      */
     protected function sendViaChannel($channel, $contact, string $message): void
     {
-        $channelType = $channel->type ?? $channel->provider_type ?? '';
+        // Converte enum para string se necessário
+        $channelType = $channel->type instanceof \App\Enums\ChannelTypeEnum
+            ? $channel->type->value
+            : ($channel->type ?? $channel->provider_type ?? '');
 
         if (str_contains($channelType, 'whatsapp') && $contact->phone) {
             $whatsAppService = app(WhatsAppService::class);
