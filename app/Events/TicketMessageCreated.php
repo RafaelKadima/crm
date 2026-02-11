@@ -4,6 +4,7 @@ namespace App\Events;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Scopes\TenantScope;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -56,6 +57,12 @@ class TicketMessageCreated implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
+        // Bypass TenantScope porque broadcast não tem contexto de auth
+        // Isso garante que o Lead seja carregado mesmo em contexto de queue/webhook
+        $ticket = Ticket::withoutGlobalScope(TenantScope::class)
+            ->with(['lead' => fn($q) => $q->withoutGlobalScope(TenantScope::class)])
+            ->find($this->ticket->id);
+
         return [
             'message' => [
                 'id' => $this->message->id,
@@ -69,13 +76,16 @@ class TicketMessageCreated implements ShouldBroadcastNow
                 'created_at' => $this->message->created_at?->toIso8601String(),
             ],
             'ticket' => [
-                'id' => $this->ticket->id,
-                'lead_id' => $this->ticket->lead_id,
-                'contact_id' => $this->ticket->contact_id,
-                'status' => $this->ticket->status,
+                'id' => $ticket->id,
+                'lead_id' => $ticket->lead_id,
+                'contact_id' => $ticket->contact_id,
+                'status' => $ticket->status,
             ],
-            'lead_id' => $this->ticket->lead_id,
-            'tenant_id' => $this->ticket->tenant_id,
+            'lead_id' => $ticket->lead_id,
+            'tenant_id' => $ticket->tenant_id,
+            // Para filtrar notificações por usuário responsável
+            'owner_id' => $ticket->lead?->owner_id,
+            'assigned_user_id' => $ticket->assigned_user_id,
         ];
     }
 }
