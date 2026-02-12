@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
   Users,
@@ -23,6 +24,7 @@ import { UserPermissionsModal } from '@/components/settings/UserPermissionsModal
 import { useAuth } from '@/hooks/useAuth'
 
 export function TeamSettingsPage() {
+  const { t } = useTranslation()
   const { user: currentUser } = useAuth()
   const { data: usersResponse, isLoading, refetch } = useUsers()
   const users = usersResponse?.data || []
@@ -87,16 +89,16 @@ export function TeamSettingsPage() {
           id: editingUser.id,
           data: formData.password ? formData as any : { ...formData, password: undefined } as any,
         })
-        setSuccess('Usuário atualizado com sucesso!')
+        setSuccess(t('teamPage.userUpdated'))
       } else {
         await createUser.mutateAsync(formData as any)
-        setSuccess('Usuário criado com sucesso!')
+        setSuccess(t('teamPage.userCreated'))
       }
       setShowModal(false)
       refetch()
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Erro ao salvar usuário')
+      setError(err?.response?.data?.message || t('teamPage.userSaveError'))
     }
   }
 
@@ -108,16 +110,13 @@ export function TeamSettingsPage() {
   }
 
   const handleDelete = async (user: any) => {
-    if (window.confirm(`Tem certeza que deseja excluir ${user.name}?`)) {
+    if (window.confirm(t('teamPage.confirmDelete', { name: user.name }))) {
       await deleteUser.mutateAsync(user.id)
     }
   }
 
-  const roleLabels: Record<string, string> = {
-    admin: 'Administrador',
-    gestor: 'Gestor',
-    vendedor: 'Vendedor',
-    marketing: 'Marketing',
+  const getRoleLabel = (role: string) => {
+    return t(`teamPage.roles.${role}`, { defaultValue: role })
   }
 
   const roleColors: Record<string, string> = {
@@ -133,10 +132,10 @@ export function TeamSettingsPage() {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Users className="w-6 h-6 text-purple-500" />
-            Equipe
+            {t('teamPage.title')}
           </h2>
           <p className="text-muted-foreground mt-1">
-            Gerencie os usuários da sua empresa
+            {t('teamPage.subtitle')}
           </p>
         </div>
         <button
@@ -144,7 +143,7 @@ export function TeamSettingsPage() {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
         >
           <UserPlus className="w-4 h-4" />
-          Novo Usuário
+          {t('teamPage.newUser')}
         </button>
       </div>
 
@@ -164,7 +163,7 @@ export function TeamSettingsPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Buscar usuário..."
+          placeholder={t('teamPage.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg focus:border-blue-500 focus:outline-none"
@@ -181,11 +180,11 @@ export function TeamSettingsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Usuário</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Contato</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Função</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Status</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Ações</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">{t('teamPage.tableHeaders.user')}</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">{t('teamPage.tableHeaders.contact')}</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">{t('teamPage.tableHeaders.role')}</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">{t('teamPage.tableHeaders.status')}</th>
+                <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">{t('teamPage.tableHeaders.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -222,14 +221,14 @@ export function TeamSettingsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${roleColors[user.role] || 'bg-gray-500/20 text-muted-foreground'}`}>
-                      {roleLabels[user.role] || user.role}
+                      {getRoleLabel(user.role)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       user.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                     }`}>
-                      {user.is_active ? 'Ativo' : 'Inativo'}
+                      {user.is_active ? t('teamPage.status.active') : t('teamPage.status.inactive')}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -237,7 +236,7 @@ export function TeamSettingsPage() {
                       <button
                         onClick={() => openModal(user)}
                         className="p-2 hover:bg-accent rounded-lg transition-colors"
-                        title="Editar"
+                        title={t('teamPage.actions.edit')}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -246,7 +245,7 @@ export function TeamSettingsPage() {
                         <button
                           onClick={() => setPermissionsUser(user)}
                           className="p-2 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-colors"
-                          title="Permissões"
+                          title={t('teamPage.actions.permissions')}
                         >
                           <Key className="w-4 h-4" />
                         </button>
@@ -256,14 +255,14 @@ export function TeamSettingsPage() {
                         className={`p-2 rounded-lg transition-colors ${
                           user.is_active ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-green-500/20 text-green-400'
                         }`}
-                        title={user.is_active ? 'Desativar' : 'Ativar'}
+                        title={user.is_active ? t('teamPage.actions.deactivate') : t('teamPage.actions.activate')}
                       >
                         <Power className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(user)}
                         className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
-                        title="Excluir"
+                        title={t('teamPage.actions.delete')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -276,7 +275,7 @@ export function TeamSettingsPage() {
 
           {filteredUsers?.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              Nenhum usuário encontrado
+              {t('teamPage.noUsersFound')}
             </div>
           )}
         </div>
@@ -292,7 +291,7 @@ export function TeamSettingsPage() {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
-                {editingUser ? 'Editar Usuário' : 'Novo Usuário'}
+                {editingUser ? t('teamPage.editUser') : t('teamPage.newUser')}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -311,7 +310,7 @@ export function TeamSettingsPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-muted-foreground mb-1">Nome</label>
+                <label className="block text-sm text-muted-foreground mb-1">{t('teamPage.form.name')}</label>
                 <input
                   type="text"
                   required
@@ -321,7 +320,7 @@ export function TeamSettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-muted-foreground mb-1">Email</label>
+                <label className="block text-sm text-muted-foreground mb-1">{t('teamPage.form.email')}</label>
                 <input
                   type="email"
                   required
@@ -331,7 +330,7 @@ export function TeamSettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-muted-foreground mb-1">Telefone</label>
+                <label className="block text-sm text-muted-foreground mb-1">{t('teamPage.form.phone')}</label>
                 <input
                   type="text"
                   value={formData.phone}
@@ -340,20 +339,20 @@ export function TeamSettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-muted-foreground mb-1">Função</label>
+                <label className="block text-sm text-muted-foreground mb-1">{t('teamPage.form.role')}</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                 >
-                  <option value="vendedor">Vendedor</option>
-                  <option value="gestor">Gestor</option>
-                  <option value="marketing">Marketing</option>
-                  <option value="admin">Administrador</option>
+                  <option value="vendedor">{t('teamPage.roles.vendedor')}</option>
+                  <option value="gestor">{t('teamPage.roles.gestor')}</option>
+                  <option value="marketing">{t('teamPage.roles.marketing')}</option>
+                  <option value="admin">{t('teamPage.roles.admin')}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-muted-foreground mb-1">Código Linx (Vendedor)</label>
+                <label className="block text-sm text-muted-foreground mb-1">{t('teamPage.form.linxCode')}</label>
                 <input
                   type="text"
                   value={formData.linx_vendedor_id}
@@ -361,11 +360,11 @@ export function TeamSettingsPage() {
                   placeholder="Ex: 123"
                   className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
                 />
-                <p className="text-xs text-muted-foreground mt-1">ID do vendedor no Linx Smart</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('teamPage.form.linxCodeDesc')}</p>
               </div>
               <div>
                 <label className="block text-sm text-muted-foreground mb-1">
-                  {editingUser ? 'Nova Senha (deixe em branco para manter)' : 'Senha'}
+                  {editingUser ? t('teamPage.form.newPassword') : t('teamPage.form.password')}
                 </label>
                 <input
                   type="password"
@@ -374,7 +373,7 @@ export function TeamSettingsPage() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
-                  placeholder={editingUser ? '••••••••' : 'Mínimo 8 caracteres'}
+                  placeholder={editingUser ? '••••••••' : t('teamPage.form.passwordPlaceholder')}
                 />
               </div>
               <div className="flex gap-3 pt-2">
@@ -383,7 +382,7 @@ export function TeamSettingsPage() {
                   onClick={() => setShowModal(false)}
                   className="flex-1 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
                 >
-                  Cancelar
+                  {t('teamPage.form.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -393,7 +392,7 @@ export function TeamSettingsPage() {
                   {(createUser.isPending || updateUser.isPending) ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    'Salvar'
+                    t('teamPage.form.save')
                   )}
                 </button>
               </div>

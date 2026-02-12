@@ -38,12 +38,34 @@ interface FBLoginOptions {
   response_type: string
   override_default_response_type: boolean
   extras?: {
-    setup?: {
-      solutionID?: string
-    }
-    featureType?: string
-    sessionInfoVersion?: string
     version?: string
+    featureType?: string
+    setup?: {
+      business?: {
+        id?: string | null
+        name?: string | null
+        email?: string | null
+        phone?: { code?: string | null; number?: string | null }
+        website?: string | null
+        address?: {
+          streetAddress1?: string | null
+          streetAddress2?: string | null
+          city?: string | null
+          state?: string | null
+          zipPostal?: string | null
+          country?: string | null
+        }
+        timezone?: string | null
+      }
+      phone?: {
+        displayName?: string | null
+        category?: string | null
+        description?: string | null
+      }
+      preVerifiedPhone?: { ids?: string[] | null }
+      solutionID?: string | null
+      whatsAppBusinessAccount?: { ids?: string[] | null }
+    }
   }
 }
 
@@ -180,7 +202,7 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
 }
 
 // Hook para carregar o Facebook SDK
-export function useFacebookSDK(appId: string, version = 'v21.0') {
+export function useFacebookSDK(appId: string, version = 'v24.0') {
   const [isLoaded, setIsLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const initAttempted = useRef(false)
@@ -259,36 +281,50 @@ export function useMetaEmbeddedSignup() {
   // Escuta mensagens do popup do Facebook
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Log all object messages for debugging
-      if (event.data && typeof event.data === 'object' && event.data.type) {
-        console.log('[EmbeddedSignup] postMessage received:', {
-          origin: event.origin,
-          type: event.data?.type,
-          event: event.data?.event,
-          hasData: !!event.data?.data,
-          keys: Object.keys(event.data),
-        })
-      }
-
       // Aceitar mensagens de qualquer subdomínio do Facebook
-      if (!event.origin.includes('facebook.com')) {
+      if (event.origin !== 'https://www.facebook.com' && event.origin !== 'https://web.facebook.com') {
         return
       }
 
-      // Processa mensagens do Embedded Signup
-      if (event.data?.type === 'WA_EMBEDDED_SIGNUP') {
-        const eventName = event.data.event as string
-        const data = event.data.data as SessionInfoData
+      try {
+        // Parse data - pode vir como string JSON ou objeto
+        const parsedData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
 
-        // Detectar se é coexistence (número do WhatsApp Business App)
-        const isCoexistence =
-          eventName === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING' ||
-          (eventName === 'FINISH' && data.is_wa_login_user === true)
+        // Log for debugging
+        if (parsedData && parsedData.type) {
+          console.log('[EmbeddedSignup] postMessage received:', {
+            origin: event.origin,
+            type: parsedData.type,
+            event: parsedData.event,
+            hasData: !!parsedData.data,
+            keys: Object.keys(parsedData),
+          })
+        }
 
-        const enrichedData = { ...data, is_coexistence: isCoexistence }
-        setSessionInfo(enrichedData)
-        sessionInfoRef.current = enrichedData
-        console.log('[EmbeddedSignup] sessionInfo received:', JSON.stringify(enrichedData), 'event:', eventName, 'coexistence:', isCoexistence)
+        // Processa mensagens do Embedded Signup
+        if (parsedData.type === 'WA_EMBEDDED_SIGNUP') {
+          const eventName = parsedData.event as string
+          const data = parsedData.data as SessionInfoData
+
+          if (eventName === 'FINISH' || eventName === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING') {
+            // Detectar se é coexistence (número do WhatsApp Business App)
+            const isCoexistence =
+              eventName === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING' ||
+              data?.is_wa_login_user === true
+
+            const enrichedData = { ...data, is_coexistence: isCoexistence }
+            setSessionInfo(enrichedData)
+            sessionInfoRef.current = enrichedData
+            console.log('[EmbeddedSignup] sessionInfo received:', JSON.stringify(enrichedData), 'event:', eventName, 'coexistence:', isCoexistence)
+          } else if (eventName === 'CANCEL') {
+            console.warn('[EmbeddedSignup] User cancelled at step:', parsedData.data?.current_step)
+          } else if (eventName === 'ERROR') {
+            console.error('[EmbeddedSignup] Error from Meta:', parsedData.data?.error_message)
+          }
+        }
+      } catch {
+        // Non-JSON responses - ignore
+        console.log('[EmbeddedSignup] Non-JSON response:', event.data)
       }
     }
 
@@ -325,9 +361,30 @@ export function useMetaEmbeddedSignup() {
           response_type: 'code',
           override_default_response_type: true,
           extras: {
-            setup: {},
+            version: 'v3',
             featureType: config.featureType || '',
-            sessionInfoVersion: '3',
+            setup: {
+              business: {
+                id: null,
+                name: null,
+                email: null,
+                phone: { code: null, number: null },
+                website: null,
+                address: {
+                  streetAddress1: null,
+                  streetAddress2: null,
+                  city: null,
+                  state: null,
+                  zipPostal: null,
+                  country: null,
+                },
+                timezone: null,
+              },
+              phone: { displayName: null, category: null, description: null },
+              preVerifiedPhone: { ids: null },
+              solutionID: null,
+              whatsAppBusinessAccount: { ids: null },
+            },
           },
         }
 

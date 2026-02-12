@@ -327,8 +327,20 @@ class ChannelWhatsAppProfileController extends Controller
      */
     protected function validateChannel(Channel $channel): void
     {
+        // Debug logging
+        Log::debug('Validating channel for WhatsApp profile', [
+            'channel_id' => $channel->id,
+            'type_class' => get_class($channel->type),
+            'type_value' => $channel->type->value ?? 'NULL',
+            'raw_type' => $channel->getRawOriginal('type'),
+        ]);
+
         // Compare with enum value since type is ChannelTypeEnum
         if ($channel->type->value !== 'whatsapp') {
+            Log::warning('Channel type validation failed', [
+                'expected' => 'whatsapp',
+                'actual' => $channel->type->value ?? 'NULL',
+            ]);
             throw new \Exception('Channel is not a WhatsApp channel');
         }
 

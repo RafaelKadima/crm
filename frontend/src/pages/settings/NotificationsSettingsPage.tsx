@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
   Bell,
@@ -19,73 +20,23 @@ import { useSoundSettings } from '@/hooks/useSounds'
 
 interface NotificationSetting {
   key: string
-  label: string
-  description: string
   email: boolean
   push: boolean
   sound: boolean
 }
 
 const defaultSettings: NotificationSetting[] = [
-  {
-    key: 'new_lead',
-    label: 'Novo Lead',
-    description: 'Quando um novo lead é criado',
-    email: true,
-    push: true,
-    sound: true,
-  },
-  {
-    key: 'lead_assigned',
-    label: 'Lead Atribuído',
-    description: 'Quando um lead é atribuído a você',
-    email: true,
-    push: true,
-    sound: true,
-  },
-  {
-    key: 'new_message',
-    label: 'Nova Mensagem',
-    description: 'Quando receber uma nova mensagem',
-    email: false,
-    push: true,
-    sound: true,
-  },
-  {
-    key: 'task_due',
-    label: 'Tarefa Vencendo',
-    description: 'Lembrete de tarefas próximas ao vencimento',
-    email: true,
-    push: true,
-    sound: false,
-  },
-  {
-    key: 'appointment_reminder',
-    label: 'Lembrete de Agendamento',
-    description: 'Notificação antes de reuniões agendadas',
-    email: true,
-    push: true,
-    sound: true,
-  },
-  {
-    key: 'deal_won',
-    label: 'Negócio Fechado',
-    description: 'Quando um negócio é ganho',
-    email: true,
-    push: true,
-    sound: true,
-  },
-  {
-    key: 'deal_lost',
-    label: 'Negócio Perdido',
-    description: 'Quando um negócio é perdido',
-    email: true,
-    push: false,
-    sound: false,
-  },
+  { key: 'new_lead', email: true, push: true, sound: true },
+  { key: 'lead_assigned', email: true, push: true, sound: true },
+  { key: 'new_message', email: false, push: true, sound: true },
+  { key: 'task_due', email: true, push: true, sound: false },
+  { key: 'appointment_reminder', email: true, push: true, sound: true },
+  { key: 'deal_won', email: true, push: true, sound: true },
+  { key: 'deal_lost', email: true, push: false, sound: false },
 ]
 
 export function NotificationsSettingsPage() {
+  const { t } = useTranslation()
   const [settings, setSettings] = useState<NotificationSetting[]>(defaultSettings)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -142,10 +93,10 @@ export function NotificationsSettingsPage() {
       <div>
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Bell className="w-6 h-6 text-amber-500" />
-          Notificações
+          {t('notificationsPage.title')}
         </h2>
         <p className="text-muted-foreground mt-1">
-          Configure como você deseja receber alertas
+          {t('notificationsPage.subtitle')}
         </p>
       </div>
 
@@ -156,7 +107,7 @@ export function NotificationsSettingsPage() {
           className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 flex items-center gap-3"
         >
           <CheckCircle className="w-5 h-5 text-green-400" />
-          <p className="text-green-300">Preferências salvas com sucesso!</p>
+          <p className="text-green-300">{t('notificationsPage.saveSuccess')}</p>
         </motion.div>
       )}
 
@@ -166,31 +117,31 @@ export function NotificationsSettingsPage() {
           <div className="flex items-center gap-3">
             <Monitor className="w-5 h-5 text-blue-400" />
             <div>
-              <p className="font-medium">Notificações do Navegador</p>
+              <p className="font-medium">{t('notificationsPage.browserNotifications')}</p>
               <p className="text-sm text-muted-foreground">
-                Receba notificações na área de trabalho quando novas mensagens chegarem
+                {t('notificationsPage.browserNotificationsDesc')}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {!isSupported ? (
-              <span className="text-xs text-muted-foreground">Não suportado</span>
+              <span className="text-xs text-muted-foreground">{t('notificationsPage.notSupported')}</span>
             ) : permission === 'granted' ? (
               <span className="flex items-center gap-1.5 text-xs text-green-400">
                 <BellRing className="w-3.5 h-3.5" />
-                Ativado
+                {t('notificationsPage.enabled')}
               </span>
             ) : permission === 'denied' ? (
               <span className="flex items-center gap-1.5 text-xs text-red-400">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                Bloqueado pelo navegador
+                {t('notificationsPage.blockedByBrowser')}
               </span>
             ) : (
               <button
                 onClick={requestPermission}
                 className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
               >
-                Permitir notificações
+                {t('notificationsPage.allowNotifications')}
               </button>
             )}
           </div>
@@ -207,9 +158,9 @@ export function NotificationsSettingsPage() {
               <VolumeX className="w-5 h-5 text-muted-foreground" />
             )}
             <div>
-              <p className="font-medium">Som de Notificações</p>
+              <p className="font-medium">{t('notificationsPage.notificationSound')}</p>
               <p className="text-sm text-muted-foreground">
-                Ativar ou desativar todos os sons de notificação
+                {t('notificationsPage.notificationSoundDesc')}
               </p>
             </div>
           </div>
@@ -219,7 +170,7 @@ export function NotificationsSettingsPage() {
                 onClick={testSound}
                 className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md transition-colors"
               >
-                Testar
+                {t('notificationsPage.test')}
               </button>
             )}
             <button
@@ -264,7 +215,7 @@ export function NotificationsSettingsPage() {
           <thead>
             <tr className="border-b border-border">
               <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">
-                Tipo de Notificação
+                {t('notificationsPage.notificationType')}
               </th>
               <th className="text-center px-4 py-4 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center justify-center gap-1">
@@ -293,8 +244,8 @@ export function NotificationsSettingsPage() {
                 className="border-b border-border/30 hover:bg-accent/20"
               >
                 <td className="px-6 py-4">
-                  <p className="font-medium">{setting.label}</p>
-                  <p className="text-sm text-muted-foreground">{setting.description}</p>
+                  <p className="font-medium">{t(`notificationsPage.types.${setting.key}`)}</p>
+                  <p className="text-sm text-muted-foreground">{t(`notificationsPage.types.${setting.key}_desc`)}</p>
                 </td>
                 <td className="text-center px-4 py-4">
                   <button
@@ -353,12 +304,12 @@ export function NotificationsSettingsPage() {
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Salvando...
+            {t('notificationsPage.saving')}
           </>
         ) : (
           <>
             <Save className="w-4 h-4" />
-            Salvar Preferências
+            {t('notificationsPage.savePreferences')}
           </>
         )}
       </button>

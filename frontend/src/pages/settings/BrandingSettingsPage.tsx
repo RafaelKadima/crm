@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
   Paintbrush,
@@ -39,6 +40,7 @@ const fontOptions = [
 ]
 
 export function BrandingSettingsPage() {
+  const { t } = useTranslation()
   const { data: brandingData, isLoading } = useBranding()
   const updateBranding = useUpdateBranding()
   const uploadLogo = useUploadLogo()
@@ -65,42 +67,42 @@ export function BrandingSettingsPage() {
     setError(null)
     try {
       await updateBranding.mutateAsync({ name, ...branding })
-      setSuccess('Branding atualizado com sucesso!')
+      setSuccess(t('brandingPage.saveSuccess'))
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Erro ao salvar branding')
+      setError(err?.response?.data?.message || t('brandingPage.saveError'))
     }
   }
 
   const handleUpload = async (file: File, type: 'light' | 'dark' | 'favicon') => {
     try {
       await uploadLogo.mutateAsync({ file, type })
-      setSuccess('Logo enviada com sucesso!')
+      setSuccess(t('brandingPage.logoUploadSuccess'))
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Erro ao enviar logo')
+      setError(err?.response?.data?.message || t('brandingPage.logoUploadError'))
     }
   }
 
   const handleRemove = async (type: 'light' | 'dark' | 'favicon') => {
     try {
       await removeLogo.mutateAsync(type)
-      setSuccess('Logo removida com sucesso!')
+      setSuccess(t('brandingPage.logoRemoveSuccess'))
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Erro ao remover logo')
+      setError(err?.response?.data?.message || t('brandingPage.logoRemoveError'))
     }
   }
 
   const handleReset = async () => {
-    if (window.confirm('Tem certeza que deseja resetar todas as configurações de branding?')) {
+    if (window.confirm(t('brandingPage.resetConfirm'))) {
       try {
         await resetBranding.mutateAsync()
         setBranding(DEFAULT_BRANDING)
-        setSuccess('Branding resetado para os valores padrão!')
+        setSuccess(t('brandingPage.resetSuccess'))
         setTimeout(() => setSuccess(null), 3000)
       } catch (err: any) {
-        setError(err?.response?.data?.message || 'Erro ao resetar branding')
+        setError(err?.response?.data?.message || t('brandingPage.saveError'))
       }
     }
   }
@@ -137,15 +139,15 @@ export function BrandingSettingsPage() {
   )
 
   const LogoUploader = ({
-    title,
-    description,
+    titleKey,
+    descKey,
     icon: Icon,
     currentUrl,
     inputRef,
     type,
   }: {
-    title: string
-    description: string
+    titleKey: string
+    descKey: string
     icon: React.ElementType
     currentUrl: string | null
     inputRef: React.RefObject<HTMLInputElement>
@@ -154,23 +156,23 @@ export function BrandingSettingsPage() {
     <div className="bg-accent/30 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-2">
         <Icon className="w-4 h-4 text-muted-foreground" />
-        <span className="font-medium text-sm">{title}</span>
+        <span className="font-medium text-sm">{t(titleKey)}</span>
       </div>
-      <p className="text-xs text-muted-foreground mb-3">{description}</p>
+      <p className="text-xs text-muted-foreground mb-3">{t(descKey)}</p>
 
       {currentUrl ? (
         <div className="space-y-2">
           <div className={`p-4 rounded-lg flex items-center justify-center ${
             type === 'light' ? 'bg-white' : 'bg-background'
           }`}>
-            <img src={currentUrl} alt={title} className="max-h-16 max-w-full object-contain" />
+            <img src={currentUrl} alt={t(titleKey)} className="max-h-16 max-w-full object-contain" />
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => inputRef.current?.click()}
               className="flex-1 px-3 py-1.5 bg-muted-foreground/20 hover:bg-accent rounded text-sm transition-colors"
             >
-              Alterar
+              {t('brandingPage.change')}
             </button>
             <button
               onClick={() => handleRemove(type)}
@@ -186,7 +188,7 @@ export function BrandingSettingsPage() {
           className="w-full p-4 border-2 border-dashed border-border rounded-lg hover:border-border transition-colors"
         >
           <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Clique para enviar</span>
+          <span className="text-sm text-muted-foreground">{t('brandingPage.clickToUpload')}</span>
         </button>
       )}
 
@@ -218,10 +220,10 @@ export function BrandingSettingsPage() {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Paintbrush className="w-6 h-6 text-pink-500" />
-            Branding da Empresa
+            {t('brandingPage.title')}
           </h2>
           <p className="text-muted-foreground mt-1">
-            Personalize a aparência do sistema com sua marca
+            {t('brandingPage.subtitle')}
           </p>
         </div>
         <button
@@ -229,7 +231,7 @@ export function BrandingSettingsPage() {
           className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors text-sm"
         >
           <RotateCcw className="w-4 h-4" />
-          Resetar
+          {t('brandingPage.reset')}
         </button>
       </div>
 
@@ -259,13 +261,13 @@ export function BrandingSettingsPage() {
       <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Type className="w-5 h-5 text-blue-400" />
-          Nome da Empresa
+          {t('brandingPage.companyName')}
         </h3>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Nome da sua empresa"
+          placeholder={t('brandingPage.companyNamePlaceholder')}
           className="w-full px-4 py-3 bg-accent border border-border rounded-lg text-lg focus:border-blue-500 focus:outline-none"
         />
       </div>
@@ -274,28 +276,28 @@ export function BrandingSettingsPage() {
       <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Image className="w-5 h-5 text-purple-400" />
-          Logos
+          {t('brandingPage.logos')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <LogoUploader
-            title="Logo Principal"
-            description="Para fundo claro (PNG, JPG, SVG)"
+            titleKey="brandingPage.mainLogo"
+            descKey="brandingPage.mainLogoDesc"
             icon={Sun}
             currentUrl={brandingData?.logo_url || null}
             inputRef={lightLogoRef as React.RefObject<HTMLInputElement>}
             type="light"
           />
           <LogoUploader
-            title="Logo Escura"
-            description="Para fundo escuro (PNG, JPG, SVG)"
+            titleKey="brandingPage.darkLogo"
+            descKey="brandingPage.darkLogoDesc"
             icon={Moon}
             currentUrl={brandingData?.logo_dark_url || null}
             inputRef={darkLogoRef as React.RefObject<HTMLInputElement>}
             type="dark"
           />
           <LogoUploader
-            title="Favicon"
-            description="Ícone do navegador (PNG, ICO)"
+            titleKey="brandingPage.favicon"
+            descKey="brandingPage.faviconDesc"
             icon={Image}
             currentUrl={brandingData?.favicon_url || null}
             inputRef={faviconRef as React.RefObject<HTMLInputElement>}
@@ -308,42 +310,42 @@ export function BrandingSettingsPage() {
       <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Palette className="w-5 h-5 text-amber-400" />
-          Cores do Sistema
+          {t('brandingPage.systemColors')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <ColorInput
-            label="Cor Primária"
-            description="Botões, links e destaques"
+            label={t('brandingPage.primaryColor')}
+            description={t('brandingPage.primaryColorDesc')}
             value={branding.primary_color}
             onChange={(v) => setBranding({ ...branding, primary_color: v })}
           />
           <ColorInput
-            label="Cor Secundária"
-            description="Elementos secundários"
+            label={t('brandingPage.secondaryColor')}
+            description={t('brandingPage.secondaryColorDesc')}
             value={branding.secondary_color}
             onChange={(v) => setBranding({ ...branding, secondary_color: v })}
           />
           <ColorInput
-            label="Cor de Destaque"
-            description="Badges e alertas"
+            label={t('brandingPage.accentColorLabel')}
+            description={t('brandingPage.accentColorDesc')}
             value={branding.accent_color}
             onChange={(v) => setBranding({ ...branding, accent_color: v })}
           />
           <ColorInput
-            label="Sidebar - Fundo"
-            description="Cor de fundo do menu lateral"
+            label={t('brandingPage.sidebarBg')}
+            description={t('brandingPage.sidebarBgDesc')}
             value={branding.sidebar_color}
             onChange={(v) => setBranding({ ...branding, sidebar_color: v })}
           />
           <ColorInput
-            label="Sidebar - Texto"
-            description="Cor do texto do menu lateral"
+            label={t('brandingPage.sidebarText')}
+            description={t('brandingPage.sidebarTextDesc')}
             value={branding.sidebar_text_color}
             onChange={(v) => setBranding({ ...branding, sidebar_text_color: v })}
           />
           <ColorInput
-            label="Header - Fundo"
-            description="Cor de fundo do cabeçalho"
+            label={t('brandingPage.headerBg')}
+            description={t('brandingPage.headerBgDesc')}
             value={branding.header_color}
             onChange={(v) => setBranding({ ...branding, header_color: v })}
           />
@@ -354,11 +356,11 @@ export function BrandingSettingsPage() {
       <div className="bg-muted/50 rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Type className="w-5 h-5 text-green-400" />
-          Tipografia e Estilos
+          {t('brandingPage.typography')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Fonte Principal</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">{t('brandingPage.mainFont')}</label>
             <select
               value={branding.font_family}
               onChange={(e) => setBranding({ ...branding, font_family: e.target.value })}
@@ -373,7 +375,7 @@ export function BrandingSettingsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">
-              Arredondamento dos Botões (px)
+              {t('brandingPage.buttonRadius')}
             </label>
             <div className="flex items-center gap-4">
               <input
@@ -394,7 +396,7 @@ export function BrandingSettingsPage() {
 
       {/* Preview */}
       <div className="bg-muted/50 rounded-xl border border-border p-6">
-        <h3 className="text-lg font-semibold mb-4">Pré-visualização</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('brandingPage.preview')}</h3>
         <div className="rounded-lg overflow-hidden border border-border">
           {/* Mock Sidebar */}
           <div className="flex">
@@ -406,21 +408,21 @@ export function BrandingSettingsPage() {
                 <img src={brandingData.logo_dark_url} alt="Logo" className="h-8 mb-4 object-contain" />
               ) : (
                 <div className="text-lg font-bold mb-4" style={{ fontFamily: branding.font_family }}>
-                  {name || 'Sua Empresa'}
+                  {name || t('brandingPage.companyNamePlaceholder')}
                 </div>
               )}
               <nav className="space-y-2 text-sm">
                 <div className="px-3 py-2 rounded" style={{ backgroundColor: branding.primary_color }}>
-                  Dashboard
+                  {t('brandingPage.previewDashboard')}
                 </div>
-                <div className="px-3 py-2 rounded opacity-70 hover:opacity-100">Leads</div>
-                <div className="px-3 py-2 rounded opacity-70 hover:opacity-100">Conversas</div>
+                <div className="px-3 py-2 rounded opacity-70 hover:opacity-100">{t('brandingPage.previewLeads')}</div>
+                <div className="px-3 py-2 rounded opacity-70 hover:opacity-100">{t('brandingPage.previewConversations')}</div>
               </nav>
             </div>
             {/* Mock Content */}
             <div className="flex-1 bg-background p-6">
               <h4 className="text-xl font-bold mb-4" style={{ fontFamily: branding.font_family }}>
-                Dashboard
+                {t('brandingPage.previewDashboard')}
               </h4>
               <div className="flex gap-3">
                 <button
@@ -430,7 +432,7 @@ export function BrandingSettingsPage() {
                     borderRadius: `${branding.button_radius}px`,
                   }}
                 >
-                  Botão Primário
+                  {t('brandingPage.previewPrimaryButton')}
                 </button>
                 <button
                   className="px-4 py-2 text-white"
@@ -439,7 +441,7 @@ export function BrandingSettingsPage() {
                     borderRadius: `${branding.button_radius}px`,
                   }}
                 >
-                  Botão Secundário
+                  {t('brandingPage.previewSecondaryButton')}
                 </button>
                 <span
                   className="px-3 py-1 text-white text-sm flex items-center"
@@ -448,7 +450,7 @@ export function BrandingSettingsPage() {
                     borderRadius: `${branding.button_radius}px`,
                   }}
                 >
-                  Badge
+                  {t('brandingPage.previewBadge')}
                 </span>
               </div>
             </div>
@@ -465,12 +467,12 @@ export function BrandingSettingsPage() {
         {updateBranding.isPending ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            Salvando...
+            {t('brandingPage.saving')}
           </>
         ) : (
           <>
             <Save className="w-5 h-5" />
-            Salvar Configurações de Branding
+            {t('brandingPage.saveSettings')}
           </>
         )}
       </button>

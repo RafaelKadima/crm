@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -27,6 +28,7 @@ import { QueueMenuConfig } from './QueueMenuConfig'
 import type { Queue } from '@/hooks/useQueues'
 
 export function QueuesPage() {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
   const [showChannelSelector, setShowChannelSelector] = useState(false)
@@ -92,17 +94,17 @@ export function QueuesPage() {
       const result = await distributeWaiting.mutateAsync(queue.id)
       alert(result.message)
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Erro ao distribuir leads')
+      alert(error.response?.data?.error || t('queuesPage.distributeError'))
     }
   }
 
   const handleDeleteQueue = async (queue: Queue) => {
-    if (!confirm(`Tem certeza que deseja excluir a fila "${queue.name}"?`)) return
-    
+    if (!confirm(t('queuesPage.confirmDelete', { name: queue.name }))) return
+
     try {
       await deleteQueue.mutateAsync(queue.id)
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Erro ao excluir fila')
+      alert(error.response?.data?.error || t('queuesPage.deleteError'))
     }
   }
 
@@ -114,9 +116,9 @@ export function QueuesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Filas / Setores</h1>
+            <h1 className="text-3xl font-bold">{t('queuesPage.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              Gerencie as filas de atendimento por canal
+              {t('queuesPage.subtitle')}
             </p>
           </div>
 
@@ -128,7 +130,7 @@ export function QueuesPage() {
             >
               <MessageSquare className="w-4 h-4" />
               <span className="font-medium">
-                {selectedChannel?.name || 'Todos os canais'}
+                {selectedChannel?.name || t('queuesPage.allChannels')}
               </span>
               <ChevronDown
                 className={`w-4 h-4 transition-transform ${
@@ -153,7 +155,7 @@ export function QueuesPage() {
                       !selectedChannelId ? 'bg-blue-600/20' : ''
                     }`}
                   >
-                    <p className="font-medium">Todos os canais</p>
+                    <p className="font-medium">{t('queuesPage.allChannels')}</p>
                   </button>
                   {channels?.map((channel) => (
                     <button
@@ -178,7 +180,7 @@ export function QueuesPage() {
 
         <Button onClick={handleCreateQueue}>
           <Plus className="h-4 w-4 mr-2" />
-          Nova Fila
+          {t('queuesPage.newQueue')}
         </Button>
       </div>
 
@@ -187,7 +189,7 @@ export function QueuesPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar filas..."
+            placeholder={t('queuesPage.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -234,32 +236,32 @@ export function QueuesPage() {
                     <p className="text-sm text-muted-foreground mt-1">{queue.menu_label}</p>
                   </div>
                   <Badge variant={queue.is_active ? 'success' : 'secondary'}>
-                    {queue.is_active ? 'Ativa' : 'Inativa'}
+                    {queue.is_active ? t('queuesPage.active') : t('queuesPage.inactive')}
                   </Badge>
                 </div>
 
                 {/* Info */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Canal:</span>
+                    <span className="text-muted-foreground">{t('queuesPage.channel')}:</span>
                     <span>{queue.channel?.name || '-'}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Pipeline:</span>
+                    <span className="text-muted-foreground">{t('queuesPage.pipeline')}:</span>
                     <span>{queue.pipeline?.name || '-'}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">SDR Agent:</span>
+                    <span className="text-muted-foreground">{t('queuesPage.sdrAgent')}:</span>
                     <span className={queue.sdr_agent_id ? 'text-green-400' : 'text-muted-foreground'}>
-                      {queue.sdr_agent?.name || 'Sem agente'}
+                      {queue.sdr_agent?.name || t('queuesPage.noAgent')}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Leads:</span>
+                    <span className="text-muted-foreground">{t('queuesPage.leads')}:</span>
                     <span>{queue.leads_count || 0}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Usuários:</span>
+                    <span className="text-muted-foreground">{t('queuesPage.users')}:</span>
                     <span>{queue.users_count || 0}</span>
                   </div>
                 </div>
@@ -268,7 +270,7 @@ export function QueuesPage() {
                 <div className="flex items-center justify-between p-3 bg-background rounded-lg mb-4">
                   <div className="flex items-center gap-2">
                     <LayoutGrid className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Autodistribuir</span>
+                    <span className="text-sm">{t('queuesPage.autoDistribute')}</span>
                   </div>
                   <button
                     onClick={() => handleToggleAutoDistribute(queue)}
@@ -291,7 +293,7 @@ export function QueuesPage() {
                     onClick={() => handleManageUsers(queue)}
                   >
                     <Users className="w-4 h-4 mr-1" />
-                    Usuários
+                    {t('queuesPage.users')}
                   </Button>
                   <Button
                     variant="outline"
@@ -299,7 +301,7 @@ export function QueuesPage() {
                     onClick={() => handlePreview(queue)}
                   >
                     <Eye className="w-4 h-4 mr-1" />
-                    Preview
+                    {t('queuesPage.preview')}
                   </Button>
                   <Button
                     variant="outline"
@@ -308,7 +310,7 @@ export function QueuesPage() {
                     disabled={distributeWaiting.isPending}
                   >
                     <PlayCircle className="w-4 h-4 mr-1" />
-                    Distribuir
+                    {t('queuesPage.distributeNow')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -335,10 +337,10 @@ export function QueuesPage() {
           {filteredQueues.length === 0 && !isLoading && (
             <div className="col-span-full text-center py-12 text-muted-foreground">
               <LayoutGrid className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhuma fila encontrada</p>
+              <p>{t('queuesPage.noQueuesFound')}</p>
               <Button onClick={handleCreateQueue} className="mt-4">
                 <Plus className="w-4 h-4 mr-2" />
-                Criar primeira fila
+                {t('queuesPage.createFirstQueue')}
               </Button>
             </div>
           )}

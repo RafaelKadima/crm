@@ -3,6 +3,7 @@ import echo from '@/lib/echo'
 import { useNotificationStore } from '@/store/notificationStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSoundSettings } from '@/hooks/useSounds'
+import { useAuthStore } from '@/store/authStore'
 
 /**
  * Toca um som de notificação usando Web Audio API (sem arquivo externo)
@@ -71,6 +72,8 @@ interface MessageEvent {
   }
   lead_id: string
   tenant_id: string
+  owner_id?: string | null
+  assigned_user_id?: string | null
 }
 
 interface LeadUpdatedEvent {
@@ -160,6 +163,7 @@ export function useTenantMessages(tenantId: string | null) {
   const queryClient = useQueryClient()
   const soundEnabled = useSoundSettings((s) => s.enabled)
   const soundVolume = useSoundSettings((s) => s.volume)
+  const currentUserId = useAuthStore((s) => s.user?.id)
 
   useEffect(() => {
     if (!tenantId || !echo) {
@@ -184,12 +188,20 @@ export function useTenantMessages(tenantId: string | null) {
 
         const isInbound = data.message.direction === 'inbound'
 
-        // Só notifica mensagens RECEBIDAS (inbound), não as enviadas
-        if (data.lead_id && isInbound) {
+        // Verificar se o usuário atual é o responsável pelo lead
+        // Notifica se: não tem owner (lead novo) OU é o owner OU é o assigned do ticket
+        const isResponsible = !data.owner_id ||
+          String(data.owner_id) === String(currentUserId) ||
+          String(data.assigned_user_id) === String(currentUserId)
+
+        // Só notifica mensagens RECEBIDAS (inbound) E se for responsável
+        if (data.lead_id && isInbound && isResponsible) {
           addUnreadMessage(data.lead_id, data.message.content)
 
           // Tocar som de nova mensagem (se habilitado)
+          console.log('🔊 Som habilitado:', soundEnabled, 'Volume:', soundVolume, 'Responsável:', isResponsible)
           if (soundEnabled) {
+            console.log('🔔 Tocando som de notificação...')
             playNotificationSound(soundVolume)
           }
 
@@ -229,7 +241,7 @@ export function useTenantMessages(tenantId: string | null) {
       console.log('🔌 Desconectando do canal tenant:', tenantId)
       echo?.leave(`tenant.${tenantId}`)
     }
-  }, [tenantId, addUnreadMessage, queryClient, soundEnabled, soundVolume])
+  }, [tenantId, addUnreadMessage, queryClient, soundEnabled, soundVolume, currentUserId])
 }
 
 /**

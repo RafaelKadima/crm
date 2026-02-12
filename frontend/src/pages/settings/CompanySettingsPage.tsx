@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
   Building2,
@@ -18,6 +19,7 @@ import { useAuthStore } from '@/store/authStore'
 import api from '@/api/axios'
 
 export function CompanySettingsPage() {
+  const { t } = useTranslation()
   const { tenant } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -72,7 +74,7 @@ export function CompanySettingsPage() {
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Erro ao salvar configurações')
+      setError(err?.response?.data?.message || t('companyPage.saveError'))
     } finally {
       setLoading(false)
     }
@@ -83,10 +85,10 @@ export function CompanySettingsPage() {
       <div>
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Building2 className="w-6 h-6 text-blue-500" />
-          Dados da Empresa
+          {t('companyPage.title')}
         </h2>
         <p className="text-muted-foreground mt-1">
-          Configure as informações da sua empresa
+          {t('companyPage.subtitle')}
         </p>
       </div>
 
@@ -108,17 +110,17 @@ export function CompanySettingsPage() {
           className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 flex items-center gap-3"
         >
           <CheckCircle className="w-5 h-5 text-green-400" />
-          <p className="text-green-300">Configurações salvas com sucesso!</p>
+          <p className="text-green-300">{t('companyPage.saveSuccess')}</p>
         </motion.div>
       )}
 
       <div className="bg-muted/50 rounded-xl border border-border p-6 space-y-6">
         {/* Informações Básicas */}
         <div>
-          <h3 className="text-lg font-semibold mb-4">Informações Básicas</h3>
+          <h3 className="text-lg font-semibold mb-4">{t('companyPage.basicInfo')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Nome da Empresa</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.companyName')}</label>
               <input
                 type="text"
                 value={formData.name}
@@ -127,7 +129,7 @@ export function CompanySettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Slug (URL)</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.slug')}</label>
               <input
                 type="text"
                 value={formData.slug}
@@ -143,11 +145,11 @@ export function CompanySettingsPage() {
         <div>
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Phone className="w-5 h-5 text-green-400" />
-            Contato
+            {t('companyPage.contact')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">WhatsApp Business</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.whatsappBusiness')}</label>
               <input
                 type="text"
                 value={formData.whatsapp_number}
@@ -157,7 +159,7 @@ export function CompanySettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Telefone</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.phone')}</label>
               <input
                 type="text"
                 value={formData.phone}
@@ -169,7 +171,7 @@ export function CompanySettingsPage() {
             <div>
               <label className="block text-sm text-muted-foreground mb-1 flex items-center gap-1">
                 <Mail className="w-4 h-4" />
-                Email
+                {t('companyPage.email')}
               </label>
               <input
                 type="email"
@@ -182,7 +184,7 @@ export function CompanySettingsPage() {
             <div>
               <label className="block text-sm text-muted-foreground mb-1 flex items-center gap-1">
                 <Globe className="w-4 h-4" />
-                Website
+                {t('companyPage.website')}
               </label>
               <input
                 type="url"
@@ -199,21 +201,21 @@ export function CompanySettingsPage() {
         <div>
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-red-400" />
-            Endereço
+            {t('companyPage.address')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-3">
-              <label className="block text-sm text-muted-foreground mb-1">Endereço</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.addressLabel')}</label>
               <input
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Rua, número, bairro"
+                placeholder={t('companyPage.addressPlaceholder')}
                 className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Cidade</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.city')}</label>
               <input
                 type="text"
                 value={formData.city}
@@ -223,13 +225,13 @@ export function CompanySettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Estado</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.state')}</label>
               <select
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                 className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               >
-                <option value="">Selecione</option>
+                <option value="">{t('companyPage.selectState')}</option>
                 {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => (
                   <option key={uf} value={uf}>{uf}</option>
                 ))}
@@ -242,14 +244,14 @@ export function CompanySettingsPage() {
         <div>
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Link2 className="w-5 h-5 text-orange-400" />
-            Integração Linx
+            {t('companyPage.linxIntegration')}
           </h3>
 
           {/* Toggle de ativação */}
           <div className="flex items-center justify-between mb-4 p-4 bg-accent/30 rounded-lg">
             <div>
-              <p className="font-medium">Integração Ativa</p>
-              <p className="text-sm text-muted-foreground">Habilitar envio de leads para o Linx Smart</p>
+              <p className="font-medium">{t('companyPage.linxActive')}</p>
+              <p className="text-sm text-muted-foreground">{t('companyPage.linxActiveDesc')}</p>
             </div>
             <button
               type="button"
@@ -266,7 +268,7 @@ export function CompanySettingsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Código da Empresa</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.linxCompanyCode')}</label>
               <input
                 type="text"
                 value={formData.linx_empresa_id}
@@ -274,10 +276,10 @@ export function CompanySettingsPage() {
                 placeholder="Ex: 1"
                 className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
-              <p className="text-xs text-muted-foreground mt-1">ID da empresa no Linx Smart</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('companyPage.linxCompanyCodeDesc')}</p>
             </div>
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Código da Revenda</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.linxResellerCode')}</label>
               <input
                 type="text"
                 value={formData.linx_revenda_id}
@@ -285,10 +287,10 @@ export function CompanySettingsPage() {
                 placeholder="Ex: 1"
                 className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
-              <p className="text-xs text-muted-foreground mt-1">ID da revenda no Linx Smart</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('companyPage.linxResellerCodeDesc')}</p>
             </div>
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">URL da API (opcional)</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('companyPage.linxApiUrl')}</label>
               <input
                 type="url"
                 value={formData.linx_api_url}
@@ -296,7 +298,7 @@ export function CompanySettingsPage() {
                 placeholder="https://api.linx.com.br"
                 className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
               />
-              <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar padrão</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('companyPage.linxApiUrlDesc')}</p>
             </div>
           </div>
         </div>
@@ -309,12 +311,12 @@ export function CompanySettingsPage() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Salvando...
+              {t('companyPage.saving')}
             </>
           ) : (
             <>
               <Save className="w-4 h-4" />
-              Salvar Alterações
+              {t('companyPage.saveChanges')}
             </>
           )}
         </button>

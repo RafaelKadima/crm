@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -59,6 +60,7 @@ const channelIcons = {
 }
 
 export function ChannelsPage() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -99,6 +101,24 @@ export function ChannelsPage() {
   const testConnection = useTestChannelConnection()
   const updateIaMode = useUpdateChannelIaMode()
   const toggleActive = useToggleChannelActive()
+
+  // Translated type info
+  const getTypeInfo = (type: string) => ({
+    label: t(`channelsPage.types.${type}`),
+    description: t(`channelsPage.types.${type}Desc`),
+    color: channelTypeInfo[type as keyof typeof channelTypeInfo]?.color || 'bg-gray-500',
+  })
+
+  const getIaModeInfo = (mode: string) => ({
+    label: t(`channelsPage.iaModes.${mode}`),
+    description: t(`channelsPage.iaModes.${mode}Desc`),
+    color: iaModeInfo[mode as keyof typeof iaModeInfo]?.color || 'bg-gray-500',
+  })
+
+  const getProviderInfo = (provider: string) => ({
+    label: t(`channelsPage.providers.${provider}`),
+    description: t(`channelsPage.providers.${provider}Desc`),
+  })
 
   // Filter channels
   const filteredChannels = useMemo(() => {
@@ -193,13 +213,12 @@ export function ChannelsPage() {
       })
       setIsCreateModalOpen(false)
 
-      // Se for WhatsApp interno, abre o modal de QR automaticamente
       if (createdChannel.type === 'whatsapp' && createdChannel.provider_type === 'internal') {
         setQrChannel(createdChannel)
         setIsQRModalOpen(true)
       }
     } catch (error) {
-      console.error('Erro ao criar canal:', error)
+      console.error('Error creating channel:', error)
     }
   }
 
@@ -214,7 +233,7 @@ export function ChannelsPage() {
       })
       setIsConfigModalOpen(false)
     } catch (error) {
-      console.error('Erro ao atualizar canal:', error)
+      console.error('Error updating channel:', error)
     }
   }
 
@@ -229,7 +248,7 @@ export function ChannelsPage() {
       })
       setIsIaModalOpen(false)
     } catch (error) {
-      console.error('Erro ao atualizar modo IA:', error)
+      console.error('Error updating IA mode:', error)
     }
   }
 
@@ -239,7 +258,7 @@ export function ChannelsPage() {
       await deleteChannel.mutateAsync(selectedChannel.id)
       setIsDeleteModalOpen(false)
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao deletar canal')
+      alert(error.response?.data?.message || t('channelsPage.errors.deleteError'))
     }
   }
 
@@ -252,7 +271,7 @@ export function ChannelsPage() {
     } catch (error: any) {
       setTestResult({
         success: false,
-        message: error.response?.data?.message || 'Erro ao testar conexão',
+        message: error.response?.data?.message || t('channelsPage.errors.testError'),
       })
     }
   }
@@ -261,7 +280,7 @@ export function ChannelsPage() {
     try {
       await toggleActive.mutateAsync(channel.id)
     } catch (error) {
-      console.error('Erro ao alternar status:', error)
+      console.error('Error toggling status:', error)
     }
   }
 
@@ -283,12 +302,12 @@ export function ChannelsPage() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Canais"
-        subtitle="Gerencie seus canais de atendimento e configure a IA SDR"
+        title={t('channelsPage.title')}
+        subtitle={t('channelsPage.subtitle')}
         actions={
           <Button onClick={openCreateModal}>
             <Plus className="h-4 w-4 mr-2" />
-            Novo Canal
+            {t('channelsPage.newChannel')}
           </Button>
         }
       />
@@ -297,7 +316,7 @@ export function ChannelsPage() {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar canais..."
+          placeholder={t('channelsPage.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10"
@@ -312,17 +331,17 @@ export function ChannelsPage() {
               <MessageSquare className="h-8 w-8 text-muted-foreground" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">Nenhum canal encontrado</h3>
+              <h3 className="font-semibold text-lg">{t('channelsPage.noChannelsFound')}</h3>
               <p className="text-muted-foreground">
                 {search
-                  ? 'Tente uma busca diferente'
-                  : 'Crie seu primeiro canal de atendimento'}
+                  ? t('channelsPage.tryAnotherSearch')
+                  : t('channelsPage.createFirstChannel')}
               </p>
             </div>
             {!search && (
               <Button onClick={openCreateModal}>
                 <Plus className="h-4 w-4 mr-2" />
-                Criar Canal
+                {t('channelsPage.createChannel')}
               </Button>
             )}
           </div>
@@ -332,8 +351,8 @@ export function ChannelsPage() {
           <AnimatePresence>
             {filteredChannels.map((channel, index) => {
               const Icon = channelIcons[channel.type] || MoreHorizontal
-              const typeInfo = channelTypeInfo[channel.type]
-              const iaInfo = iaModeInfo[channel.ia_mode]
+              const typeInfo = getTypeInfo(channel.type)
+              const iaInfo = getIaModeInfo(channel.ia_mode)
 
               return (
                 <motion.div
@@ -359,7 +378,7 @@ export function ChannelsPage() {
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className={`p-3 rounded-xl ${typeInfo.color} text-white`}>
+                          <div className={`p-3 rounded-xl ${channelTypeInfo[channel.type]?.color || 'bg-gray-500'} text-white`}>
                             <Icon className="h-5 w-5" />
                           </div>
                           <div>
@@ -375,7 +394,7 @@ export function ChannelsPage() {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => handleToggleActive(channel)}
-                            title={channel.is_active ? 'Desativar' : 'Ativar'}
+                            title={channel.is_active ? t('channelsPage.deactivate') : t('channelsPage.activate')}
                           >
                             {channel.is_active ? (
                               <Power className="h-4 w-4 text-green-500" />
@@ -392,30 +411,30 @@ export function ChannelsPage() {
                         {channel.type === 'whatsapp' && channel.provider_type === 'internal' && (
                           <Badge variant="outline" className="border-orange-500 text-orange-600">
                             <QrCode className="h-3 w-3 mr-1" />
-                            Interno
+                            {t('channelsPage.internal')}
                           </Badge>
                         )}
                         {channel.type === 'whatsapp' && channel.provider_type === 'internal' && (
                           channel.config?.internal_connected ? (
                             <Badge className="bg-green-500 text-white">
                               <Wifi className="h-3 w-3 mr-1" />
-                              Conectado
+                              {t('channelsPage.connected')}
                             </Badge>
                           ) : (
                             <Badge variant="secondary" className="text-muted-foreground">
                               <WifiOff className="h-3 w-3 mr-1" />
-                              Desconectado
+                              {t('channelsPage.disconnected')}
                             </Badge>
                           )
                         )}
                         <Badge
-                          className={`${iaInfo.color} text-white`}
+                          className={`${iaModeInfo[channel.ia_mode]?.color || 'bg-gray-500'} text-white`}
                         >
                           <Bot className="h-3 w-3 mr-1" />
                           {iaInfo.label}
                         </Badge>
                         {!channel.is_active && (
-                          <Badge variant="secondary">Inativo</Badge>
+                          <Badge variant="secondary">{t('channelsPage.inactive')}</Badge>
                         )}
                       </div>
 
@@ -423,11 +442,11 @@ export function ChannelsPage() {
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4" />
-                          <span>{channel.leads_count || 0} leads</span>
+                          <span>{channel.leads_count || 0} {t('channelsPage.leads')}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <MessageSquare className="h-4 w-4" />
-                          <span>{channel.tickets_count || 0} tickets</span>
+                          <span>{channel.tickets_count || 0} {t('channelsPage.tickets')}</span>
                         </div>
                       </div>
 
@@ -441,7 +460,7 @@ export function ChannelsPage() {
                             className={channel.config?.internal_connected ? 'border-green-500 text-green-600' : ''}
                           >
                             <QrCode className="h-4 w-4 mr-1" />
-                            {channel.config?.internal_connected ? 'Conectado' : 'Conectar'}
+                            {channel.config?.internal_connected ? t('channelsPage.connected') : t('channelsPage.connect')}
                           </Button>
                         )}
                         <Button
@@ -451,7 +470,7 @@ export function ChannelsPage() {
                           onClick={() => openConfigModal(channel)}
                         >
                           <Settings className="h-4 w-4 mr-1" />
-                          Configurar
+                          {t('channelsPage.configure')}
                         </Button>
                         <Button
                           variant="outline"
@@ -460,7 +479,7 @@ export function ChannelsPage() {
                           onClick={() => openIaModal(channel)}
                         >
                           <Bot className="h-4 w-4 mr-1" />
-                          IA
+                          {t('channelsPage.ia')}
                         </Button>
                         <Button
                           variant="ghost"
@@ -486,20 +505,20 @@ export function ChannelsPage() {
           <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5 text-primary" />
-              Novo Canal
+              {t('channelsPage.createModal.title')}
             </DialogTitle>
             <DialogDescription>
-              Configure um novo canal de atendimento
+              {t('channelsPage.createModal.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {/* Channel Type Selection */}
             <div className="space-y-3">
-              <label className="text-sm font-medium">Tipo do Canal</label>
+              <label className="text-sm font-medium">{t('channelsPage.createModal.channelType')}</label>
               <div className="grid grid-cols-2 gap-3">
                 {(['whatsapp', 'instagram', 'webchat', 'other'] as const).map((type) => {
-                  const info = channelTypeInfo[type]
+                  const info = getTypeInfo(type)
                   const Icon = channelIcons[type]
                   return (
                     <button
@@ -512,7 +531,7 @@ export function ChannelsPage() {
                           : 'border-border bg-muted/50 hover:bg-muted hover:border-muted-foreground/20'
                       }`}
                     >
-                      <div className={`p-2.5 rounded-lg ${info.color} text-white shrink-0`}>
+                      <div className={`p-2.5 rounded-lg ${channelTypeInfo[type]?.color || 'bg-gray-500'} text-white shrink-0`}>
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="text-left">
@@ -528,10 +547,10 @@ export function ChannelsPage() {
             {/* WhatsApp Provider Selection */}
             {formData.type === 'whatsapp' && (
               <div className="space-y-3">
-                <label className="text-sm font-medium">Provedor WhatsApp</label>
+                <label className="text-sm font-medium">{t('channelsPage.createModal.whatsappProvider')}</label>
                 <div className="grid grid-cols-2 gap-3">
                   {(['meta', 'internal'] as const).map((provider) => {
-                    const info = whatsappProviderInfo[provider]
+                    const info = getProviderInfo(provider)
                     return (
                       <button
                         key={provider}
@@ -551,10 +570,10 @@ export function ChannelsPage() {
                         </div>
                         <p className="text-xs text-muted-foreground">{info.description}</p>
                         <div className="flex gap-2 mt-2">
-                          {info.supports_templates && (
+                          {whatsappProviderInfo[provider]?.supports_templates && (
                             <Badge variant="secondary" className="text-xs">Templates</Badge>
                           )}
-                          {info.requires_qr && (
+                          {whatsappProviderInfo[provider]?.requires_qr && (
                             <Badge variant="secondary" className="text-xs">QR Code</Badge>
                           )}
                         </div>
@@ -564,7 +583,7 @@ export function ChannelsPage() {
                 </div>
                 {formData.provider_type === 'internal' && (
                   <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg">
-                    O provider interno usa conexao via QR Code. Templates do WhatsApp Business nao sao suportados.
+                    {t('channelsPage.createModal.internalProviderWarning')}
                   </p>
                 )}
               </div>
@@ -572,9 +591,9 @@ export function ChannelsPage() {
 
             {/* Name */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nome do Canal *</label>
+              <label className="text-sm font-medium">{t('channelsPage.createModal.channelName')}</label>
               <Input
-                placeholder="Ex: WhatsApp Principal"
+                placeholder={t('channelsPage.createModal.channelNamePlaceholder')}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="h-11"
@@ -583,14 +602,14 @@ export function ChannelsPage() {
 
             {/* Identifier */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Identificador *</label>
+              <label className="text-sm font-medium">{t('channelsPage.createModal.identifier')}</label>
               <Input
                 placeholder={
                   formData.type === 'whatsapp'
-                    ? 'Ex: +55 11 99999-9999'
+                    ? t('channelsPage.createModal.identifierWhatsapp')
                     : formData.type === 'instagram'
-                    ? 'Ex: @seuinstagram'
-                    : 'Ex: chat.seusite.com'
+                    ? t('channelsPage.createModal.identifierInstagram')
+                    : t('channelsPage.createModal.identifierOther')
                 }
                 value={formData.identifier}
                 onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
@@ -598,19 +617,19 @@ export function ChannelsPage() {
               />
               <p className="text-xs text-muted-foreground">
                 {formData.type === 'whatsapp'
-                  ? 'Número do WhatsApp Business'
+                  ? t('channelsPage.createModal.identifierDescWhatsapp')
                   : formData.type === 'instagram'
-                  ? 'Username do Instagram'
-                  : 'URL ou identificador único'}
+                  ? t('channelsPage.createModal.identifierDescInstagram')
+                  : t('channelsPage.createModal.identifierDescOther')}
               </p>
             </div>
 
             {/* IA Mode */}
             <div className="space-y-3">
-              <label className="text-sm font-medium">Modo de Atendimento</label>
+              <label className="text-sm font-medium">{t('channelsPage.createModal.serviceMode')}</label>
               <div className="space-y-2">
                 {(['none', 'ia_sdr', 'enterprise'] as const).map((mode) => {
-                  const info = iaModeInfo[mode]
+                  const info = getIaModeInfo(mode)
                   return (
                     <button
                       key={mode}
@@ -622,7 +641,7 @@ export function ChannelsPage() {
                           : 'border-border bg-muted/50 hover:bg-muted hover:border-muted-foreground/20'
                       }`}
                     >
-                      <div className={`w-4 h-4 rounded-full ${info.color} shrink-0`} />
+                      <div className={`w-4 h-4 rounded-full ${iaModeInfo[mode]?.color || 'bg-gray-500'} shrink-0`} />
                       <div className="flex-1">
                         <span className="text-sm font-medium block">{info.label}</span>
                         <span className="text-xs text-muted-foreground">{info.description}</span>
@@ -644,15 +663,15 @@ export function ChannelsPage() {
                 exit={{ opacity: 0, height: 0 }}
                 className="space-y-2"
               >
-                <label className="text-sm font-medium">ID do Workflow (n8n)</label>
+                <label className="text-sm font-medium">{t('channelsPage.createModal.workflowId')}</label>
                 <Input
-                  placeholder="Ex: abc123"
+                  placeholder={t('channelsPage.createModal.workflowIdPlaceholder')}
                   value={formData.ia_workflow_id}
                   onChange={(e) => setFormData({ ...formData, ia_workflow_id: e.target.value })}
                   className="h-11"
                 />
                 <p className="text-xs text-muted-foreground">
-                  ID do workflow no n8n que será acionado para processar mensagens
+                  {t('channelsPage.createModal.workflowIdDesc')}
                 </p>
               </motion.div>
             )}
@@ -666,7 +685,7 @@ export function ChannelsPage() {
                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Settings className="h-4 w-4" />
-                Configuração Avançada (Token e IDs)
+                {t('channelsPage.createModal.advancedConfig')}
                 <motion.span
                   animate={{ rotate: showAdvancedConfig ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
@@ -715,11 +734,11 @@ export function ChannelsPage() {
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Access Token (Permanente)</label>
+                          <label className="text-sm font-medium">Access Token</label>
                           <div className="flex gap-2">
                             <Input
                               type={showToken ? 'text' : 'password'}
-                              placeholder="Token de acesso do System User"
+                              placeholder="System User Access Token"
                               value={formData.config.access_token || ''}
                               onChange={(e) =>
                                 setFormData({
@@ -748,7 +767,7 @@ export function ChannelsPage() {
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Page ID</label>
                             <Input
-                              placeholder="ID da Página do Facebook"
+                              placeholder="Facebook Page ID"
                               value={formData.config.page_id || ''}
                               onChange={(e) =>
                                 setFormData({
@@ -761,7 +780,7 @@ export function ChannelsPage() {
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Instagram Account ID</label>
                             <Input
-                              placeholder="ID da conta Instagram"
+                              placeholder="Instagram Account ID"
                               value={formData.config.instagram_account_id || ''}
                               onChange={(e) =>
                                 setFormData({
@@ -800,7 +819,7 @@ export function ChannelsPage() {
                     )}
 
                     <p className="text-xs text-muted-foreground">
-                      Você pode configurar isso depois clicando em "Configurar" no canal criado.
+                      {t('channelsPage.createModal.configLater')}
                     </p>
                   </motion.div>
                 )}
@@ -811,7 +830,7 @@ export function ChannelsPage() {
 
           <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted/30">
             <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-              Cancelar
+              {t('channelsPage.createModal.cancel')}
             </Button>
             <Button
               onClick={handleCreateChannel}
@@ -822,7 +841,7 @@ export function ChannelsPage() {
               ) : (
                 <Plus className="h-4 w-4 mr-2" />
               )}
-              Criar Canal
+              {t('channelsPage.createModal.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -837,19 +856,18 @@ export function ChannelsPage() {
                 <>
                   {(() => {
                     const Icon = channelIcons[selectedChannel.type]
-                    const typeInfo = channelTypeInfo[selectedChannel.type]
                     return (
-                      <div className={`p-2 rounded-lg ${typeInfo.color} text-white`}>
+                      <div className={`p-2 rounded-lg ${channelTypeInfo[selectedChannel.type]?.color || 'bg-gray-500'} text-white`}>
                         <Icon className="h-4 w-4" />
                       </div>
                     )
                   })()}
-                  Configurar {selectedChannel.name}
+                  {t('channelsPage.configModal.title', { name: selectedChannel.name })}
                 </>
               )}
             </DialogTitle>
             <DialogDescription>
-              Configure as credenciais de API e outras opções
+              {t('channelsPage.configModal.description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -857,14 +875,14 @@ export function ChannelsPage() {
             {/* Basic Info */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Nome *</label>
+                <label className="text-sm font-medium">{t('channelsPage.configModal.name')}</label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Identificador</label>
+                <label className="text-sm font-medium">{t('channelsPage.configModal.identifier')}</label>
                 <Input
                   value={formData.identifier}
                   onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
@@ -875,7 +893,7 @@ export function ChannelsPage() {
             {/* Webhook URL */}
             <div className="p-4 bg-muted rounded-lg">
               <label className="text-sm font-medium mb-2 block">
-                URL do Webhook (configure no Meta Business)
+                {t('channelsPage.configModal.webhookUrl')}
               </label>
               <div className="flex gap-2">
                 <Input value={webhookUrl} readOnly className="font-mono text-sm" />
@@ -884,7 +902,7 @@ export function ChannelsPage() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Use esta URL como Callback URL no painel do Meta Business
+                {t('channelsPage.configModal.webhookDesc')}
               </p>
             </div>
 
@@ -893,12 +911,12 @@ export function ChannelsPage() {
               <div className="space-y-4">
                 <h4 className="font-medium flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-green-500" />
-                  Configuração WhatsApp Business API
+                  {t('channelsPage.configModal.whatsappConfig')}
                 </h4>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Phone Number ID *</label>
+                    <label className="text-sm font-medium">{t('channelsPage.configModal.phoneNumberId')}</label>
                     <Input
                       placeholder="Ex: 123456789012345"
                       value={formData.config.phone_number_id || ''}
@@ -911,7 +929,7 @@ export function ChannelsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">WABA ID *</label>
+                    <label className="text-sm font-medium">{t('channelsPage.configModal.wabaId')}</label>
                     <Input
                       placeholder="WhatsApp Business Account ID"
                       value={formData.config.waba_id || ''}
@@ -926,11 +944,11 @@ export function ChannelsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Access Token (Permanente) *</label>
+                  <label className="text-sm font-medium">{t('channelsPage.configModal.accessToken')}</label>
                   <div className="flex gap-2">
                     <Input
                       type={showToken ? 'text' : 'password'}
-                      placeholder="Token de acesso do System User"
+                      placeholder="System User Access Token"
                       value={formData.config.access_token || ''}
                       onChange={(e) =>
                         setFormData({
@@ -948,7 +966,7 @@ export function ChannelsPage() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Token permanente gerado no Meta Business Suite → System Users
+                    {t('channelsPage.configModal.accessTokenDesc')}
                   </p>
                 </div>
               </div>
@@ -959,14 +977,14 @@ export function ChannelsPage() {
               <div className="space-y-4">
                 <h4 className="font-medium flex items-center gap-2">
                   <Instagram className="h-4 w-4 text-pink-500" />
-                  Configuração Instagram Direct
+                  {t('channelsPage.configModal.instagramConfig')}
                 </h4>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Page ID *</label>
+                    <label className="text-sm font-medium">{t('channelsPage.configModal.pageId')}</label>
                     <Input
-                      placeholder="ID da Página do Facebook"
+                      placeholder="Facebook Page ID"
                       value={formData.config.page_id || ''}
                       onChange={(e) =>
                         setFormData({
@@ -977,9 +995,9 @@ export function ChannelsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Instagram Account ID</label>
+                    <label className="text-sm font-medium">{t('channelsPage.configModal.instagramAccountId')}</label>
                     <Input
-                      placeholder="Preenchido automaticamente"
+                      placeholder={t('channelsPage.configModal.filledAutomatically')}
                       value={formData.config.instagram_account_id || ''}
                       onChange={(e) =>
                         setFormData({
@@ -1039,11 +1057,11 @@ export function ChannelsPage() {
             <div className="p-4 bg-muted/50 rounded-xl border">
               <h4 className="font-medium mb-3 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                Instruções
+                {t('channelsPage.configModal.instructions')}
               </h4>
               <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                 <li>
-                  Acesse o{' '}
+                  {t('channelsPage.configModal.instruction1')}{' '}
                   <a
                     href="https://business.facebook.com"
                     target="_blank"
@@ -1052,17 +1070,17 @@ export function ChannelsPage() {
                     Meta Business Suite
                   </a>
                 </li>
-                <li>Configure a API do WhatsApp ou Instagram</li>
-                <li>Copie as credenciais e cole acima</li>
-                <li>Configure o Webhook com a URL acima</li>
-                <li>Teste a conexão antes de salvar</li>
+                <li>{t('channelsPage.configModal.instruction2')}</li>
+                <li>{t('channelsPage.configModal.instruction3')}</li>
+                <li>{t('channelsPage.configModal.instruction4')}</li>
+                <li>{t('channelsPage.configModal.instruction5')}</li>
               </ol>
             </div>
           </div>
 
           <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted/30">
             <Button variant="outline" onClick={() => setIsConfigModalOpen(false)}>
-              Cancelar
+              {t('channelsPage.configModal.cancel')}
             </Button>
             <Button
               variant="outline"
@@ -1074,7 +1092,7 @@ export function ChannelsPage() {
               ) : (
                 <Zap className="h-4 w-4 mr-2" />
               )}
-              Testar Conexão
+              {t('channelsPage.configModal.testConnection')}
             </Button>
             <Button onClick={handleUpdateChannel} disabled={updateChannel.isPending}>
               {updateChannel.isPending ? (
@@ -1082,7 +1100,7 @@ export function ChannelsPage() {
               ) : (
                 <CheckCircle className="h-4 w-4 mr-2" />
               )}
-              Salvar
+              {t('channelsPage.configModal.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1096,19 +1114,19 @@ export function ChannelsPage() {
               <div className="p-2 rounded-lg bg-purple-500 text-white">
                 <Bot className="h-4 w-4" />
               </div>
-              Configurar IA SDR
+              {t('channelsPage.iaModal.title')}
             </DialogTitle>
             <DialogDescription>
-              Configure como a IA irá atender neste canal
+              {t('channelsPage.iaModal.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
             {/* IA Mode Selection */}
             <div className="space-y-3">
-              <label className="text-sm font-medium">Modo de Atendimento</label>
+              <label className="text-sm font-medium">{t('channelsPage.iaModal.serviceMode')}</label>
               {(['none', 'ia_sdr', 'enterprise'] as const).map((mode) => {
-                const info = iaModeInfo[mode]
+                const info = getIaModeInfo(mode)
                 return (
                   <button
                     key={mode}
@@ -1120,7 +1138,7 @@ export function ChannelsPage() {
                         : 'border-border bg-muted/50 hover:bg-muted hover:border-muted-foreground/20'
                     }`}
                   >
-                    <div className={`w-4 h-4 rounded-full ${info.color} shrink-0`} />
+                    <div className={`w-4 h-4 rounded-full ${iaModeInfo[mode]?.color || 'bg-gray-500'} shrink-0`} />
                     <div className="flex-1">
                       <span className="font-medium block">{info.label}</span>
                       <span className="text-sm text-muted-foreground">{info.description}</span>
@@ -1145,14 +1163,14 @@ export function ChannelsPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium flex items-center gap-2">
                     <Bot className="h-4 w-4 text-purple-500" />
-                    SDR Agent (IA Local)
+                    {t('channelsPage.iaModal.sdrAgent')}
                   </label>
                   <select
                     value={formData.sdr_agent_id}
                     onChange={(e) => setFormData({ ...formData, sdr_agent_id: e.target.value })}
                     className="w-full h-11 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">Selecione um SDR Agent...</option>
+                    <option value="">{t('channelsPage.iaModal.selectSdrAgent')}</option>
                     {sdrAgents.filter(a => a.is_active).map((agent) => (
                       <option key={agent.id} value={agent.id}>
                         {agent.name} ({agent.ai_model})
@@ -1160,11 +1178,11 @@ export function ChannelsPage() {
                     ))}
                   </select>
                   <p className="text-xs text-muted-foreground">
-                    SDR Agent criado no CRM para processar mensagens automaticamente
+                    {t('channelsPage.iaModal.sdrAgentDesc')}
                   </p>
                   {sdrAgents.length === 0 && (
                     <p className="text-xs text-amber-600">
-                      Nenhum SDR Agent criado. <a href="/sdr" className="underline">Criar agora</a>
+                      {t('channelsPage.iaModal.noSdrAgent')} <a href="/sdr" className="underline">{t('channelsPage.iaModal.createNow')}</a>
                     </p>
                   )}
                 </div>
@@ -1172,24 +1190,24 @@ export function ChannelsPage() {
                 {/* Divider */}
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-border" />
-                  <span className="text-xs text-muted-foreground">ou use n8n</span>
+                  <span className="text-xs text-muted-foreground">{t('channelsPage.iaModal.orUseN8n')}</span>
                   <div className="flex-1 h-px bg-border" />
                 </div>
 
                 {/* Workflow n8n (fallback) */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">ID do Workflow (n8n)</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('channelsPage.iaModal.workflowId')}</label>
                   <Input
-                    placeholder="Ex: abc123 (opcional se usar SDR Agent)"
+                    placeholder={t('channelsPage.iaModal.workflowIdPlaceholder')}
                     value={formData.ia_workflow_id}
                     onChange={(e) => setFormData({ ...formData, ia_workflow_id: e.target.value })}
                     className="h-11"
                     disabled={!!formData.sdr_agent_id}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {formData.sdr_agent_id 
-                      ? 'Desabilitado quando um SDR Agent está selecionado'
-                      : 'Usado apenas se nenhum SDR Agent for selecionado'}
+                    {formData.sdr_agent_id
+                      ? t('channelsPage.iaModal.workflowIdDisabled')
+                      : t('channelsPage.iaModal.workflowIdUsed')}
                   </p>
                 </div>
               </motion.div>
@@ -1204,13 +1222,13 @@ export function ChannelsPage() {
               >
                 <h4 className="font-medium text-purple-700 dark:text-purple-400 mb-2 flex items-center gap-2">
                   <Bot className="h-4 w-4" />
-                  Sobre a IA SDR
+                  {t('channelsPage.iaModal.aboutIaSdr')}
                 </h4>
                 <ul className="text-sm text-purple-700/80 dark:text-purple-400/80 space-y-1">
-                  <li>• Qualificação automática de leads</li>
-                  <li>• Responde perguntas frequentes</li>
-                  <li>• Transfere para humano quando necessário</li>
-                  <li>• Move leads entre estágios automaticamente</li>
+                  <li>• {t('channelsPage.iaModal.iaSdrFeature1')}</li>
+                  <li>• {t('channelsPage.iaModal.iaSdrFeature2')}</li>
+                  <li>• {t('channelsPage.iaModal.iaSdrFeature3')}</li>
+                  <li>• {t('channelsPage.iaModal.iaSdrFeature4')}</li>
                 </ul>
               </motion.div>
             )}
@@ -1223,13 +1241,13 @@ export function ChannelsPage() {
               >
                 <h4 className="font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
                   <Zap className="h-4 w-4" />
-                  Sobre o modo Enterprise
+                  {t('channelsPage.iaModal.aboutEnterprise')}
                 </h4>
                 <ul className="text-sm text-blue-700/80 dark:text-blue-400/80 space-y-1">
-                  <li>• Todas as features do IA SDR</li>
-                  <li>• Workflows personalizados avançados</li>
-                  <li>• Integração com sistemas externos</li>
-                  <li>• Análise de sentimento e priorização</li>
+                  <li>• {t('channelsPage.iaModal.enterpriseFeature1')}</li>
+                  <li>• {t('channelsPage.iaModal.enterpriseFeature2')}</li>
+                  <li>• {t('channelsPage.iaModal.enterpriseFeature3')}</li>
+                  <li>• {t('channelsPage.iaModal.enterpriseFeature4')}</li>
                 </ul>
               </motion.div>
             )}
@@ -1237,7 +1255,7 @@ export function ChannelsPage() {
 
           <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted/30">
             <Button variant="outline" onClick={() => setIsIaModalOpen(false)}>
-              Cancelar
+              {t('channelsPage.iaModal.cancel')}
             </Button>
             <Button onClick={handleUpdateIaMode} disabled={updateIaMode.isPending}>
               {updateIaMode.isPending ? (
@@ -1245,7 +1263,7 @@ export function ChannelsPage() {
               ) : (
                 <CheckCircle className="h-4 w-4 mr-2" />
               )}
-              Salvar
+              {t('channelsPage.iaModal.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1257,10 +1275,10 @@ export function ChannelsPage() {
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
-              Excluir Canal
+              {t('channelsPage.deleteModal.title')}
             </DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir o canal{' '}
+              {t('channelsPage.deleteModal.description')}{' '}
               <strong>{selectedChannel?.name}</strong>?
             </DialogDescription>
           </DialogHeader>
@@ -1268,15 +1286,14 @@ export function ChannelsPage() {
           <div className="py-4">
             <div className="p-4 bg-destructive/10 rounded-lg text-destructive">
               <p className="text-sm">
-                Esta ação não pode ser desfeita. Canais com leads ou tickets vinculados não podem
-                ser excluídos.
+                {t('channelsPage.deleteModal.warning')}
               </p>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
-              Cancelar
+              {t('channelsPage.deleteModal.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -1288,7 +1305,7 @@ export function ChannelsPage() {
               ) : (
                 <Trash2 className="h-4 w-4 mr-2" />
               )}
-              Excluir
+              {t('channelsPage.deleteModal.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1308,4 +1325,3 @@ export function ChannelsPage() {
     </div>
   )
 }
-

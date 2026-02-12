@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageSquare,
@@ -20,54 +21,55 @@ type TabId = 'whatsapp' | 'instagram' | 'queues' | 'templates' | 'integrations'
 
 interface Tab {
   id: TabId
-  label: string
+  labelKey: string
   icon: React.ElementType
-  description: string
+  descKey: string
   color: string
 }
 
 const tabs: Tab[] = [
   {
     id: 'whatsapp',
-    label: 'WhatsApp',
+    labelKey: 'channelsIntegrations.tabs.whatsapp',
     icon: MessageSquare,
-    description: 'Configurar canais WhatsApp',
+    descKey: 'channelsIntegrations.tabs.whatsappDesc',
     color: 'text-green-500',
   },
   {
     id: 'instagram',
-    label: 'Instagram',
+    labelKey: 'channelsIntegrations.tabs.instagram',
     icon: Instagram,
-    description: 'Configurar canais Instagram',
+    descKey: 'channelsIntegrations.tabs.instagramDesc',
     color: 'text-pink-500',
   },
   {
     id: 'queues',
-    label: 'Filas',
+    labelKey: 'channelsIntegrations.tabs.queues',
     icon: LayoutGrid,
-    description: 'Filas de atendimento',
+    descKey: 'channelsIntegrations.tabs.queuesDesc',
     color: 'text-blue-500',
   },
   {
     id: 'templates',
-    label: 'Templates',
+    labelKey: 'channelsIntegrations.tabs.templates',
     icon: FileText,
-    description: 'Templates WhatsApp',
+    descKey: 'channelsIntegrations.tabs.templatesDesc',
     color: 'text-purple-500',
   },
   {
     id: 'integrations',
-    label: 'Integrações',
+    labelKey: 'channelsIntegrations.tabs.integrations',
     icon: Plug,
-    description: 'Integrações externas',
+    descKey: 'channelsIntegrations.tabs.integrationsDesc',
     color: 'text-orange-500',
   },
 ]
 
 // Wrapper para filtrar canais por tipo
 function ChannelsFiltered({ type }: { type: 'whatsapp' | 'instagram' }) {
-  // Passamos o tipo como prop para filtrar no componente
-  // Por ora, mostramos todos os canais - o usuário pode criar/editar o que precisar
+  const { t } = useTranslation()
+  const typeLabel = type === 'whatsapp' ? 'WhatsApp Business' : 'Instagram Direct'
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border">
@@ -77,8 +79,7 @@ function ChannelsFiltered({ type }: { type: 'whatsapp' | 'instagram' }) {
           <Instagram className="h-5 w-5 text-pink-500" />
         )}
         <span className="text-sm text-muted-foreground">
-          Configure seus canais de {type === 'whatsapp' ? 'WhatsApp Business' : 'Instagram Direct'} aqui.
-          Você pode adicionar tokens, testar conexões e configurar a IA SDR.
+          {t('channelsIntegrations.channelTypeInfo', { type: typeLabel })}
         </span>
       </div>
       <ChannelsPage />
@@ -105,6 +106,7 @@ function IntegrationsWrapper() {
 }
 
 export function ChannelsIntegrationsPage() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<TabId>('whatsapp')
 
   return (
@@ -113,10 +115,10 @@ export function ChannelsIntegrationsPage() {
       <div>
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Plug className="w-6 h-6 text-primary" />
-          Canais & Integrações
+          {t('channelsIntegrations.title')}
         </h2>
         <p className="text-muted-foreground mt-1">
-          Configure todos os seus canais de comunicação e integrações em um só lugar
+          {t('channelsIntegrations.subtitle')}
         </p>
       </div>
 
@@ -136,7 +138,7 @@ export function ChannelsIntegrationsPage() {
               )}
             >
               <tab.icon className={cn('h-4 w-4', isActive && tab.color)} />
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey)}</span>
               {isActive && (
                 <motion.div
                   layoutId="activeTabIndicator"

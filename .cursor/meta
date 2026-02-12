@@ -1,0 +1,31 @@
+O que VOCÊ precisa fazer agora:
+1. No Meta App Dashboard → Settings → Basic:
+
+Privacy Policy URL: https://crm.omnify.center/privacy-policy
+Terms of Service URL: https://crm.omnify.center/terms-of-use
+2. Deploy das alterações:
+
+cd frontend && npm run build
+make deploy
+3. Testar a URL (obrigatório antes de resubmeter):
+Abrir em janela anônima: https://crm.omnify.center/privacy-policy
+Confirmar que carrega sem login e mostra o conteúdo em inglês
+4. Access Verification (processo no Meta Business Manager):
+Iniciar verificação em: Meta for Developers → seu app → Access Verification
+Necessário para manage_app_solution
+5. Gravar os Screencasts (em inglês!):
+Screencast 1 - whatsapp_business_messaging:
+
+Mostrar login no CRM
+Connect with Meta → login completo
+Mostrar Business/WABA/Phone number selecionado
+Enviar mensagem de teste com timestamp
+Mostrar WhatsApp nativo recebendo
+Screencast 2 - whatsapp_business_management:
+
+Ir em Templates
+Selecionar template com placeholders
+Preencher {1}=Nome, {2}=OrderID
+Enviar para número de teste
+Mostrar no WhatsApp nativo a mensagem renderizada
+Quer que eu faça o deploy agora?
