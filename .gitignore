@@ -35,3 +35,4 @@ Thumbs.db
 __pycache__/
 *.pyc
 
+.cursor/mcp.json

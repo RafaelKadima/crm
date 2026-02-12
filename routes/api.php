@@ -407,7 +407,15 @@ Route::middleware('auth:api')->group(function () {
             Route::get('{channel}/queues', [QueueController::class, 'byChannel']);
             Route::get('{channel}/queues/stats', [QueueController::class, 'stats']);
             Route::post('{channel}/queues/reorder', [QueueController::class, 'reorderMenu']);
+
+            // WhatsApp Business Profile (para canais com Meta Cloud API)
+            Route::get('{channel}/whatsapp-profile', [\App\Http\Controllers\ChannelWhatsAppProfileController::class, 'getProfile']);
+            Route::put('{channel}/whatsapp-profile', [\App\Http\Controllers\ChannelWhatsAppProfileController::class, 'updateProfile']);
+            Route::post('{channel}/whatsapp-profile/photo', [\App\Http\Controllers\ChannelWhatsAppProfileController::class, 'uploadPhoto']);
         });
+
+        // Categorias de negócio WhatsApp
+        Route::get('whatsapp-profile/categories', [\App\Http\Controllers\ChannelWhatsAppProfileController::class, 'getCategories']);
 
         // =====================
         // FILAS/SETORES (QUEUES)

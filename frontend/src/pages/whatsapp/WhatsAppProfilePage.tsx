@@ -7,21 +7,62 @@ import {
   CheckCircle,
   Settings,
   Loader2,
-  User,
   Building2,
   AlertTriangle,
+  Smartphone,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { useMetaIntegrations, type MetaIntegration } from '@/hooks/useMetaIntegrations'
+import { useMetaIntegrations } from '@/hooks/useMetaIntegrations'
+import { useChannels } from '@/hooks/useChannels'
 import { WhatsAppProfileEditor } from '@/components/integrations/WhatsAppProfileEditor'
+import { ChannelWhatsAppProfileEditor } from '@/components/integrations/ChannelWhatsAppProfileEditor'
 import { Badge } from '@/components/ui/Badge'
+
+// Tipo unificado para exibição
+interface WhatsAppNumber {
+  id: string
+  type: 'meta_integration' | 'channel'
+  phoneNumber: string
+  name: string | null
+  status: string
+  isActive: boolean
+}
 
 export function WhatsAppProfilePage() {
   const { t } = useTranslation()
-  const { data: integrations, isLoading } = useMetaIntegrations()
-  const [editProfileId, setEditProfileId] = useState<string | null>(null)
+  const { data: metaIntegrations, isLoading: loadingMeta } = useMetaIntegrations()
+  const { data: channels, isLoading: loadingChannels } = useChannels()
 
-  const activeIntegrations = integrations?.filter(i => i.status === 'active') || []
+  const [editingItem, setEditingItem] = useState<WhatsAppNumber | null>(null)
+
+  // Combinar meta_integrations ativas
+  const metaNumbers: WhatsAppNumber[] = (metaIntegrations || [])
+    .filter(i => i.status === 'active')
+    .map(i => ({
+      id: i.id,
+      type: 'meta_integration' as const,
+      phoneNumber: i.display_phone_number || i.phone_number_id,
+      name: i.verified_name,
+      status: i.status,
+      isActive: true,
+    }))
+
+  // Combinar canais WhatsApp ativos com provider_type = 'meta' e que tenham access_token
+  const channelNumbers: WhatsAppNumber[] = (channels || [])
+    .filter(c => c.type === 'whatsapp' && c.is_active && c.config?.access_token)
+    .map(c => ({
+      id: c.id,
+      type: 'channel' as const,
+      phoneNumber: c.identifier || c.config?.phone_number_id || c.name,
+      name: c.name,
+      status: c.is_active ? 'active' : 'inactive',
+      isActive: c.is_active,
+    }))
+
+  // Combinar ambas as fontes
+  const allNumbers = [...metaNumbers, ...channelNumbers]
+
+  const isLoading = loadingMeta || loadingChannels
 
   return (
     <div className="min-h-screen bg-background">
@@ -35,7 +76,7 @@ export function WhatsAppProfilePage() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
-        ) : activeIntegrations.length === 0 ? (
+        ) : allNumbers.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -53,9 +94,9 @@ export function WhatsAppProfilePage() {
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeIntegrations.map((integration, index) => (
+            {allNumbers.map((item, index) => (
               <motion.div
-                key={integration.id}
+                key={`${item.type}-${item.id}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -69,29 +110,39 @@ export function WhatsAppProfilePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold truncate">
-                        {integration.display_phone_number || integration.phone_number_id}
+                        {item.phoneNumber}
                       </h3>
-                      {integration.verified_name && (
+                      {item.name && (
                         <p className="text-sm text-muted-foreground flex items-center gap-1 truncate">
                           <Building2 className="w-3 h-3 flex-shrink-0" />
-                          {integration.verified_name}
+                          {item.name}
                         </p>
                       )}
                     </div>
-                    <Badge variant="success" className="flex-shrink-0">
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      {t('common.active', 'Ativo')}
-                    </Badge>
+                    <div className="flex flex-col gap-1 items-end">
+                      <Badge variant="success" className="flex-shrink-0">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        {t('common.active', 'Ativo')}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs flex-shrink-0">
+                        {item.type === 'meta_integration' ? (
+                          <>
+                            <Smartphone className="w-3 h-3 mr-1" />
+                            Embedded
+                          </>
+                        ) : (
+                          <>
+                            <Phone className="w-3 h-3 mr-1" />
+                            Canal
+                          </>
+                        )}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
 
                 {/* Content */}
                 <div className="p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="w-4 h-4" />
-                    <span>ID: {integration.phone_number_id}</span>
-                  </div>
-
                   <p className="text-sm text-muted-foreground">
                     {t('whatsappProfile.editDescription', 'Edite foto, descricao, endereco e outras informacoes do perfil comercial.')}
                   </p>
@@ -100,7 +151,7 @@ export function WhatsAppProfilePage() {
                 {/* Action */}
                 <div className="p-4 border-t border-border">
                   <button
-                    onClick={() => setEditProfileId(integration.id)}
+                    onClick={() => setEditingItem(item)}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium"
                   >
                     <Settings className="w-4 h-4" />
@@ -113,13 +164,24 @@ export function WhatsAppProfilePage() {
         )}
       </div>
 
-      {/* Profile Editor Modal */}
-      {editProfileId && (
+      {/* Profile Editor Modal - Meta Integration */}
+      {editingItem?.type === 'meta_integration' && (
         <WhatsAppProfileEditor
-          integrationId={editProfileId}
-          open={!!editProfileId}
+          integrationId={editingItem.id}
+          open={true}
           onOpenChange={(open) => {
-            if (!open) setEditProfileId(null)
+            if (!open) setEditingItem(null)
+          }}
+        />
+      )}
+
+      {/* Profile Editor Modal - Channel */}
+      {editingItem?.type === 'channel' && (
+        <ChannelWhatsAppProfileEditor
+          channelId={editingItem.id}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setEditingItem(null)
           }}
         />
       )}
