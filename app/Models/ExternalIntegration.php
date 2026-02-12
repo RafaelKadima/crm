@@ -6,10 +6,13 @@ use App\Enums\AuthTypeEnum;
 use App\Enums\HttpMethodEnum;
 use App\Enums\IntegrationTypeEnum;
 use App\Traits\BelongsToTenant;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Crypt;
 
 class ExternalIntegration extends Model
 {
@@ -48,11 +51,44 @@ class ExternalIntegration extends Model
             'http_method' => HttpMethodEnum::class,
             'headers' => 'array',
             'auth_type' => AuthTypeEnum::class,
-            'auth_config' => 'encrypted:array',
+            // auth_config uses custom accessor to handle decryption errors
             'trigger_on' => 'array',
             'trigger_stages' => 'array',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Custom accessor for auth_config to handle decryption errors gracefully.
+     * This prevents 500 errors when data was encrypted with a different APP_KEY.
+     */
+    protected function authConfig(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                if (empty($value)) {
+                    return [];
+                }
+
+                try {
+                    $decrypted = Crypt::decrypt($value, false);
+                    return is_array($decrypted) ? $decrypted : json_decode($decrypted, true) ?? [];
+                } catch (DecryptException $e) {
+                    // Log the error but return empty array to prevent 500
+                    \Log::warning('Failed to decrypt auth_config for integration', [
+                        'integration_id' => $this->id ?? 'unknown',
+                        'error' => $e->getMessage(),
+                    ]);
+                    return ['_decryption_failed' => true];
+                }
+            },
+            set: function ($value) {
+                if (empty($value)) {
+                    return null;
+                }
+                return Crypt::encrypt(is_array($value) ? $value : json_decode($value, true));
+            }
+        );
     }
 
     /**
