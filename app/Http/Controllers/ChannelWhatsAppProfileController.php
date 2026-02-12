@@ -327,8 +327,8 @@ class ChannelWhatsAppProfileController extends Controller
      */
     protected function validateChannel(Channel $channel): void
     {
-        // Debug logging
-        Log::debug('Validating channel for WhatsApp profile', [
+        // Debug logging - using INFO level to ensure it appears
+        Log::info('Validating channel for WhatsApp profile', [
             'channel_id' => $channel->id,
             'type_class' => get_class($channel->type),
             'type_value' => $channel->type->value ?? 'NULL',
