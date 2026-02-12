@@ -5,6 +5,7 @@ import type { Ticket } from '@/types'
 interface TicketsParams {
   page?: number
   status?: string
+  waiting_queue?: boolean
 }
 
 export function useTickets(params?: TicketsParams) {

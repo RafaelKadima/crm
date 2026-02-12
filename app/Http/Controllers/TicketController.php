@@ -92,6 +92,13 @@ class TicketController extends Controller
             });
         }
 
+        // Filtro especial: tickets aguardando seleção de fila
+        if ($request->has('waiting_queue') && $request->waiting_queue) {
+            $query->whereHas('lead', function ($q) {
+                $q->whereNull('queue_id');
+            })->where('status', '!=', 'closed');
+        }
+
         $query->orderByDesc('created_at');
 
         $tickets = $query->paginate($request->get('per_page', 15));
