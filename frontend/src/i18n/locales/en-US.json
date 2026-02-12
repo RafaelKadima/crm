@@ -159,7 +159,16 @@
     "ads": "Ads",
     "bi": "BI & Analytics",
     "content": "Content",
-    "goals": "Goals"
+    "goals": "Goals",
+    "whatsappProfile": "WhatsApp Profile"
+  },
+  "whatsappProfile": {
+    "title": "WhatsApp Business Profile",
+    "description": "Manage your WhatsApp business profile information",
+    "noIntegrations": "No WhatsApp connected",
+    "noIntegrationsDesc": "Connect a WhatsApp Business number to edit your company profile.",
+    "editDescription": "Edit photo, description, address and other business profile information.",
+    "editProfile": "Edit Profile"
   },
   "sidebar": {
     "service": "Service",

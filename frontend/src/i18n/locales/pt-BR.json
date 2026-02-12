@@ -159,7 +159,16 @@
     "ads": "Anúncios",
     "bi": "BI & Analytics",
     "content": "Conteúdo",
-    "goals": "Metas"
+    "goals": "Metas",
+    "whatsappProfile": "Perfil WhatsApp"
+  },
+  "whatsappProfile": {
+    "title": "Perfil do WhatsApp Business",
+    "description": "Gerencie as informações do seu perfil comercial no WhatsApp",
+    "noIntegrations": "Nenhum WhatsApp conectado",
+    "noIntegrationsDesc": "Conecte um número WhatsApp Business para poder editar o perfil da sua empresa.",
+    "editDescription": "Edite foto, descrição, endereço e outras informações do perfil comercial.",
+    "editProfile": "Editar Perfil"
   },
   "sidebar": {
     "service": "Atendimento",

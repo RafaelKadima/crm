@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -65,22 +66,22 @@ type NavEntry =
 
 const navEntries: NavEntry[] = [
   // Dashboard - item direto
-  { type: 'item', item: { icon: LayoutDashboard, label: 'Dashboard', path: '/' } },
+  { type: 'item', item: { icon: LayoutDashboard, label: 'nav.dashboard', path: '/' } },
 
   { type: 'separator' },
 
   // ATENDIMENTO - section flat
   {
     type: 'section',
-    label: 'Atendimento',
+    label: 'sidebar.service',
     items: [
-      { icon: Kanban, label: 'Leads', path: '/leads', permissions: ['leads.view_own', 'leads.view_all'] },
-      { icon: MessageSquare, label: 'Conversas', path: '/conversas' },
-      { icon: Users, label: 'Contatos', path: '/contacts', permission: 'contacts.view' },
-      { icon: CheckSquare, label: 'Tarefas', path: '/tasks', permissions: ['tasks.view_own', 'tasks.view_all'] },
-      { icon: CalendarDays, label: 'Agendamentos', path: '/appointments', feature: 'appointments', featureFunction: 'appointments.list', permission: 'appointments.view' },
-      { icon: Clock, label: 'Minha Agenda', path: '/schedule', feature: 'appointments', featureFunction: 'appointments.schedule', permission: 'appointments.view' },
-      { icon: MessageSquareText, label: 'Respostas Rápidas', path: '/quick-replies' },
+      { icon: Kanban, label: 'nav.leads', path: '/leads', permissions: ['leads.view_own', 'leads.view_all'] },
+      { icon: MessageSquare, label: 'nav.conversations', path: '/conversas' },
+      { icon: Users, label: 'nav.contacts', path: '/contacts', permission: 'contacts.view' },
+      { icon: CheckSquare, label: 'nav.tasks', path: '/tasks', permissions: ['tasks.view_own', 'tasks.view_all'] },
+      { icon: CalendarDays, label: 'nav.appointments', path: '/appointments', feature: 'appointments', featureFunction: 'appointments.list', permission: 'appointments.view' },
+      { icon: Clock, label: 'nav.schedule', path: '/schedule', feature: 'appointments', featureFunction: 'appointments.schedule', permission: 'appointments.view' },
+      { icon: MessageSquareText, label: 'nav.quickReplies', path: '/quick-replies' },
     ],
   },
 
@@ -89,10 +90,11 @@ const navEntries: NavEntry[] = [
   // MARKETING - section flat
   {
     type: 'section',
-    label: 'Marketing',
+    label: 'sidebar.marketing',
     items: [
-      { icon: Package, label: 'Produtos', path: '/products', feature: 'products', featureFunction: 'products.list', permission: 'products.view' },
-      { icon: Globe, label: 'Landing Pages', path: '/landing-pages', feature: 'landing_pages', featureFunction: 'lp.list', permissions: ['landing_pages.view', 'landing_pages.create'] },
+      { icon: Package, label: 'nav.products', path: '/products', feature: 'products', featureFunction: 'products.list', permission: 'products.view' },
+      { icon: Globe, label: 'nav.landingPages', path: '/landing-pages', feature: 'landing_pages', featureFunction: 'lp.list', permissions: ['landing_pages.view', 'landing_pages.create'] },
+      { icon: MessageSquare, label: 'nav.whatsappProfile', path: '/whatsapp-profile' },
     ],
   },
 
@@ -101,10 +103,10 @@ const navEntries: NavEntry[] = [
   // VENDAS - section flat
   {
     type: 'section',
-    label: 'Vendas',
+    label: 'sidebar.sales',
     items: [
-      { icon: Trophy, label: 'Metas e KPIs', path: '/goals' },
-      { icon: BarChart3, label: 'Relatórios', path: '/reports', permissions: ['reports.view_own', 'reports.view_all'] },
+      { icon: Trophy, label: 'sidebar.goalsKpis', path: '/goals' },
+      { icon: BarChart3, label: 'nav.reports', path: '/reports', permissions: ['reports.view_own', 'reports.view_all'] },
     ],
   },
 
@@ -114,11 +116,11 @@ const navEntries: NavEntry[] = [
   {
     type: 'group',
     id: 'sdr',
-    label: 'SDR com IA',
+    label: 'sidebar.sdrAI',
     icon: Bot,
     defaultOpen: false,
     items: [
-      { icon: Bot, label: 'Agentes IA', path: '/sdr', feature: 'sdr_ia', featureFunction: 'sdr.agents', permission: 'sdr_ia.view' },
+      { icon: Bot, label: 'sidebar.aiAgents', path: '/sdr', feature: 'sdr_ia', featureFunction: 'sdr.agents', permission: 'sdr_ia.view' },
     ],
   },
 
@@ -126,17 +128,17 @@ const navEntries: NavEntry[] = [
   {
     type: 'group',
     id: 'ads',
-    label: 'Ads Intelligence',
+    label: 'sidebar.adsIntelligence',
     icon: Target,
     defaultOpen: false,
     items: [
-      { icon: Target, label: 'Dashboard', path: '/ads', feature: 'ads_intelligence', featureFunction: 'ads.dashboard' },
-      { icon: Zap, label: 'Criar Campanha', path: '/ads/agent', feature: 'ads_intelligence', featureFunction: 'ads.create_campaign' },
-      { icon: Bot, label: 'Chat com Agente', path: '/ads/chat', feature: 'ads_intelligence', featureFunction: 'ads.chat' },
-      { icon: ImageIcon, label: 'Criativos', path: '/ads/creatives', feature: 'ads_intelligence', featureFunction: 'ads.creatives' },
-      { icon: BarChart3, label: 'Campanhas', path: '/ads/campaigns', feature: 'ads_intelligence', featureFunction: 'ads.campaigns' },
-      { icon: Lightbulb, label: 'Insights', path: '/ads/insights', feature: 'ads_intelligence', featureFunction: 'ads.insights' },
-      { icon: Zap, label: 'Automações', path: '/ads/automation', feature: 'ads_intelligence', featureFunction: 'ads.automation' },
+      { icon: Target, label: 'nav.dashboard', path: '/ads', feature: 'ads_intelligence', featureFunction: 'ads.dashboard' },
+      { icon: Zap, label: 'sidebar.createCampaign', path: '/ads/agent', feature: 'ads_intelligence', featureFunction: 'ads.create_campaign' },
+      { icon: Bot, label: 'sidebar.chatWithAgent', path: '/ads/chat', feature: 'ads_intelligence', featureFunction: 'ads.chat' },
+      { icon: ImageIcon, label: 'sidebar.creatives', path: '/ads/creatives', feature: 'ads_intelligence', featureFunction: 'ads.creatives' },
+      { icon: BarChart3, label: 'sidebar.campaigns', path: '/ads/campaigns', feature: 'ads_intelligence', featureFunction: 'ads.campaigns' },
+      { icon: Lightbulb, label: 'sidebar.insights', path: '/ads/insights', feature: 'ads_intelligence', featureFunction: 'ads.insights' },
+      { icon: Zap, label: 'sidebar.automations', path: '/ads/automation', feature: 'ads_intelligence', featureFunction: 'ads.automation' },
     ],
   },
 
@@ -144,14 +146,14 @@ const navEntries: NavEntry[] = [
   {
     type: 'group',
     id: 'content',
-    label: 'Criador de Conteúdo',
+    label: 'sidebar.contentCreator',
     icon: Video,
     defaultOpen: false,
     items: [
-      { icon: PlayCircle, label: 'Dashboard', path: '/content', feature: 'viral_content', featureFunction: 'viral.dashboard' },
-      { icon: Bot, label: 'Chat com Agente', path: '/content/chat', feature: 'viral_content', featureFunction: 'viral.generate' },
-      { icon: Users, label: 'Criadores', path: '/content/creators', feature: 'viral_content', featureFunction: 'viral.analyze' },
-      { icon: TrendingUp, label: 'Busca Viral', path: '/content/viral-search', feature: 'viral_content', featureFunction: 'viral.auto_discover' },
+      { icon: PlayCircle, label: 'nav.dashboard', path: '/content', feature: 'viral_content', featureFunction: 'viral.dashboard' },
+      { icon: Bot, label: 'sidebar.chatWithAgent', path: '/content/chat', feature: 'viral_content', featureFunction: 'viral.generate' },
+      { icon: Users, label: 'sidebar.creators', path: '/content/creators', feature: 'viral_content', featureFunction: 'viral.analyze' },
+      { icon: TrendingUp, label: 'sidebar.viralSearch', path: '/content/viral-search', feature: 'viral_content', featureFunction: 'viral.auto_discover' },
     ],
   },
 
@@ -159,35 +161,35 @@ const navEntries: NavEntry[] = [
   {
     type: 'group',
     id: 'bi',
-    label: 'BI Analytics',
+    label: 'sidebar.biAnalytics',
     icon: PieChart,
     defaultOpen: false,
     items: [
-      { icon: PieChart, label: 'Dashboard', path: '/bi', feature: 'bi_agent', featureFunction: 'bi.dashboard', adminOnly: true },
-      { icon: Brain, label: 'Analista IA', path: '/bi/analyst', feature: 'bi_agent', featureFunction: 'bi.analyst', adminOnly: true },
-      { icon: ClipboardCheck, label: 'Ações Pendentes', path: '/bi/actions', feature: 'bi_agent', featureFunction: 'bi.actions', adminOnly: true },
+      { icon: PieChart, label: 'nav.dashboard', path: '/bi', feature: 'bi_agent', featureFunction: 'bi.dashboard', adminOnly: true },
+      { icon: Brain, label: 'sidebar.aiAnalyst', path: '/bi/analyst', feature: 'bi_agent', featureFunction: 'bi.analyst', adminOnly: true },
+      { icon: ClipboardCheck, label: 'sidebar.pendingActions', path: '/bi/actions', feature: 'bi_agent', featureFunction: 'bi.actions', adminOnly: true },
     ],
   },
 
   { type: 'separator' },
 
   // Canais - item direto
-  { type: 'item', item: { icon: Plug, label: 'Canais', path: '/connect-channels' } },
+  { type: 'item', item: { icon: Plug, label: 'nav.channels', path: '/connect-channels' } },
 
   // Configurações - item direto
-  { type: 'item', item: { icon: Settings, label: 'Configurações', path: '/settings', permission: 'settings.view' } },
+  { type: 'item', item: { icon: Settings, label: 'nav.settings', path: '/settings', permission: 'settings.view' } },
 
   // Administração - colapsável
   {
     type: 'group',
     id: 'admin',
-    label: 'Administração',
+    label: 'sidebar.administration',
     icon: Shield,
     defaultOpen: false,
     items: [
-      { icon: Building2, label: 'Grupos', path: '/groups', feature: 'groups', featureFunction: 'groups.view' },
-      { icon: Shield, label: 'Super Admin', path: '/super-admin', superAdminOnly: true },
-      { icon: History, label: 'Histórico Suporte', path: '/super-admin/support-history', superAdminOnly: true },
+      { icon: Building2, label: 'nav.groups', path: '/groups', feature: 'groups', featureFunction: 'groups.view' },
+      { icon: Shield, label: 'sidebar.superAdmin', path: '/super-admin', superAdminOnly: true },
+      { icon: History, label: 'sidebar.supportHistory', path: '/super-admin/support-history', superAdminOnly: true },
     ],
   },
 ]
@@ -203,6 +205,7 @@ function NavItemLink({
   isCollapsed: boolean
   currentPath: string
 }) {
+  const { t } = useTranslation()
   const isActive = currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path))
 
   return (
@@ -230,7 +233,7 @@ function NavItemLink({
               isActive ? 'text-sidebar-accent font-medium' : 'text-sidebar-foreground/70'
             )}
           >
-            {item.label}
+            {t(item.label)}
           </motion.span>
         )}
       </AnimatePresence>
@@ -239,12 +242,13 @@ function NavItemLink({
 }
 
 function SectionLabel({ label, isCollapsed }: { label: string; isCollapsed: boolean }) {
+  const { t } = useTranslation()
   if (isCollapsed) return null
 
   return (
     <div className="px-3 pt-2 pb-1">
       <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-        {label}
+        {t(label)}
       </span>
     </div>
   )
@@ -277,6 +281,7 @@ function CollapsibleGroup({
   onToggle: () => void
   currentPath: string
 }) {
+  const { t } = useTranslation()
   if (items.length === 0) return null
 
   const hasActiveItem = items.some(
@@ -315,7 +320,7 @@ function CollapsibleGroup({
                   hasActiveItem ? 'text-sidebar-accent font-medium' : 'text-sidebar-foreground/70'
                 )}
               >
-                {label}
+                {t(label)}
               </motion.span>
               <motion.div
                 initial={{ opacity: 0 }}
@@ -359,6 +364,7 @@ function CollapsibleGroup({
 // ─── Main Sidebar ──────────────────────────────────────────────────
 
 export function Sidebar() {
+  const { t } = useTranslation()
   const location = useLocation()
   const { sidebarCollapsed, toggleSidebar, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
   const { tenant, user } = useAuthStore()
@@ -508,7 +514,7 @@ export function Sidebar() {
       {/* Tenant Info */}
       {tenant && !sidebarCollapsed && (
         <div className="relative px-4 py-3 border-b border-sidebar-accent/5">
-          <p className="text-xs text-muted-foreground">Empresa</p>
+          <p className="text-xs text-muted-foreground">{t('sidebar.company')}</p>
           <p className="text-sm font-medium truncate">{tenant.name}</p>
           {featuresData?.plan_label && (
             <span className={cn(

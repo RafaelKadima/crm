@@ -28,6 +28,7 @@ import { DetectedQuestionsPage, AgentLearningDashboard } from '@/pages/learning'
 import { SuperAdminDashboard, TenantsPage, CreateTenantPage, TenantDetailsPage, GroupsPage as SuperAdminGroupsPage, GroupDetailsPage, SupportAgentPage } from '@/pages/super-admin'
 import SupportHistory from '@/pages/support/SupportHistory'
 import { WhatsAppTemplatesPage } from '@/pages/whatsapp-templates'
+import { WhatsAppProfilePage } from '@/pages/whatsapp/WhatsAppProfilePage'
 import { GtmSettingsPage } from '@/pages/settings/GtmSettingsPage'
 import { GtmScript } from '@/components/GtmScript'
 import { BrandingProvider } from '@/components/BrandingProvider'
@@ -198,6 +199,7 @@ function AppRoutes() {
         <Route path="appointments" element={<AppointmentsPage />} />
         <Route path="schedule" element={<ScheduleConfigPage />} />
         <Route path="whatsapp-templates" element={<WhatsAppTemplatesPage />} />
+        <Route path="whatsapp-profile" element={<WhatsAppProfilePage />} />
         <Route path="gtm" element={<GtmSettingsPage />} />
         
         {/* Ads Intelligence */}
