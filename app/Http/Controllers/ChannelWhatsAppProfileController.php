@@ -162,12 +162,14 @@ class ChannelWhatsAppProfileController extends Controller
             $config = $channel->config;
             $accessToken = $config['access_token'] ?? null;
             $phoneNumberId = $config['phone_number_id'] ?? null;
-            $wabaId = $config['waba_id'] ?? null;
 
-            if (!$wabaId) {
+            // Use Meta App ID for upload session (required by Graph API)
+            $appId = config('services.meta.app_id');
+
+            if (!$appId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Channel does not have WABA ID configured',
+                    'message' => 'Meta App ID not configured',
                 ], 400);
             }
 
@@ -225,9 +227,9 @@ class ChannelWhatsAppProfileController extends Controller
                 ], 400);
             }
 
-            // Step 1: Create upload session
+            // Step 1: Create upload session using App ID
             $createResponse = Http::withToken($accessToken)
-                ->post("{$this->baseUrl}/{$wabaId}/uploads", [
+                ->post("{$this->baseUrl}/{$appId}/uploads", [
                     'file_length' => strlen($imageData),
                     'file_type' => $mimeType,
                 ]);
