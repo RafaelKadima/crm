@@ -103,7 +103,6 @@ export function ContactModal({ isOpen, onClose, contact }: ContactModalProps) {
       }
       onClose()
     } catch (error: any) {
-      console.error('Erro ao salvar contato:', error)
       if (error?.response?.data?.errors) {
         setErrors(error.response.data.errors)
       }

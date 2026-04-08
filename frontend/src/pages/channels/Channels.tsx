@@ -288,7 +288,8 @@ export function ChannelsPage() {
     navigator.clipboard.writeText(text)
   }
 
-  const webhookUrl = `${window.location.origin.replace(':5176', ':8000')}/api/webhooks/meta`
+  const apiBase = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || window.location.origin
+  const webhookUrl = `${apiBase}/api/webhooks/meta`
 
   if (isLoading) {
     return (

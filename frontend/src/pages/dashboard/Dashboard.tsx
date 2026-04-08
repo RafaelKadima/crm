@@ -5,8 +5,6 @@ import {
   TrendingUp,
   MessageSquare,
   CheckCircle,
-  ArrowUpRight,
-  ArrowDownRight,
   Kanban,
   Clock,
   UserPlus,
@@ -50,7 +48,9 @@ export function DashboardPage() {
       change: '+12.5%',
       trend: 'up' as const,
       icon: Users,
-      color: 'bg-blue-500',
+      bgColor: 'bg-white/5',
+      iconColor: 'text-foreground/60',
+      accentColor: 'var(--color-foreground)',
     },
     {
       title: t('dashboard.conversionRate'),
@@ -58,7 +58,9 @@ export function DashboardPage() {
       change: `${stats?.conversion_rate?.toFixed(1) || 0}%`,
       trend: 'up' as const,
       icon: TrendingUp,
-      color: 'bg-green-500',
+      bgColor: 'bg-success/10',
+      iconColor: 'text-success',
+      accentColor: 'var(--color-success)',
     },
     {
       title: t('dashboard.openTickets'),
@@ -66,7 +68,9 @@ export function DashboardPage() {
       change: '-3.1%',
       trend: 'down' as const,
       icon: MessageSquare,
-      color: 'bg-yellow-500',
+      bgColor: 'bg-warning/10',
+      iconColor: 'text-warning',
+      accentColor: 'var(--color-warning)',
     },
     {
       title: t('dashboard.pendingTasks'),
@@ -74,7 +78,9 @@ export function DashboardPage() {
       change: '+22.4%',
       trend: 'up' as const,
       icon: CheckCircle,
-      color: 'bg-purple-500',
+      bgColor: 'bg-primary/10',
+      iconColor: 'text-primary/70',
+      accentColor: 'var(--color-primary)',
     },
   ]
 
@@ -101,36 +107,30 @@ export function DashboardPage() {
       >
         {statCards.map((stat) => (
           <motion.div key={stat.title} variants={item}>
-            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow">
+            <Card
+              className="relative overflow-hidden hover:shadow-lg transition-shadow border-l-2"
+              style={{ borderLeftColor: stat.accentColor }}
+            >
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">{stat.title}</p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                    <p className="text-4xl font-display font-semibold tracking-tight mt-2">{stat.value}</p>
                     <div className="flex items-center mt-2">
-                      {stat.trend === 'up' ? (
-                        <ArrowUpRight className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <ArrowDownRight className="h-4 w-4 text-red-500" />
-                      )}
                       <span
                         className={`text-sm font-medium ${
-                          stat.trend === 'up' ? 'text-green-500' : 'text-red-500'
+                          stat.trend === 'up' ? 'text-success' : 'text-destructive'
                         }`}
                       >
                         {stat.change}
                       </span>
                     </div>
                   </div>
-                  <div className={`p-3 rounded-xl ${stat.color}`}>
-                    <stat.icon className="h-6 w-6 text-white" />
+                  <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                    <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
                   </div>
                 </div>
               </CardContent>
-              <div
-                className={`absolute bottom-0 left-0 right-0 h-1 ${stat.color}`}
-                style={{ opacity: 0.5 }}
-              />
             </Card>
           </motion.div>
         ))}
@@ -251,7 +251,7 @@ export function DashboardPage() {
                       </div>
                       <div className="text-right">
                         {lead.value && (
-                          <p className="font-semibold text-green-600">
+                          <p className="font-semibold text-success">
                             {formatCurrency(lead.value)}
                           </p>
                         )}
@@ -386,8 +386,8 @@ function buildActivityTimeline(leads: any[], tasks: any[]): ActivityItem[] {
       subtitle: lead.channel?.name ? `via ${lead.channel.name}` : 'Lead criado',
       time: formatRelativeTime(lead.created_at),
       icon: UserPlus,
-      iconColor: 'text-blue-400',
-      bgColor: 'bg-blue-500/10',
+      iconColor: 'text-info',
+      bgColor: 'bg-info/10',
       date: new Date(lead.created_at),
     })
   }
@@ -400,8 +400,8 @@ function buildActivityTimeline(leads: any[], tasks: any[]): ActivityItem[] {
       subtitle: task.type || 'Tarefa',
       time: formatRelativeTime(task.created_at || task.due_date),
       icon: CheckCircle,
-      iconColor: 'text-purple-400',
-      bgColor: 'bg-purple-500/10',
+      iconColor: 'text-primary/70',
+      bgColor: 'bg-primary/10',
       date: new Date(task.created_at || task.due_date),
     })
   }

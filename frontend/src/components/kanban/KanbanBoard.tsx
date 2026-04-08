@@ -83,7 +83,6 @@ export function KanbanBoard({ stages, leads, onLeadMove, onLeadClick }: KanbanBo
 
       // Only update if moving to a different stage
       if (targetStageId && targetStageId !== activeLead.stage_id) {
-        console.log(`Moving lead ${activeLeadId} to stage ${targetStageId}`)
         onLeadMove(activeLeadId, targetStageId)
       }
     }

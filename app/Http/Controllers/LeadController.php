@@ -109,7 +109,7 @@ class LeadController extends Controller
         $query->orderByRaw('last_message_at DESC NULLS LAST')
               ->orderByDesc('created_at');
 
-        $leads = $query->paginate($request->get('per_page', 15));
+        $leads = $query->paginate(min((int) $request->get('per_page', 15), 100));
 
         return response()->json($leads);
     }
@@ -431,18 +431,20 @@ class LeadController extends Controller
      */
     public function messages(Request $request, Lead $lead): JsonResponse
     {
-        $perPage = $request->get('per_page', 50);
+        $perPage = min((int) $request->get('per_page', 50), 100);
         $page = $request->get('page', 1);
 
-        // Busca todos os ticket IDs do lead, ordenados por criação
-        $ticketIds = $lead->tickets()
+        // Single query for tickets (used for IDs, separators, and active ticket info)
+        $tickets = $lead->tickets()
+            ->select('id', 'status', 'ia_enabled', 'created_at', 'updated_at')
             ->orderBy('created_at', 'asc')
-            ->pluck('id');
+            ->get();
 
-        if ($ticketIds->isEmpty()) {
+        if ($tickets->isEmpty()) {
             return response()->json([
                 'data' => [],
                 'tickets' => [],
+                'active_ticket' => null,
                 'current_page' => 1,
                 'last_page' => 1,
                 'per_page' => $perPage,
@@ -451,28 +453,29 @@ class LeadController extends Controller
             ]);
         }
 
-        // Busca mensagens de todos os tickets, mais recentes primeiro (para paginação)
+        $ticketIds = $tickets->pluck('id');
+
+        // Message query — no column restriction so all DB columns (including any added via migrations) are returned
         $messages = \App\Models\TicketMessage::whereIn('ticket_id', $ticketIds)
             ->orderByDesc('sent_at')
             ->paginate($perPage);
 
-        // Busca info dos tickets para separadores no frontend
-        $tickets = $lead->tickets()
-            ->select('id', 'lead_id', 'contact_id', 'channel_id', 'status', 'created_at', 'updated_at')
-            ->orderBy('created_at', 'asc')
-            ->get()
-            ->map(function ($ticket) {
-                return [
-                    'id' => $ticket->id,
-                    'status' => $ticket->status,
-                    'created_at' => $ticket->created_at,
-                    'updated_at' => $ticket->updated_at,
-                ];
-            });
+        // Active ticket = first non-closed, or latest
+        $activeTicket = $tickets->firstWhere('status', '!=', 'closed') ?? $tickets->last();
 
         return response()->json([
             'data' => $messages->items(),
-            'tickets' => $tickets,
+            'tickets' => $tickets->map(fn($t) => [
+                'id' => $t->id,
+                'status' => $t->status,
+                'created_at' => $t->created_at,
+                'updated_at' => $t->updated_at,
+            ]),
+            'active_ticket' => $activeTicket ? [
+                'id' => $activeTicket->id,
+                'status' => $activeTicket->status,
+                'ia_enabled' => $activeTicket->ia_enabled,
+            ] : null,
             'current_page' => $messages->currentPage(),
             'last_page' => $messages->lastPage(),
             'per_page' => $messages->perPage(),

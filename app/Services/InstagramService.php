@@ -344,7 +344,7 @@ class InstagramService
             if ($lead->stage_id) {
                 $pipeline = $lead->stage?->pipeline;
                 if ($pipeline) {
-                    $firstStage = $pipeline->stages()->orderBy('position')->first();
+                    $firstStage = $pipeline->stages()->orderBy('order')->first();
                     if ($firstStage && $firstStage->id !== $lead->stage_id) {
                         $lead->update(['stage_id' => $firstStage->id]);
                         Log::info('Lead moved to first stage on reopen', [

@@ -97,7 +97,7 @@ class AgentQueueController extends Controller
             ]);
 
             return response()->json([
-                'error' => $e->getMessage()
+                'error' => $this->safeErrorMessage($e)
             ], 500);
         }
     }
@@ -147,7 +147,7 @@ class AgentQueueController extends Controller
             ]);
 
             return response()->json([
-                'error' => $e->getMessage()
+                'error' => $this->safeErrorMessage($e)
             ], 500);
         }
     }

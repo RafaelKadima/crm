@@ -43,7 +43,7 @@ class ProductController extends Controller
         $query->orderBy($sortBy, $sortDir);
 
         // Paginação
-        $perPage = $request->get('per_page', 20);
+        $perPage = min((int) $request->get('per_page', 20), 100);
         $products = $query->paginate($perPage);
 
         return response()->json($products);

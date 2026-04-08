@@ -214,7 +214,7 @@ class DealStageActivityController extends Controller
         }
 
         $activities = $query->orderBy('due_at')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         $activities->getCollection()->transform(fn($activity) => $this->formatActivityForDashboard($activity));
 

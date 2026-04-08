@@ -42,7 +42,7 @@ class ActionApprovalController extends Controller
             $query->withPriority($request->priority);
         }
 
-        $actions = $query->paginate($request->get('per_page', 20));
+        $actions = $query->paginate(min((int) $request->get('per_page', 20), 100));
 
         // Adiciona contagem por prioridade
         $countByPriority = BiSuggestedAction::countPendingByPriority($tenantId);
@@ -230,7 +230,7 @@ class ActionApprovalController extends Controller
             return $error;
 
         } catch (\Exception $e) {
-            $error = ['error' => $e->getMessage()];
+            $error = ['error' => $this->safeErrorMessage($e)];
             $action->markFailed($error);
             
             \Log::error('Erro ao executar ação BI', [

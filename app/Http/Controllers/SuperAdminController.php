@@ -22,6 +22,19 @@ use Illuminate\Validation\Rule;
 
 class SuperAdminController extends Controller
 {
+    private function validateSort(Request $request, array $allowedColumns): array
+    {
+        $sortBy = in_array($request->get('sort_by'), $allowedColumns, true)
+            ? $request->get('sort_by')
+            : 'created_at';
+
+        $sortDir = in_array(strtolower($request->get('sort_dir', 'desc')), ['asc', 'desc'], true)
+            ? $request->get('sort_dir')
+            : 'desc';
+
+        return [$sortBy, $sortDir];
+    }
+
     /**
      * Dashboard do Super Admin.
      */
@@ -78,8 +91,9 @@ class SuperAdminController extends Controller
             $query->where('is_active', $request->boolean('is_active'));
         }
 
-        $tenants = $query->orderBy($request->get('sort_by', 'created_at'), $request->get('sort_dir', 'desc'))
-            ->paginate($request->get('per_page', 20));
+        [$sortBy, $sortDir] = $this->validateSort($request, ['created_at', 'name', 'slug', 'plan', 'is_active']);
+        $tenants = $query->orderBy($sortBy, $sortDir)
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         return response()->json($tenants);
     }
@@ -332,8 +346,9 @@ class SuperAdminController extends Controller
             $query->where('is_active', $request->boolean('is_active'));
         }
 
-        $users = $query->orderBy($request->get('sort_by', 'created_at'), $request->get('sort_dir', 'desc'))
-            ->paginate($request->get('per_page', 20));
+        [$sortBy, $sortDir] = $this->validateSort($request, ['created_at', 'name', 'email', 'role', 'is_active']);
+        $users = $query->orderBy($sortBy, $sortDir)
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         \Log::error('[SuperAdmin] listUsers total: ' . $users->total() . ', current_page: ' . $users->currentPage());
 
@@ -497,7 +512,7 @@ class SuperAdminController extends Controller
         }
 
         $logs = $query->orderByDesc('created_at')
-            ->paginate($request->get('per_page', 50));
+            ->paginate(min((int) $request->get('per_page', 50), 100));
 
         return response()->json($logs);
     }
@@ -528,8 +543,9 @@ class SuperAdminController extends Controller
             $query->where('is_active', $request->boolean('is_active'));
         }
 
-        $groups = $query->orderBy($request->get('sort_by', 'created_at'), $request->get('sort_dir', 'desc'))
-            ->paginate($request->get('per_page', 20));
+        [$sortBy, $sortDir] = $this->validateSort($request, ['created_at', 'name', 'slug', 'is_active']);
+        $groups = $query->orderBy($sortBy, $sortDir)
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         return response()->json($groups);
     }

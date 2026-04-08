@@ -35,6 +35,7 @@ import {
   Trophy,
   History,
   Plug,
+  Megaphone,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -94,6 +95,7 @@ const navEntries: NavEntry[] = [
     items: [
       { icon: Package, label: 'nav.products', path: '/products', feature: 'products', featureFunction: 'products.list', permission: 'products.view' },
       { icon: Globe, label: 'nav.landingPages', path: '/landing-pages', feature: 'landing_pages', featureFunction: 'lp.list', permissions: ['landing_pages.view', 'landing_pages.create'] },
+      { icon: Megaphone, label: 'nav.broadcasts', path: '/broadcasts' },
       { icon: MessageSquare, label: 'nav.whatsappProfile', path: '/whatsapp-profile' },
     ],
   },
@@ -212,15 +214,15 @@ function NavItemLink({
     <NavLink
       to={item.path}
       className={cn(
-        'group items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
-        'hover:bg-sidebar-accent/5',
-        isActive && 'text-sidebar-accent nav-active',
+        'group items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150',
+        'hover:bg-muted',
+        isActive && 'bg-muted text-foreground',
         item.hideOnMobile ? 'hidden md:flex' : 'flex'
       )}
     >
       <item.icon className={cn(
         'h-[18px] w-[18px] shrink-0 transition-colors',
-        isActive ? 'text-sidebar-accent' : 'text-muted-foreground group-hover:text-sidebar-accent/80'
+        isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
       )} />
       <AnimatePresence mode="wait">
         {!isCollapsed && (
@@ -229,8 +231,8 @@ function NavItemLink({
             animate={{ opacity: 1, width: 'auto' }}
             exit={{ opacity: 0, width: 0 }}
             className={cn(
-              'text-sm whitespace-nowrap',
-              isActive ? 'text-sidebar-accent font-medium' : 'text-sidebar-foreground/70'
+              'text-[13px] whitespace-nowrap',
+              isActive ? 'text-foreground font-medium' : 'text-sidebar-foreground'
             )}
           >
             {t(item.label)}
@@ -247,7 +249,7 @@ function SectionLabel({ label, isCollapsed }: { label: string; isCollapsed: bool
 
   return (
     <div className="px-3 pt-2 pb-1">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+      <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
         {t(label)}
       </span>
     </div>
@@ -257,7 +259,7 @@ function SectionLabel({ label, isCollapsed }: { label: string; isCollapsed: bool
 function SeparatorLine({ isCollapsed }: { isCollapsed: boolean }) {
   return (
     <div className={cn('my-2', isCollapsed ? 'mx-3' : 'mx-3')}>
-      <div className="h-px bg-sidebar-accent/5" />
+      <div className="h-px bg-border" />
     </div>
   )
 }
@@ -300,13 +302,13 @@ function CollapsibleGroup({
       <button
         onClick={onToggle}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
-          'hover:bg-sidebar-accent/5 text-left'
+          'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150',
+          'hover:bg-muted text-left cursor-pointer'
         )}
       >
         <Icon className={cn(
           'h-[18px] w-[18px] shrink-0 transition-colors',
-          hasActiveItem ? 'text-sidebar-accent' : 'text-muted-foreground'
+          hasActiveItem ? 'text-accent' : 'text-muted-foreground'
         )} />
         <AnimatePresence mode="wait">
           {!isCollapsed && (
@@ -316,8 +318,8 @@ function CollapsibleGroup({
                 animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
                 className={cn(
-                  'text-sm whitespace-nowrap flex-1',
-                  hasActiveItem ? 'text-sidebar-accent font-medium' : 'text-sidebar-foreground/70'
+                  'text-[13px] whitespace-nowrap flex-1',
+                  hasActiveItem ? 'text-foreground font-medium' : 'text-sidebar-foreground'
                 )}
               >
                 {t(label)}
@@ -346,7 +348,7 @@ function CollapsibleGroup({
           >
             <ul className={cn(
               'mt-0.5 space-y-0.5',
-              !isCollapsed && 'ml-4 pl-3 border-l border-sidebar-accent/10'
+              !isCollapsed && 'ml-4 pl-3 border-l border-border'
             )}>
               {items.map((item) => (
                 <li key={item.path}>
@@ -459,8 +461,7 @@ export function Sidebar() {
         mobileMenuOpen ? 'flex' : 'hidden md:flex'
       )}
       style={{
-        borderRight: '1px solid var(--color-sidebar-accent, rgba(255, 255, 255, 0.06))',
-        borderRightColor: 'color-mix(in srgb, var(--color-sidebar-accent) 6%, transparent)',
+        borderRight: '1px solid var(--color-border)',
       }}
       onClick={(e) => {
         // Close mobile menu when clicking a link
@@ -470,7 +471,7 @@ export function Sidebar() {
       }}
     >
       {/* Logo */}
-      <div className="relative h-16 flex items-center justify-between px-4 border-b border-sidebar-accent/5">
+      <div className="relative h-16 flex items-center justify-between px-4 border-b border-border">
         <AnimatePresence mode="wait">
           {logoUrl ? (
             <motion.div
@@ -498,9 +499,8 @@ export function Sidebar() {
         <button
           onClick={toggleSidebar}
           className={cn(
-            'p-2 rounded-lg transition-all duration-200',
-            'hover:bg-sidebar-accent/5 hover:text-sidebar-accent',
-            'border border-transparent hover:border-sidebar-accent/10'
+            'p-1.5 rounded-lg transition-colors duration-150',
+            'hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer'
           )}
         >
           {sidebarCollapsed ? (
@@ -513,13 +513,13 @@ export function Sidebar() {
 
       {/* Tenant Info */}
       {tenant && !sidebarCollapsed && (
-        <div className="relative px-4 py-3 border-b border-sidebar-accent/5">
-          <p className="text-xs text-muted-foreground">{t('sidebar.company')}</p>
-          <p className="text-sm font-medium truncate">{tenant.name}</p>
+        <div className="relative px-4 py-3 border-b border-border">
+          <p className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('sidebar.company')}</p>
+          <p className="text-sm font-medium truncate mt-0.5">{tenant.name}</p>
           {featuresData?.plan_label && (
             <span className={cn(
-              'inline-flex items-center mt-1 px-2 py-0.5 rounded-md text-xs font-medium',
-              'bg-sidebar-accent/10 text-sidebar-accent/80 border border-sidebar-accent/10'
+              'inline-flex items-center mt-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium',
+              'bg-foreground/10 text-foreground/70 border border-foreground/10'
             )}>
               {featuresData.plan_label}
             </span>
@@ -590,23 +590,6 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Footer */}
-      <div className="relative p-4 border-t border-sidebar-accent/5">
-        <div className={cn(
-          'text-xs font-mono',
-          sidebarCollapsed ? 'text-center' : ''
-        )}>
-          <span className="text-muted-foreground">
-            {sidebarCollapsed ? 'v1' : (
-              <>
-                <span className="text-sidebar-accent">OmniFy</span>
-                <span className="text-sidebar-accent/50">HUB</span>
-                <span className="text-muted-foreground ml-2">v1.0.0</span>
-              </>
-            )}
-          </span>
-        </div>
-      </div>
     </motion.aside>
   )
 }

@@ -236,21 +236,16 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
   const loadMessages = async () => {
     setIsLoading(true)
     try {
-      // Busca lead para obter ticket ativo (para envio de mensagens)
-      const response = await api.get(`/leads/${lead.id}`)
-      const leadData = response.data
-
-      const ticket = leadData.tickets?.find((t: any) => t.status !== 'closed') || leadData.tickets?.[0]
-
-      if (ticket) {
-        setTicketId(ticket.id)
-        setTicketStatus(ticket.status === 'closed' ? 'closed' : 'open')
-        setIaEnabled(ticket.ia_enabled !== false)
-      }
-
-      // Busca mensagens de TODOS os tickets do lead (histórico completo)
+      // Single request: messages + active ticket info
       const messagesResponse = await api.get(`/leads/${lead.id}/messages?page=1&per_page=50`)
-      const { data: rawMessages, tickets } = messagesResponse.data
+      const { data: rawMessages, tickets, active_ticket } = messagesResponse.data
+
+      // Set active ticket from messages response (no extra API call needed)
+      if (active_ticket) {
+        setTicketId(active_ticket.id)
+        setTicketStatus(active_ticket.status === 'closed' ? 'closed' : 'open')
+        setIaEnabled(active_ticket.ia_enabled !== false)
+      }
 
       if (tickets) {
         setTicketHistory(tickets)
@@ -462,6 +457,27 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
     })
   }
 
+  const isSameDay = (d1: string, d2: string) => {
+    const a = new Date(d1)
+    const b = new Date(d2)
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  }
+
+  const getDateLabel = (dateString: string) => {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return ''
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const diffDays = Math.round((today.getTime() - target.getTime()) / 86400000)
+    if (diffDays === 0) return 'Hoje'
+    if (diffDays === 1) return 'Ontem'
+    if (diffDays < 7) {
+      return date.toLocaleDateString('pt-BR', { weekday: 'long' }).replace(/^\w/, c => c.toUpperCase())
+    }
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+  }
+
   // Channel type for file upload and audio
   const channelType = lead.channel?.type || 'whatsapp'
 
@@ -556,14 +572,9 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
 
           {/* Lead Score */}
           {hasIaFeature && leadScore && (
-            <div className={cn(
-              "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
-              leadScore.score >= 70 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-              leadScore.score >= 40 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
-              "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-            )}>
+            <div className="px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 bg-muted text-muted-foreground">
               <Sparkles className="h-3 w-3" />
-              {Math.round(leadScore.score)}% conversão
+              {Math.round(leadScore.score)}%
             </div>
           )}
         </div>
@@ -573,18 +584,8 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
           {ticketStatus === 'open' ? (
             <>
               {hasLinxIntegration && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSendToLinx}
-                  disabled={isSendingToLinx}
-                  className="text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
-                >
-                  {isSendingToLinx ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ExternalLink className="h-4 w-4" />
-                  )}
+                <Button variant="outline" size="sm" onClick={handleSendToLinx} disabled={isSendingToLinx}>
+                  {isSendingToLinx ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
                   <span className="ml-1.5 hidden sm:inline">Linx</span>
                 </Button>
               )}
@@ -595,39 +596,19 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
                   size="sm"
                   onClick={handleToggleIa}
                   disabled={isTogglingIa}
-                  className={cn(
-                    iaEnabled
-                      ? "bg-green-600/20 text-green-400 border-green-500/30"
-                      : "text-muted-foreground border-muted-foreground/30"
-                  )}
+                  className={cn(iaEnabled && "bg-foreground/5 border-foreground/15 text-foreground")}
                 >
-                  {isTogglingIa ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : iaEnabled ? (
-                    <Bot className="h-4 w-4" />
-                  ) : (
-                    <UserRound className="h-4 w-4" />
-                  )}
-                  <span className="ml-1.5 hidden sm:inline">{iaEnabled ? 'IA Ativa' : 'Você'}</span>
+                  {isTogglingIa ? <Loader2 className="h-4 w-4 animate-spin" /> : iaEnabled ? <Bot className="h-4 w-4" /> : <UserRound className="h-4 w-4" />}
+                  <span className="ml-1.5 hidden sm:inline">{iaEnabled ? 'IA' : 'Você'}</span>
                 </Button>
               )}
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsTransferModalOpen(true)}
-                className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10"
-              >
+              <Button variant="outline" size="sm" onClick={() => setIsTransferModalOpen(true)}>
                 <ArrowRightLeft className="h-4 w-4" />
                 <span className="ml-1.5 hidden sm:inline">Transferir</span>
               </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsCloseModalOpen(true)}
-                className="text-red-400 border-red-400/30 hover:bg-red-400/10"
-              >
+              <Button variant="outline" size="sm" onClick={() => setIsCloseModalOpen(true)} className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20">
                 <MessageSquareOff className="h-4 w-4" />
                 <span className="ml-1.5 hidden sm:inline">Encerrar</span>
               </Button>
@@ -692,6 +673,9 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
             const isFirstInGroup = prevMsg?.direction !== msg.direction
             const isLastInGroup = nextMsg?.direction !== msg.direction
 
+            // Separador de data: estilo WhatsApp
+            const showDateSeparator = !prevMsg || !isSameDay(msg.created_at, prevMsg.created_at)
+
             // Separador de ticket: quando muda o ticket_id entre mensagens
             const showTicketSeparator = prevMsg && msg.ticket_id && prevMsg.ticket_id && msg.ticket_id !== prevMsg.ticket_id
             const ticketInfo = showTicketSeparator ? ticketHistory.find(t => t.id === msg.ticket_id) : null
@@ -700,6 +684,13 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
 
             return (
             <>
+            {showDateSeparator && (
+              <div key={`date-${msg.created_at}`} className="flex items-center justify-center my-3">
+                <div className="px-3 py-1 rounded-lg bg-muted/80 border border-border text-[11px] text-muted-foreground font-medium shadow-sm">
+                  {getDateLabel(msg.created_at)}
+                </div>
+              </div>
+            )}
             {showTicketSeparator && (
               <div key={`separator-${msg.ticket_id}`} className="flex items-center gap-3 my-4 px-2">
                 <div className="flex-1 h-px bg-border" />
@@ -717,11 +708,8 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
                 <div className="flex-1 h-px bg-border" />
               </div>
             )}
-            <motion.div
+            <div
               key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.02 }}
               className={cn(
                 'flex',
                 msg.direction === 'outbound' ? 'justify-end' : 'justify-start',
@@ -807,7 +795,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
             </>
           )})
         )}

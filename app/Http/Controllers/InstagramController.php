@@ -35,7 +35,7 @@ class InstagramController extends Controller
         $challenge = $request->query('hub_challenge');
 
         // Token de verificação definido no .env
-        $verifyToken = config('services.instagram.verify_token', 'crm_instagram_verify_token');
+        $verifyToken = config('services.instagram.verify_token');
 
         if ($mode === 'subscribe' && $token === $verifyToken) {
             Log::info('Instagram webhook verified successfully');

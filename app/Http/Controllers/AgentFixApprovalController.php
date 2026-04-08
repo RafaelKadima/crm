@@ -114,7 +114,7 @@ class AgentFixApprovalController extends Controller
             $query->where('ticket_id', $request->ticket_id);
         }
 
-        $perPage = $request->input('per_page', 20);
+        $perPage = min((int) $request->input('per_page', 20), 100);
         $fixRequests = $query->paginate($perPage);
 
         return response()->json($fixRequests);

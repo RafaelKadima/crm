@@ -17,7 +17,7 @@ import { SaleClosingModal } from '@/components/sales/SaleClosingModal'
 import { useInfiniteLeads, useUpdateLeadStage } from '@/hooks/useLeads'
 import { usePipelines, type Pipeline } from '@/hooks/usePipelines'
 import { useNotificationStore } from '@/store/notificationStore'
-import { useTenantMessages } from '@/hooks/useWebSocket'
+// useTenantMessages moved to MainLayout (global)
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
 import type { Lead, PipelineStage } from '@/types'
@@ -30,9 +30,9 @@ export function LeadsKanbanPage() {
 
   const ticketFilterTabs: { key: TicketFilterType; label: string; icon: any; color: string; description: string }[] = [
     { key: 'all', label: t('common.all'), icon: Inbox, color: 'text-muted-foreground', description: t('leads.allLeads') },
-    { key: 'pending', label: t('leads.pendingLabel'), icon: Bell, color: 'text-amber-400', description: t('leads.awaitingService') },
-    { key: 'open', label: t('leads.inServiceLabel'), icon: MessageCircle, color: 'text-blue-400', description: t('leads.activeConversations') },
-    { key: 'closed', label: t('leads.closedLabel'), icon: CheckCircle2, color: 'text-green-400', description: t('leads.finishedConversations') },
+    { key: 'pending', label: t('leads.pendingLabel'), icon: Bell, color: 'text-muted-foreground', description: t('leads.awaitingService') },
+    { key: 'open', label: t('leads.inServiceLabel'), icon: MessageCircle, color: 'text-muted-foreground', description: t('leads.activeConversations') },
+    { key: 'closed', label: t('leads.closedLabel'), icon: CheckCircle2, color: 'text-muted-foreground', description: t('leads.finishedConversations') },
   ]
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
@@ -74,10 +74,7 @@ export function LeadsKanbanPage() {
   // Auth store para pegar o tenant_id
   const { user } = useAuthStore()
 
-  // 🔥 WebSocket: escuta mensagens do tenant em tempo real
-  useTenantMessages(user?.tenant_id || null)
-
-  // Notification store
+  // Notification store (WebSocket global in MainLayout)
   const { 
     unreadMessages, 
     markAsRead, 
@@ -373,7 +370,7 @@ export function LeadsKanbanPage() {
                           setShowPipelineSelector(false)
                         }}
                         className={`w-full text-left px-4 py-3 hover:bg-accent transition-colors flex items-center justify-between ${
-                          pipeline.id === selectedPipelineId ? 'bg-blue-600/20' : ''
+                          pipeline.id === selectedPipelineId ? 'bg-muted' : ''
                         }`}
                       >
                         <div>
@@ -381,7 +378,7 @@ export function LeadsKanbanPage() {
                           <p className="text-xs text-muted-foreground">{pipeline.stages?.length || 0} {t('leads.stages')}</p>
                         </div>
                         {pipeline.is_default && (
-                          <span className="text-xs bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded">
+                          <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
                             {t('common.default')}
                           </span>
                         )}
@@ -463,11 +460,10 @@ export function LeadsKanbanPage() {
                 onClick={markAllAsRead}
                 className="relative"
               >
-                <Bell className="h-4 w-4 mr-2 text-green-500" />
-                <span className="text-green-600 font-medium">{totalUnread} {t('leads.newMessages', { count: totalUnread })}</span>
+                <Bell className="h-4 w-4 mr-2" />
+                <span className="font-medium">{totalUnread} {t('leads.newMessages', { count: totalUnread })}</span>
                 <span className="absolute -top-1 -right-1 h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-foreground"></span>
                 </span>
               </Button>
             </motion.div>
@@ -498,18 +494,18 @@ export function LeadsKanbanPage() {
               <button
                 key={tab.key}
                 onClick={() => setTicketFilter(tab.key)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all text-sm ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm cursor-pointer ${
                   isActive
-                    ? 'bg-accent text-foreground shadow-md'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? tab.color : ''}`} />
+                <Icon className="h-4 w-4" />
                 <span className="font-medium">{tab.label}</span>
                 {tab.key !== 'all' && (
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    isActive ? 'bg-muted-foreground/20' : 'bg-accent'
-                  } ${tab.key === 'pending' && ticketCounts.pending > 0 ? 'bg-amber-500/30 text-amber-300' : ''}`}>
+                    isActive ? 'bg-background/20' : 'bg-muted'
+                  }`}>
                     {tab.key === 'pending' ? ticketCounts.pending : tab.key === 'open' ? ticketCounts.open : ticketCounts.closed}
                   </span>
                 )}

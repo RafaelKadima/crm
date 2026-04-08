@@ -757,15 +757,74 @@ class WhatsAppService implements WhatsAppProviderInterface
 
         if (!$contact) {
             $name = $contactInfo['profile']['name'] ?? "WhatsApp {$phone}";
-            
+
             $contact = Contact::create([
                 'tenant_id' => $channel->tenant_id,
                 'name' => $name,
                 'phone' => $formattedPhone,
             ]);
+
+            // Fetch WhatsApp profile picture asynchronously
+            $this->fetchAndStoreProfilePicture($contact, $phone, $channel);
+        } elseif (empty($contact->profile_picture_url)) {
+            // Existing contact without profile picture — try to fetch
+            $this->fetchAndStoreProfilePicture($contact, $phone, $channel);
         }
 
         return $contact;
+    }
+
+    /**
+     * Fetch WhatsApp profile picture from Meta Cloud API and store on contact.
+     * Uses the contacts endpoint: GET /v18.0/{phone_number_id}/contacts
+     * Non-blocking — fails silently if unavailable.
+     */
+    protected function fetchAndStoreProfilePicture(Contact $contact, string $phone, Channel $channel): void
+    {
+        try {
+            if (!$this->phoneNumberId || !$this->accessToken) {
+                return;
+            }
+
+            // Meta Cloud API: get contact profile info
+            $response = \Illuminate\Support\Facades\Http::withToken($this->accessToken)
+                ->timeout(5)
+                ->get("{$this->baseUrl}/{$this->phoneNumberId}", [
+                    'fields' => 'profile_picture_url',
+                    'contacts' => $phone,
+                ]);
+
+            // Alternative: try the direct profile pic endpoint
+            if (!$response->successful()) {
+                // Try via the contacts API (some implementations)
+                $response = \Illuminate\Support\Facades\Http::withToken($this->accessToken)
+                    ->timeout(5)
+                    ->post("{$this->baseUrl}/{$this->phoneNumberId}/contacts", [
+                        'blocking' => 'wait',
+                        'contacts' => ["+{$phone}"],
+                    ]);
+            }
+
+            $data = $response->json();
+
+            // Extract profile picture URL from response
+            $profilePicUrl = null;
+
+            if (isset($data['contacts'][0]['profile_picture_url'])) {
+                $profilePicUrl = $data['contacts'][0]['profile_picture_url'];
+            } elseif (isset($data['profile_picture_url'])) {
+                $profilePicUrl = $data['profile_picture_url'];
+            } elseif (isset($data['data']['profile_picture_url'])) {
+                $profilePicUrl = $data['data']['profile_picture_url'];
+            }
+
+            if ($profilePicUrl) {
+                $contact->update(['profile_picture_url' => $profilePicUrl]);
+            }
+        } catch (\Throwable $e) {
+            // Non-critical — fail silently, contact works without picture
+            \Illuminate\Support\Facades\Log::debug("[WhatsApp] Could not fetch profile picture for {$phone}: " . $e->getMessage());
+        }
     }
 
     /**
@@ -835,7 +894,7 @@ class WhatsAppService implements WhatsAppProviderInterface
             if ($lead->stage_id) {
                 $pipeline = $lead->stage?->pipeline;
                 if ($pipeline) {
-                    $firstStage = $pipeline->stages()->orderBy('position')->first();
+                    $firstStage = $pipeline->stages()->orderBy('order')->first();
                     if ($firstStage && $firstStage->id !== $lead->stage_id) {
                         $lead->update(['stage_id' => $firstStage->id]);
                         Log::info('Lead moved to first stage on reopen', [
@@ -1671,6 +1730,41 @@ class WhatsAppService implements WhatsAppProviderInterface
             $metadata['delivery_status'] = $statusType;
             $metadata['status_timestamp'] = $status['timestamp'];
             $message->update(['metadata' => $metadata]);
+        }
+
+        // Update broadcast message status if this message belongs to a broadcast
+        $broadcastMsg = \App\Models\BroadcastMessage::where('whatsapp_message_id', $messageId)->first();
+        if ($broadcastMsg) {
+            $updateData = ['status' => strtoupper($statusType)];
+
+            $timestampField = match ($statusType) {
+                'delivered' => 'delivered_at',
+                'read' => 'read_at',
+                'sent' => 'sent_at',
+                default => null,
+            };
+
+            if ($timestampField) {
+                $updateData[$timestampField] = now();
+            }
+
+            if ($statusType === 'failed') {
+                $updateData['error_message'] = $errors[0]['message'] ?? 'Unknown error';
+                $updateData['error_code'] = $errors[0]['code'] ?? null;
+            }
+
+            $broadcastMsg->update($updateData);
+
+            // Atomic increment on parent broadcast
+            $broadcast = $broadcastMsg->broadcast;
+            if ($broadcast) {
+                match ($statusType) {
+                    'delivered' => $broadcast->increment('delivered_count'),
+                    'read' => $broadcast->increment('read_count'),
+                    'failed' => $broadcast->increment('failed_count'),
+                    default => null,
+                };
+            }
         }
     }
 

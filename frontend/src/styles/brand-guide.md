@@ -56,15 +56,15 @@ A identidade visual é **futurística e cyberpunk**, transmitindo tecnologia ava
 
 | Tipo | Fonte | Uso |
 |------|-------|-----|
-| **Display** | Orbitron | Títulos, logo, headings |
+| **Display** | Space Grotesk | Títulos, logo, headings |
 | **Body** | Exo 2 | Texto principal, UI |
 | **Mono** | JetBrains Mono | Código, dados técnicos |
 
 ### Hierarquia
 
 ```css
-h1 { font-family: 'Orbitron'; font-weight: 700; letter-spacing: 0.02em; }
-h2 { font-family: 'Orbitron'; font-weight: 600; letter-spacing: 0.02em; }
+h1 { font-family: 'Space Grotesk'; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-family: 'Space Grotesk'; font-weight: 600; letter-spacing: -0.01em; }
 body { font-family: 'Exo 2'; font-weight: 400; }
 code { font-family: 'JetBrains Mono'; }
 ```

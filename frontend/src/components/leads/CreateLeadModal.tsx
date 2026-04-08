@@ -87,7 +87,6 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
       setFormData({ name: '', phone: '', email: '', company: '', value: '', channel_id: '' })
       onClose()
     } catch (error: any) {
-      console.error('Error creating lead:', error)
       setErrors({ submit: error.message || 'Erro ao criar lead' })
     }
   }

@@ -101,7 +101,7 @@ class TicketController extends Controller
 
         $query->orderByDesc('created_at');
 
-        $tickets = $query->paginate($request->get('per_page', 15));
+        $tickets = $query->paginate(min((int) $request->get('per_page', 15), 100));
 
         return response()->json($tickets);
         } catch (\Exception $e) {
@@ -491,7 +491,7 @@ class TicketController extends Controller
      */
     public function messages(Request $request, Ticket $ticket): JsonResponse
     {
-        $perPage = $request->get('per_page', 30);
+        $perPage = min((int) $request->get('per_page', 30), 100);
         $page = $request->get('page', 1);
 
         // Cache key para as últimas mensagens (primeira página)

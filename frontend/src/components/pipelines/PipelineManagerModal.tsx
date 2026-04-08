@@ -149,7 +149,6 @@ export function PipelineManagerModal({
 
     try {
       if (isCreatingNew) {
-        console.log('Criando pipeline:', { name, description, is_public: isPublic, is_default: isDefault, sdr_agent_id: sdrAgentId, stages })
         await createPipeline.mutateAsync({
           name,
           description,
@@ -161,8 +160,6 @@ export function PipelineManagerModal({
         setSuccess('Pipeline criado com sucesso!')
         setIsCreatingNew(false)
       } else if (selectedPipelineId) {
-        console.log('Atualizando pipeline:', { id: selectedPipelineId, name, description, is_public: isPublic, is_default: isDefault, sdr_agent_id: sdrAgentId })
-
         // Salvar metadados do pipeline
         await updatePipeline.mutateAsync({
           id: selectedPipelineId,
@@ -181,7 +178,6 @@ export function PipelineManagerModal({
 
         // Criar novos estágios
         if (newStages.length > 0) {
-          console.log('Criando novos estágios:', newStages)
           newStages.forEach((stage) => {
             const stageIndex = stages.findIndex(s => s === stage)
             promises.push(
@@ -198,7 +194,6 @@ export function PipelineManagerModal({
 
         // Atualizar estágios existentes
         if (existingStages.length > 0) {
-          console.log('Atualizando estágios existentes:', existingStages)
           existingStages.forEach((stage) => {
             const stageIndex = stages.findIndex(s => s === stage)
             promises.push(
@@ -222,7 +217,6 @@ export function PipelineManagerModal({
       }
       setTimeout(() => setSuccess(null), 3000)
     } catch (err: any) {
-      console.error('Erro ao salvar pipeline:', err)
       const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Erro ao salvar pipeline'
       setError(message)
       setTimeout(() => setError(null), 5000)
@@ -270,7 +264,6 @@ export function PipelineManagerModal({
     setError(null)
     
     try {
-      console.log('Salvando estágio:', { pipelineId: selectedPipelineId, stage, index })
       if (stage.id) {
         await updateStage.mutateAsync({
           pipelineId: selectedPipelineId,
@@ -292,7 +285,6 @@ export function PipelineManagerModal({
       setSuccess('Estágio salvo!')
       setTimeout(() => setSuccess(null), 2000)
     } catch (err: any) {
-      console.error('Erro ao salvar estágio:', err)
       const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Erro ao salvar estágio'
       setError(message)
       setTimeout(() => setError(null), 5000)
@@ -322,7 +314,6 @@ export function PipelineManagerModal({
     setError(null)
     
     try {
-      console.log('Adicionando usuário ao pipeline:', { pipelineId: selectedPipelineId, userId })
       await addUserToPipeline.mutateAsync({
         pipelineId: selectedPipelineId,
         userId,
@@ -331,7 +322,6 @@ export function PipelineManagerModal({
       setSuccess('Usuário adicionado!')
       setTimeout(() => setSuccess(null), 2000)
     } catch (err: any) {
-      console.error('Erro ao adicionar usuário:', err)
       const message = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Erro ao adicionar usuário'
       setError(message)
       setTimeout(() => setError(null), 5000)

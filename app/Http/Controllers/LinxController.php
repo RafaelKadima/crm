@@ -159,11 +159,11 @@ class LinxController extends Controller
         // Configuração de autenticação
         // Por enquanto, usa configuração fixa ou do tenant
         $config = [
-            'subscription_key' => config('services.linx.subscription_key', env('LINX_SUBSCRIPTION_KEY')),
-            'ambiente' => config('services.linx.ambiente', env('LINX_AMBIENTE', 'PRODUCAO')),
-            'username' => config('services.linx.username', env('LINX_USERNAME')),
-            'password' => config('services.linx.password', env('LINX_PASSWORD')),
-            'cnpj_empresa' => config('services.linx.cnpj_empresa', env('LINX_CNPJ_EMPRESA')),
+            'subscription_key' => config('services.linx.subscription_key'),
+            'ambiente' => config('services.linx.ambiente', 'PRODUCAO'),
+            'username' => config('services.linx.username'),
+            'password' => config('services.linx.password'),
+            'cnpj_empresa' => config('services.linx.cnpj_empresa'),
         ];
 
         // Se tenant tem URL customizada, usa ela

@@ -38,17 +38,13 @@ export function CreateTenantPage() {
     setError(null)
     setSuccess(false)
     
-    console.log('Enviando dados:', formData)
-    
     try {
-      const result = await createTenant.mutateAsync(formData)
-      console.log('Resultado:', result)
+      await createTenant.mutateAsync(formData)
       setSuccess(true)
       setTimeout(() => {
         navigate('/super-admin/tenants')
       }, 1500)
     } catch (error: any) {
-      console.error('Erro ao criar empresa:', error)
       const message = error?.response?.data?.message || error?.message || 'Erro ao criar empresa'
       setError(message)
     }

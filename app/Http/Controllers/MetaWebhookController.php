@@ -43,11 +43,11 @@ class MetaWebhookController extends Controller
         $challenge = $request->query('hub_challenge');
 
         // Aceita qualquer token válido (WhatsApp ou Instagram)
-        $validTokens = [
-            config('services.whatsapp.verify_token', 'crm_whatsapp_verify_token'),
-            config('services.instagram.verify_token', 'crm_instagram_verify_token'),
-            config('services.meta.verify_token', 'crm_meta_verify_token'), // Token unificado
-        ];
+        $validTokens = array_filter([
+            config('services.whatsapp.verify_token'),
+            config('services.instagram.verify_token'),
+            config('services.meta.verify_token'),
+        ]);
 
         if ($mode === 'subscribe' && in_array($token, $validTokens)) {
             Log::info('Meta webhook verified successfully', ['token' => $token]);

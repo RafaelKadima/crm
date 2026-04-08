@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Search,
   Bell,
   BellOff,
   BellRing,
@@ -13,16 +12,16 @@ import {
   User,
   ChevronDown,
   Menu,
+  MessageSquare,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import { useUIStore } from '@/store/uiStore'
 import { useTheme } from '@/hooks/useTheme'
+import { useNotificationStore } from '@/store/notificationStore'
 import { Avatar } from '@/components/ui/Avatar'
-import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { UserPointsBadge } from '@/components/gamification/UserPointsBadge'
-import { LanguageSelector } from '@/components/LanguageSelector'
 import { Breadcrumbs } from './Breadcrumbs'
 import { useSoundSettings } from '@/hooks/useSounds'
 
@@ -33,15 +32,42 @@ export function Header() {
   const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
   const { theme, setTheme } = useTheme()
   const { enabled: soundEnabled, toggle: toggleSound } = useSoundSettings()
+  const unreadMessages = useNotificationStore((s) => s.unreadMessages)
+  const markAsRead = useNotificationStore((s) => s.markAsRead)
+  const markAllAsRead = useNotificationStore((s) => s.markAllAsRead)
+  const totalUnread = useNotificationStore((s) => s.getTotalUnread())
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [searchFocused, setSearchFocused] = useState(false)
-  const [soundAnimating, setSoundAnimating] = useState(false)
+  const notificationRef = useRef<HTMLDivElement>(null)
+
+  // Close notification dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showNotifications])
+
+  const unreadList = Array.from(unreadMessages.values())
+    .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime())
+
+  const formatTimeAgo = (dateString: string) => {
+    const diff = Date.now() - new Date(dateString).getTime()
+    const minutes = Math.floor(diff / 60000)
+    if (minutes < 1) return 'agora'
+    if (minutes < 60) return `${minutes}min`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}h`
+    return `${Math.floor(hours / 24)}d`
+  }
 
   const handleToggleSound = () => {
     toggleSound()
-    setSoundAnimating(true)
-    setTimeout(() => setSoundAnimating(false), 600)
   }
 
   const handleLogout = () => {
@@ -56,14 +82,11 @@ export function Header() {
   return (
     <header
       className={cn(
-        "fixed top-0 right-0 z-30 h-16 transition-all duration-200",
-        "bg-background/80 backdrop-blur-xl",
+        "fixed top-0 right-0 z-30 h-14 transition-all duration-200",
+        "bg-background/90 backdrop-blur-md border-b border-border",
         "left-0 md:left-[72px]",
         !sidebarCollapsed && "md:left-[280px]"
       )}
-      style={{
-        borderBottom: '1px solid var(--color-border)',
-      }}
     >
       <div className="h-full flex items-center justify-between px-3 sm:px-6">
         {/* Mobile menu button + Breadcrumbs */}
@@ -79,66 +102,16 @@ export function Header() {
           <Breadcrumbs />
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          {/* Compact Search */}
-          <div className="hidden md:block relative">
-            <Search className={cn(
-              "absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 transition-colors duration-200",
-              searchFocused ? "text-foreground" : "text-muted-foreground"
-            )} />
-            <Input
-              placeholder={t('common.search') + '...'}
-              className={cn(
-                "pl-9 w-44 h-9 text-sm bg-card/50 transition-all duration-200",
-                "border-border focus:border-foreground/20 focus:w-56",
-                "placeholder:text-muted-foreground/60"
-              )}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-          </div>
-
-          {/* Gamification Points Badge */}
-          <UserPointsBadge className="hidden md:block" />
-
-          {/* Language Selector */}
-          <LanguageSelector showLabel={false} />
-
+        {/* Actions — minimal */}
+        <div className="flex items-center gap-1">
           {/* Theme Toggle */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className={cn(
-              "relative overflow-hidden transition-all duration-200",
-              "hover:bg-accent hover:text-foreground",
-              "border border-transparent hover:border-border"
-            )}
+            className="text-muted-foreground hover:text-foreground"
           >
-            <AnimatePresence mode="wait">
-              {theme === 'dark' ? (
-                <motion.div
-                  key="sun"
-                  initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                  exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Sun className="h-5 w-5 text-foreground/80" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="moon"
-                  initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
-                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                  exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Moon className="h-5 w-5 text-slate-600" />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
           {/* Sound Toggle */}
@@ -146,56 +119,16 @@ export function Header() {
             variant="ghost"
             size="icon"
             onClick={handleToggleSound}
-            title={soundEnabled ? t('common.disabled') : t('common.enabled')}
             className={cn(
-              "relative transition-all duration-300",
-              "hover:bg-accent hover:text-foreground",
-              "border border-transparent hover:border-border",
-              soundEnabled && "text-amber-400",
-              !soundEnabled && "text-muted-foreground/50",
-              soundAnimating && "scale-110"
+              "text-muted-foreground hover:text-foreground",
+              soundEnabled && "text-foreground"
             )}
           >
-            <AnimatePresence mode="wait">
-              {soundEnabled ? (
-                <motion.div
-                  key="bell-on"
-                  initial={{ scale: 0.5, opacity: 0, rotate: -30 }}
-                  animate={{
-                    scale: 1,
-                    opacity: 1,
-                    rotate: [0, 15, -15, 10, -10, 0],
-                  }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <BellRing className="h-5 w-5" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="bell-off"
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <BellOff className="h-5 w-5" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-            {/* Glow indicator when sound is ON */}
-            {soundEnabled && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute top-1 right-1 h-2 w-2 rounded-full bg-amber-400"
-                style={{ boxShadow: '0 0 8px rgba(251, 191, 36, 0.6)' }}
-              />
-            )}
+            {soundEnabled ? <BellRing className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
           </Button>
 
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative" ref={notificationRef}>
             <Button
               variant="ghost"
               size="icon"
@@ -203,14 +136,17 @@ export function Header() {
               className={cn(
                 "relative transition-all duration-200",
                 "hover:bg-accent hover:text-foreground",
-                "border border-transparent hover:border-border",
-                showNotifications && "bg-accent border-border"
+                showNotifications && "bg-accent"
               )}
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-primary"
-                style={{ boxShadow: '0 0 8px var(--color-primary)' }}
-              />
+              {totalUnread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1"
+                  style={{ boxShadow: '0 0 8px var(--color-primary)' }}
+                >
+                  {totalUnread > 99 ? '99+' : totalUnread}
+                </span>
+              )}
             </Button>
 
             <AnimatePresence>
@@ -219,17 +155,80 @@ export function Header() {
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-2 w-80 rounded-xl overflow-hidden futuristic-card"
+                  className="absolute right-0 mt-2 w-80 rounded-xl overflow-hidden futuristic-card z-50"
                 >
-                  <div className="p-4 border-b border-border">
-                    <h3 className="font-display font-semibold text-foreground">{t('settings.notifications')}</h3>
+                  <div className="p-3 border-b border-border flex items-center justify-between">
+                    <h3 className="font-display font-semibold text-foreground text-sm">
+                      {t('settings.notifications')}
+                      {totalUnread > 0 && (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          ({totalUnread})
+                        </span>
+                      )}
+                    </h3>
+                    {totalUnread > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          markAllAsRead()
+                        }}
+                        className="text-xs text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Marcar todas como lidas
+                      </button>
+                    )}
                   </div>
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
-                      <Bell className="h-6 w-6 text-muted-foreground/30" />
+
+                  {unreadList.length === 0 ? (
+                    <div className="p-6 text-center text-sm text-muted-foreground">
+                      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
+                        <Bell className="h-6 w-6 text-muted-foreground/30" />
+                      </div>
+                      Nenhuma notificação
                     </div>
-                    {t('common.noData')}
-                  </div>
+                  ) : (
+                    <div className="max-h-80 overflow-y-auto">
+                      {unreadList.slice(0, 20).map((msg) => (
+                        <button
+                          key={msg.leadId}
+                          onClick={() => {
+                            markAsRead(msg.leadId)
+                            setShowNotifications(false)
+                            navigate(`/conversas?lead=${msg.leadId}`)
+                          }}
+                          className="w-full px-3 py-2.5 flex items-start gap-3 hover:bg-accent/50 transition-colors text-left border-b border-border/50 last:border-0"
+                        >
+                          <div className="mt-0.5 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <MessageSquare className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-medium text-foreground">
+                                {msg.count} {msg.count === 1 ? 'nova mensagem' : 'novas mensagens'}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground shrink-0">
+                                {formatTimeAgo(msg.lastMessageAt)}
+                              </span>
+                            </div>
+                            {msg.lastMessagePreview && (
+                              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                {msg.lastMessagePreview}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              markAsRead(msg.leadId)
+                            }}
+                            className="mt-0.5 p-1 rounded hover:bg-muted transition-colors shrink-0"
+                          >
+                            <X className="h-3 w-3 text-muted-foreground" />
+                          </button>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -251,7 +250,7 @@ export function Header() {
                   fallback={user?.name || 'U'}
                   size="sm"
                 />
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background"
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-success border-2 border-background"
                   style={{ boxShadow: '0 0 6px rgba(16, 185, 129, 0.5)' }}
                 />
               </div>

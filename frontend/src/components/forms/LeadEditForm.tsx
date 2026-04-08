@@ -136,7 +136,6 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
       await api.delete(`/leads/${lead.id}`)
       onDelete?.()
     } catch (err: any) {
-      console.error('Error deleting lead:', err)
       setError(err.response?.data?.message || 'Erro ao excluir lead')
       setIsDeleting(false)
       setShowDeleteConfirm(false)
@@ -185,7 +184,6 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
       onSave?.(response.data)
 
     } catch (err: any) {
-      console.error('Error saving lead:', err)
       setError(err.response?.data?.message || 'Erro ao salvar dados')
     } finally {
       setIsSaving(false)

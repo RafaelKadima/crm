@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import echo from '@/lib/echo'
+import { getEcho } from '@/lib/echo'
 import { useEffects } from '@/contexts/EffectsContext'
 import type { GamificationTier, Achievement, UserAchievement } from '@/types'
 
@@ -43,20 +43,14 @@ export function useGamificationWebSocket(userId: string | null) {
 
   useEffect(() => {
     if (!userId) return
+    const echoInstance = getEcho()
+    if (!echoInstance) return
 
-    console.log('🎮 Connecting to gamification channel for user:', userId)
-    const channel = echo.private(`user.${userId}`)
+    const channel = echoInstance.private(`user.${userId}`)
 
     channel
-      .subscribed(() => {
-        console.log('✅ Subscribed to gamification channel')
-      })
-      .error((error: any) => {
-        console.error('❌ Error subscribing to gamification channel:', error)
-      })
       // Points earned event
       .listen('.points.earned', (data: PointsEarnedEvent) => {
-        console.log('🎯 Points earned:', data)
 
         // Show points popup
         showPointsPopup(data.points)
@@ -66,8 +60,6 @@ export function useGamificationWebSocket(userId: string | null) {
       })
       // Tier changed event
       .listen('.tier.changed', (data: TierChangedEvent) => {
-        console.log('🏆 Tier changed:', data)
-
         // Show tier up celebration
         showTierUpCelebration({
           previousTier: data.previous_tier,
@@ -80,8 +72,6 @@ export function useGamificationWebSocket(userId: string | null) {
       })
       // Achievement unlocked event
       .listen('.achievement.unlocked', (data: AchievementUnlockedEvent) => {
-        console.log('🏅 Achievement unlocked:', data)
-
         // Show achievement notification
         showAchievementUnlock({
           achievement: data.achievement,
@@ -100,8 +90,6 @@ export function useGamificationWebSocket(userId: string | null) {
       })
       // Activity completed event
       .listen('.activity.completed', (data: ActivityCompletedEvent) => {
-        console.log('✅ Activity completed:', data)
-
         // Show points if earned
         if (data.points_earned > 0) {
           showPointsPopup(data.points_earned)
@@ -118,8 +106,7 @@ export function useGamificationWebSocket(userId: string | null) {
       })
 
     return () => {
-      console.log('🔌 Disconnecting from gamification channel')
-      echo.leave(`user.${userId}`)
+      getEcho()?.leave(`user.${userId}`)
     }
   }, [userId, queryClient, showPointsPopup, showTierUpCelebration, showAchievementUnlock])
 }
@@ -132,11 +119,12 @@ export function useLeaderboardWebSocket(tenantId: string | null) {
 
   useEffect(() => {
     if (!tenantId) return
+    const echoInstance = getEcho()
+    if (!echoInstance) return
 
-    const channel = echo.private(`tenant.${tenantId}`)
+    const channel = echoInstance.private(`tenant.${tenantId}`)
 
     channel.listen('.leaderboard.updated', () => {
-      console.log('📊 Leaderboard updated')
       queryClient.invalidateQueries({ queryKey: ['gamification', 'leaderboard'] })
     })
 

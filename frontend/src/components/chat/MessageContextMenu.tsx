@@ -100,7 +100,6 @@ export function MessageContextMenu({
       onDataAdded?.()
       onClose()
     } catch (err: any) {
-      console.error('Failed to save:', err)
       notify('error', {
         title: 'Erro ao salvar',
         description: err?.response?.data?.message || 'Tente novamente',

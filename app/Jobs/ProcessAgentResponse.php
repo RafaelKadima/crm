@@ -19,6 +19,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -282,18 +283,23 @@ class ProcessAgentResponse implements ShouldQueue
             return;
         }
 
-        // Atualiza custom_fields do lead com qualificação
-        $customFields = $this->lead->custom_fields ?? [];
-        $customFields['agent_qualification'] = [
-            'temperature' => $qualification['temperature'] ?? 'unknown',
-            'score' => $qualification['score'] ?? 0,
-            'pain_points' => $qualification['pain_points'] ?? [],
-            'interests' => $qualification['interests'] ?? [],
-            'objections' => $qualification['objections'] ?? [],
-            'updated_at' => now()->toISOString(),
-        ];
+        DB::transaction(function () use ($qualification) {
+            // Lock lead para evitar race condition em custom_fields
+            $lead = Lead::lockForUpdate()->find($this->lead->id);
 
-        $this->lead->update(['custom_fields' => $customFields]);
+            $customFields = $lead->custom_fields ?? [];
+            $customFields['agent_qualification'] = [
+                'temperature' => $qualification['temperature'] ?? 'unknown',
+                'score' => $qualification['score'] ?? 0,
+                'pain_points' => $qualification['pain_points'] ?? [],
+                'interests' => $qualification['interests'] ?? [],
+                'objections' => $qualification['objections'] ?? [],
+                'updated_at' => now()->toISOString(),
+            ];
+
+            $lead->update(['custom_fields' => $customFields]);
+            $this->lead->refresh();
+        });
 
         event(new LeadUpdated($this->lead->fresh()));
     }
@@ -351,53 +357,58 @@ class ProcessAgentResponse implements ShouldQueue
         
         if ($appointment && !empty($appointment['scheduled_at'])) {
             try {
-                $appointmentService = app(\App\Services\AppointmentService::class);
-                
-                // Usa o responsável do lead ou round-robin se não tiver
-                $userId = $this->lead->owner_id;
-                if (!$userId) {
-                    $userId = app(\App\Services\LeadAssignmentService::class)->assignLeadOwner($this->lead)->id;
-                }
-                
-                $newAppointment = $appointmentService->createAppointment([
-                    'tenant_id' => $this->lead->tenant_id,
-                    'lead_id' => $this->lead->id,
-                    'contact_id' => $this->lead->contact_id,
-                    'user_id' => $userId,
-                    'scheduled_by' => null, // null = agendado pela IA
-                    'type' => $appointment['type'] ?? 'meeting',
-                    'scheduled_at' => \Carbon\Carbon::parse($appointment['scheduled_at']),
-                    'duration_minutes' => $appointment['duration_minutes'] ?? 30,
-                    'title' => $appointment['title'] ?? 'Reunião agendada pelo SDR',
-                    'description' => $appointment['description'] ?? null,
-                    'location' => $appointment['location'] ?? null,
-                ]);
-                
-                // Move o lead para o estágio "Apresentação" após agendar
-                $this->lead->refresh();
-                $newStage = \App\Models\PipelineStage::where('pipeline_id', $this->lead->pipeline_id)
-                    ->where('name', 'LIKE', '%Apresenta%')
-                    ->first();
+                DB::transaction(function () use ($appointment) {
+                    $appointmentService = app(\App\Services\AppointmentService::class);
 
-                if ($newStage && $newStage->id !== $this->lead->stage_id) {
-                    $oldStage = $this->lead->stage;
+                    // Lock lead para evitar race condition
+                    $lead = Lead::lockForUpdate()->find($this->lead->id);
 
-                    // Usa moveToStage para disparar eventos de integracao
-                    $this->lead->moveToStage($newStage, null, 'ia');
+                    // Usa o responsável do lead ou round-robin se não tiver
+                    $userId = $lead->owner_id;
+                    if (!$userId) {
+                        $userId = app(\App\Services\LeadAssignmentService::class)->assignLeadOwner($lead)->id;
+                    }
 
-                    Log::info('Lead moved to stage after scheduling', [
-                        'lead_id' => $this->lead->id,
-                        'from_stage' => $oldStage?->name,
-                        'to_stage' => $newStage->name,
+                    $newAppointment = $appointmentService->createAppointment([
+                        'tenant_id' => $lead->tenant_id,
+                        'lead_id' => $lead->id,
+                        'contact_id' => $lead->contact_id,
+                        'user_id' => $userId,
+                        'scheduled_by' => null, // null = agendado pela IA
+                        'type' => $appointment['type'] ?? 'meeting',
+                        'scheduled_at' => \Carbon\Carbon::parse($appointment['scheduled_at']),
+                        'duration_minutes' => $appointment['duration_minutes'] ?? 30,
+                        'title' => $appointment['title'] ?? 'Reunião agendada pelo SDR',
+                        'description' => $appointment['description'] ?? null,
+                        'location' => $appointment['location'] ?? null,
                     ]);
-                }
-                
-                Log::info('Appointment created by agent', [
-                    'lead_id' => $this->lead->id,
-                    'appointment_id' => $newAppointment->id,
-                    'scheduled_at' => $newAppointment->scheduled_at,
-                ]);
-                
+
+                    // Move o lead para o estágio "Apresentação" após agendar
+                    $newStage = \App\Models\PipelineStage::where('pipeline_id', $lead->pipeline_id)
+                        ->where('name', 'LIKE', '%Apresenta%')
+                        ->first();
+
+                    if ($newStage && $newStage->id !== $lead->stage_id) {
+                        $oldStage = $lead->stage;
+                        $lead->moveToStage($newStage, null, 'ia');
+
+                        Log::info('Lead moved to stage after scheduling', [
+                            'lead_id' => $lead->id,
+                            'from_stage' => $oldStage?->name,
+                            'to_stage' => $newStage->name,
+                        ]);
+                    }
+
+                    Log::info('Appointment created by agent', [
+                        'lead_id' => $lead->id,
+                        'appointment_id' => $newAppointment->id,
+                        'scheduled_at' => $newAppointment->scheduled_at,
+                    ]);
+                });
+
+                // Refresh lead after transaction
+                $this->lead->refresh();
+
             } catch (\Exception $e) {
                 Log::error('Failed to create appointment', [
                     'lead_id' => $this->lead->id,

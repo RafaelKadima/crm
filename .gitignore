@@ -1,5 +1,6 @@
 *.log
 .DS_Store
+tmpclaude-*
 
 # Arquivos de ambiente (NUNCA commitar!)
 .env

@@ -15,9 +15,10 @@ class EnsureInternalRequest
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $internalKey = env('LARAVEL_INTERNAL_KEY');
+        $internalKey = config('services.internal.api_key');
+        $providedKey = $request->header('X-Internal-Key');
 
-        if (!$internalKey || $request->header('X-Internal-Key') !== $internalKey) {
+        if (!$internalKey || !$providedKey || !hash_equals($internalKey, $providedKey)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 

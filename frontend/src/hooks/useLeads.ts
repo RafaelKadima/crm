@@ -123,19 +123,10 @@ export function useUpdateLeadStage() {
       }
     },
     onSuccess: (response) => {
-      // Debug: ver a resposta completa
-      console.log('[GTM Debug] Response:', response)
-      console.log('[GTM Debug] Response data:', response?.data)
-      
       // Dispara evento GTM se o estágio tiver gtm_event_key
       const lead = response?.data?.lead
       const stage = lead?.stage
-      
-      console.log('[GTM Debug] Lead:', lead)
-      console.log('[GTM Debug] Stage:', stage)
-      console.log('[GTM Debug] gtm_event_key:', stage?.gtm_event_key)
-      console.log('[GTM Debug] dataLayer exists:', typeof window !== 'undefined' && !!(window as any).dataLayer)
-      
+
       if (stage?.gtm_event_key) {
         const eventData = {
           event: stage.gtm_event_key,
@@ -157,12 +148,7 @@ export function useUpdateLeadStage() {
         
         if (typeof window !== 'undefined' && (window as any).dataLayer) {
           ;(window as any).dataLayer.push(eventData)
-          console.log('[GTM] ✅ Event pushed:', stage.gtm_event_key, eventData)
-        } else {
-          console.log('[GTM] ❌ dataLayer not found!')
         }
-      } else {
-        console.log('[GTM] ⚠️ No gtm_event_key for this stage')
       }
     },
     onSettled: () => {

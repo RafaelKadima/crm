@@ -242,7 +242,7 @@ class AdAccountController extends Controller
             ]);
 
             return response()->json([
-                'error' => $e->getMessage(),
+                'error' => $this->safeErrorMessage($e, 'Erro ao buscar insights da conta.'),
             ], 400);
         }
     }
@@ -279,7 +279,7 @@ class AdAccountController extends Controller
             ]);
 
             return response()->json([
-                'error' => $e->getMessage(),
+                'error' => $this->safeErrorMessage($e, 'Erro ao buscar insights de campanhas.'),
             ], 400);
         }
     }
@@ -343,7 +343,7 @@ class AdAccountController extends Controller
 
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => $this->safeErrorMessage($e, 'Erro ao buscar insights da conta.'),
                 'account_id' => $accountId,
             ], 400);
         }
@@ -405,7 +405,7 @@ class AdAccountController extends Controller
 
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => $this->safeErrorMessage($e, 'Erro ao buscar insights de campanhas.'),
                 'account_id' => $accountId,
             ], 400);
         }

@@ -32,7 +32,7 @@ class AdsGuardrailController extends Controller
         
         $guardrails = $query->orderBy('priority', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 100));
         
         return response()->json($guardrails);
     }

@@ -47,7 +47,7 @@ class WhatsAppTemplateController extends Controller
                 category: $request->get('category'),
                 status: $request->get('status'),
                 search: $request->get('search'),
-                perPage: $request->get('per_page', 20)
+                perPage: min((int) $request->get('per_page', 20), 100)
             );
 
             return response()->json([

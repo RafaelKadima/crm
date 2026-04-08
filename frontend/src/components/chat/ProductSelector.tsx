@@ -135,7 +135,6 @@ export function ProductSelector({ ticketId, isOpen, onClose, onSent }: ProductSe
 
       handleClose()
     } catch (error: any) {
-      console.error('Error sending product:', error)
       toast.error(error.response?.data?.error || 'Erro ao enviar produto')
     }
   }

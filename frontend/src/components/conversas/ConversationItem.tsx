@@ -55,7 +55,7 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
         "w-full flex items-start gap-3 p-3 text-left transition-colors rounded-lg",
         isActive && "bg-primary/10 border-l-2 border-primary",
         !isActive && "hover:bg-muted/50",
-        hasUnread && !isActive && "ring-2 ring-green-500 bg-green-500/5"
+        hasUnread && !isActive && "bg-success/10 border-l-2 border-success"
       )}
     >
       {/* Avatar */}
@@ -68,9 +68,9 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
         {/* Channel indicator */}
         <div className={cn(
           "absolute -bottom-0.5 -right-0.5 p-1 rounded-full",
-          lead.channel?.type === 'whatsapp' ? 'bg-green-500' :
-          lead.channel?.type === 'instagram' ? 'bg-pink-500' :
-          'bg-blue-500'
+          lead.channel?.type === 'whatsapp' ? 'bg-[#25D366]' :
+          lead.channel?.type === 'instagram' ? 'bg-[#E1306C]' :
+          'bg-secondary'
         )}>
           <ChannelIcon className="h-2.5 w-2.5 text-white" />
         </div>
@@ -106,7 +106,7 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
               animate={{ scale: 1 }}
               className={cn(
                 "flex-shrink-0 min-w-5 h-5 px-1.5 rounded-full",
-                "bg-primary text-primary-foreground",
+                "bg-success text-success-foreground",
                 "text-xs font-medium flex items-center justify-center"
               )}
             >
@@ -115,14 +115,14 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
           )}
         </div>
 
-        {/* Stage badge */}
+        {/* Stage badge — uses stage color but desaturated */}
         {lead.stage && (
           <div className="mt-1.5">
             <span
-              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+              className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
               style={{
-                backgroundColor: `${lead.stage.color}20`,
-                color: lead.stage.color,
+                backgroundColor: `color-mix(in srgb, ${lead.stage.color || '#888'} 12%, transparent)`,
+                color: `color-mix(in srgb, ${lead.stage.color || '#888'} 70%, var(--color-foreground))`,
               }}
             >
               {lead.stage.name}

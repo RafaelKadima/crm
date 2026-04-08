@@ -16,6 +16,8 @@ class MetaOAuthService
     protected string $apiVersion;
     protected string $appId;
     protected string $appSecret;
+    protected string $embeddedAppId;
+    protected string $embeddedAppSecret;
     protected string $redirectUri;
     protected array $scopes;
 
@@ -24,6 +26,8 @@ class MetaOAuthService
         $this->apiVersion = config('services.meta.api_version', 'v19.0');
         $this->appId = config('services.meta.app_id');
         $this->appSecret = config('services.meta.app_secret');
+        $this->embeddedAppId = config('services.meta.embedded_app_id', $this->appId);
+        $this->embeddedAppSecret = config('services.meta.embedded_app_secret', $this->appSecret);
         $this->redirectUri = config('services.meta.redirect_uri');
         $this->scopes = config('services.meta.scopes', [
             'whatsapp_business_management',
@@ -170,12 +174,15 @@ class MetaOAuthService
     /**
      * Troca um short-lived token por um long-lived token.
      */
-    protected function exchangeForLongLivedToken(string $shortLivedToken): array
+    protected function exchangeForLongLivedToken(string $shortLivedToken, bool $useEmbeddedCredentials = false): array
     {
+        $clientId = $useEmbeddedCredentials ? $this->embeddedAppId : $this->appId;
+        $clientSecret = $useEmbeddedCredentials ? $this->embeddedAppSecret : $this->appSecret;
+
         $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", [
             'grant_type' => 'fb_exchange_token',
-            'client_id' => $this->appId,
-            'client_secret' => $this->appSecret,
+            'client_id' => $clientId,
+            'client_secret' => $clientSecret,
             'fb_exchange_token' => $shortLivedToken,
         ]);
 
@@ -426,9 +433,9 @@ class MetaOAuthService
         // 1. Troca o code por access_token
         $tokenData = $this->exchangeCodeForTokenEmbedded($code, $pageUrl);
 
-        // 2. Obtém long-lived token
+        // 2. Obtém long-lived token (usa credenciais do app embedded)
         if (!isset($tokenData['expires_in']) || $tokenData['expires_in'] < 5184000) {
-            $tokenData = $this->exchangeForLongLivedToken($tokenData['access_token']);
+            $tokenData = $this->exchangeForLongLivedToken($tokenData['access_token'], true);
         }
 
         $accessToken = $tokenData['access_token'];
@@ -507,9 +514,9 @@ class MetaOAuthService
             'phone_number_id' => $phoneNumberId,
         ]);
 
-        // Tenta obter long-lived token
+        // Tenta obter long-lived token (usa credenciais do app embedded)
         try {
-            $tokenData = $this->exchangeForLongLivedToken($accessToken);
+            $tokenData = $this->exchangeForLongLivedToken($accessToken, true);
             $accessToken = $tokenData['access_token'];
             $expiresAt = isset($tokenData['expires_in'])
                 ? Carbon::now()->addSeconds($tokenData['expires_in'])
@@ -582,8 +589,8 @@ class MetaOAuthService
     protected function exchangeCodeForTokenEmbedded(string $code, ?string $pageUrl = null): array
     {
         $params = [
-            'client_id' => $this->appId,
-            'client_secret' => $this->appSecret,
+            'client_id' => $this->embeddedAppId,
+            'client_secret' => $this->embeddedAppSecret,
             'code' => $code,
         ];
 

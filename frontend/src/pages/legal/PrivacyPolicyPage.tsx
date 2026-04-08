@@ -300,7 +300,7 @@ function Section({ icon: Icon, title, children }: { icon: any; title: string; ch
         <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
           <Icon className="w-5 h-5 text-cyan-400" />
         </div>
-        <h2 className="text-xl font-semibold text-white" dangerouslySetInnerHTML={{ __html: title }} />
+        <h2 className="text-xl font-semibold text-white">{title}</h2>
       </div>
       <div className="pl-12">
         {children}
@@ -312,8 +312,8 @@ function Section({ icon: Icon, title, children }: { icon: any; title: string; ch
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-      <span className="text-slate-400 text-sm min-w-[140px]" dangerouslySetInnerHTML={{ __html: label + ':' }} />
-      <span className="text-white" dangerouslySetInnerHTML={{ __html: value }} />
+      <span className="text-slate-400 text-sm min-w-[140px]">{label}:</span>
+      <span className="text-white">{value}</span>
     </div>
   )
 }
@@ -323,7 +323,7 @@ function ListItem({ title, children }: { title: string; children: React.ReactNod
     <li className="flex items-start gap-3">
       <span className="text-cyan-400 mt-1">&bull;</span>
       <div>
-        <strong className="text-white" dangerouslySetInnerHTML={{ __html: title + ': ' }} />
+        <strong className="text-white">{title}: </strong>
         <span>{children}</span>
       </div>
     </li>

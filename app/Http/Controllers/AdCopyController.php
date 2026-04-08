@@ -38,7 +38,7 @@ class AdCopyController extends Controller
 
         $copies = $query->with('creative')
             ->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         return response()->json($copies);
     }
@@ -166,7 +166,7 @@ class AdCopyController extends Controller
         }
 
         $copies = $query->orderBy('created_at', 'desc')
-            ->limit($request->get('per_page', 10))
+            ->limit(min((int) $request->get('per_page', 10), 100))
             ->get();
 
         return response()->json(['data' => $copies]);

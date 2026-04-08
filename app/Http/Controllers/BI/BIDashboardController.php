@@ -213,7 +213,7 @@ class BIDashboardController extends Controller
         
         $analyses = BiAnalysis::where('tenant_id', $tenantId)
             ->orderByDesc('created_at')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         return response()->json($analyses);
     }
@@ -405,7 +405,7 @@ class BIDashboardController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Erro interno: ' . $e->getMessage(),
+                'message' => 'Erro interno: ' . $this->safeErrorMessage($e),
             ], 500);
         }
     }

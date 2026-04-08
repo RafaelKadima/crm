@@ -1,7 +1,6 @@
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
 
-// Declarar Pusher no window para o Echo usar
 declare global {
   interface Window {
     Pusher: typeof Pusher
@@ -9,55 +8,57 @@ declare global {
   }
 }
 
-// Verificar se WebSocket está habilitado
 const WEBSOCKET_ENABLED = import.meta.env.VITE_WEBSOCKET_ENABLED !== 'false'
-
-// URL base da API
 const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
 let echo: Echo<'reverb'> | null = null
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let reconnectAttempts = 0
+const MAX_RECONNECT_ATTEMPTS = 20
+const BASE_RECONNECT_DELAY = 1000
 
-if (WEBSOCKET_ENABLED) {
-  window.Pusher = Pusher
+function getAuthToken(): string | null {
+  try {
+    const authData = localStorage.getItem('crm-auth')
+    return authData ? JSON.parse(authData)?.state?.token : null
+  } catch {
+    return null
+  }
+}
 
-  // Configuração do Laravel Echo com Reverb
+function createEchoInstance(): Echo<'reverb'> {
   const wsHost = import.meta.env.VITE_REVERB_HOST || import.meta.env.VITE_PUSHER_HOST || '127.0.0.1'
   const wsPort = Number(import.meta.env.VITE_REVERB_PORT || import.meta.env.VITE_PUSHER_PORT || 6001)
   const wsScheme = import.meta.env.VITE_REVERB_SCHEME || 'http'
   const forceTLS = wsScheme === 'https'
 
-  echo = new Echo({
+  return new Echo({
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY || import.meta.env.VITE_PUSHER_APP_KEY || 'app-key',
-    wsHost: wsHost,
-    wsPort: wsPort,
+    wsHost,
+    wsPort,
     wssPort: wsPort,
-    forceTLS: forceTLS,
+    forceTLS,
     disableStats: true,
-    enabledTransports: ['ws'],
+    enabledTransports: forceTLS ? ['ws', 'wss'] : ['ws'],
     cluster: 'mt1',
-    // Autorização para canais privados
     authorizer: (channel: { name: string }) => ({
       authorize: (socketId: string, callback: (error: Error | null, data: { auth: string } | null) => void) => {
-        // Pegar token do localStorage (onde o authStore salva)
-        const authData = localStorage.getItem('crm-auth')
-        const token = authData ? JSON.parse(authData)?.state?.token : null
-
-        if (!token) {
-          console.warn('⚠️ No auth token found for WebSocket authorization')
-          callback(new Error('No token'), null)
-          return
+        const token = getAuthToken()
+        const baseUrl = API_BASE.replace(/\/api\/?$/, '')
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         }
 
-        // Remove /api do final se existir para evitar duplicação
-        const baseUrl = API_BASE.replace(/\/api\/?$/, '')
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`
+        }
+
         fetch(`${baseUrl}/api/broadcasting/auth`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
+          headers,
           body: JSON.stringify({
             socket_id: socketId,
             channel_name: channel.name,
@@ -70,23 +71,142 @@ if (WEBSOCKET_ENABLED) {
             return response.json()
           })
           .then((data) => {
-            console.log('✅ WebSocket channel authorized:', channel.name)
             callback(null, data)
           })
           .catch((error) => {
-            console.error('❌ WebSocket auth error:', error)
             callback(error instanceof Error ? error : new Error(String(error)), null)
           })
       },
     }),
   })
+}
 
-  // Exportar para uso global
+function scheduleReconnect() {
+  if (reconnectTimer) return
+  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    console.warn('[Echo] Max reconnect attempts reached. Waiting for user interaction.')
+    // Reset on next user interaction to try again
+    const resetOnInteraction = () => {
+      reconnectAttempts = 0
+      reconnectEcho()
+      document.removeEventListener('click', resetOnInteraction)
+      document.removeEventListener('keydown', resetOnInteraction)
+    }
+    document.addEventListener('click', resetOnInteraction, { once: true })
+    document.addEventListener('keydown', resetOnInteraction, { once: true })
+    return
+  }
+
+  const delay = Math.min(BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts), 30000)
+  reconnectAttempts++
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null
+    reconnectEcho()
+  }, delay)
+}
+
+/**
+ * Reconnects the Echo instance with a fresh token.
+ * Called automatically on connection loss or can be called manually.
+ */
+export function reconnectEcho() {
+  if (!WEBSOCKET_ENABLED) return
+
+  const token = getAuthToken()
+  if (!token) {
+    scheduleReconnect()
+    return
+  }
+
+  try {
+    echo?.disconnect()
+  } catch { /* ignore */ }
+
+  try {
+    echo = createEchoInstance()
+    window.Echo = echo
+
+    // Monitor connection state via the underlying Pusher connector
+    const connector = (echo as any).connector?.pusher
+    if (connector) {
+      connector.connection.bind('connected', () => {
+        reconnectAttempts = 0
+      })
+
+      connector.connection.bind('disconnected', () => {
+        scheduleReconnect()
+      })
+
+      connector.connection.bind('unavailable', () => {
+        scheduleReconnect()
+      })
+
+      connector.connection.bind('error', () => {
+        scheduleReconnect()
+      })
+    }
+
+    // Dispatch event so hooks can re-subscribe
+    window.dispatchEvent(new CustomEvent('echo:reconnected'))
+  } catch {
+    scheduleReconnect()
+  }
+}
+
+// Initialize
+if (WEBSOCKET_ENABLED) {
+  window.Pusher = Pusher
+
+  echo = createEchoInstance()
   window.Echo = echo
+
+  // Monitor connection state
+  const connector = (echo as any).connector?.pusher
+  if (connector) {
+    connector.connection.bind('connected', () => {
+      reconnectAttempts = 0
+    })
+
+    connector.connection.bind('disconnected', () => {
+      scheduleReconnect()
+    })
+
+    connector.connection.bind('unavailable', () => {
+      scheduleReconnect()
+    })
+
+    connector.connection.bind('error', () => {
+      scheduleReconnect()
+    })
+  }
+
+  // Reconnect when tab becomes visible again (user comes back)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const pusher = (echo as any)?.connector?.pusher
+      const state = pusher?.connection?.state
+      if (state && state !== 'connected' && state !== 'connecting') {
+        reconnectAttempts = 0
+        reconnectEcho()
+      }
+    }
+  })
+
+  // Reconnect on network recovery
+  window.addEventListener('online', () => {
+    reconnectAttempts = 0
+    reconnectEcho()
+  })
 } else {
-  console.info('ℹ️ WebSocket disabled (VITE_WEBSOCKET_ENABLED=false)')
   window.Echo = null
 }
 
-export default echo
+/**
+ * Returns the current Echo instance (always fresh, survives reconnections).
+ */
+export function getEcho(): Echo<'reverb'> | null {
+  return echo
+}
 
+export default echo

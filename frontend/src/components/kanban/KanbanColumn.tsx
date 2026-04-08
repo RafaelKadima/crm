@@ -29,38 +29,26 @@ export function KanbanColumn({ stage, leads, onLeadClick, isOver, totalLeadsInPi
       <div
         ref={setNodeRef}
         className={cn(
-          "bg-muted/30 rounded-xl p-3 h-full flex flex-col transition-all duration-200",
+          "bg-muted/20 rounded-xl p-3 h-full flex flex-col transition-all duration-200",
           isOver && "bg-primary/10 ring-2 ring-primary/30 scale-[1.02]"
         )}
       >
         {/* Column Header */}
-        <div className="flex items-center justify-between mb-3 px-1 shrink-0">
+        <div
+          className="flex items-center justify-between mb-3 pl-3 shrink-0 border-l-[3px]"
+          style={{ borderColor: stage.color }}
+        >
           <div className="flex items-center gap-2">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: stage.color }}
-            />
-            <h3 className="font-semibold text-sm">{stage.name}</h3>
+            <h3 className="font-medium text-sm text-foreground">{stage.name}</h3>
             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {leads.length}
             </span>
           </div>
           {totalValue > 0 && (
-            <span className="text-xs font-semibold text-green-500">
+            <span className="text-xs font-medium text-muted-foreground">
               {formatCurrency(totalValue)}
             </span>
           )}
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-1 rounded-full bg-muted overflow-hidden mt-2 mb-1 mx-1 shrink-0">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              backgroundColor: stage.color,
-              width: `${Math.min((leads.length / Math.max(totalLeadsInPipeline, 1)) * 100, 100)}%`,
-            }}
-          />
         </div>
 
         {/* Cards - scrollable area */}
@@ -79,7 +67,7 @@ export function KanbanColumn({ stage, leads, onLeadClick, isOver, totalLeadsInPi
             {leads.length === 0 && (
               <div className={cn(
                 "flex items-center justify-center h-24 text-sm text-muted-foreground border-2 border-dashed rounded-lg transition-colors",
-                isOver ? "border-primary bg-primary/5" : "border-muted"
+                isOver ? "border-primary bg-primary/5" : "border-border/50"
               )}>
                 {isOver ? "Solte aqui" : "Arraste leads aqui"}
               </div>

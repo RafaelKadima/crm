@@ -111,8 +111,6 @@ export function AudioRecorder({
         }
       }
       
-      console.log('MediaRecorder using MIME type:', mimeType || 'browser default')
-      
       const mediaRecorder = new MediaRecorder(stream, { mimeType })
       mediaRecorderRef.current = mediaRecorder
       
@@ -137,7 +135,6 @@ export function AudioRecorder({
       }, 1000)
       
     } catch (err: any) {
-      console.error('Error starting recording:', err)
       if (err.name === 'NotAllowedError') {
         setError('Permissão para microfone negada')
       } else if (err.name === 'NotFoundError') {
@@ -197,7 +194,6 @@ export function AudioRecorder({
                         mimeType.includes('mpeg') ? 'mp3' : 'webm'
 
       const fileName = `audio_${Date.now()}.${extension}`
-      console.log('Sending audio:', mimeType, extension, audioBlob.size)
 
       // 1. Request presigned URL for upload
       const presignedResponse = await api.post('/files/presigned-url', {
@@ -270,14 +266,11 @@ export function AudioRecorder({
         }
       }
 
-      console.log('Audio message created:', audioMessage)
-
       setAudioBlob(null)
       setDuration(0)
       onAudioSent?.(audioMessage)
 
     } catch (err: any) {
-      console.error('Error sending audio:', err)
       setError(err.response?.data?.error || 'Erro ao enviar áudio')
     } finally {
       setIsSending(false)

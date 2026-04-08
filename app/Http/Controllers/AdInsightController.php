@@ -60,7 +60,7 @@ class AdInsightController extends Controller
             END
         ")->orderBy('created_at', 'desc');
 
-        $insights = $query->paginate($request->input('per_page', 20));
+        $insights = $query->paginate(min((int) $request->input('per_page', 20), 100));
 
         // Contadores
         $counts = [
@@ -174,7 +174,7 @@ class AdInsightController extends Controller
 
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Erro ao executar ação: ' . $e->getMessage(),
+                'error' => $this->safeErrorMessage($e, 'Erro ao executar ação.'),
             ], 500);
         }
     }

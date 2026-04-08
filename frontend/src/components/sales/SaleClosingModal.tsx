@@ -223,7 +223,6 @@ export function SaleClosingModal({
       onSuccess?.()
       onClose()
     } catch (error: any) {
-      console.error('Error creating sale:', error)
       setErrors({ submit: error.response?.data?.message || 'Erro ao registrar venda' })
     }
   }

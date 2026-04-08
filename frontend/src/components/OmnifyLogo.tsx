@@ -104,11 +104,11 @@ export function OmnifyLogo({
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -10 }}
-          className={cn('font-display font-bold tracking-[0.15em]', textSize)}
+          className={cn('font-display font-bold tracking-[0.06em]', textSize)}
         >
           <span className="text-foreground">OMNI</span>
           <span className="text-foreground/50">FY</span>
-          <span className="text-foreground/30 font-normal text-[0.6em] ml-2 tracking-[0.2em]">
+          <span className="text-foreground/30 font-normal text-[0.6em] ml-2 tracking-[0.1em]">
             HUB
           </span>
         </motion.div>

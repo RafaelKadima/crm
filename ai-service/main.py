@@ -77,13 +77,14 @@ app = FastAPI(
     redoc_url="/redoc" if settings.debug else None
 )
 
-# CORS
+# CORS — origens configuráveis via env CORS_ALLOWED_ORIGINS
+_cors_origins = [o.strip() for o in settings.cors_allowed_origins.split(",") if o.strip()] if settings.cors_allowed_origins else ["http://localhost:5176"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especificar domínios
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "X-Requested-With", "X-Internal-Key"],
 )
 
 # Routers

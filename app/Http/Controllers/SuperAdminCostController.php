@@ -306,7 +306,7 @@ class SuperAdminCostController extends Controller
         }
 
         $alerts = $query->orderByDesc('created_at')
-            ->paginate($request->get('per_page', 50));
+            ->paginate(min((int) $request->get('per_page', 50), 100));
 
         return response()->json($alerts);
     }
@@ -384,7 +384,7 @@ class SuperAdminCostController extends Controller
 
         $records = $query->orderByDesc('year')
             ->orderByDesc('month')
-            ->paginate($request->get('per_page', 50));
+            ->paginate(min((int) $request->get('per_page', 50), 100));
 
         return response()->json($records);
     }

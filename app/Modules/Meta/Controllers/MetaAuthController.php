@@ -313,7 +313,7 @@ class MetaAuthController extends Controller
                 'oauth_configured' => $this->oauthService->isConfigured(),
                 'embedded_signup_configured' => $this->oauthService->isEmbeddedSignupConfigured(),
                 'config_id' => $this->oauthService->getConfigId(),
-                'app_id' => config('services.meta.app_id'),
+                'app_id' => config('services.meta.embedded_app_id', config('services.meta.app_id')),
                 'token_service_configured' => $this->tokenService->isConfigured(),
             ],
         ]);

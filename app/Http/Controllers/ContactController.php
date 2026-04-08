@@ -32,7 +32,7 @@ class ContactController extends Controller
 
         $query->orderByDesc('created_at');
 
-        $contacts = $query->paginate($request->get('per_page', 15));
+        $contacts = $query->paginate(min((int) $request->get('per_page', 15), 100));
 
         return response()->json($contacts);
     }

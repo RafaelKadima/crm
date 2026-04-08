@@ -56,7 +56,7 @@ class AIContentProxyController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erro ao conectar com o serviço de IA',
-                'message' => $e->getMessage()
+                'message' => $this->safeErrorMessage($e)
             ], 503);
         }
     }
@@ -78,7 +78,7 @@ class AIContentProxyController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erro ao conectar com o serviço de IA',
-                'message' => $e->getMessage()
+                'message' => $this->safeErrorMessage($e)
             ], 503);
         }
     }
@@ -100,7 +100,7 @@ class AIContentProxyController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erro ao conectar com o serviço de IA',
-                'message' => $e->getMessage()
+                'message' => $this->safeErrorMessage($e)
             ], 503);
         }
     }

@@ -89,7 +89,7 @@ class AgentLearningController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Feedback submission error', ['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => $this->safeErrorMessage($e)], 500);
         }
     }
 
@@ -156,7 +156,7 @@ class AgentLearningController extends Controller
             }
 
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => $this->safeErrorMessage($e)], 500);
         }
 
         return response()->json(['error' => 'Ação inválida'], 400);

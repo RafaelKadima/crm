@@ -6,12 +6,16 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
   },
+  withCredentials: true,
 })
 
-// Request interceptor - add token
+// Request interceptor - add token from store as fallback (cookie is primary)
 api.interceptors.request.use(
   (config) => {
+    // O cookie httpOnly é enviado automaticamente via withCredentials.
+    // O token no header é fallback para compatibilidade durante a transição.
     const token = useAuthStore.getState().token
     if (token) {
       config.headers.Authorization = `Bearer ${token}`

@@ -107,14 +107,12 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
   return new Promise((resolve) => {
     // Se já inicializado COM O MESMO appId, resolve imediatamente
     if (fbSDKInitialized && window.FB && fbCurrentAppId === appId) {
-      console.log('[EmbeddedSignup] SDK already initialized with appId:', appId)
       resolve(true)
       return
     }
 
     // Se appId mudou, resetar estado e forçar reinicialização
     if (fbSDKInitialized && fbCurrentAppId && fbCurrentAppId !== appId) {
-      console.log('[EmbeddedSignup] App ID changed from', fbCurrentAppId, 'to', appId, '- reinitializing SDK')
       fbSDKInitialized = false
       fbSDKLoading = false
       fbCurrentAppId = null
@@ -134,7 +132,6 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
     // Se FB já existe mas não foi inicializado
     if (window.FB) {
       try {
-        console.log('[EmbeddedSignup] FB.init with appId:', appId)
         window.FB.init({
           appId,
           xfbml: true,
@@ -144,7 +141,6 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
         fbCurrentAppId = appId
         resolve(true)
       } catch (e) {
-        console.error('Error initializing FB SDK:', e)
         resolve(false)
       }
       return
@@ -157,7 +153,6 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
     // Define callback para quando o SDK carregar
     window.fbAsyncInit = function () {
       try {
-        console.log('[EmbeddedSignup] FB.init with appId:', appId)
         window.FB.init({
           appId,
           xfbml: true,
@@ -169,7 +164,6 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
         fbInitCallbacks.forEach((cb) => cb(true))
         fbInitCallbacks = []
       } catch (e) {
-        console.error('Error in fbAsyncInit:', e)
         fbInitCallbacks.forEach((cb) => cb(false))
         fbInitCallbacks = []
       }
@@ -191,7 +185,6 @@ function loadFacebookSDK(appId: string, version: string): Promise<boolean> {
     script.defer = true
 
     script.onerror = () => {
-      console.error('Failed to load Facebook SDK script')
       fbSDKLoading = false
       fbInitCallbacks.forEach((cb) => cb(false))
       fbInitCallbacks = []
@@ -229,9 +222,8 @@ export function useFacebookSDK(appId: string, version = 'v24.0') {
           setError('Failed to load Facebook SDK')
         }
       })
-      .catch((e) => {
+      .catch(() => {
         setError('Failed to load Facebook SDK')
-        console.error(e)
       })
   }, [appId, version, isLoaded])
 
@@ -290,17 +282,6 @@ export function useMetaEmbeddedSignup() {
         // Parse data - pode vir como string JSON ou objeto
         const parsedData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
 
-        // Log for debugging
-        if (parsedData && parsedData.type) {
-          console.log('[EmbeddedSignup] postMessage received:', {
-            origin: event.origin,
-            type: parsedData.type,
-            event: parsedData.event,
-            hasData: !!parsedData.data,
-            keys: Object.keys(parsedData),
-          })
-        }
-
         // Processa mensagens do Embedded Signup
         if (parsedData.type === 'WA_EMBEDDED_SIGNUP') {
           const eventName = parsedData.event as string
@@ -315,16 +296,14 @@ export function useMetaEmbeddedSignup() {
             const enrichedData = { ...data, is_coexistence: isCoexistence }
             setSessionInfo(enrichedData)
             sessionInfoRef.current = enrichedData
-            console.log('[EmbeddedSignup] sessionInfo received:', JSON.stringify(enrichedData), 'event:', eventName, 'coexistence:', isCoexistence)
           } else if (eventName === 'CANCEL') {
-            console.warn('[EmbeddedSignup] User cancelled at step:', parsedData.data?.current_step)
+            // User cancelled the signup flow
           } else if (eventName === 'ERROR') {
-            console.error('[EmbeddedSignup] Error from Meta:', parsedData.data?.error_message)
+            // Error from Meta during signup
           }
         }
       } catch {
         // Non-JSON responses - ignore
-        console.log('[EmbeddedSignup] Non-JSON response:', event.data)
       }
     }
 
@@ -388,18 +367,13 @@ export function useMetaEmbeddedSignup() {
           },
         }
 
-        console.log('[EmbeddedSignup] Calling FB.login with appId:', config.appId, 'configId:', config.configId, 'options:', JSON.stringify(loginOptions))
-
         window.FB.login(
           (response: FBLoginResponse) => {
             // Usa ref para pegar o valor mais recente do sessionInfo
             const currentSessionInfo = sessionInfoRef.current
-            console.log('[EmbeddedSignup] FB.login response:', JSON.stringify(response))
-            console.log('[EmbeddedSignup] sessionInfo at callback:', JSON.stringify(currentSessionInfo))
 
             if (response.authResponse) {
               if (response.authResponse.accessToken) {
-                console.log('[EmbeddedSignup] Got accessToken, sending to backend with sessionInfo...')
                 processSignupMutation.mutate({
                   access_token: response.authResponse.accessToken,
                   waba_id: currentSessionInfo?.waba_id,
@@ -407,7 +381,6 @@ export function useMetaEmbeddedSignup() {
                   is_coexistence: currentSessionInfo?.is_coexistence || false,
                 })
               } else if (response.authResponse.code) {
-                console.log('[EmbeddedSignup] Got code, sending to backend...')
                 processSignupMutation.mutate({
                   code: response.authResponse.code,
                   waba_id: currentSessionInfo?.waba_id,
@@ -417,24 +390,19 @@ export function useMetaEmbeddedSignup() {
                 })
               } else {
                 setIsProcessing(false)
-                console.error('[EmbeddedSignup] No accessToken or code in response')
                 toast.error('Resposta incompleta do Facebook. Tente novamente.')
               }
             } else {
               // Usuário cancelou ou erro
               setIsProcessing(false)
-              if (response.status === 'unknown') {
-                console.log('[EmbeddedSignup] User closed the login popup')
-              } else {
-                console.error('[EmbeddedSignup] Login failed with status:', response.status)
-                toast.error('Falha na autenticacao com o Facebook. Verifique o console para mais detalhes.')
+              if (response.status !== 'unknown') {
+                toast.error('Falha na autenticacao com o Facebook.')
               }
             }
           },
           loginOptions
         )
       } catch (e) {
-        console.error('Error calling FB.login:', e)
         setIsProcessing(false)
         toast.error('Erro ao abrir popup do Facebook')
       }

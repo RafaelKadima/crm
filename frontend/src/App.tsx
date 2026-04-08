@@ -16,6 +16,7 @@ import { SettingsPage } from '@/pages/settings/Settings'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
 import { ProductsPage } from '@/pages/products/Products'
+import { BroadcastsPage } from '@/pages/broadcasts/BroadcastsPage'
 import { LandingPagesPage } from '@/pages/landing-pages/LandingPages'
 import { PublicLandingPage } from '@/pages/landing-pages/PublicLandingPage'
 import { LandingPageBuilder } from '@/pages/landing-pages/LandingPageBuilder'
@@ -69,10 +70,9 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
-  // TODO: Verificar se é super admin
-  // if (!user?.is_super_admin) {
-  //   return <Navigate to="/" replace />
-  // }
+  if (!user?.is_super_admin) {
+    return <Navigate to="/" replace />
+  }
 
   return <div className="fixed inset-0 overflow-y-auto">{children}</div>
 }
@@ -191,6 +191,7 @@ function AppRoutes() {
         <Route path="products" element={<ProductsPage />} />
         <Route path="landing-pages" element={<LandingPagesPage />} />
         <Route path="landing-pages/:id/edit" element={<LandingPageBuilder />} />
+        <Route path="broadcasts" element={<BroadcastsPage />} />
         <Route path="sdr" element={<SdrHubPage />} />
         <Route path="sdr/create" element={<SdrAgentConfig />} />
         <Route path="sdr/:agentId/config" element={<SdrAgentConfig />} />

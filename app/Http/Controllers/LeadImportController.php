@@ -165,7 +165,7 @@ class LeadImportController extends Controller
             
             return response()->json([
                 'message' => 'Erro ao processar arquivo',
-                'error' => $e->getMessage(),
+                'error' => $this->safeErrorMessage($e, 'Erro ao processar arquivo.'),
             ], 500);
         }
     }

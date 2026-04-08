@@ -1003,3 +1003,45 @@ export interface QuickReplyVariable {
   key: string
   description: string
 }
+
+// Broadcast Types
+export type BroadcastStatus = 'DRAFT' | 'SENDING' | 'PAUSED' | 'COMPLETED' | 'CANCELLED'
+export type BroadcastMessageStatus = 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
+
+export interface BroadcastFilters {
+  pipeline_id?: string
+  stage_id?: string
+  owner_id?: string
+  channel_id?: string
+  status?: string
+}
+
+export interface TemplateVariableMapping {
+  index: number
+  field: string
+}
+
+export interface Broadcast {
+  id: string
+  tenant_id: string
+  channel_id: string
+  created_by: string
+  whatsapp_template_id: string
+  name: string
+  filters: BroadcastFilters
+  template_variables: TemplateVariableMapping[]
+  status: BroadcastStatus
+  total_recipients: number
+  sent_count: number
+  delivered_count: number
+  read_count: number
+  failed_count: number
+  scheduled_at?: string
+  started_at?: string
+  completed_at?: string
+  created_at: string
+  updated_at: string
+  template?: WhatsAppTemplate
+  channel?: Channel
+  creator?: { id: string; name: string }
+}

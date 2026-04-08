@@ -45,7 +45,7 @@ class SupportActivityController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $perPage = $request->input('per_page', 20);
+        $perPage = min((int) $request->input('per_page', 20), 100);
         $activities = $query->paginate($perPage);
 
         return response()->json($activities);

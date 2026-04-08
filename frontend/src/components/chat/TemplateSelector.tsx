@@ -92,7 +92,6 @@ export function TemplateSelector({ channelId, ticketId, isOpen, onClose, onSent 
       const response = await whatsAppTemplatesApi.getApproved(channelId)
       setTemplates(response.data.data || [])
     } catch (error) {
-      console.error('Error loading templates:', error)
       toast.error('Erro ao carregar templates')
     } finally {
       setIsLoading(false)
@@ -169,7 +168,6 @@ export function TemplateSelector({ channelId, ticketId, isOpen, onClose, onSent 
       onSent()
       handleClose()
     } catch (error: any) {
-      console.error('Error sending template:', error)
       toast.error(error.response?.data?.error || 'Erro ao enviar template')
     } finally {
       setIsSending(false)

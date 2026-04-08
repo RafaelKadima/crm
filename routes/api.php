@@ -47,10 +47,12 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Rotas públicas de autenticação
-Route::post('login', [AuthController::class, 'login']);
-Route::prefix('auth')->group(function () {
+// Rotas públicas de autenticação (rate limited: 5 tentativas/minuto)
+Route::middleware('throttle:login')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
+    Route::prefix('auth')->group(function () {
+        Route::post('login', [AuthController::class, 'login']);
+    });
 });
 
 // Download de arquivos (assinado)
@@ -77,93 +79,75 @@ Route::middleware('auth:api')->group(function () {
         Route::post('refresh', [AuthController::class, 'refresh']);
     });
 
-    // Features do tenant (para o frontend saber o que mostrar)
-    Route::get('my-features', [\App\Http\Controllers\TenantFeaturesController::class, 'myFeatures']);
-    Route::get('check-feature/{feature}', [\App\Http\Controllers\TenantFeaturesController::class, 'checkFeature']);
-    Route::get('check-function/{feature}/{function}', [\App\Http\Controllers\TenantFeaturesController::class, 'checkFunction']);
-
-    // Configurações do tenant
-    Route::get('tenant/settings', [\App\Http\Controllers\TenantSettingsController::class, 'show']);
-    Route::put('tenant/settings', [\App\Http\Controllers\TenantSettingsController::class, 'update']);
-
-    // Branding do tenant
-    Route::prefix('branding')->group(function () {
-        Route::get('/', [\App\Http\Controllers\BrandingController::class, 'show']);
-        Route::put('/', [\App\Http\Controllers\BrandingController::class, 'update']);
-        Route::post('logo', [\App\Http\Controllers\BrandingController::class, 'uploadLogo']);
-        Route::delete('logo', [\App\Http\Controllers\BrandingController::class, 'removeLogo']);
-        Route::post('reset', [\App\Http\Controllers\BrandingController::class, 'reset']);
-    });
-
-    // Branding do tenant (identidade visual)
-    Route::get('tenant/branding', [\App\Http\Controllers\BrandingController::class, 'show']);
-    Route::put('tenant/branding', [\App\Http\Controllers\BrandingController::class, 'update']);
-    Route::post('tenant/branding/upload', [\App\Http\Controllers\BrandingController::class, 'upload']);
-    Route::delete('tenant/branding/image', [\App\Http\Controllers\BrandingController::class, 'deleteImage']);
-
-    // =============================================================================
-    // INTEGRACOES EXTERNAS (Linx, Webhooks CRM, ERPs)
-    // =============================================================================
-    Route::prefix('integrations')->group(function () {
-        Route::get('/', [ExternalIntegrationController::class, 'index']);
-        Route::post('/', [ExternalIntegrationController::class, 'store']);
-        Route::get('templates', [ExternalIntegrationController::class, 'getTemplates']);
-        Route::get('available-fields', [ExternalIntegrationController::class, 'getAvailableFields']);
-        Route::get('{integration}', [ExternalIntegrationController::class, 'show']);
-        Route::put('{integration}', [ExternalIntegrationController::class, 'update']);
-        Route::delete('{integration}', [ExternalIntegrationController::class, 'destroy']);
-        Route::post('{integration}/toggle', [ExternalIntegrationController::class, 'toggleActive']);
-        Route::post('{integration}/test', [ExternalIntegrationController::class, 'testConnection']);
-        Route::get('{integration}/logs', [ExternalIntegrationController::class, 'getLogs']);
-        Route::post('{integration}/logs/{log}/retry', [ExternalIntegrationController::class, 'retryLog']);
-        Route::get('{integration}/mappings', [ExternalIntegrationController::class, 'getMappings']);
-        Route::post('{integration}/mappings', [ExternalIntegrationController::class, 'saveMapping']);
-        Route::post('{integration}/preview', [ExternalIntegrationController::class, 'previewPayload']);
-    });
-
-    // =============================================================================
-    // USO DE IA E PACOTES (Unidades de IA)
-    // =============================================================================
-    Route::prefix('usage')->group(function () {
-        // Resumo de uso do tenant
-        Route::get('summary', [\App\Http\Controllers\AiUsageController::class, 'summary']);
-
-        // Histórico de uso diário
-        Route::get('daily', [\App\Http\Controllers\AiUsageController::class, 'dailyUsage']);
-
-        // Uso por modelo
-        Route::get('by-model', [\App\Http\Controllers\AiUsageController::class, 'usageByModel']);
-
-        // Verificar limites
-        Route::get('limits', [\App\Http\Controllers\AiUsageController::class, 'checkLimits']);
-
-        // Calcular excedente
-        Route::get('overage', [\App\Http\Controllers\AiUsageController::class, 'overageCost']);
-
-        // Estimativa de uso
-        Route::post('estimate', [\App\Http\Controllers\AiUsageController::class, 'estimate']);
-    });
-
-    // Pacotes de IA
-    Route::prefix('packages')->group(function () {
-        // Pacotes disponíveis
-        Route::get('available', [\App\Http\Controllers\AiUsageController::class, 'availablePackages']);
-
-        // Compras do tenant
-        Route::get('purchases', [\App\Http\Controllers\AiUsageController::class, 'purchases']);
-
-        // Comprar pacote
-        Route::post('purchase', [\App\Http\Controllers\AiUsageController::class, 'purchasePackage']);
-
-        // Confirmar pagamento
-        Route::post('purchases/{purchaseId}/confirm', [\App\Http\Controllers\AiUsageController::class, 'confirmPayment']);
-    });
-
-    // Planos disponíveis
-    Route::get('plans', [\App\Http\Controllers\AiUsageController::class, 'plans']);
-
-    // Rotas que requerem tenant
+    // Rotas que requerem tenant ativo
     Route::middleware('tenant')->group(function () {
+
+        // Features do tenant (para o frontend saber o que mostrar)
+        Route::get('my-features', [\App\Http\Controllers\TenantFeaturesController::class, 'myFeatures']);
+        Route::get('check-feature/{feature}', [\App\Http\Controllers\TenantFeaturesController::class, 'checkFeature']);
+        Route::get('check-function/{feature}/{function}', [\App\Http\Controllers\TenantFeaturesController::class, 'checkFunction']);
+
+        // Configurações do tenant
+        Route::get('tenant/settings', [\App\Http\Controllers\TenantSettingsController::class, 'show']);
+        Route::put('tenant/settings', [\App\Http\Controllers\TenantSettingsController::class, 'update']);
+
+        // Branding do tenant
+        Route::prefix('branding')->group(function () {
+            Route::get('/', [\App\Http\Controllers\BrandingController::class, 'show']);
+            Route::put('/', [\App\Http\Controllers\BrandingController::class, 'update']);
+            Route::post('logo', [\App\Http\Controllers\BrandingController::class, 'uploadLogo']);
+            Route::delete('logo', [\App\Http\Controllers\BrandingController::class, 'removeLogo']);
+            Route::post('reset', [\App\Http\Controllers\BrandingController::class, 'reset']);
+        });
+
+        // Branding do tenant (identidade visual)
+        Route::get('tenant/branding', [\App\Http\Controllers\BrandingController::class, 'show']);
+        Route::put('tenant/branding', [\App\Http\Controllers\BrandingController::class, 'update']);
+        Route::post('tenant/branding/upload', [\App\Http\Controllers\BrandingController::class, 'upload']);
+        Route::delete('tenant/branding/image', [\App\Http\Controllers\BrandingController::class, 'deleteImage']);
+
+        // =============================================================================
+        // INTEGRACOES EXTERNAS (Linx, Webhooks CRM, ERPs)
+        // =============================================================================
+        Route::prefix('integrations')->group(function () {
+            Route::get('/', [ExternalIntegrationController::class, 'index']);
+            Route::post('/', [ExternalIntegrationController::class, 'store']);
+            Route::get('templates', [ExternalIntegrationController::class, 'getTemplates']);
+            Route::get('available-fields', [ExternalIntegrationController::class, 'getAvailableFields']);
+            Route::get('{integration}', [ExternalIntegrationController::class, 'show']);
+            Route::put('{integration}', [ExternalIntegrationController::class, 'update']);
+            Route::delete('{integration}', [ExternalIntegrationController::class, 'destroy']);
+            Route::post('{integration}/toggle', [ExternalIntegrationController::class, 'toggleActive']);
+            Route::post('{integration}/test', [ExternalIntegrationController::class, 'testConnection']);
+            Route::get('{integration}/logs', [ExternalIntegrationController::class, 'getLogs']);
+            Route::post('{integration}/logs/{log}/retry', [ExternalIntegrationController::class, 'retryLog']);
+            Route::get('{integration}/mappings', [ExternalIntegrationController::class, 'getMappings']);
+            Route::post('{integration}/mappings', [ExternalIntegrationController::class, 'saveMapping']);
+            Route::post('{integration}/preview', [ExternalIntegrationController::class, 'previewPayload']);
+        });
+
+        // =============================================================================
+        // USO DE IA E PACOTES (Unidades de IA)
+        // =============================================================================
+        Route::prefix('usage')->group(function () {
+            Route::get('summary', [\App\Http\Controllers\AiUsageController::class, 'summary']);
+            Route::get('daily', [\App\Http\Controllers\AiUsageController::class, 'dailyUsage']);
+            Route::get('by-model', [\App\Http\Controllers\AiUsageController::class, 'usageByModel']);
+            Route::get('limits', [\App\Http\Controllers\AiUsageController::class, 'checkLimits']);
+            Route::get('overage', [\App\Http\Controllers\AiUsageController::class, 'overageCost']);
+            Route::post('estimate', [\App\Http\Controllers\AiUsageController::class, 'estimate']);
+        });
+
+        // Pacotes de IA
+        Route::prefix('packages')->group(function () {
+            Route::get('available', [\App\Http\Controllers\AiUsageController::class, 'availablePackages']);
+            Route::get('purchases', [\App\Http\Controllers\AiUsageController::class, 'purchases']);
+            Route::post('purchase', [\App\Http\Controllers\AiUsageController::class, 'purchasePackage']);
+            Route::post('purchases/{purchaseId}/confirm', [\App\Http\Controllers\AiUsageController::class, 'confirmPayment']);
+        });
+
+        // Planos disponíveis
+        Route::get('plans', [\App\Http\Controllers\AiUsageController::class, 'plans']);
 
         // Leads
         Route::prefix('leads')->group(function () {
@@ -226,17 +210,17 @@ Route::middleware('auth:api')->group(function () {
 
         // Usuários do tenant
         Route::prefix('users')->group(function () {
-            Route::get('/', [UserController::class, 'index']);
-            Route::post('/', [UserController::class, 'store']);
-            Route::get('{user}', [UserController::class, 'show']);
-            Route::put('{user}', [UserController::class, 'update']);
-            Route::delete('{user}', [UserController::class, 'destroy']);
-            Route::post('{user}/toggle-active', [UserController::class, 'toggleActive']);
+            Route::get('/', [UserController::class, 'index'])->middleware('permission:users.view');
+            Route::post('/', [UserController::class, 'store'])->middleware('permission:users.manage');
+            Route::get('{user}', [UserController::class, 'show'])->middleware('permission:users.view');
+            Route::put('{user}', [UserController::class, 'update'])->middleware('permission:users.manage');
+            Route::delete('{user}', [UserController::class, 'destroy'])->middleware('permission:users.manage');
+            Route::post('{user}/toggle-active', [UserController::class, 'toggleActive'])->middleware('permission:users.manage');
 
             // Permissões do usuário (apenas Admin)
-            Route::get('{user}/permissions', [PermissionController::class, 'userPermissions']);
-            Route::put('{user}/permissions', [PermissionController::class, 'updateUserPermissions']);
-            Route::post('{user}/permissions/reset', [PermissionController::class, 'resetUserPermissions']);
+            Route::get('{user}/permissions', [PermissionController::class, 'userPermissions'])->middleware('permission:users.manage');
+            Route::put('{user}/permissions', [PermissionController::class, 'updateUserPermissions'])->middleware('permission:users.manage');
+            Route::post('{user}/permissions/reset', [PermissionController::class, 'resetUserPermissions'])->middleware('permission:users.manage');
         });
 
         // Permissões
@@ -361,14 +345,14 @@ Route::middleware('auth:api')->group(function () {
         // Pipelines
         Route::prefix('pipelines')->group(function () {
             Route::get('/', [PipelineController::class, 'index']);
-            Route::post('/', [PipelineController::class, 'store']);
+            Route::post('/', [PipelineController::class, 'store'])->middleware('permission:pipelines.manage');
             Route::get('{pipeline}', [PipelineController::class, 'show']);
-            Route::put('{pipeline}', [PipelineController::class, 'update']);
-            Route::delete('{pipeline}', [PipelineController::class, 'destroy']);
+            Route::put('{pipeline}', [PipelineController::class, 'update'])->middleware('permission:pipelines.manage');
+            Route::delete('{pipeline}', [PipelineController::class, 'destroy'])->middleware('permission:pipelines.manage');
             Route::get('{pipeline}/stages', [PipelineController::class, 'stages']);
-            Route::post('{pipeline}/stages', [PipelineController::class, 'storeStage']);
-            Route::put('{pipeline}/stages/{stage}', [PipelineController::class, 'updateStage']);
-            Route::delete('{pipeline}/stages/{stage}', [PipelineController::class, 'destroyStage']);
+            Route::post('{pipeline}/stages', [PipelineController::class, 'storeStage'])->middleware('permission:pipelines.manage');
+            Route::put('{pipeline}/stages/{stage}', [PipelineController::class, 'updateStage'])->middleware('permission:pipelines.manage');
+            Route::delete('{pipeline}/stages/{stage}', [PipelineController::class, 'destroyStage'])->middleware('permission:pipelines.manage');
 
             // Gerenciamento de permissões de usuários
             Route::get('{pipeline}/users', [PipelineController::class, 'users']);
@@ -391,13 +375,13 @@ Route::middleware('auth:api')->group(function () {
         // Canais
         Route::prefix('channels')->group(function () {
             Route::get('/', [ChannelController::class, 'index']);
-            Route::post('/', [ChannelController::class, 'store']);
+            Route::post('/', [ChannelController::class, 'store'])->middleware('permission:channels.manage');
             Route::get('{channel}', [ChannelController::class, 'show']);
-            Route::put('{channel}', [ChannelController::class, 'update']);
-            Route::delete('{channel}', [ChannelController::class, 'destroy']);
-            Route::post('{channel}/test-connection', [ChannelController::class, 'testConnection']);
-            Route::put('{channel}/ia-mode', [ChannelController::class, 'updateIaMode']);
-            Route::post('{channel}/toggle-active', [ChannelController::class, 'toggleActive']);
+            Route::put('{channel}', [ChannelController::class, 'update'])->middleware('permission:channels.manage');
+            Route::delete('{channel}', [ChannelController::class, 'destroy'])->middleware('permission:channels.manage');
+            Route::post('{channel}/test-connection', [ChannelController::class, 'testConnection'])->middleware('permission:channels.manage');
+            Route::put('{channel}/ia-mode', [ChannelController::class, 'updateIaMode'])->middleware('permission:channels.manage');
+            Route::post('{channel}/toggle-active', [ChannelController::class, 'toggleActive'])->middleware('permission:channels.manage');
 
             // Menu de filas
             Route::put('{channel}/queue-menu', [ChannelController::class, 'updateQueueMenu']);
@@ -700,6 +684,20 @@ Route::middleware('auth:api')->group(function () {
             Route::get('approved/{channel}', [\App\Http\Controllers\WhatsAppTemplateController::class, 'approved']);
             Route::get('stats/{channel}', [\App\Http\Controllers\WhatsAppTemplateController::class, 'stats']);
         });
+    });
+
+    // =====================
+    // BROADCASTS (Envio em massa)
+    // =====================
+    Route::prefix('broadcasts')->controller(\App\Http\Controllers\BroadcastController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::post('/preview', 'preview');
+        Route::get('/{broadcast}', 'show');
+        Route::post('/{broadcast}/start', 'start');
+        Route::post('/{broadcast}/pause', 'pause');
+        Route::post('/{broadcast}/cancel', 'cancel');
+        Route::delete('/{broadcast}', 'destroy');
     });
 
     // Instagram (rotas protegidas)
@@ -1118,9 +1116,9 @@ Route::middleware(['auth:api', 'tenant'])->prefix('brand-layers')->group(functio
 
 // =============================================================================
 // Rotas para integração com Worker Python (fila de mensagens)
-// Autenticação via X-API-Key header
+// Autenticação via X-Internal-Key header (InternalApiMiddleware)
 // =============================================================================
-Route::prefix('agent')->group(function () {
+Route::middleware(['internal.api', 'throttle:internal'])->prefix('agent')->group(function () {
     Route::post('context', [\App\Http\Controllers\AgentQueueController::class, 'getContext']);
     Route::post('response', [\App\Http\Controllers\AgentQueueController::class, 'handleResponse']);
 });
@@ -1211,8 +1209,8 @@ Route::prefix('lp')->group(function () {
     Route::post('{slug}/submit', [LandingPageController::class, 'publicSubmit']);
 });
 
-// Webhooks públicos (sem autenticação)
-Route::prefix('webhooks')->group(function () {
+// Webhooks públicos (sem autenticação, rate limited: 120/min por IP)
+Route::middleware('throttle:webhooks')->prefix('webhooks')->group(function () {
     // WhatsApp webhook (Meta Cloud API)
     Route::get('whatsapp', [WhatsAppController::class, 'verifyWebhook']);
     Route::post('whatsapp', [WhatsAppController::class, 'receiveWebhook']);

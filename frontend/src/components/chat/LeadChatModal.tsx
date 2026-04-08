@@ -214,12 +214,9 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
     // Prevent processing same message twice (WebSocket can fire multiple times)
     if (processedMessageIds.current.has(messageId)) {
-      console.log('📩 Mensagem já processada, ignorando:', messageId)
       return
     }
     processedMessageIds.current.add(messageId)
-
-    console.log('📩 Nova mensagem para o lead:', data)
 
     // Ignora mensagens enviadas pelo próprio usuário (já foram adicionadas localmente)
     // EXCETO mensagens de mídia (que não têm mensagem temporária)
@@ -422,32 +419,27 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
     }
 
     try {
-      // Na página 1, busca lead para obter ticket ativo (para envio de mensagens)
-      if (page === 1) {
-        const leadResponse = await api.get(`/leads/${lead.id}`)
-        const leadData = leadResponse.data
-
-        if (leadData.tickets && leadData.tickets.length > 0) {
-          const ticket = leadData.tickets[0]
-          setTicketId(ticket.id)
-          setTicketStatus(ticket.status === 'closed' ? 'closed' : 'open')
-          setIaEnabled(ticket.ia_enabled !== false)
-        } else {
-          setTicketId(null)
-          setTicketStatus('closed')
-        }
-      }
-
-      // Busca mensagens de TODOS os tickets do lead (histórico completo)
+      // Single request: messages + active ticket info
       const messagesResponse = await api.get(`/leads/${lead.id}/messages`, {
         params: { page, per_page: 50 }
       })
 
-      const { data: allMessages, tickets, has_more } = messagesResponse.data
+      const { data: allMessages, tickets, active_ticket, has_more } = messagesResponse.data
 
-      // Salva info dos tickets para separadores
-      if (page === 1 && tickets) {
-        setTicketHistory(tickets)
+      // Set active ticket from messages response (no extra API call)
+      if (page === 1) {
+        if (active_ticket) {
+          setTicketId(active_ticket.id)
+          setTicketStatus(active_ticket.status === 'closed' ? 'closed' : 'open')
+          setIaEnabled(active_ticket.ia_enabled !== false)
+        } else {
+          setTicketId(null)
+          setTicketStatus('closed')
+        }
+
+        if (tickets) {
+          setTicketHistory(tickets)
+        }
       }
 
       const formattedMessages = allMessages.map((m: any) => ({
@@ -470,7 +462,6 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       setHasMoreMessages(has_more)
       setCurrentPage(page)
     } catch (error) {
-      console.error('Error loading messages:', error)
       if (!append) {
         setTicketId(null)
         setMessages([])
@@ -538,7 +529,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       const response = await api.put(`/tickets/${ticketId}/toggle-ia`)
       setIaEnabled(response.data.ia_enabled)
     } catch (error) {
-      console.error('Error toggling IA:', error)
+      // Error toggling IA - silently handled
     } finally {
       setIsTogglingIa(false)
     }
@@ -570,7 +561,6 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
         })
       }
     } catch (error: any) {
-      console.error('Error sending to Linx:', error)
       notify('error', {
         title: 'Erro ao enviar para o Linx',
         description: error?.response?.data?.message || 'Tente novamente',
@@ -583,7 +573,6 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
   const handleSend = async () => {
     if (!message.trim() || !lead || !ticketId) {
-      console.error('Não é possível enviar: lead ou ticket não encontrado')
       return
     }
 
@@ -626,7 +615,6 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           } catch (igError: any) {
             // Se Instagram falhar (sem instagram_id), usa endpoint genérico
             if (igError?.response?.status === 400) {
-              console.warn('Instagram API failed, using generic endpoint')
               return api.post(`/tickets/${ticketId}/messages`, {
                 message: newMessage.content,
               })
@@ -664,7 +652,6 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       queryClient.invalidateQueries({ queryKey: ['tickets'] })
 
     } catch (error) {
-      console.error('Error sending message:', error)
       // Mark as failed
       setMessages((prev) =>
         prev.map((m) =>
@@ -689,7 +676,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       await reopenTicket.mutateAsync(ticketId)
       setTicketStatus('open')
     } catch (error) {
-      console.error('Error reopening ticket:', error)
+      // Error reopening ticket - silently handled
     }
   }
 
@@ -727,7 +714,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
           }, 2000)
         }
       } catch (error) {
-        console.error('Erro ao recarregar lead:', error)
+        // Error reloading lead - silently handled
       }
       // Também recarrega as mensagens
       loadMessages(1, false)
@@ -741,6 +728,27 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
   const formatMessageTime = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const isSameDay = (d1: string, d2: string) => {
+    const a = new Date(d1)
+    const b = new Date(d2)
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  }
+
+  const getDateLabel = (dateString: string) => {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return ''
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const diffDays = Math.round((today.getTime() - target.getTime()) / 86400000)
+    if (diffDays === 0) return 'Hoje'
+    if (diffDays === 1) return 'Ontem'
+    if (diffDays < 7) {
+      return date.toLocaleDateString('pt-BR', { weekday: 'long' }).replace(/^\w/, c => c.toUpperCase())
+    }
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
   }
 
   if (!lead) return null
@@ -1176,7 +1184,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       {/* Atividades Button */}
                       <button
                         onClick={() => setActiveView('activities')}
-                        className="px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-[#00D4FF]/20 hover:border-[#00D4FF]/40 text-[#C0C8D4] hover:bg-[#00D4FF]/10 hover:text-[#00D4FF]"
+                        className="px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 border border-border text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                         title="Atividades"
                       >
                         <ListChecks className="h-3.5 w-3.5" />
@@ -1185,7 +1193,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       {/* Transferir Button */}
                       <button
                         onClick={() => setIsTransferModalOpen(true)}
-                        className="px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-blue-500/20 text-[#C0C8D4] hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/40"
+                        className="px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 border border-border text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                         title="Transferir"
                       >
                         <ArrowRightLeft className="h-3.5 w-3.5" />
@@ -1194,24 +1202,24 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       {/* Encerrar Button */}
                       <button
                         onClick={() => setIsCloseModalOpen(true)}
-                        className="px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-red-500/20 text-[#C0C8D4] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40"
+                        className="px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 border border-border text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 cursor-pointer"
                         title="Encerrar"
                       >
                         <MessageSquareOff className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">Encerrar</span>
                       </button>
                       {/* Separador visual */}
-                      <div className="w-px h-5 bg-[#1E2330] mx-0.5 sm:mx-1" />
-                      {/* Toggle IA Button - só aparece se tenant tem feature de IA */}
+                      <div className="w-px h-5 bg-border mx-0.5 sm:mx-1" />
+                      {/* Toggle IA Button */}
                       {hasIaFeature && (
                         <button
                           onClick={handleToggleIa}
                           disabled={isTogglingIa}
                           className={cn(
-                            "px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border disabled:opacity-50",
+                            "px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 border disabled:opacity-50 cursor-pointer",
                             iaEnabled
-                              ? "border-purple-500/20 text-purple-400 hover:bg-purple-500/10 hover:border-purple-500/40"
-                              : "border-orange-500/20 text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/40"
+                              ? "border-foreground/15 bg-foreground/5 text-foreground"
+                              : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
                           )}
                           title={iaEnabled ? "Desativar IA e assumir atendimento" : "Reativar IA"}
                         >
@@ -1225,12 +1233,12 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                           <span className="hidden sm:inline">{iaEnabled ? 'IA' : 'Você'}</span>
                         </button>
                       )}
-                      {/* Botão Enviar para Linx - só aparece se tenant tem integração */}
+                      {/* Botão Enviar para Linx */}
                       {hasLinxIntegration && (
                         <button
                           onClick={handleSendToLinx}
                           disabled={isSendingToLinx}
-                          className="px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 border border-orange-500/20 text-[#C0C8D4] hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-500/40 disabled:opacity-50"
+                          className="px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 border border-border text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50 cursor-pointer"
                           title="Enviar lead para o Linx Smart"
                         >
                           {isSendingToLinx ? (
@@ -1446,6 +1454,9 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                       const isFirstInGroup = !isSameDirectionAsPrev
                       const isLastInGroup = !isSameDirectionAsNext
 
+                      // Separador de data: estilo WhatsApp
+                      const showDateSeparator = !prevMsg || !isSameDay(msg.created_at, prevMsg.created_at)
+
                       // Separador de ticket: quando muda o ticket_id entre mensagens
                       const showTicketSeparator = prevMsg && msg.ticket_id && prevMsg.ticket_id && msg.ticket_id !== prevMsg.ticket_id
                       const ticketInfo = showTicketSeparator ? ticketHistory.find(t => t.id === msg.ticket_id) : null
@@ -1454,6 +1465,13 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
 
                       return (
                       <>
+                      {showDateSeparator && (
+                        <div key={`date-${msg.created_at}`} className="flex items-center justify-center my-3">
+                          <div className="px-3 py-1 rounded-lg bg-muted/80 border border-border text-[11px] text-muted-foreground font-medium shadow-sm">
+                            {getDateLabel(msg.created_at)}
+                          </div>
+                        </div>
+                      )}
                       {showTicketSeparator && (
                         <div key={`separator-${msg.ticket_id}`} className="flex items-center gap-3 my-4 px-2">
                           <div className="flex-1 h-px bg-border" />
@@ -1471,11 +1489,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                           <div className="flex-1 h-px bg-border" />
                         </div>
                       )}
-                      <motion.div
+                      <div
                         key={msg.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
                         className={cn(
                           'flex',
                           msg.direction === 'outbound' ? 'justify-end' : 'justify-start',
@@ -1588,7 +1603,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                             </div>
                           )}
                         </div>
-                      </motion.div>
+                      </div>
                       </>
                     )})}
                     <div ref={messagesEndRef} />

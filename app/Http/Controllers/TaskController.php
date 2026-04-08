@@ -55,7 +55,7 @@ class TaskController extends Controller
 
         $query->orderBy('due_at');
 
-        $tasks = $query->paginate($request->get('per_page', 15));
+        $tasks = $query->paginate(min((int) $request->get('per_page', 15), 100));
 
         return response()->json($tasks);
     }

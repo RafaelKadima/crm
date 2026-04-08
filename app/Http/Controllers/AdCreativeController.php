@@ -38,7 +38,7 @@ class AdCreativeController extends Controller
 
         $creatives = $query->with('account')
             ->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 100));
 
         return response()->json($creatives);
     }
@@ -130,7 +130,7 @@ class AdCreativeController extends Controller
             ]);
 
             return response()->json([
-                'error' => 'Erro ao enviar criativo: ' . $e->getMessage()
+                'error' => $this->safeErrorMessage($e, 'Erro ao enviar criativo.')
             ], 500);
         }
     }
@@ -172,7 +172,7 @@ class AdCreativeController extends Controller
             ]);
 
             return response()->json([
-                'error' => 'Erro ao adicionar criativo: ' . $e->getMessage()
+                'error' => $this->safeErrorMessage($e, 'Erro ao adicionar criativo.')
             ], 500);
         }
     }
@@ -275,7 +275,7 @@ class AdCreativeController extends Controller
         }
 
         $creatives = $query->orderBy('created_at', 'desc')
-            ->limit($request->get('per_page', 10))
+            ->limit(min((int) $request->get('per_page', 10), 100))
             ->get();
 
         return response()->json(['data' => $creatives]);

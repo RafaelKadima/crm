@@ -129,7 +129,6 @@ export function TaskModal({ isOpen, onClose, task, leadId, contactId }: TaskModa
       }
       onClose()
     } catch (error: any) {
-      console.error('Erro ao salvar tarefa:', error)
       if (error?.response?.data?.errors) {
         setErrors(error.response.data.errors)
       }

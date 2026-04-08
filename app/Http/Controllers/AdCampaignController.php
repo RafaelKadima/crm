@@ -43,7 +43,7 @@ class AdCampaignController extends Controller
         $sortDir = $request->input('sort_dir', 'desc');
         $query->orderBy($sortBy, $sortDir);
 
-        $campaigns = $query->paginate($request->input('per_page', 20));
+        $campaigns = $query->paginate(min((int) $request->input('per_page', 20), 100));
 
         return response()->json($campaigns);
     }
@@ -346,7 +346,7 @@ class AdCampaignController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => $this->safeErrorMessage($e, 'Erro ao sincronizar campanhas.'),
             ], 500);
         }
     }

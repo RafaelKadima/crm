@@ -38,7 +38,7 @@ class WhatsAppController extends Controller
         $challenge = $request->query('hub_challenge');
 
         // Token de verificação definido no .env
-        $verifyToken = config('services.whatsapp.verify_token', 'crm_whatsapp_verify_token');
+        $verifyToken = config('services.whatsapp.verify_token');
 
         $result = WhatsAppService::verifyWebhookToken($mode, $token, $challenge, $verifyToken);
 
@@ -62,7 +62,10 @@ class WhatsAppController extends Controller
     {
         $payload = $request->all();
 
-        Log::info('WhatsApp webhook received', ['payload' => $payload]);
+        Log::info('WhatsApp webhook received', [
+            'phone_number_id' => $payload['entry'][0]['changes'][0]['value']['metadata']['phone_number_id'] ?? 'unknown',
+            'message_count' => count($payload['entry'][0]['changes'][0]['value']['messages'] ?? []),
+        ]);
 
         try {
             // Extract phone number ID from webhook
@@ -549,7 +552,7 @@ class WhatsAppController extends Controller
                 'phone_number_id' => $validated['phone_number_id'],
                 'access_token' => $validated['access_token'],
                 'business_account_id' => $validated['business_account_id'] ?? null,
-                'webhook_verify_token' => $validated['webhook_verify_token'] ?? 'crm_whatsapp_verify_token',
+                'webhook_verify_token' => $validated['webhook_verify_token'] ?? config('services.whatsapp.verify_token'),
                 'configured_at' => now()->toIso8601String(),
             ],
         ]);

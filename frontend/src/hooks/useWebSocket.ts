@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from 'react'
-import echo from '@/lib/echo'
+import { useEffect, useRef } from 'react'
+import { getEcho, reconnectEcho } from '@/lib/echo'
 import { useNotificationStore } from '@/store/notificationStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSoundSettings } from '@/hooks/useSounds'
@@ -8,13 +8,14 @@ import { useAuthStore } from '@/store/authStore'
 /**
  * Toca um som de notificação usando Web Audio API (sem arquivo externo)
  */
-function playNotificationSound(volume: number) {
+async function playNotificationSound(volume: number) {
   try {
     const ctx = new AudioContext()
+    if (ctx.state === 'suspended') await ctx.resume()
+
     const gain = ctx.createGain()
     gain.connect(ctx.destination)
 
-    // Primeiro tom (ding)
     const osc1 = ctx.createOscillator()
     osc1.connect(gain)
     osc1.type = 'sine'
@@ -22,7 +23,6 @@ function playNotificationSound(volume: number) {
     osc1.start(ctx.currentTime)
     osc1.stop(ctx.currentTime + 0.15)
 
-    // Segundo tom (mais agudo)
     const osc2 = ctx.createOscillator()
     osc2.connect(gain)
     osc2.type = 'sine'
@@ -30,14 +30,13 @@ function playNotificationSound(volume: number) {
     osc2.start(ctx.currentTime + 0.15)
     osc2.stop(ctx.currentTime + 0.35)
 
-    // Volume: usar o valor diretamente (0-1)
     gain.gain.setValueAtTime(volume * 0.8, ctx.currentTime)
     gain.gain.setValueAtTime(volume * 0.8, ctx.currentTime + 0.15)
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
 
     osc2.onended = () => ctx.close()
   } catch {
-    // Silently fail
+    // Silently fail — browser may block audio without user gesture
   }
 }
 
@@ -96,25 +95,36 @@ interface LeadUpdatedEvent {
  * Hook para escutar mensagens de um ticket específico
  */
 export function useTicketMessages(ticketId: string | null, onMessage?: (data: MessageEvent) => void) {
+  const onMessageRef = useRef(onMessage)
+  onMessageRef.current = onMessage
+
   useEffect(() => {
-    if (!ticketId || !echo) return
+    if (!ticketId || !getEcho()) return
 
-    const channel = echo.private(`ticket.${ticketId}`)
+    const subscribe = () => {
+      const echoInstance = getEcho()
+      if (!echoInstance) return
+      const channel = echoInstance.private(`ticket.${ticketId}`)
+      channel.listen('.message.created', (data: MessageEvent) => {
+        onMessageRef.current?.(data)
+      })
+    }
 
-    channel.listen('.message.created', (data: MessageEvent) => {
-      console.log('📩 Nova mensagem no ticket:', data)
-      onMessage?.(data)
-    })
+    subscribe()
+
+    // Re-subscribe on reconnection
+    const handleReconnect = () => subscribe()
+    window.addEventListener('echo:reconnected', handleReconnect)
 
     return () => {
-      echo?.leave(`ticket.${ticketId}`)
+      window.removeEventListener('echo:reconnected', handleReconnect)
+      getEcho()?.leave(`ticket.${ticketId}`)
     }
-  }, [ticketId, onMessage])
+  }, [ticketId])
 }
 
 /**
  * Hook para escutar mensagens de um lead específico (usado no chat modal)
- * NÃO adiciona notificação - isso é feito pelo useTenantMessages no Kanban
  */
 export function useLeadMessages(
   leadId: string | null,
@@ -122,41 +132,45 @@ export function useLeadMessages(
   onLeadUpdated?: (data: LeadUpdatedEvent) => void
 ) {
   const queryClient = useQueryClient()
+  const onMessageRef = useRef(onMessage)
+  const onLeadUpdatedRef = useRef(onLeadUpdated)
+  onMessageRef.current = onMessage
+  onLeadUpdatedRef.current = onLeadUpdated
 
   useEffect(() => {
-    if (!leadId || !echo) return
+    if (!leadId || !getEcho()) return
 
-    const channel = echo.private(`lead.${leadId}`)
+    const subscribe = () => {
+      const echoInstance = getEcho()
+      if (!echoInstance) return
+      const channel = echoInstance.private(`lead.${leadId}`)
+      channel
+        .listen('.message.created', (data: MessageEvent) => {
+          queryClient.invalidateQueries({ queryKey: ['lead', leadId] })
+          onMessageRef.current?.(data)
+        })
+        .listen('.lead.updated', (data: LeadUpdatedEvent) => {
+          queryClient.invalidateQueries({ queryKey: ['lead', leadId] })
+          queryClient.invalidateQueries({ queryKey: ['leads'] })
+          onLeadUpdatedRef.current?.(data)
+        })
+    }
 
-    channel
-      .listen('.message.created', (data: MessageEvent) => {
-        console.log('📩 Nova mensagem para o lead:', data)
+    subscribe()
 
-        // Invalida o cache para atualizar os dados
-        queryClient.invalidateQueries({ queryKey: ['lead', leadId] })
-
-        // Chama callback para atualizar o chat
-        onMessage?.(data)
-      })
-      .listen('.lead.updated', (data: LeadUpdatedEvent) => {
-        console.log('📝 Lead atualizado via WebSocket:', data.action, data.lead?.id)
-
-        // Invalida o cache para atualizar os dados
-        queryClient.invalidateQueries({ queryKey: ['lead', leadId] })
-        queryClient.invalidateQueries({ queryKey: ['leads'] })
-
-        // Chama callback para reagir à atualização (transferência, etc)
-        onLeadUpdated?.(data)
-      })
+    const handleReconnect = () => subscribe()
+    window.addEventListener('echo:reconnected', handleReconnect)
 
     return () => {
-      echo?.leave(`lead.${leadId}`)
+      window.removeEventListener('echo:reconnected', handleReconnect)
+      getEcho()?.leave(`lead.${leadId}`)
     }
-  }, [leadId, onMessage, onLeadUpdated, queryClient])
+  }, [leadId, queryClient])
 }
 
 /**
- * Hook para escutar todas as mensagens do tenant (Kanban)
+ * Hook global para escutar todas as mensagens do tenant.
+ * Deve ser montado UMA VEZ no layout principal.
  */
 export function useTenantMessages(tenantId: string | null) {
   const { addUnreadMessage } = useNotificationStore()
@@ -165,162 +179,96 @@ export function useTenantMessages(tenantId: string | null) {
   const soundVolume = useSoundSettings((s) => s.volume)
   const currentUserId = useAuthStore((s) => s.user?.id)
 
+  // Use refs for values that change but shouldn't cause re-subscribe
+  const soundEnabledRef = useRef(soundEnabled)
+  const soundVolumeRef = useRef(soundVolume)
+  const currentUserIdRef = useRef(currentUserId)
+  soundEnabledRef.current = soundEnabled
+  soundVolumeRef.current = soundVolume
+  currentUserIdRef.current = currentUserId
+
   useEffect(() => {
-    if (!tenantId || !echo) {
-      if (!echo) {
-        console.log('ℹ️ WebSocket disabled - useTenantMessages skipped')
-      }
-      return
+    if (!tenantId || !getEcho()) return
+
+    const subscribe = () => {
+      const echoInstance = getEcho()
+      if (!echoInstance) return
+      const channel = echoInstance.private(`tenant.${tenantId}`)
+
+      channel
+        .listen('.message.created', (data: MessageEvent) => {
+          const isInbound = data.message.direction === 'inbound'
+          const userId = currentUserIdRef.current
+
+          const isResponsible = !data.owner_id ||
+            String(data.owner_id) === String(userId) ||
+            String(data.assigned_user_id) === String(userId)
+
+          if (data.lead_id && isInbound && isResponsible) {
+            addUnreadMessage(data.lead_id, data.message.content)
+
+            if (soundEnabledRef.current) {
+              playNotificationSound(soundVolumeRef.current)
+            }
+
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+              try {
+                const notification = new Notification('Nova mensagem', {
+                  body: data.message.content?.substring(0, 80) || 'Você recebeu uma nova mensagem',
+                  icon: '/favicon.ico',
+                  tag: `lead-${data.lead_id}`,
+                  silent: true,
+                })
+                notification.onclick = () => {
+                  window.focus()
+                  notification.close()
+                }
+                setTimeout(() => notification.close(), 5000)
+              } catch { /* ignore */ }
+            }
+          }
+
+          // Only invalidate the specific lead, not ALL leads (avoids heavy re-fetch)
+          if (data.lead_id) {
+            queryClient.invalidateQueries({ queryKey: ['lead', data.lead_id] })
+          }
+        })
+        .listen('.lead.updated', (data: { action: string; lead: any }) => {
+          // Lead updates (transfer, stage change) need full list refresh
+          queryClient.invalidateQueries({ queryKey: ['leads'] })
+          if (data.lead?.id) {
+            queryClient.invalidateQueries({ queryKey: ['lead', data.lead.id] })
+          }
+        })
     }
 
-    console.log('🔌 Conectando ao canal tenant:', tenantId)
-    const channel = echo.private(`tenant.${tenantId}`)
+    subscribe()
 
-    channel
-      .subscribed(() => {
-        console.log('✅ Inscrito no canal tenant:', tenantId)
-      })
-      .error((error: any) => {
-        console.error('❌ Erro ao inscrever no canal tenant:', error)
-      })
-      .listen('.message.created', (data: MessageEvent) => {
-        console.log('📩 Nova mensagem no tenant:', data)
-
-        const isInbound = data.message.direction === 'inbound'
-
-        // Verificar se o usuário atual é o responsável pelo lead
-        // Notifica se: não tem owner (lead novo) OU é o owner OU é o assigned do ticket
-        const isResponsible = !data.owner_id ||
-          String(data.owner_id) === String(currentUserId) ||
-          String(data.assigned_user_id) === String(currentUserId)
-
-        // Só notifica mensagens RECEBIDAS (inbound) E se for responsável
-        if (data.lead_id && isInbound && isResponsible) {
-          addUnreadMessage(data.lead_id, data.message.content)
-
-          // Tocar som de nova mensagem (se habilitado)
-          console.log('🔊 Som habilitado:', soundEnabled, 'Volume:', soundVolume, 'Responsável:', isResponsible)
-          if (soundEnabled) {
-            console.log('🔔 Tocando som de notificação...')
-            playNotificationSound(soundVolume)
-          }
-
-          // Notificação do browser
-          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            try {
-              const notification = new Notification('Nova mensagem', {
-                body: data.message.content?.substring(0, 80) || 'Você recebeu uma nova mensagem',
-                icon: '/favicon.ico',
-                tag: `lead-${data.lead_id}`,
-                silent: true,
-              })
-              notification.onclick = () => {
-                window.focus()
-                notification.close()
-              }
-              setTimeout(() => notification.close(), 5000)
-            } catch {}
-          }
-        }
-
-        // Invalida o cache de leads para atualizar o Kanban
-        queryClient.invalidateQueries({ queryKey: ['leads'] })
-      })
-      .listen('.lead.updated', (data: { action: string; lead: any }) => {
-        console.log('📝 Lead atualizado:', data.action, data.lead?.id)
-
-        // Invalida o cache de leads para atualizar o Kanban
-        queryClient.invalidateQueries({ queryKey: ['leads'] })
-
-        if (data.lead?.id) {
-          queryClient.invalidateQueries({ queryKey: ['lead', data.lead.id] })
-        }
-      })
+    const handleReconnect = () => {
+      // Leave stale channel first, then re-subscribe
+      try { getEcho()?.leave(`tenant.${tenantId}`) } catch { /* ignore */ }
+      subscribe()
+    }
+    window.addEventListener('echo:reconnected', handleReconnect)
 
     return () => {
-      console.log('🔌 Desconectando do canal tenant:', tenantId)
-      echo?.leave(`tenant.${tenantId}`)
+      window.removeEventListener('echo:reconnected', handleReconnect)
+      getEcho()?.leave(`tenant.${tenantId}`)
     }
-  }, [tenantId, addUnreadMessage, queryClient, soundEnabled, soundVolume, currentUserId])
+  }, [tenantId, addUnreadMessage, queryClient])
 }
 
 /**
- * Hook principal para usar WebSockets no app
- * Escuta o canal do tenant para notificações globais
+ * Hook to force Echo reconnection when auth token changes (login/refresh).
  */
-export function useWebSocket() {
-  const { addUnreadMessage } = useNotificationStore()
-  const queryClient = useQueryClient()
-  const soundEnabled = useSoundSettings((s) => s.enabled)
-  const soundVolume = useSoundSettings((s) => s.volume)
+export function useEchoTokenSync() {
+  const token = useAuthStore((s) => s.token)
+  const prevTokenRef = useRef(token)
 
-  const connectToTenant = useCallback((tenantId: string) => {
-    if (!echo) {
-      console.log('ℹ️ WebSocket disabled - connectToTenant skipped')
-      return () => {}
+  useEffect(() => {
+    if (token && token !== prevTokenRef.current) {
+      prevTokenRef.current = token
+      reconnectEcho()
     }
-
-    const channel = echo.private(`tenant.${tenantId}`)
-
-    channel.listen('.message.created', (data: MessageEvent) => {
-      console.log('🔔 Nova mensagem recebida:', data)
-
-      // Só notifica mensagens RECEBIDAS (inbound), não as enviadas
-      const isInbound = data.message.direction === 'inbound'
-
-      // Notificação visual (apenas para mensagens recebidas)
-      if (data.lead_id && isInbound) {
-        addUnreadMessage(data.lead_id, data.message.content)
-      }
-
-      // Atualizar dados
-      queryClient.invalidateQueries({ queryKey: ['leads'] })
-      if (data.ticket.id) {
-        queryClient.invalidateQueries({ queryKey: ['ticket', data.ticket.id] })
-      }
-      if (data.lead_id) {
-        queryClient.invalidateQueries({ queryKey: ['lead', data.lead_id] })
-      }
-
-      // Notificação do navegador + som (apenas para mensagens recebidas)
-      if (isInbound) {
-        // Tocar som de nova mensagem (se habilitado)
-        if (soundEnabled) {
-          playNotificationSound(soundVolume)
-        }
-
-        // Notificação do browser
-        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-          try {
-            const contactName = data.message.content?.substring(0, 80) || 'Nova mensagem'
-            const notification = new Notification('Nova mensagem', {
-              body: contactName,
-              icon: '/favicon.ico',
-              tag: `lead-${data.lead_id}`,
-              silent: true,
-            })
-            notification.onclick = () => {
-              window.focus()
-              notification.close()
-            }
-            setTimeout(() => notification.close(), 5000)
-          } catch {}
-        }
-      }
-    })
-
-    return () => {
-      echo?.leave(`tenant.${tenantId}`)
-    }
-  }, [addUnreadMessage, queryClient, soundEnabled, soundVolume])
-
-  const disconnectAll = useCallback(() => {
-    echo?.disconnect()
-  }, [])
-
-  return {
-    echo,
-    connectToTenant,
-    disconnectAll,
-  }
+  }, [token])
 }

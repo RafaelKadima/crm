@@ -2,13 +2,24 @@
 
 namespace App\Providers;
 
+use App\Models\Channel;
 use App\Models\Lead;
+use App\Models\Pipeline;
 use App\Models\Tenant;
 use App\Models\Ticket;
+use App\Models\User;
 use App\Observers\LeadObserver;
 use App\Observers\TenantObserver;
 use App\Observers\TicketObserver;
+use App\Policies\ChannelPolicy;
+use App\Policies\LeadPolicy;
+use App\Policies\PipelinePolicy;
+use App\Policies\UserPolicy;
 use App\Scopes\TenantScope;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -28,6 +39,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureRateLimiting();
+        $this->registerPolicies();
+
         // Registra observers para tracking de uso
         Lead::observe(LeadObserver::class);
         Tenant::observe(TenantObserver::class);
@@ -47,6 +61,43 @@ class AppServiceProvider extends ServiceProvider
             }
             
             return $ticket;
+        });
+    }
+
+    protected function registerPolicies(): void
+    {
+        Gate::policy(Lead::class, LeadPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Pipeline::class, PipelinePolicy::class);
+        Gate::policy(Channel::class, ChannelPolicy::class);
+
+        // Super admin bypassa todas as policies
+        Gate::before(function ($user) {
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
+        });
+    }
+
+    protected function configureRateLimiting(): void
+    {
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(120)->by(
+                $request->user()?->id ?: $request->ip()
+            );
+        });
+
+        RateLimiter::for('login', function (Request $request) {
+            $key = strtolower($request->input('email', '')) . '|' . $request->ip();
+            return Limit::perMinute(5)->by($key);
+        });
+
+        RateLimiter::for('webhooks', function (Request $request) {
+            return Limit::perMinute(120)->by($request->ip());
+        });
+
+        RateLimiter::for('internal', function (Request $request) {
+            return Limit::perMinute(300)->by($request->ip());
         });
     }
 }

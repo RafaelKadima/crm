@@ -235,31 +235,50 @@ class WhatsAppTemplateService
         $synced = ['created' => 0, 'updated' => 0, 'total' => count($metaTemplates)];
 
         foreach ($metaTemplates as $metaTemplate) {
-            $existing = WhatsAppTemplate::where('channel_id', $channel->id)
-                ->where('meta_template_id', $metaTemplate['id'])
+            // Busca incluindo soft-deleted (constraint única não exclui soft-deleted)
+            $existing = WhatsAppTemplate::withTrashed()
+                ->where('channel_id', $channel->id)
+                ->where(function ($query) use ($metaTemplate) {
+                    $query->where('meta_template_id', $metaTemplate['id'])
+                        ->orWhere(function ($q) use ($metaTemplate) {
+                            $q->where('name', $metaTemplate['name'])
+                              ->where('language', $metaTemplate['language'] ?? 'pt_BR');
+                        });
+                })
                 ->first();
 
+            $templateData = $this->parseMetaTemplate($metaTemplate);
+
             if ($existing) {
-                // Atualiza status
-                $existing->status = WhatsAppTemplateStatusEnum::tryFrom($metaTemplate['status']) 
-                    ?? $existing->status;
-                $existing->rejection_reason = $metaTemplate['rejected_reason'] ?? null;
-                $existing->response_payload = $metaTemplate;
-                $existing->save();
+                // Restaura se estava soft-deleted
+                if ($existing->trashed()) {
+                    $existing->restore();
+                }
+                $existing->update([
+                    'meta_template_id' => $metaTemplate['id'],
+                    'status' => WhatsAppTemplateStatusEnum::tryFrom($metaTemplate['status'])
+                        ?? $existing->status,
+                    'category' => WhatsAppTemplateCategoryEnum::tryFrom($metaTemplate['category'])
+                        ?? $existing->category,
+                    'body_text' => $templateData['body_text'],
+                    'header_type' => $templateData['header_type'],
+                    'header_text' => $templateData['header_text'],
+                    'footer_text' => $templateData['footer_text'],
+                    'buttons' => $templateData['buttons'],
+                    'rejection_reason' => $metaTemplate['rejected_reason'] ?? null,
+                    'response_payload' => $metaTemplate,
+                ]);
                 $synced['updated']++;
             } else {
-                // Cria registro local para template existente no Meta
-                $templateData = $this->parseMetaTemplate($metaTemplate);
-                
                 WhatsAppTemplate::create([
                     'tenant_id' => $channel->tenant_id,
                     'channel_id' => $channel->id,
                     'meta_template_id' => $metaTemplate['id'],
                     'name' => $metaTemplate['name'],
-                    'category' => WhatsAppTemplateCategoryEnum::tryFrom($metaTemplate['category']) 
+                    'category' => WhatsAppTemplateCategoryEnum::tryFrom($metaTemplate['category'])
                         ?? WhatsAppTemplateCategoryEnum::UTILITY,
                     'language' => $metaTemplate['language'] ?? 'pt_BR',
-                    'status' => WhatsAppTemplateStatusEnum::tryFrom($metaTemplate['status']) 
+                    'status' => WhatsAppTemplateStatusEnum::tryFrom($metaTemplate['status'])
                         ?? WhatsAppTemplateStatusEnum::PENDING,
                     'body_text' => $templateData['body_text'],
                     'header_type' => $templateData['header_type'],

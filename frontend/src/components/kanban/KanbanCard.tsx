@@ -1,6 +1,5 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { motion } from 'framer-motion'
 import { Phone, Mail, MessageSquare, Clock, MessageCircle } from 'lucide-react'
 import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import { StageProgressBar } from '@/components/stage-activities/StageProgressBar'
@@ -13,13 +12,12 @@ interface KanbanCardProps {
   onClick: () => void
 }
 
-// Channel icons with colors
 const channelConfig: Record<string, { icon: typeof Phone; color: string }> = {
-  whatsapp: { icon: MessageSquare, color: 'text-green-500' },
-  instagram: { icon: MessageCircle, color: 'text-pink-500' },
-  messenger: { icon: MessageCircle, color: 'text-blue-500' },
+  whatsapp: { icon: MessageSquare, color: 'text-[#25D366]' },
+  instagram: { icon: MessageCircle, color: 'text-[#E1306C]' },
+  messenger: { icon: MessageCircle, color: 'text-[#0084FF]' },
   telefone: { icon: Phone, color: 'text-muted-foreground' },
-  email: { icon: Mail, color: 'text-blue-400' },
+  email: { icon: Mail, color: 'text-muted-foreground' },
 }
 
 export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
@@ -32,7 +30,6 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
     isDragging: isSortableDragging,
   } = useSortable({ id: lead.id })
 
-  // Busca progresso das atividades do lead
   const { data: progress } = useLeadStageProgress(lead.id)
 
   const style = {
@@ -46,41 +43,34 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
   const hasUnread = (lead.unread_messages && lead.unread_messages > 0) || lead.has_new_message
 
   return (
-    <motion.div
+    <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        "bg-card rounded-lg p-3 shadow-sm border cursor-pointer transition-all relative",
-        "hover:shadow-md hover:border-primary/30",
-        (isDragging || isSortableDragging) && "opacity-50 shadow-lg scale-105 rotate-2",
-        hasUnread && "ring-2 ring-green-500/50 border-green-500/30"
+        "bg-card rounded-lg p-3.5 border cursor-pointer transition-all",
+        "hover:border-foreground/15",
+        (isDragging || isSortableDragging) && "opacity-50 scale-105",
+        hasUnread && "border-foreground/20 bg-foreground/[0.02]"
       )}
     >
-      {/* Unread Notification Badge */}
+      {/* Unread dot */}
       {hasUnread && (
-        <div className="absolute -top-1.5 -right-1.5 z-10">
-          <span className="relative flex h-4 w-4">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-green-500 text-white text-[8px] font-bold">
-              {lead.unread_messages && lead.unread_messages > 9 ? '9+' : lead.unread_messages || '!'}
-            </span>
-          </span>
+        <div className="absolute -top-1 -right-1 z-10">
+          <span className="flex h-3 w-3 rounded-full bg-foreground" />
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-xs leading-tight truncate">
+          <h4 className="font-medium text-sm leading-tight truncate">
             {lead.contact?.name || 'Sem nome'}
           </h4>
           {lead.contact?.phone && (
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground mt-0.5">
               {formatPhone(lead.contact.phone)}
             </p>
           )}
@@ -88,27 +78,24 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
         <ChannelIcon className={cn("h-4 w-4 shrink-0", channel.color)} />
       </div>
 
-      {/* Title/Notes */}
+      {/* Title */}
       {lead.title && (
-        <p className="text-[10px] text-muted-foreground mb-2 line-clamp-2">
+        <p className="text-[11px] text-muted-foreground mb-2 line-clamp-2">
           {lead.title}
         </p>
       )}
 
-      {/* New Message Preview */}
+      {/* New message indicator */}
       {hasUnread && lead.last_message_at && (
-        <div className="mb-2 p-1.5 rounded bg-green-500/10 border border-green-500/20">
-          <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-            <MessageSquare className="h-3 w-3" />
-            <span className="text-[10px] font-medium">Nova mensagem!</span>
-          </div>
+        <div className="mb-2 px-2 py-1 rounded bg-muted">
+          <span className="text-[11px] font-medium text-foreground">Nova mensagem</span>
         </div>
       )}
 
       {/* Owner */}
       {lead.owner && (
-        <div className="mb-2 px-2 py-1 rounded bg-purple-500/10">
-          <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium truncate block">
+        <div className="mb-2 px-2 py-1 rounded bg-muted">
+          <span className="text-[11px] text-muted-foreground font-medium truncate block">
             {lead.owner.name}
           </span>
         </div>
@@ -122,21 +109,21 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-1.5 border-t">
+      <div className="flex items-center justify-between pt-1.5 border-t border-border">
         <div className="flex items-center gap-2">
           {lead.last_interaction_at && (
-            <div className="flex items-center text-[10px] text-muted-foreground">
+            <div className="flex items-center text-[11px] text-muted-foreground">
               <Clock className="h-3 w-3 mr-1" />
               {new Date(lead.last_interaction_at).toLocaleDateString('pt-BR')}
             </div>
           )}
         </div>
         {lead.value && lead.value > 0 && (
-          <span className="text-xs font-semibold text-green-600 dark:text-green-400">
+          <span className="text-xs font-medium text-foreground">
             {formatCurrency(lead.value)}
           </span>
         )}
       </div>
-    </motion.div>
+    </div>
   )
 }

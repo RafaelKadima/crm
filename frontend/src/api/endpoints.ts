@@ -1195,3 +1195,38 @@ export const superAdminApi = {
     api.get<PaginatedResponse<any>>('/super-admin/logs', { params }),
 }
 
+// =====================
+// BROADCASTS ENDPOINTS
+// =====================
+export const broadcastsApi = {
+  list: (params?: { status?: string; search?: string; page?: number; per_page?: number }) =>
+    api.get<{ success: boolean; data: PaginatedResponse<any> }>('/broadcasts', { params }),
+
+  create: (data: {
+    name: string
+    channel_id: string
+    whatsapp_template_id: string
+    filters?: Record<string, any>
+    template_variables?: Array<{ index: number; field: string }>
+  }) =>
+    api.post<{ success: boolean; data: any; message: string }>('/broadcasts', data),
+
+  show: (id: string) =>
+    api.get<{ success: boolean; data: any }>(`/broadcasts/${id}`),
+
+  start: (id: string) =>
+    api.post<{ success: boolean; data: any; message: string }>(`/broadcasts/${id}/start`),
+
+  pause: (id: string) =>
+    api.post<{ success: boolean; data: any; message: string }>(`/broadcasts/${id}/pause`),
+
+  cancel: (id: string) =>
+    api.post<{ success: boolean; data: any; message: string }>(`/broadcasts/${id}/cancel`),
+
+  preview: (filters: Record<string, any>) =>
+    api.post<{ success: boolean; data: { total: number; sample: Array<{ id: string; name: string; phone: string }> } }>('/broadcasts/preview', { filters }),
+
+  delete: (id: string) =>
+    api.delete<{ success: boolean; message: string }>(`/broadcasts/${id}`),
+}
+

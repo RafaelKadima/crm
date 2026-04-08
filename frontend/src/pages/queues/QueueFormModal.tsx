@@ -119,7 +119,6 @@ export function QueueFormModal({
           auto_distribute: formData.auto_distribute,
           is_active: formData.is_active,
         }
-        console.log('Updating queue with data:', updateData)
         await updateQueue.mutateAsync(updateData)
       } else {
         await createQueue.mutateAsync({

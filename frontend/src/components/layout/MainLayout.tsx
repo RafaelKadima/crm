@@ -2,11 +2,20 @@ import { Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
+import { useAuthStore } from '@/store/authStore'
+import { useTenantMessages, useEchoTokenSync } from '@/hooks/useWebSocket'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 
 export function MainLayout() {
   const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
+  const tenantId = useAuthStore((s) => s.tenant?.id ?? s.user?.tenant_id ?? null)
+
+  // Global WebSocket: listens for ALL tenant messages (notifications, sounds, browser alerts)
+  useTenantMessages(tenantId ? String(tenantId) : null)
+
+  // Reconnect Echo automatically when auth token changes (login, refresh)
+  useEchoTokenSync()
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -25,7 +34,7 @@ export function MainLayout() {
         initial={false}
         animate={{ marginLeft: sidebarCollapsed ? 72 : 280 }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
-        className={cn("pt-16 flex-1 flex flex-col min-h-0 max-md:!ml-0")}
+        className={cn("pt-14 flex-1 flex flex-col min-h-0 max-md:!ml-0")}
       >
         {/* Content wrapper with safe-area padding */}
         <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-3 sm:p-5 md:p-8">
@@ -42,4 +51,3 @@ export function MainLayout() {
     </div>
   )
 }
-

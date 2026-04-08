@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -47,6 +48,11 @@ class AuthController extends Controller
         // Cria novo token
         $token = $user->createToken('CRM Access Token')->accessToken;
 
+        // Seta o token como cookie httpOnly (seguro contra XSS)
+        $cookieMinutes = 60 * 24; // 24 horas
+        $secure = app()->environment('production');
+        Cookie::queue('crm_token', $token, $cookieMinutes, '/', null, $secure, true, false, 'Lax');
+
         return response()->json([
             'message' => 'Login realizado com sucesso.',
             'access_token' => $token,
@@ -76,6 +82,9 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $request->user()->token()->revoke();
+
+        // Remove o cookie httpOnly
+        Cookie::queue(Cookie::forget('crm_token'));
 
         return response()->json([
             'message' => 'Logout realizado com sucesso.',
@@ -127,6 +136,11 @@ class AuthController extends Controller
 
         // Cria novo token
         $token = $user->createToken('CRM Access Token')->accessToken;
+
+        // Atualiza o cookie httpOnly
+        $cookieMinutes = 60 * 24;
+        $secure = app()->environment('production');
+        Cookie::queue('crm_token', $token, $cookieMinutes, '/', null, $secure, true, false, 'Lax');
 
         return response()->json([
             'message' => 'Token atualizado com sucesso.',

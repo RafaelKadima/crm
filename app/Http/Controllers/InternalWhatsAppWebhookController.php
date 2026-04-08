@@ -264,6 +264,11 @@ class InternalWhatsAppWebhookController extends Controller
                 'contact_id' => $contact->id,
                 'phone' => $formattedPhone,
             ]);
+
+            // Try to fetch profile picture from Meta Cloud API if available
+            $this->tryFetchProfilePicture($contact, $formattedPhone, $channel);
+        } elseif (empty($contact->profile_picture_url)) {
+            $this->tryFetchProfilePicture($contact, $formattedPhone, $channel);
         }
 
         return $contact;
@@ -302,7 +307,7 @@ class InternalWhatsAppWebhookController extends Controller
             if ($lead->stage_id) {
                 $pipeline = $lead->stage?->pipeline;
                 if ($pipeline) {
-                    $firstStage = $pipeline->stages()->orderBy('position')->first();
+                    $firstStage = $pipeline->stages()->orderBy('order')->first();
                     if ($firstStage && $firstStage->id !== $lead->stage_id) {
                         $lead->update(['stage_id' => $firstStage->id]);
                         Log::info('Lead moved to first stage on reopen', [
@@ -613,5 +618,34 @@ class InternalWhatsAppWebhookController extends Controller
         }
 
         return $phone;
+    }
+
+    /**
+     * Try to fetch profile picture via Meta Cloud API for a contact.
+     * Falls back silently — contacts work fine without pictures.
+     */
+    protected function tryFetchProfilePicture(Contact $contact, string $phone, Channel $channel): void
+    {
+        try {
+            // Check if tenant has a Meta Cloud API channel we can use
+            $metaChannel = \App\Models\Channel::where('tenant_id', $channel->tenant_id)
+                ->where('type', 'whatsapp')
+                ->whereNotNull('config->access_token')
+                ->whereNotNull('config->phone_number_id')
+                ->first();
+
+            if (!$metaChannel) {
+                return;
+            }
+
+            $service = new \App\Services\WhatsAppService($metaChannel);
+            // Use the service's profile picture fetch (which handles the Meta API call)
+            $reflection = new \ReflectionMethod($service, 'fetchAndStoreProfilePicture');
+            $reflection->setAccessible(true);
+            $reflection->invoke($service, $contact, $phone, $metaChannel);
+        } catch (\Throwable $e) {
+            // Non-critical
+            Log::debug("[InternalWA] Could not fetch profile picture for {$phone}: " . $e->getMessage());
+        }
     }
 }

@@ -87,15 +87,15 @@ export function ConversationsList({
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-1 p-2 border-b bg-muted/20">
+      <div className="flex gap-1 p-2 border-b">
         {filterOptions.map((option) => (
           <button
             key={option.value}
             onClick={() => setFilter(option.value)}
             className={cn(
-              "flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors",
+              "flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer",
               filter === option.value
-                ? "bg-primary text-primary-foreground"
+                ? "bg-foreground text-background"
                 : "hover:bg-muted text-muted-foreground"
             )}
           >

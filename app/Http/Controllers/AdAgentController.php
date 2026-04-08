@@ -63,7 +63,7 @@ class AdAgentController extends Controller
 
             return response()->json([
                 'error' => 'Serviço de IA indisponível',
-                'detail' => $e->getMessage(),
+                'detail' => $this->safeErrorMessage($e),
             ], 503);
         }
     }
@@ -133,7 +133,7 @@ class AdAgentController extends Controller
             ]);
 
             return response()->json([
-                'error' => $e->getMessage()
+                'error' => $this->safeErrorMessage($e, 'Erro ao criar campanha.')
             ], 500);
         }
     }

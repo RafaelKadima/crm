@@ -293,7 +293,6 @@ export function LandingPageBuilder() {
       })
       showNotification('success', 'Landing page salva com sucesso!')
     } catch (error) {
-      console.error('Error saving:', error)
       showNotification('error', 'Erro ao salvar. Tente novamente.')
     } finally {
       setIsSaving(false)

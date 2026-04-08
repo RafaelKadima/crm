@@ -6,7 +6,7 @@ import { MessageSquare } from 'lucide-react'
 import { useConversasStore, useActiveConversation } from '@/store/conversasStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { useAuthStore } from '@/store/authStore'
-import { useTenantMessages } from '@/hooks/useWebSocket'
+// useTenantMessages moved to MainLayout (global)
 import { useLeads } from '@/hooks/useLeads'
 import { ConversationsList } from '@/components/conversas/ConversationsList'
 import { ChatPanel } from '@/components/conversas/ChatPanel'
@@ -24,8 +24,7 @@ export function ConversasPage() {
   // Ref para controlar se já processamos o lead da URL
   const processedUrlLeadRef = useRef<string | null>(null)
 
-  // WebSocket para notificações em tempo real
-  useTenantMessages(user?.tenant_id || null)
+  // WebSocket is global in MainLayout
 
   // Busca todos os leads (mesmo hook usado no Kanban)
   const { data: leadsResponse, isLoading: isLoadingLeads } = useLeads()

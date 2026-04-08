@@ -39,7 +39,7 @@ class AdsKnowledgeController extends Controller
         
         $knowledge = $query->orderBy('priority', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 20));
+            ->paginate(min((int) $request->get('per_page', 20), 100));
         
         return response()->json($knowledge);
     }
@@ -199,7 +199,7 @@ class AdsKnowledgeController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Serviço de IA indisponível',
-                'message' => $e->getMessage(),
+                'message' => $this->safeErrorMessage($e),
             ], 503);
         }
     }
@@ -217,7 +217,7 @@ class AdsKnowledgeController extends Controller
             ->active()
             ->orderBy('effectiveness_score', 'desc')
             ->orderBy('usage_count', 'desc')
-            ->paginate($request->get('per_page', 10));
+            ->paginate(min((int) $request->get('per_page', 10), 100));
         
         return response()->json($patterns);
     }

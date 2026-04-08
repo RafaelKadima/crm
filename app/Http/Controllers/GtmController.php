@@ -30,7 +30,7 @@ class GtmController extends Controller
     public function updateSettings(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'gtm_container_id' => 'nullable|string|max:50',
+            'gtm_container_id' => ['nullable', 'string', 'max:50', 'regex:/^GTM-[A-Z0-9]{1,10}$/'],
             'gtm_enabled' => 'boolean',
             'gtm_webhook_url' => 'nullable|url|max:500',
             'ga4_measurement_id' => 'nullable|string|max:50',

@@ -59,7 +59,7 @@ class AppointmentController extends Controller
             $query->today();
         }
 
-        $appointments = $query->paginate($request->get('per_page', 20));
+        $appointments = $query->paginate(min((int) $request->get('per_page', 20), 100));
 
         return response()->json($appointments);
     }

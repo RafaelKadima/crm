@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useGtmSettings } from '@/hooks/useGtm'
 import { useAuthStore } from '@/store/authStore'
-import echo from '@/lib/echo'
+import { getEcho } from '@/lib/echo'
 
 /**
  * Componente que injeta o script do Google Tag Manager na página.
@@ -19,6 +19,12 @@ export function GtmScript() {
     }
 
     const containerId = settings.gtm_container_id
+
+    // Valida formato do container ID para prevenir XSS
+    if (!/^GTM-[A-Z0-9]{1,10}$/.test(containerId)) {
+      console.warn('Invalid GTM container ID format:', containerId)
+      return
+    }
 
     // Verifica se já foi injetado
     if (document.querySelector(`script[data-gtm="${containerId}"]`)) {
@@ -52,9 +58,6 @@ export function GtmScript() {
     noscript.appendChild(iframe)
     document.body.insertBefore(noscript, document.body.firstChild)
 
-    // Log para debug
-    console.log(`[GTM] Container ${containerId} inicializado`)
-
     return () => {
       // Cleanup ao desmontar (opcional)
     }
@@ -63,31 +66,25 @@ export function GtmScript() {
   // Escuta eventos GTM via WebSocket
   useEffect(() => {
     // Só conecta se WebSocket estiver habilitado (echo não é null)
-    if (!echo || !settings?.gtm_enabled || !tenantId) {
+    const echoInstance = getEcho()
+    if (!echoInstance || !settings?.gtm_enabled || !tenantId) {
       return
     }
 
-    console.log(`[GTM] Conectando ao canal WebSocket para eventos GTM...`)
-
-    const channel = echo.private(`tenant.${tenantId}.gtm`)
+    const channel = echoInstance.private(`tenant.${tenantId}.gtm`)
 
     channel
       .subscribed(() => {
-        console.log(`[GTM] ✅ Inscrito no canal de eventos GTM`)
       })
       .listen('.gtm.event', (eventData: Record<string, any>) => {
-        console.log(`[GTM] 📊 Evento recebido via WebSocket:`, eventData)
-
         // Faz push no dataLayer
         if (typeof window !== 'undefined' && (window as any).dataLayer) {
           (window as any).dataLayer.push(eventData)
-          console.log(`[GTM] ✅ Evento pushed para dataLayer:`, eventData.event)
         }
       })
 
     return () => {
-      console.log(`[GTM] Desconectando do canal de eventos GTM`)
-      echo?.leave(`tenant.${tenantId}.gtm`)
+      getEcho()?.leave(`tenant.${tenantId}.gtm`)
     }
   }, [settings?.gtm_enabled, tenantId])
 
@@ -104,7 +101,6 @@ export function pushGtmEvent(eventName: string, eventData?: Record<string, any>)
       ...eventData,
       timestamp: new Date().toISOString(),
     })
-    console.log(`[GTM] Event pushed: ${eventName}`, eventData)
   }
 }
 
