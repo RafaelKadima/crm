@@ -115,20 +115,24 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
           )}
         </div>
 
-        {/* Stage badge — uses stage color but desaturated */}
-        {lead.stage && (
-          <div className="mt-1.5">
-            <span
-              className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${lead.stage.color || '#888'} 12%, transparent)`,
-                color: `color-mix(in srgb, ${lead.stage.color || '#888'} 70%, var(--color-foreground))`,
-              }}
-            >
-              {lead.stage.name}
-            </span>
-          </div>
-        )}
+        {/* Ticket status badge */}
+        {(() => {
+          const ticketStatus = lead.tickets?.[0]?.status
+          const config = ticketStatus === 'open'
+            ? { label: 'Aberto', color: 'text-info bg-info/15' }
+            : ticketStatus === 'pending'
+              ? { label: 'Pendente', color: 'text-warning bg-warning/15' }
+              : ticketStatus === 'closed'
+                ? { label: 'Fechado', color: 'text-muted-foreground bg-muted/50' }
+                : null
+          return config ? (
+            <div className="mt-1.5">
+              <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium", config.color)}>
+                {config.label}
+              </span>
+            </div>
+          ) : null
+        })()}
       </div>
     </motion.button>
   )

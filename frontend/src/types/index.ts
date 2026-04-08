@@ -86,6 +86,8 @@ export interface Lead {
   stage?: PipelineStage
   owner?: User
   channel?: Channel
+  // Ticket info (latest)
+  tickets?: Array<{ id: string; lead_id: string; status: string; created_at: string }>
   // Notification fields
   unread_messages?: number
   has_new_message?: boolean

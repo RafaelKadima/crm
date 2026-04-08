@@ -16,8 +16,8 @@ interface ConversationsListProps {
 const filterOptions = [
   { value: 'all', label: 'Todas' },
   { value: 'pending', label: 'Pendentes' },
-  { value: 'mine', label: 'Meus' },
-  { value: 'unread', label: 'Não lidas' },
+  { value: 'open', label: 'Abertos' },
+  { value: 'closed', label: 'Fechados' },
 ] as const
 
 export function ConversationsList({
@@ -41,15 +41,15 @@ export function ConversationsList({
       }
     }
 
-    // Filtros
+    // Filtros por status do ticket
+    const ticketStatus = lead.tickets?.[0]?.status
     switch (filter) {
       case 'pending':
-        return lead.tickets?.some((t) => t.status === 'pending')
-      case 'mine':
-        // Implementar quando tiver owner_id
-        return true
-      case 'unread':
-        return (lead.unread_messages || 0) > 0
+        return ticketStatus === 'pending' || !ticketStatus
+      case 'open':
+        return ticketStatus === 'open'
+      case 'closed':
+        return ticketStatus === 'closed'
       default:
         return true
     }

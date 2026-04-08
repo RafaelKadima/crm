@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type FilterType = 'all' | 'pending' | 'mine' | 'unread'
+type FilterType = 'all' | 'pending' | 'open' | 'closed'
 
 interface ConversasState {
   // Conversa ativa
