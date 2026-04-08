@@ -178,14 +178,17 @@ export function useTenantMessages(tenantId: string | null) {
   const soundEnabled = useSoundSettings((s) => s.enabled)
   const soundVolume = useSoundSettings((s) => s.volume)
   const currentUserId = useAuthStore((s) => s.user?.id)
+  const currentUserRole = useAuthStore((s) => s.user?.role)
 
   // Use refs for values that change but shouldn't cause re-subscribe
   const soundEnabledRef = useRef(soundEnabled)
   const soundVolumeRef = useRef(soundVolume)
   const currentUserIdRef = useRef(currentUserId)
+  const currentUserRoleRef = useRef(currentUserRole)
   soundEnabledRef.current = soundEnabled
   soundVolumeRef.current = soundVolume
   currentUserIdRef.current = currentUserId
+  currentUserRoleRef.current = currentUserRole
 
   useEffect(() => {
     if (!tenantId || !getEcho()) return
@@ -199,8 +202,12 @@ export function useTenantMessages(tenantId: string | null) {
         .listen('.message.created', (data: MessageEvent) => {
           const isInbound = data.message.direction === 'inbound'
           const userId = currentUserIdRef.current
+          const userRole = currentUserRoleRef.current
 
-          const isResponsible = !data.owner_id ||
+          // Admin/Gestor receive ALL inbound notifications; vendedor only their own leads
+          const isAdminOrGestor = userRole === 'admin' || userRole === 'gestor'
+          const isResponsible = isAdminOrGestor ||
+            !data.owner_id ||
             String(data.owner_id) === String(userId) ||
             String(data.assigned_user_id) === String(userId)
 
