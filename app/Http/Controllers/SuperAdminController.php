@@ -28,9 +28,8 @@ class SuperAdminController extends Controller
             ? $request->get('sort_by')
             : 'created_at';
 
-        $sortDir = in_array(strtolower($request->get('sort_dir', 'desc')), ['asc', 'desc'], true)
-            ? $request->get('sort_dir')
-            : 'desc';
+        $dir = strtolower($request->get('sort_dir', 'desc') ?? 'desc');
+        $sortDir = in_array($dir, ['asc', 'desc'], true) ? $dir : 'desc';
 
         return [$sortBy, $sortDir];
     }
