@@ -65,6 +65,7 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'avatar' => $user->avatar,
                 'is_active' => $user->is_active,
+                'is_super_admin' => $user->is_super_admin,
                 'tenant_id' => $user->tenant_id,
             ],
             'tenant' => $user->tenant ? [
@@ -108,6 +109,7 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'avatar' => $user->avatar,
                 'is_active' => $user->is_active,
+                'is_super_admin' => $user->is_super_admin,
                 'tenant_id' => $user->tenant_id,
                 'tenant' => $user->tenant ? [
                     'id' => $user->tenant->id,
