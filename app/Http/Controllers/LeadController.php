@@ -331,6 +331,9 @@ class LeadController extends Controller
 
         $lead->load(['contact', 'pipeline', 'stage', 'channel', 'owner']);
 
+        // Broadcast para atualização em tempo real (transferência)
+        event(new \App\Events\LeadUpdated($lead, 'transferred'));
+
         return response()->json([
             'message' => 'Lead atribuído com sucesso.',
             'lead' => $lead,

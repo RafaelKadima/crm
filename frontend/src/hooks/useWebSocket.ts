@@ -211,6 +211,18 @@ export function useTenantMessages(tenantId: string | null) {
             String(data.owner_id) === String(userId) ||
             String(data.assigned_user_id) === String(userId)
 
+          // Debug: remove after confirming notifications work
+          console.debug('[WS] message.created', {
+            direction: data.message.direction,
+            isInbound,
+            userRole,
+            userId,
+            owner_id: data.owner_id,
+            assigned_user_id: data.assigned_user_id,
+            isResponsible,
+            lead_id: data.lead_id,
+          })
+
           if (data.lead_id && isInbound && isResponsible) {
             addUnreadMessage(data.lead_id, data.message.content)
 
@@ -243,6 +255,7 @@ export function useTenantMessages(tenantId: string | null) {
         .listen('.lead.updated', (data: { action: string; lead: any }) => {
           // Lead updates (transfer, stage change) need full list refresh
           queryClient.invalidateQueries({ queryKey: ['leads'] })
+          queryClient.invalidateQueries({ queryKey: ['leads-infinite'] })
           if (data.lead?.id) {
             queryClient.invalidateQueries({ queryKey: ['lead', data.lead.id] })
           }
