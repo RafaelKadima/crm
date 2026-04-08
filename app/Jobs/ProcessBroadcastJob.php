@@ -24,9 +24,7 @@ class ProcessBroadcastJob implements ShouldQueue
 
     public function __construct(
         public Broadcast $broadcast
-    ) {
-        $this->onQueue('broadcasts');
-    }
+    ) {}
 
     public function handle(WhatsAppService $whatsAppService): void
     {
