@@ -62,7 +62,7 @@ class BroadcastService
     }
 
     /**
-     * Preview dos filtros — retorna contagem e sample.
+     * Preview dos filtros — retorna todos os contatos para seleção.
      */
     public function previewRecipients(array $filters, User $user): array
     {
@@ -70,7 +70,7 @@ class BroadcastService
 
         return [
             'total' => $contacts->count(),
-            'sample' => $contacts->take(5)->map(fn (Contact $c) => [
+            'contacts' => $contacts->map(fn (Contact $c) => [
                 'id' => $c->id,
                 'name' => $c->name,
                 'phone' => $c->phone,
@@ -97,8 +97,14 @@ class BroadcastService
 
         $contacts = $this->resolveRecipients($data['filters'] ?? [], $user);
 
+        // Se contact_ids fornecidos, filtra apenas os selecionados
+        if (!empty($data['contact_ids'])) {
+            $selectedIds = collect($data['contact_ids']);
+            $contacts = $contacts->filter(fn (Contact $c) => $selectedIds->contains($c->id));
+        }
+
         if ($contacts->isEmpty()) {
-            throw new \InvalidArgumentException('Nenhum contato encontrado com os filtros selecionados.');
+            throw new \InvalidArgumentException('Nenhum contato selecionado para o broadcast.');
         }
 
         return DB::transaction(function () use ($data, $user, $contacts) {

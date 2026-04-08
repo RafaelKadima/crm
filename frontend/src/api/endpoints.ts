@@ -1207,6 +1207,7 @@ export const broadcastsApi = {
     channel_id: string
     whatsapp_template_id: string
     filters?: Record<string, any>
+    contact_ids?: string[]
     template_variables?: Array<{ index: number; field: string }>
   }) =>
     api.post<{ success: boolean; data: any; message: string }>('/broadcasts', data),
@@ -1224,7 +1225,7 @@ export const broadcastsApi = {
     api.post<{ success: boolean; data: any; message: string }>(`/broadcasts/${id}/cancel`),
 
   preview: (filters: Record<string, any>) =>
-    api.post<{ success: boolean; data: { total: number; sample: Array<{ id: string; name: string; phone: string }> } }>('/broadcasts/preview', { filters }),
+    api.post<{ success: boolean; data: { total: number; contacts: Array<{ id: string; name: string; phone: string }> } }>('/broadcasts/preview', { filters }),
 
   delete: (id: string) =>
     api.delete<{ success: boolean; message: string }>(`/broadcasts/${id}`),

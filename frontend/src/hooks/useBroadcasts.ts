@@ -40,6 +40,7 @@ export const useCreateBroadcast = () => {
       channel_id: string
       whatsapp_template_id: string
       filters?: Record<string, any>
+      contact_ids?: string[]
       template_variables?: Array<{ index: number; field: string }>
     }) => {
       const response = await broadcastsApi.create(data)

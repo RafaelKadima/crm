@@ -57,6 +57,7 @@ export function CreateBroadcastModal({ open, onOpenChange }: CreateBroadcastModa
 
   // Step 2 — Recipients
   const [filters, setFilters] = useState<Record<string, string>>({})
+  const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set())
 
   // Step 3 — Variables
   const [variableMappings, setVariableMappings] = useState<Array<{ index: number; field: string }>>([])
@@ -137,7 +138,33 @@ export function CreateBroadcastModal({ open, onOpenChange }: CreateBroadcastModa
 
   // Preview recipients
   const handlePreview = () => {
-    previewMutation.mutate(filters)
+    previewMutation.mutate(filters, {
+      onSuccess: (data) => {
+        // Select all by default
+        const allIds = new Set((data?.data?.contacts || []).map((c: any) => c.id))
+        setSelectedContactIds(allIds)
+      },
+    })
+  }
+
+  // Contact list from preview
+  const previewContacts: Array<{ id: string; name: string; phone: string }> = previewMutation.data?.data?.contacts || []
+
+  const toggleContact = (id: string) => {
+    setSelectedContactIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleAll = () => {
+    if (selectedContactIds.size === previewContacts.length) {
+      setSelectedContactIds(new Set())
+    } else {
+      setSelectedContactIds(new Set(previewContacts.map((c) => c.id)))
+    }
   }
 
   // Reset on close
@@ -148,6 +175,7 @@ export function CreateBroadcastModal({ open, onOpenChange }: CreateBroadcastModa
       setChannelId('')
       setTemplateId('')
       setFilters({})
+      setSelectedContactIds(new Set())
       setVariableMappings([])
     }
   }, [open])
@@ -160,6 +188,7 @@ export function CreateBroadcastModal({ open, onOpenChange }: CreateBroadcastModa
         channel_id: channelId,
         whatsapp_template_id: templateId,
         filters,
+        contact_ids: Array.from(selectedContactIds),
         template_variables: variableMappings,
       })
       toast.success('Broadcast criado com sucesso!')
@@ -172,7 +201,7 @@ export function CreateBroadcastModal({ open, onOpenChange }: CreateBroadcastModa
   // Validation per step
   const canAdvance = (s: number) => {
     if (s === 0) return !!name.trim() && !!channelId && !!templateId
-    if (s === 1) return (previewMutation.data?.data?.total || 0) > 0
+    if (s === 1) return selectedContactIds.size > 0
     return true
   }
 
@@ -288,12 +317,13 @@ export function CreateBroadcastModal({ open, onOpenChange }: CreateBroadcastModa
 
             {step === 1 && (
               <StepContent key="step1">
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Filtre os leads para selecionar quem vai receber o broadcast.
+                    Filtre e selecione os contatos que vão receber o broadcast.
                   </p>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Filters */}
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label>Pipeline</Label>
                       <select
@@ -336,20 +366,6 @@ export function CreateBroadcastModal({ open, onOpenChange }: CreateBroadcastModa
                         ))}
                       </select>
                     </div>
-
-                    <div>
-                      <Label>Status do lead</Label>
-                      <select
-                        value={filters.status || ''}
-                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                        className="mt-1.5 w-full h-10 px-3 rounded-md border bg-input text-foreground text-sm"
-                      >
-                        <option value="">Todos</option>
-                        <option value="OPEN">Aberto</option>
-                        <option value="WON">Ganho</option>
-                        <option value="LOST">Perdido</option>
-                      </select>
-                    </div>
                   </div>
 
                   <Button
@@ -365,28 +381,51 @@ export function CreateBroadcastModal({ open, onOpenChange }: CreateBroadcastModa
                     Buscar destinatários
                   </Button>
 
-                  {/* Preview results */}
-                  {previewMutation.data && (
-                    <div className="p-4 bg-muted/30 rounded-lg border">
-                      <p className="text-sm font-medium text-foreground mb-2">
-                        {previewMutation.data.data.total} contatos encontrados
-                      </p>
-                      {previewMutation.data.data.total === 0 ? (
-                        <div className="flex items-center gap-2 text-sm text-warning">
-                          <AlertCircle className="h-4 w-4" />
-                          Nenhum contato com telefone encontrado para esses filtros.
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground mb-2">Amostra:</p>
-                          {previewMutation.data.data.sample.map((c: any) => (
-                            <div key={c.id} className="flex items-center gap-3 text-sm">
-                              <span className="text-foreground">{c.name || 'Sem nome'}</span>
-                              <span className="text-muted-foreground">{c.phone}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                  {/* Contact list with checkboxes */}
+                  {previewContacts.length > 0 && (
+                    <div className="border rounded-lg overflow-hidden">
+                      {/* Header with select all */}
+                      <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/30 border-b">
+                        <input
+                          type="checkbox"
+                          checked={selectedContactIds.size === previewContacts.length && previewContacts.length > 0}
+                          onChange={toggleAll}
+                          className="h-4 w-4 rounded border-border accent-success cursor-pointer"
+                        />
+                        <span className="text-sm font-medium text-foreground">
+                          {selectedContactIds.size} de {previewContacts.length} selecionados
+                        </span>
+                      </div>
+
+                      {/* Contact list */}
+                      <div className="max-h-52 overflow-y-auto divide-y divide-border">
+                        {previewContacts.map((c) => (
+                          <label
+                            key={c.id}
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-muted/30 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedContactIds.has(c.id)}
+                              onChange={() => toggleContact(c.id)}
+                              className="h-4 w-4 rounded border-border accent-success cursor-pointer"
+                            />
+                            <span className="text-sm text-foreground flex-1 truncate">
+                              {c.name || 'Sem nome'}
+                            </span>
+                            <span className="text-xs text-muted-foreground font-mono">
+                              {c.phone}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {previewMutation.isSuccess && previewContacts.length === 0 && (
+                    <div className="flex items-center gap-2 text-sm text-warning p-4 bg-muted/30 rounded-lg border">
+                      <AlertCircle className="h-4 w-4" />
+                      Nenhum contato com telefone encontrado para esses filtros.
                     </div>
                   )}
                 </div>
