@@ -50,22 +50,12 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
       {...listeners}
       onClick={onClick}
       className={cn(
-        "relative bg-card rounded-lg p-3.5 border cursor-pointer transition-all",
+        "bg-card rounded-lg p-3.5 border cursor-pointer transition-all",
         "hover:border-foreground/15",
         (isDragging || isSortableDragging) && "opacity-50 scale-105",
         hasUnread && "border-success/50 bg-success/5 shadow-[0_0_0_1px_rgba(61,214,140,0.15)]"
       )}
     >
-      {/* Unread dot */}
-      {hasUnread && (
-        <div className="absolute -top-1 -right-1 z-10">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success/60" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-success" />
-          </span>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
@@ -78,7 +68,15 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
             </p>
           )}
         </div>
-        <ChannelIcon className={cn("h-4 w-4 shrink-0", channel.color)} />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {hasUnread && (
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success/60" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
+            </span>
+          )}
+          <ChannelIcon className={cn("h-4 w-4", channel.color)} />
+        </div>
       </div>
 
       {/* Title */}
