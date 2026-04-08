@@ -286,6 +286,7 @@ function BroadcastCard({
                 total={broadcast.delivered_count}
                 pct={readPct}
                 color="bg-emerald-400"
+                hint="Depende da confirmação de leitura do destinatário"
               />
               <StatItem
                 icon={<AlertTriangle className="h-3.5 w-3.5" />}
@@ -368,6 +369,7 @@ function StatItem({
   total,
   pct,
   color,
+  hint,
 }: {
   icon: React.ReactNode
   label: string
@@ -375,12 +377,14 @@ function StatItem({
   total: number
   pct: number
   color: string
+  hint?: string
 }) {
   return (
-    <div>
+    <div title={hint}>
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
         {icon}
         <span>{label}</span>
+        {hint && <AlertTriangle className="h-3 w-3 text-muted-foreground/50" />}
         <span className="ml-auto font-medium text-foreground">{value}/{total}</span>
       </div>
       <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">

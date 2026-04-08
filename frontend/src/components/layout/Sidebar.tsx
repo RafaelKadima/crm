@@ -36,6 +36,7 @@ import {
   History,
   Plug,
   Megaphone,
+  FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -95,6 +96,7 @@ const navEntries: NavEntry[] = [
     items: [
       { icon: Package, label: 'nav.products', path: '/products', feature: 'products', featureFunction: 'products.list', permission: 'products.view' },
       { icon: Globe, label: 'nav.landingPages', path: '/landing-pages', feature: 'landing_pages', featureFunction: 'lp.list', permissions: ['landing_pages.view', 'landing_pages.create'] },
+      { icon: FileText, label: 'nav.whatsappTemplates', path: '/whatsapp-templates' },
       { icon: Megaphone, label: 'nav.broadcasts', path: '/broadcasts' },
       { icon: MessageSquare, label: 'nav.whatsappProfile', path: '/whatsapp-profile' },
     ],
@@ -190,7 +192,7 @@ const navEntries: NavEntry[] = [
     defaultOpen: false,
     items: [
       { icon: Building2, label: 'nav.groups', path: '/groups', feature: 'groups', featureFunction: 'groups.view' },
-      { icon: Shield, label: 'sidebar.superAdmin', path: '/super-admin', superAdminOnly: true },
+      { icon: Shield, label: 'sidebar.superAdmin', path: '/super-admin/tenants', superAdminOnly: true },
       { icon: History, label: 'sidebar.supportHistory', path: '/super-admin/support-history', superAdminOnly: true },
     ],
   },
