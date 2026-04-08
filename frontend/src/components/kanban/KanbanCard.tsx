@@ -50,16 +50,19 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
       {...listeners}
       onClick={onClick}
       className={cn(
-        "bg-card rounded-lg p-3.5 border cursor-pointer transition-all",
+        "relative bg-card rounded-lg p-3.5 border cursor-pointer transition-all",
         "hover:border-foreground/15",
         (isDragging || isSortableDragging) && "opacity-50 scale-105",
-        hasUnread && "border-foreground/20 bg-foreground/[0.02]"
+        hasUnread && "border-success/50 bg-success/5 shadow-[0_0_0_1px_rgba(61,214,140,0.15)]"
       )}
     >
       {/* Unread dot */}
       {hasUnread && (
         <div className="absolute -top-1 -right-1 z-10">
-          <span className="flex h-3 w-3 rounded-full bg-foreground" />
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success/60" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-success" />
+          </span>
         </div>
       )}
 
@@ -87,8 +90,8 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
 
       {/* New message indicator */}
       {hasUnread && lead.last_message_at && (
-        <div className="mb-2 px-2 py-1 rounded bg-muted">
-          <span className="text-[11px] font-medium text-foreground">Nova mensagem</span>
+        <div className="mb-2 px-2 py-1 rounded bg-success/10">
+          <span className="text-[11px] font-medium text-success">Nova mensagem</span>
         </div>
       )}
 

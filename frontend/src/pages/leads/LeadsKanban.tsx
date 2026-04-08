@@ -134,16 +134,27 @@ export function LeadsKanbanPage() {
     })).sort((a: PipelineStage, b: PipelineStage) => a.order - b.order)
   }, [currentPipeline])
 
-  // Enrich leads with notification data
+  // Enrich leads with notification data and sort unread to top
   const enrichedLeads = useMemo(() => {
-    return localLeads.map((lead) => {
+    const enriched = localLeads.map((lead) => {
       const notification = unreadMessages.get(lead.id)
       return {
         ...lead,
         unread_messages: notification?.count || 0,
         has_new_message: !!notification,
-        last_message_at: notification?.lastMessageAt,
+        last_message_at: notification?.lastMessageAt || lead.last_message_at,
       }
+    })
+
+    // Sort: unread first (by most recent message), then rest by last_message_at
+    return enriched.sort((a, b) => {
+      const aUnread = a.unread_messages > 0 ? 1 : 0
+      const bUnread = b.unread_messages > 0 ? 1 : 0
+      if (aUnread !== bUnread) return bUnread - aUnread
+      // Among unreads (or among reads), sort by most recent message
+      const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0
+      const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0
+      return bTime - aTime
     })
   }, [localLeads, unreadMessages])
 
@@ -463,7 +474,8 @@ export function LeadsKanbanPage() {
                 <Bell className="h-4 w-4 mr-2" />
                 <span className="font-medium">{totalUnread} {t('leads.newMessages', { count: totalUnread })}</span>
                 <span className="absolute -top-1 -right-1 h-3 w-3">
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-foreground"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success/60"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-success"></span>
                 </span>
               </Button>
             </motion.div>
