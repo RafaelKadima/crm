@@ -53,13 +53,13 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
         "bg-card rounded-lg p-3.5 border cursor-pointer transition-all",
         "hover:border-foreground/15",
         (isDragging || isSortableDragging) && "opacity-50 scale-105",
-        hasUnread && "border-success/50 bg-success/5 shadow-[0_0_0_1px_rgba(61,214,140,0.15)]"
+        hasUnread && "border-success bg-success/10 ring-1 ring-success/30 shadow-[0_0_12px_rgba(61,214,140,0.15)]"
       )}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-sm leading-tight truncate">
+          <h4 className={cn("text-sm leading-tight truncate", hasUnread ? "font-semibold text-foreground" : "font-medium")}>
             {lead.contact?.name || 'Sem nome'}
           </h4>
           {lead.contact?.phone && (
@@ -88,8 +88,14 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
 
       {/* New message indicator */}
       {hasUnread && lead.last_message_at && (
-        <div className="mb-2 px-2 py-1 rounded bg-success/10">
-          <span className="text-[11px] font-medium text-success">Nova mensagem</span>
+        <div className="mb-2 px-2.5 py-1.5 rounded-md bg-success/15 border border-success/25">
+          <span className="text-[11px] font-semibold text-success flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success/75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+            </span>
+            Aguardando resposta
+          </span>
         </div>
       )}
 
