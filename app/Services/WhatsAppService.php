@@ -745,6 +745,183 @@ class WhatsAppService implements WhatsAppProviderInterface
     }
 
     /**
+     * Processa eventos de history sync (coexistencia).
+     *
+     * Quando o cliente final aceita "importar historico" no app do WhatsApp Business,
+     * a Meta envia eventos com `field: history` contendo lotes de mensagens antigas
+     * agrupadas por thread. Cada mensagem vem com o `timestamp` original (epoch).
+     *
+     * Comportamento:
+     * - Mensagens sao gravadas com `sent_at` = timestamp original (NAO `now()`)
+     * - Cada `TicketMessage` recebe `metadata.is_history = true`
+     * - Tickets criados a partir de history nao disparam IA, fila, broadcast ou
+     *   automacoes — historico nao deve acionar workflows como mensagem nova
+     * - Threads sao mapeadas para Contato unico (por wa_id) e ticket unico
+     *
+     * Doc Meta: https://developers.facebook.com/docs/whatsapp/embedded-signup/steps#step-7
+     */
+    public function processHistorySync(array $payload, Channel $channel): int
+    {
+        $entry = $payload['entry'][0] ?? null;
+        if (!$entry) return 0;
+
+        $changes = $entry['changes'][0] ?? null;
+        if (!$changes || ($changes['field'] ?? null) !== 'history') return 0;
+
+        $value = $changes['value'] ?? [];
+        $historyChunks = $value['history'] ?? [];
+
+        if (empty($historyChunks)) {
+            Log::warning('History sync: no history chunks in payload', [
+                'channel_id' => $channel->id,
+            ]);
+            return 0;
+        }
+
+        $totalProcessed = 0;
+        $totalSkipped = 0;
+
+        foreach ($historyChunks as $chunk) {
+            $phase = $chunk['metadata']['phase'] ?? null;
+            $progress = $chunk['metadata']['progress'] ?? null;
+            $threads = $chunk['threads'] ?? [];
+
+            Log::info('History sync: processing chunk', [
+                'channel_id' => $channel->id,
+                'phase' => $phase,
+                'progress' => $progress,
+                'thread_count' => count($threads),
+            ]);
+
+            foreach ($threads as $thread) {
+                $threadId = $thread['id'] ?? null;
+                $messages = $thread['messages'] ?? [];
+
+                if (!$threadId || empty($messages)) continue;
+
+                foreach ($messages as $message) {
+                    try {
+                        $created = $this->processSingleHistoricalMessage($message, $threadId, $channel);
+                        if ($created) {
+                            $totalProcessed++;
+                        } else {
+                            $totalSkipped++;
+                        }
+                    } catch (\Throwable $e) {
+                        $totalSkipped++;
+                        Log::warning('History sync: failed to process message', [
+                            'channel_id' => $channel->id,
+                            'thread_id' => $threadId,
+                            'message_id' => $message['id'] ?? null,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+        }
+
+        Log::info('History sync: completed', [
+            'channel_id' => $channel->id,
+            'processed' => $totalProcessed,
+            'skipped' => $totalSkipped,
+        ]);
+
+        return $totalProcessed;
+    }
+
+    /**
+     * Cria uma mensagem historica (contato + ticket + ticketmessage).
+     *
+     * Diferenca em relacao ao fluxo normal:
+     * - `sent_at` usa o timestamp epoch da mensagem original
+     * - `metadata.is_history = true`
+     * - NAO dispara TicketMessageCreated event (sem broadcast)
+     * - NAO chama IA, fila, automacao
+     * - NAO marca como lida na Meta (mensagens antigas ja foram lidas no app)
+     *
+     * Idempotente: se a `whatsapp_message_id` ja existe, retorna false sem duplicar.
+     */
+    protected function processSingleHistoricalMessage(array $message, string $threadId, Channel $channel): bool
+    {
+        $messageId = $message['id'] ?? null;
+        $messageType = $message['type'] ?? null;
+        $timestamp = $message['timestamp'] ?? null;
+        $from = $message['from'] ?? null;
+
+        if (!$messageId || !$messageType || !$timestamp) {
+            return false;
+        }
+
+        // Reactions historicas: ignora (nao faz sentido replicar)
+        if ($messageType === 'reaction') return false;
+
+        // Idempotencia: se ja temos essa mensagem (criada por history previo
+        // ou por webhook em tempo real), nao recria
+        $exists = TicketMessage::where('tenant_id', $channel->tenant_id)
+            ->whereJsonContains('metadata->whatsapp_message_id', $messageId)
+            ->exists();
+
+        if ($exists) return false;
+
+        // Determina se a mensagem foi enviada PELO business ou recebida
+        // Comparacao por wa_id normalizado: se o `from` bate com o display_phone_number
+        // do canal, e mensagem outgoing (foi enviada pelo operador no app).
+        $businessPhone = preg_replace('/\D/', '', $channel->identifier ?? '');
+        $fromNormalized = preg_replace('/\D/', '', (string) $from);
+        $isOutgoing = $businessPhone && $fromNormalized === $businessPhone;
+
+        // O contato sempre e o "outro lado" da thread (nao o business)
+        $contactPhone = $isOutgoing ? $threadId : $from;
+        if (!$contactPhone) return false;
+
+        // Acha ou cria contato (sem disparar fetch de profile pic — historico nao precisa)
+        $formattedPhone = $this->formatPhoneNumber($contactPhone);
+        $contact = Contact::where('tenant_id', $channel->tenant_id)
+            ->where('phone', $formattedPhone)
+            ->first();
+
+        if (!$contact) {
+            $contact = Contact::create([
+                'tenant_id' => $channel->tenant_id,
+                'name' => "WhatsApp {$contactPhone}",
+                'phone' => $formattedPhone,
+            ]);
+        }
+
+        // Acha ou cria ticket — usa o fluxo normal porque ele garante
+        // contato + lead + ticket consistente. NAO dispara automacoes
+        // adicionais porque nao chamamos triggerSdrResponse nem
+        // event(TicketMessageCreated).
+        $ticket = $this->findOrCreateTicket($channel, $contact);
+
+        // Extrai conteudo e metadata da mensagem
+        $content = $this->extractMessageContent($message);
+        $metadata = $this->extractMediaMetadata($message, $channel) ?? [];
+        $metadata['whatsapp_message_id'] = $messageId;
+        $metadata['is_history'] = true;
+        $metadata['history_from'] = $from;
+        if (isset($message['history_context'])) {
+            $metadata['history_context'] = $message['history_context'];
+        }
+
+        // Converte timestamp epoch para Carbon
+        $sentAt = \Carbon\Carbon::createFromTimestamp((int) $timestamp);
+
+        TicketMessage::create([
+            'tenant_id' => $channel->tenant_id,
+            'ticket_id' => $ticket->id,
+            'sender_type' => $isOutgoing ? SenderTypeEnum::USER : SenderTypeEnum::CONTACT,
+            'sender_id' => $isOutgoing ? null : $contact->id,
+            'direction' => $isOutgoing ? MessageDirectionEnum::OUTBOUND : MessageDirectionEnum::INBOUND,
+            'message' => $content,
+            'metadata' => $metadata,
+            'sent_at' => $sentAt,
+        ]);
+
+        return true;
+    }
+
+    /**
      * Encontra ou cria contato
      */
     protected function findOrCreateContact(Channel $channel, string $phone, ?array $contactInfo): Contact

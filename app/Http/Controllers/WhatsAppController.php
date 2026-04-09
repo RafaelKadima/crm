@@ -62,18 +62,42 @@ class WhatsAppController extends Controller
     {
         $payload = $request->all();
 
+        $entry = $payload['entry'][0] ?? null;
+        $changes = $entry['changes'][0] ?? null;
+        $field = $changes['field'] ?? null;
+        $value = $changes['value'] ?? [];
+        $phoneNumberId = $value['metadata']['phone_number_id'] ?? null;
+        $wabaId = $entry['id'] ?? null;
+
         Log::info('WhatsApp webhook received', [
-            'phone_number_id' => $payload['entry'][0]['changes'][0]['value']['metadata']['phone_number_id'] ?? 'unknown',
-            'message_count' => count($payload['entry'][0]['changes'][0]['value']['messages'] ?? []),
+            'field' => $field,
+            'waba_id' => $wabaId,
+            'phone_number_id' => $phoneNumberId ?? 'unknown',
+            'message_count' => count($value['messages'] ?? []),
+            'history_chunks' => count($value['history'] ?? []),
         ]);
 
         try {
-            // Extract phone number ID from webhook
-            $phoneNumberId = $payload['entry'][0]['changes'][0]['value']['metadata']['phone_number_id'] ?? null;
+            // === HISTORY SYNC (coexistencia) ===
+            // Eventos `field: history` chegam apos o cliente final aceitar
+            // "importar historico" no app. Nao tem phone_number_id no metadata
+            // padrao em algumas versoes — usamos waba_id para localizar o channel.
+            if ($field === 'history') {
+                return $this->handleHistorySync($payload, $wabaId, $phoneNumberId);
+            }
 
+            // === MENSAGENS / STATUS (fluxo padrao) ===
             if (!$phoneNumberId) {
-                Log::warning('WhatsApp webhook: missing phone_number_id');
-                return response()->json(['status' => 'ignored']);
+                // Eventos WABA-level (template_status_update, account_update, etc)
+                // chegam aqui. Logamos o payload completo para diagnostico,
+                // mas nao processamos.
+                Log::warning('WhatsApp webhook: missing phone_number_id', [
+                    'field' => $field,
+                    'waba_id' => $wabaId,
+                    'value_keys' => array_keys($value),
+                    'payload' => $payload,
+                ]);
+                return response()->json(['status' => 'ignored', 'reason' => 'no_phone_number_id']);
             }
 
             // Find channel by phone_number_id
@@ -100,6 +124,55 @@ class WhatsAppController extends Controller
             // Always return 200 to prevent Meta from retrying
             return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * Processa eventos de history sync (coexistencia).
+     *
+     * Estrategia de lookup do channel:
+     * 1. Se vier `phone_number_id` no metadata, usa esse (preferido)
+     * 2. Senao, tenta achar via `waba_id` no MetaIntegration -> Channel
+     */
+    protected function handleHistorySync(array $payload, ?string $wabaId, ?string $phoneNumberId): JsonResponse
+    {
+        $channel = null;
+
+        if ($phoneNumberId) {
+            $channel = Channel::where('type', ChannelTypeEnum::WHATSAPP)
+                ->whereJsonContains('config->phone_number_id', $phoneNumberId)
+                ->first();
+        }
+
+        if (!$channel && $wabaId) {
+            // Fallback: usa MetaIntegration para mapear waba_id -> channel
+            $integration = \App\Models\MetaIntegration::withoutGlobalScopes()
+                ->where('waba_id', $wabaId)
+                ->first();
+
+            if ($integration) {
+                $channel = Channel::withoutGlobalScopes()
+                    ->where('type', ChannelTypeEnum::WHATSAPP)
+                    ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
+                    ->first();
+            }
+        }
+
+        if (!$channel) {
+            Log::warning('History sync: no channel found', [
+                'waba_id' => $wabaId,
+                'phone_number_id' => $phoneNumberId,
+                'payload' => $payload,
+            ]);
+            return response()->json(['status' => 'channel_not_found', 'context' => 'history_sync']);
+        }
+
+        $processed = $this->whatsAppService->processHistorySync($payload, $channel);
+
+        return response()->json([
+            'status' => 'success',
+            'context' => 'history_sync',
+            'messages_processed' => $processed,
+        ]);
     }
 
     /**
