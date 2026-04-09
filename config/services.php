@@ -41,7 +41,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'whatsapp' => [
-        'verify_token' => env('WHATSAPP_VERIFY_TOKEN', 'crm_whatsapp_verify_token'),
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN') ?: (app()->environment('production') ? throw new \RuntimeException('WHATSAPP_VERIFY_TOKEN must be set in production') : 'dev_whatsapp_token_' . md5(env('APP_KEY', ''))),
         'api_version' => env('WHATSAPP_API_VERSION', 'v18.0'),
     ],
 
@@ -51,7 +51,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'instagram' => [
-        'verify_token' => env('INSTAGRAM_VERIFY_TOKEN', 'crm_instagram_verify_token'),
+        'verify_token' => env('INSTAGRAM_VERIFY_TOKEN') ?: (app()->environment('production') ? throw new \RuntimeException('INSTAGRAM_VERIFY_TOKEN must be set in production') : 'dev_instagram_token_' . md5(env('APP_KEY', ''))),
         'api_version' => env('INSTAGRAM_API_VERSION', 'v18.0'),
     ],
 
@@ -66,9 +66,11 @@ return [
         'app_id' => env('META_APP_ID'),
         'app_secret' => env('META_APP_SECRET'),
         'api_version' => env('META_API_VERSION', 'v19.0'),
-        'verify_token' => env('META_VERIFY_TOKEN', 'crm_meta_verify_token'),
+        'verify_token' => env('META_VERIFY_TOKEN') ?: (app()->environment('production') ? throw new \RuntimeException('META_VERIFY_TOKEN must be set in production') : 'dev_meta_token_' . md5(env('APP_KEY', ''))),
         'redirect_uri' => env('META_REDIRECT_URI', env('APP_URL') . '/api/meta/callback'),
-        'config_id' => env('META_CONFIG_ID'), // Embedded Signup Configuration ID
+        'config_id' => env('META_CONFIG_ID'),
+        'embedded_app_id' => env('META_EMBEDDED_APP_ID', env('META_APP_ID')),
+        'embedded_app_secret' => env('META_EMBEDDED_APP_SECRET', env('META_APP_SECRET')),
         'scopes' => [
             'whatsapp_business_management',
             'whatsapp_business_messaging',
@@ -107,7 +109,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'internal' => [
-        'api_key' => env('INTERNAL_API_KEY'),
+        'api_key' => env('INTERNAL_API_KEY', env('LARAVEL_INTERNAL_KEY')),
     ],
 
     /*
@@ -169,6 +171,19 @@ return [
         'url' => env('WHATSAPP_API_URL', 'http://whatsapp-api:3000'),
         'api_key' => env('WHATSAPP_API_KEY', ''),
         'timeout' => env('WHATSAPP_API_TIMEOUT', 30),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Linx ERP Integration
+    |--------------------------------------------------------------------------
+    */
+    'linx' => [
+        'subscription_key' => env('LINX_SUBSCRIPTION_KEY'),
+        'ambiente' => env('LINX_AMBIENTE', 'PRODUCAO'),
+        'username' => env('LINX_USERNAME'),
+        'password' => env('LINX_PASSWORD'),
+        'cnpj_empresa' => env('LINX_CNPJ_EMPRESA'),
     ],
 
 ];
