@@ -38,34 +38,9 @@ interface FBLoginOptions {
   response_type: string
   override_default_response_type: boolean
   extras?: {
-    version?: string
+    sessionInfoVersion?: string
     featureType?: string
-    setup?: {
-      business?: {
-        id?: string | null
-        name?: string | null
-        email?: string | null
-        phone?: { code?: string | null; number?: string | null }
-        website?: string | null
-        address?: {
-          streetAddress1?: string | null
-          streetAddress2?: string | null
-          city?: string | null
-          state?: string | null
-          zipPostal?: string | null
-          country?: string | null
-        }
-        timezone?: string | null
-      }
-      phone?: {
-        displayName?: string | null
-        category?: string | null
-        description?: string | null
-      }
-      preVerifiedPhone?: { ids?: string[] | null }
-      solutionID?: string | null
-      whatsAppBusinessAccount?: { ids?: string[] | null }
-    }
+    setup?: Record<string, unknown>
   }
 }
 
@@ -335,35 +310,19 @@ export function useMetaEmbeddedSignup() {
       sessionInfoRef.current = null
 
       try {
-        const loginOptions = {
+        // Coexistência: featureType = 'whatsapp_business_app_onboarding', sem setup
+        // Padrão: setup vazio
+        // Ref: https://developers.facebook.com/docs/whatsapp/embedded-signup/implementation
+        const isCoexistence = config.featureType === 'whatsapp_business_app_onboarding'
+        const loginOptions: FBLoginOptions = {
           config_id: config.configId,
           response_type: 'code',
           override_default_response_type: true,
           extras: {
-            version: 'v3',
-            featureType: config.featureType || '',
-            setup: {
-              business: {
-                id: null,
-                name: null,
-                email: null,
-                phone: { code: null, number: null },
-                website: null,
-                address: {
-                  streetAddress1: null,
-                  streetAddress2: null,
-                  city: null,
-                  state: null,
-                  zipPostal: null,
-                  country: null,
-                },
-                timezone: null,
-              },
-              phone: { displayName: null, category: null, description: null },
-              preVerifiedPhone: { ids: null },
-              solutionID: null,
-              whatsAppBusinessAccount: { ids: null },
-            },
+            sessionInfoVersion: '3',
+            ...(isCoexistence
+              ? { featureType: 'whatsapp_business_app_onboarding' }
+              : { setup: {} }),
           },
         }
 
