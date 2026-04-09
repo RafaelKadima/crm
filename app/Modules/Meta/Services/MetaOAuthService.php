@@ -145,6 +145,9 @@ class MetaOAuthService
             'phone_number_id' => $businessData['phone_number_id'],
         ]);
 
+        // Inscreve o app nos webhooks da WABA (obrigatório para receber mensagens)
+        $this->subscribeAppToWaba($businessData['waba_id'], $accessToken);
+
         return $integration;
     }
 
@@ -480,7 +483,7 @@ class MetaOAuthService
                 'scopes' => $this->scopes,
                 'metadata' => [
                     'connected_at' => now()->toIso8601String(),
-                    'app_id' => $this->appId,
+                    'app_id' => $this->embeddedAppId,
                     'signup_method' => $isCoexistence ? 'embedded_coexistence' : 'embedded',
                     'is_coexistence' => $isCoexistence,
                 ],
@@ -494,6 +497,9 @@ class MetaOAuthService
             'display_phone_number' => $displayPhoneNumber,
             'is_coexistence' => $isCoexistence,
         ]);
+
+        // Inscreve o app nos webhooks da WABA (obrigatório para receber mensagens)
+        $this->subscribeAppToWaba($wabaId, $accessToken);
 
         return $integration;
     }
@@ -563,7 +569,7 @@ class MetaOAuthService
                 'scopes' => $this->scopes,
                 'metadata' => [
                     'connected_at' => now()->toIso8601String(),
-                    'app_id' => $this->appId,
+                    'app_id' => $this->embeddedAppId,
                     'signup_method' => $isCoexistence ? 'embedded_coexistence' : 'embedded_direct_token',
                     'is_coexistence' => $isCoexistence,
                 ],
@@ -579,7 +585,47 @@ class MetaOAuthService
             'is_coexistence' => $isCoexistence,
         ]);
 
+        // Inscreve o app nos webhooks da WABA (obrigatório para receber mensagens)
+        $this->subscribeAppToWaba($wabaId, $accessToken);
+
         return $integration;
+    }
+
+    /**
+     * Inscreve o app nos webhooks da WABA. Sem isso, a Meta NÃO envia
+     * eventos (mensagens, status) para nosso endpoint.
+     *
+     * Endpoint: POST /{WABA_ID}/subscribed_apps
+     * Doc: https://developers.facebook.com/docs/whatsapp/embedded-signup/steps#step-3
+     *
+     * Não lança exceção: se falhar, loga warning para não derrubar o signup.
+     * O usuário pode forçar manualmente depois via refresh-token.
+     */
+    public function subscribeAppToWaba(string $wabaId, string $accessToken): bool
+    {
+        try {
+            $response = Http::withToken($accessToken)
+                ->asJson()
+                ->post("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}/subscribed_apps", new \stdClass());
+
+            if ($response->successful() && ($response->json()['success'] ?? false)) {
+                Log::info('WABA subscribed to webhooks successfully', ['waba_id' => $wabaId]);
+                return true;
+            }
+
+            Log::warning('Failed to subscribe app to WABA webhooks', [
+                'waba_id' => $wabaId,
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
+            return false;
+        } catch (\Exception $e) {
+            Log::warning('Exception subscribing app to WABA webhooks', [
+                'waba_id' => $wabaId,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     /**
