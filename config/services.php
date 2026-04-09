@@ -41,7 +41,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'whatsapp' => [
-        'verify_token' => env('WHATSAPP_VERIFY_TOKEN') ?: (app()->environment('production') ? throw new \RuntimeException('WHATSAPP_VERIFY_TOKEN must be set in production') : 'dev_whatsapp_token_' . md5(env('APP_KEY', ''))),
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN', 'crm_whatsapp_verify_token'),
         'api_version' => env('WHATSAPP_API_VERSION', 'v18.0'),
     ],
 
@@ -51,7 +51,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'instagram' => [
-        'verify_token' => env('INSTAGRAM_VERIFY_TOKEN') ?: (app()->environment('production') ? throw new \RuntimeException('INSTAGRAM_VERIFY_TOKEN must be set in production') : 'dev_instagram_token_' . md5(env('APP_KEY', ''))),
+        'verify_token' => env('INSTAGRAM_VERIFY_TOKEN', 'crm_instagram_verify_token'),
         'api_version' => env('INSTAGRAM_API_VERSION', 'v18.0'),
     ],
 
@@ -66,7 +66,7 @@ return [
         'app_id' => env('META_APP_ID'),
         'app_secret' => env('META_APP_SECRET'),
         'api_version' => env('META_API_VERSION', 'v19.0'),
-        'verify_token' => env('META_VERIFY_TOKEN') ?: (app()->environment('production') ? throw new \RuntimeException('META_VERIFY_TOKEN must be set in production') : 'dev_meta_token_' . md5(env('APP_KEY', ''))),
+        'verify_token' => env('META_VERIFY_TOKEN', 'crm_meta_verify_token'),
         'redirect_uri' => env('META_REDIRECT_URI', env('APP_URL') . '/api/meta/callback'),
         'config_id' => env('META_CONFIG_ID'),
         'embedded_app_id' => env('META_EMBEDDED_APP_ID', env('META_APP_ID')),
