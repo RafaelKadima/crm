@@ -7,6 +7,7 @@ use App\Enums\MessageDirectionEnum;
 use App\Enums\SenderTypeEnum;
 use App\Enums\TicketStatusEnum;
 use App\Events\TicketMessageCreated;
+use App\Events\TicketStatusChanged;
 use App\Models\Queue;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
@@ -122,7 +123,12 @@ class TicketController extends Controller
             'assigned_user_id' => 'nullable|uuid|exists:users,id',
         ]);
 
-        $ticket = Ticket::create($validated);
+        // Criação manual via API/painel = ação explícita do atendente.
+        // Já nasce OPEN (não passa pelo estado pendente, pois alguém está atuando).
+        $ticket = Ticket::create([
+            ...$validated,
+            'status' => TicketStatusEnum::OPEN,
+        ]);
         $ticket->load(['lead', 'contact', 'channel', 'assignedUser']);
 
         return response()->json([
@@ -482,6 +488,57 @@ class TicketController extends Controller
         return response()->json([
             'message' => $result['message'],
             'ticket' => $result['ticket'],
+        ]);
+    }
+
+    /**
+     * Marca o ticket como aberto pela primeira vez.
+     *
+     * Chamado pelo frontend quando um atendente clica numa conversa pendente.
+     * Transição: pending → open. Idempotente para todos os outros estados.
+     *
+     * IMPORTANTE: este endpoint NÃO mexe em assigned_user_id nem em lead.owner_id.
+     * Ownership continua sendo responsabilidade exclusiva da autodistribuição da fila.
+     * O campo first_viewer_id é apenas métrica de SLA, não representa titularidade.
+     */
+    public function markAsOpened(Ticket $ticket): JsonResponse
+    {
+        // Idempotente: se não está pendente, não faz nada — só devolve o ticket atual.
+        if ($ticket->status !== TicketStatusEnum::PENDING) {
+            $ticket->load(['lead', 'contact', 'channel', 'assignedUser']);
+            return response()->json([
+                'message' => 'Ticket já estava aberto.',
+                'ticket' => $ticket,
+                'changed' => false,
+            ]);
+        }
+
+        $previousStatus = $ticket->status->value;
+
+        $ticket->update([
+            'status' => TicketStatusEnum::OPEN,
+            // first_viewed_at / first_viewer_id só são preenchidos uma vez
+            // (não sobrescrevem se já tiverem valor de uma rodada anterior).
+            'first_viewed_at' => $ticket->first_viewed_at ?? now(),
+            'first_viewer_id' => $ticket->first_viewer_id ?? auth()->id(),
+        ]);
+
+        $ticket->load(['lead', 'contact', 'channel', 'assignedUser']);
+
+        Log::info('Ticket marked as opened by first viewer', [
+            'ticket_id' => $ticket->id,
+            'first_viewer_id' => $ticket->first_viewer_id,
+            'first_viewed_at' => $ticket->first_viewed_at?->toIso8601String(),
+            'assigned_user_id' => $ticket->assigned_user_id, // preservado, NÃO foi alterado
+        ]);
+
+        // Broadcast pra atualizar a inbox dos outros atendentes em tempo real.
+        broadcast(new TicketStatusChanged($ticket, $previousStatus))->toOthers();
+
+        return response()->json([
+            'message' => 'Ticket aberto com sucesso.',
+            'ticket' => $ticket,
+            'changed' => true,
         ]);
     }
 

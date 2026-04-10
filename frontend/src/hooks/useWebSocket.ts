@@ -260,6 +260,17 @@ export function useTenantMessages(tenantId: string | null) {
             queryClient.invalidateQueries({ queryKey: ['lead', data.lead.id] })
           }
         })
+        .listen('.ticket.status_changed', (data: { ticket: { id: string; lead_id: string }; previous_status: string }) => {
+          // Outro atendente abriu uma conversa pendente — atualiza a inbox
+          // pra a conversa sair da fila "Pendentes" e aparecer em "Abertos"
+          // sem precisar refetch manual.
+          queryClient.invalidateQueries({ queryKey: ['leads'] })
+          queryClient.invalidateQueries({ queryKey: ['leads-infinite'] })
+          queryClient.invalidateQueries({ queryKey: ['tickets'] })
+          if (data.ticket?.lead_id) {
+            queryClient.invalidateQueries({ queryKey: ['lead', data.ticket.lead_id] })
+          }
+        })
     }
 
     subscribe()

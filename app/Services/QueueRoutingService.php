@@ -46,10 +46,12 @@ class QueueRoutingService
             return true;
         }
 
-        // Se tem queue_id, verifica se tem ticket ABERTO antigo (mais de 1 minuto)
-        // Tickets recém-criados (menos de 1 minuto) são da mensagem atual
+        // Se tem queue_id, verifica se tem ticket ATIVO antigo (mais de 1 minuto).
+        // Tickets recém-criados (menos de 1 minuto) são da mensagem atual.
+        // "Ativo" = open OU pending (ambos representam conversa em andamento,
+        // só diferem em "alguém já leu" vs "ainda não leu").
         $openTicket = $lead->tickets()
-            ->where('status', TicketStatusEnum::OPEN)
+            ->whereIn('status', [TicketStatusEnum::OPEN, TicketStatusEnum::PENDING])
             ->where('created_at', '<', now()->subMinute())
             ->first();
         
@@ -114,17 +116,22 @@ class QueueRoutingService
         $timeoutHours = $channel->return_timeout_hours ?? 24;
         $hoursSinceClosed = $lastClosedTicket->closed_at->diffInHours(now());
 
-        // Se fechou há menos de X horas, reabre o ticket
+        // Se fechou há menos de X horas, reabre o ticket como PENDING.
+        // Mesma regra de qualquer reabertura por mensagem de cliente:
+        // volta para a fila de pendentes para que o time veja a nova interação.
         if ($hoursSinceClosed < $timeoutHours) {
             $lastClosedTicket->update([
-                'status' => TicketStatusEnum::OPEN,
+                'status' => TicketStatusEnum::PENDING,
                 'closed_at' => null,
+                'first_viewed_at' => null,
+                'first_viewer_id' => null,
             ]);
 
             Log::info('Ticket reopened due to return within timeout', [
                 'ticket_id' => $lastClosedTicket->id,
                 'lead_id' => $lead->id,
                 'hours_since_closed' => $hoursSinceClosed,
+                'new_status' => 'pending',
             ]);
 
             return $lastClosedTicket->fresh();

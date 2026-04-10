@@ -8,6 +8,7 @@ import { useNotificationStore } from '@/store/notificationStore'
 import { useAuthStore } from '@/store/authStore'
 // useTenantMessages moved to MainLayout (global)
 import { useLeads } from '@/hooks/useLeads'
+import { useMarkTicketAsOpened } from '@/hooks/useTicketActions'
 import { ConversationsList } from '@/components/conversas/ConversationsList'
 import { ChatPanel } from '@/components/conversas/ChatPanel'
 import { LeadInfoSidebar } from '@/components/conversas/LeadInfoSidebar'
@@ -20,6 +21,7 @@ export function ConversasPage() {
   const { activeLeadId, setActiveLead } = useActiveConversation()
   const { isInfoSidebarOpen, toggleInfoSidebar } = useConversasStore()
   const markAsRead = useNotificationStore((state) => state.markAsRead)
+  const markTicketAsOpened = useMarkTicketAsOpened()
 
   // Ref para controlar se já processamos o lead da URL
   const processedUrlLeadRef = useRef<string | null>(null)
@@ -51,6 +53,16 @@ export function ConversasPage() {
   // Lead ativo (se tiver um selecionado)
   const activeLead = leadsData?.find((lead: Lead) => lead.id === activeLeadId)
 
+  // Transição pending → open: dispara o endpoint de "primeira abertura" se o ticket
+  // mais recente do lead estiver pendente. Idempotente, fire-and-forget — não bloqueia
+  // a navegação. NÃO altera ownership; só status + first_viewed_at/first_viewer_id.
+  const triggerFirstViewIfPending = (lead: Lead) => {
+    const ticket = lead.tickets?.[0]
+    if (ticket?.id && ticket.status === 'pending') {
+      markTicketAsOpened.mutate(ticket.id)
+    }
+  }
+
   // Se veio da URL com ?lead=xxx, abre essa conversa (apenas uma vez)
   useEffect(() => {
     const leadIdFromUrl = searchParams.get('lead')
@@ -62,14 +74,17 @@ export function ConversasPage() {
         processedUrlLeadRef.current = leadIdFromUrl
         setActiveLead(lead.id, lead.tickets?.[0]?.id || null)
         markAsRead(lead.id)
+        triggerFirstViewIfPending(lead)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, rawLeads, setActiveLead, markAsRead])
 
   // Quando seleciona um lead
   const handleSelectLead = (lead: Lead) => {
     setActiveLead(lead.id, lead.tickets?.[0]?.id || null)
     markAsRead(lead.id)
+    triggerFirstViewIfPending(lead)
   }
 
   return (

@@ -330,12 +330,14 @@ class InstagramService
             ->first();
 
         if (!$ticket) {
+            // Conversa nova de cliente nasce como PENDING.
+            // Vai virar OPEN quando o primeiro atendente abrir a conversa no CRM.
             $ticket = Ticket::create([
                 'tenant_id' => $channel->tenant_id,
                 'contact_id' => $contact->id,
                 'channel_id' => $channel->id,
                 'lead_id' => $lead->id,
-                'status' => TicketStatusEnum::OPEN,
+                'status' => TicketStatusEnum::PENDING,
             ]);
 
             Log::info('Ticket created from Instagram', ['ticket_id' => $ticket->id, 'lead_id' => $lead->id]);

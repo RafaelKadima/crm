@@ -143,6 +143,14 @@ export const ticketsApi = {
 
   close: (id: string) =>
     api.patch(`/tickets/${id}/close`),
+
+  /**
+   * Marca o ticket como aberto pela primeira vez (transição pending → open).
+   * Idempotente — pode ser chamado várias vezes sem efeito colateral.
+   * NÃO altera assigned_user_id; ownership permanece com a autodistribuição da fila.
+   */
+  markAsOpened: (id: string) =>
+    api.post<{ message: string; ticket: Ticket; changed: boolean }>(`/tickets/${id}/open`),
 }
 
 // =====================

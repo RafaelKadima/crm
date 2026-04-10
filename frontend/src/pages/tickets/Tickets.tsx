@@ -8,31 +8,35 @@ import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { formatDateTime } from '@/lib/utils'
 import { useTickets } from '@/hooks/useTickets'
+import { useMarkTicketAsOpened } from '@/hooks/useTicketActions'
 import { LeadChatModal } from '@/components/chat/LeadChatModal'
 import type { Lead } from '@/types'
 
 const statusConfig: Record<string, { label: string; variant: 'info' | 'warning' | 'secondary' | 'success' | 'destructive' }> = {
   open: { label: 'Aberto', variant: 'info' },
+  pending: { label: 'Pendente', variant: 'warning' },
   in_progress: { label: 'Em Atendimento', variant: 'warning' },
   waiting_customer: { label: 'Aguardando', variant: 'secondary' },
   closed: { label: 'Encerrado', variant: 'success' },
 }
 
 // Filtros simplificados
-type StatusFilterType = 'all' | 'waiting_queue' | 'open' | 'closed'
+type StatusFilterType = 'all' | 'waiting_queue' | 'pending' | 'open' | 'closed'
 
 const filterTabs: { key: StatusFilterType; label: string; icon: any; color: string }[] = [
   { key: 'all', label: 'Todos', icon: Inbox, color: 'text-muted-foreground' },
   { key: 'waiting_queue', label: 'Aguardando Fila', icon: AlertCircle, color: 'text-red-400' },
+  { key: 'pending', label: 'Pendentes', icon: AlertCircle, color: 'text-amber-400' },
   { key: 'open', label: 'Em Atendimento', icon: MessageCircle, color: 'text-blue-400' },
   { key: 'closed', label: 'Encerrados', icon: CheckCircle2, color: 'text-green-400' },
 ]
 
 export function TicketsPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilterType>('open') // Default: abertos
+  const [statusFilter, setStatusFilter] = useState<StatusFilterType>('pending') // Default: pendentes (caixa de atenção)
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const markTicketAsOpened = useMarkTicketAsOpened()
 
   // Busca tickets normais
   const { data: ticketsData, isLoading, refetch } = useTickets({})
@@ -44,13 +48,10 @@ export function TicketsPage() {
   const waitingQueueTickets = waitingQueueData?.data || []
 
   // Função para determinar o status do ticket
-  const getTicketStatus = (ticket: any): 'open' | 'closed' => {
-    // Ticket fechado = Encerrado
-    if (ticket.status === 'closed') {
-      return 'closed'
-    }
-
-    // Ticket aberto = Em Atendimento
+  const getTicketStatus = (ticket: any): 'pending' | 'open' | 'closed' => {
+    if (ticket.status === 'closed') return 'closed'
+    if (ticket.status === 'pending') return 'pending'
+    // open + waiting_customer caem em "em atendimento"
     return 'open'
   }
 
@@ -72,16 +73,18 @@ export function TicketsPage() {
   // Contadores (calculados a partir de todos os tickets)
   const counts = useMemo(() => {
     let waiting_queue = waitingQueueTickets.length
+    let pending = 0
     let open = 0
     let closed = 0
 
     allTickets.forEach((ticket: any) => {
       const status = getTicketStatus(ticket)
-      if (status === 'open') open++
+      if (status === 'pending') pending++
+      else if (status === 'open') open++
       else closed++
     })
 
-    return { waiting_queue, open, closed, total: allTickets.length }
+    return { waiting_queue, pending, open, closed, total: allTickets.length }
   }, [allTickets, waitingQueueTickets])
 
   // Filtra por status selecionado
@@ -112,6 +115,13 @@ export function TicketsPage() {
 
   // Abre o chat do ticket
   const handleTicketClick = (ticket: any) => {
+    // Transição pending → open: se o ticket está pendente, marca como aberto
+    // (idempotente, fire-and-forget — não bloqueia abertura do modal).
+    // NÃO altera ownership; só status + first_viewed_at/first_viewer_id.
+    if (ticket?.id && ticket.status === 'pending') {
+      markTicketAsOpened.mutate(ticket.id)
+    }
+
     // Se o ticket tem um lead associado, usa ele diretamente
     if (ticket.lead) {
       // Garante que o lead tem o ticket associado
@@ -169,6 +179,7 @@ export function TicketsPage() {
         title="Conversas"
         subtitle={`${filteredTickets.length} ${
           statusFilter === 'waiting_queue' ? 'aguardando fila' :
+          statusFilter === 'pending' ? 'pendentes' :
           statusFilter === 'open' ? 'em atendimento' :
           statusFilter === 'closed' ? 'encerradas' :
           'no total'
@@ -183,6 +194,7 @@ export function TicketsPage() {
             const Icon = tab.icon
             const isActive = statusFilter === tab.key
             const count = tab.key === 'waiting_queue' ? counts.waiting_queue :
+                         tab.key === 'pending' ? counts.pending :
                          tab.key === 'open' ? counts.open :
                          tab.key === 'closed' ? counts.closed : counts.total
             return (
@@ -200,7 +212,7 @@ export function TicketsPage() {
                 {tab.key !== 'all' && (
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                     isActive ? 'bg-muted-foreground/20' : 'bg-accent'
-                  } ${tab.key === 'waiting_queue' && counts.waiting_queue > 0 ? 'bg-red-500/30 text-red-300 animate-pulse' : ''}`}>
+                  } ${tab.key === 'waiting_queue' && counts.waiting_queue > 0 ? 'bg-red-500/30 text-red-300 animate-pulse' : ''} ${tab.key === 'pending' && counts.pending > 0 ? 'bg-amber-500/30 text-amber-300' : ''}`}>
                     {count}
                   </span>
                 )}
@@ -247,7 +259,9 @@ export function TicketsPage() {
             <Card
               className={`hover:shadow-lg transition-shadow cursor-pointer hover:border-blue-500/50 relative ${
                 hasUnreadMessage(ticket) ? 'ring-2 ring-green-500/50 border-green-500/30' : ''
-              } ${statusFilter === 'waiting_queue' ? 'border-red-500/30' : ''}`}
+              } ${statusFilter === 'waiting_queue' ? 'border-red-500/30' : ''} ${
+                ticket.status === 'pending' ? 'border-l-2 border-l-amber-500' : ''
+              }`}
               onClick={() => handleTicketClick(ticket)}
             >
               {/* Badge piscando para mensagem não respondida */}
@@ -324,6 +338,7 @@ export function TicketsPage() {
           <p className="text-sm mt-1">
             {searchQuery ? 'Tente ajustar sua busca' :
              statusFilter === 'waiting_queue' ? 'Nenhum cliente aguardando seleção de fila' :
+             statusFilter === 'pending' ? 'Nenhuma conversa pendente. Tudo sob controle.' :
              statusFilter === 'open' ? 'Nenhum chat aberto no momento' : 'Nenhum chat encerrado'}
           </p>
         </div>

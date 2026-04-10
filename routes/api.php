@@ -328,7 +328,8 @@ Route::middleware('auth:api')->group(function () {
             Route::put('{ticket}/transfer', [TicketController::class, 'transfer']); // Transferir para usuário
             Route::put('{ticket}/transfer-queue', [TicketController::class, 'transferToQueue']); // Transferir para fila
             Route::put('{ticket}/close', [TicketController::class, 'close']); // Encerrar conversa
-            Route::put('{ticket}/reopen', [TicketController::class, 'reopen']); // Reabrir conversa
+            Route::put('{ticket}/reopen', [TicketController::class, 'reopen']); // Reabrir conversa (ação manual do atendente)
+            Route::post('{ticket}/open', [TicketController::class, 'markAsOpened']); // Primeira abertura: pending → open
             // Toggle IA para atendimento humano
             Route::put('{ticket}/toggle-ia', [TicketController::class, 'toggleIa']); // Toggle IA on/off
             Route::get('{ticket}/ia-status', [TicketController::class, 'iaStatus']); // Status da IA

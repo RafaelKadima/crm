@@ -161,12 +161,17 @@ export function LeadsKanbanPage() {
   // Função para determinar o status do lead baseado no ticket
   const getLeadStatus = (lead: Lead): 'pending' | 'open' | 'closed' => {
     const latestTicket = (lead as any).tickets?.[0]
-    
+
     // Lead sem ticket = pendente (novo lead que chegou, sem mensagem ainda)
     if (!latestTicket) {
       return 'pending'
     }
-    
+
+    // Status nativo do ticket: pending = ninguém abriu ainda
+    if (latestTicket.status === 'pending') {
+      return 'pending'
+    }
+
     // Ticket fechado MAS com mensagens não lidas = lead reabriu conversa = pendente
     if (latestTicket.status === 'closed') {
       if (lead.unread_messages && lead.unread_messages > 0) {
@@ -174,8 +179,8 @@ export function LeadsKanbanPage() {
       }
       return 'closed'
     }
-    
-    // Ticket aberto = em atendimento (mesmo com msg não lida, está em atendimento)
+
+    // Ticket aberto/waiting_customer = em atendimento (mesmo com msg não lida)
     // A msg não lida faz o card piscar, mas não muda o status
     return 'open'
   }

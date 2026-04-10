@@ -28,6 +28,8 @@ class Ticket extends Model
         'assigned_user_id',
         'status',
         'closed_at',
+        'first_viewed_at',
+        'first_viewer_id',
         'ia_enabled',
         'ia_disabled_by',
         'ia_disabled_at',
@@ -43,9 +45,20 @@ class Ticket extends Model
         return [
             'status' => TicketStatusEnum::class,
             'closed_at' => 'datetime',
+            'first_viewed_at' => 'datetime',
             'ia_enabled' => 'boolean',
             'ia_disabled_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Atendente que abriu a conversa pela primeira vez (para SLA de primeira resposta).
+     * Independente de `assigned_user_id` — esse campo é só métrica, não representa
+     * titularidade. O dono continua sendo definido pela autodistribuição da fila.
+     */
+    public function firstViewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'first_viewer_id');
     }
 
     /**

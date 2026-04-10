@@ -119,3 +119,26 @@ export function useReopenTicket() {
     },
   })
 }
+
+/**
+ * Marca o ticket como aberto pela primeira vez (transição pending → open).
+ * Idempotente — pode ser chamado sem checagem prévia. NÃO altera ownership.
+ */
+export function useMarkTicketAsOpened() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (ticketId: string) => {
+      const { data } = await api.post(`/tickets/${ticketId}/open`)
+      return data as { message: string; ticket: any; changed: boolean }
+    },
+    onSuccess: (result) => {
+      // Só invalida o cache se o status realmente mudou.
+      // Evita refetch desnecessário quando o ticket já estava aberto.
+      if (result?.changed) {
+        queryClient.invalidateQueries({ queryKey: ['tickets'] })
+        queryClient.invalidateQueries({ queryKey: ['leads'] })
+      }
+    },
+  })
+}

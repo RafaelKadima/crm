@@ -1034,10 +1034,16 @@ class WhatsAppService implements WhatsAppProviderInterface
                 ->first();
 
             if ($closedTicket) {
-                // REABRIR o ticket fechado
+                // REABRIR o ticket fechado como PENDING.
+                // Mensagem nova em conversa fechada = atenção fresca, mesma regra
+                // de uma conversa nova. O dono anterior é preservado, mas o status
+                // volta pra fila de pendentes para que o time veja imediatamente.
+                // Limpa first_viewed_at/first_viewer_id para resetar o SLA da nova rodada.
                 $closedTicket->update([
-                    'status' => TicketStatusEnum::OPEN,
+                    'status' => TicketStatusEnum::PENDING,
                     'closed_at' => null,
+                    'first_viewed_at' => null,
+                    'first_viewer_id' => null,
                     'lead_id' => $lead->id, // Garante associação com lead
                 ]);
 
@@ -1045,6 +1051,7 @@ class WhatsAppService implements WhatsAppProviderInterface
                     'ticket_id' => $closedTicket->id,
                     'lead_id' => $lead->id,
                     'previous_status' => 'closed',
+                    'new_status' => 'pending',
                 ]);
 
                 // Disparar evento de reabertura para notificar frontend
@@ -1056,12 +1063,16 @@ class WhatsAppService implements WhatsAppProviderInterface
 
         // 3. Se ainda não tem ticket, cria novo
         if (!$ticket) {
+            // Conversa nova de cliente nasce como PENDING (precisa de atenção).
+            // Vai virar OPEN quando o primeiro atendente abrir a conversa no CRM.
+            // Status é independente do dono — a autodistribuição da fila continua
+            // atribuindo `assigned_user_id` normalmente.
             $ticket = Ticket::create([
                 'tenant_id' => $channel->tenant_id,
                 'contact_id' => $contact->id,
                 'channel_id' => $channel->id,
                 'lead_id' => $lead->id,
-                'status' => TicketStatusEnum::OPEN,
+                'status' => TicketStatusEnum::PENDING,
             ]);
 
             Log::info('Ticket created from WhatsApp', ['ticket_id' => $ticket->id, 'lead_id' => $lead->id]);

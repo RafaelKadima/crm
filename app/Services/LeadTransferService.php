@@ -36,9 +36,10 @@ class LeadTransferService
                 LeadQueueOwner::setOwnerForQueue($lead, $queue, $newUser);
             }
 
-            // Atualiza TODOS os tickets abertos do lead (não apenas um)
+            // Atualiza TODOS os tickets ATIVOS do lead (não apenas um).
+            // Ativo = open OU pending — ambos representam conversa em andamento.
             $lead->tickets()
-                ->where('status', TicketStatusEnum::OPEN)
+                ->whereIn('status', [TicketStatusEnum::OPEN, TicketStatusEnum::PENDING])
                 ->update(['assigned_user_id' => $newUser->id]);
 
             Log::info('Lead transferred to user', [
@@ -93,8 +94,11 @@ class LeadTransferService
                 LeadQueueOwner::setOwnerForQueue($lead, $newQueue, $newUser);
             }
 
-            // Atualiza o ticket aberto (se houver)
-            $ticket = $lead->tickets()->where('status', TicketStatusEnum::OPEN)->first();
+            // Atualiza o ticket ativo (se houver).
+            // Ativo = open OU pending — ambos representam conversa em andamento.
+            $ticket = $lead->tickets()
+                ->whereIn('status', [TicketStatusEnum::OPEN, TicketStatusEnum::PENDING])
+                ->first();
             if ($ticket) {
                 $ticket->update(['assigned_user_id' => $newUser?->id]);
             }

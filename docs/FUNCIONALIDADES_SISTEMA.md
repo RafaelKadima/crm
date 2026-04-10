@@ -159,6 +159,38 @@ Funcionalidades principais:
 - Transferência de atendimento
 - Encerrar/reabrir
 - **Toggle IA** por ticket (atendimento humano vs IA)
+- **Status pendente → aberto no primeiro atendimento** (ver abaixo)
+
+#### Fluxo de status do ticket (`pending` → `open` → `closed`)
+
+Status do ticket e titularidade (`assigned_user_id`) são **dimensões independentes**. A autodistribuição da fila (round-robin, carteirização, `LeadAssignmentService`, `QueueRoutingService`) continua definindo o dono — o status só reflete se alguém **já abriu** a conversa ou não.
+
+- **`pending`** — conversa nova que ninguém leu ainda. Aparece na aba "Pendentes" da inbox com destaque âmbar. Pode ter dono atribuído (autodistribuído pela fila) ou não; a diferença é só que ainda não foi aberta por nenhum atendente.
+- **`open`** — conversa em atendimento ativo (alguém já abriu). Aparece em "Em Atendimento".
+- **`waiting_customer`** — aguardando resposta do cliente (mantido para compatibilidade, mesma faixa visual de `open`).
+- **`closed`** — encerrado.
+
+**Transições automáticas:**
+
+| Gatilho | Transição | Onde |
+|---|---|---|
+| Cliente manda mensagem nova (contato sem ticket ativo) | cria ticket `pending` | `WhatsAppService::findOrCreateTicket`, `InstagramService::findOrCreateTicket`, `InternalWhatsAppWebhookController::findOrCreateTicket` |
+| Cliente manda mensagem em ticket `closed` | reabre como `pending` (zera `first_viewed_at`/`first_viewer_id`) | `WhatsAppService::findOrCreateTicket`, `QueueRoutingService::handleReturningLeadWithTimeout` |
+| Atendente abre conversa pendente na inbox (frontend) | `pending` → `open`, grava `first_viewed_at` + `first_viewer_id` | `POST /api/tickets/{ticket}/open` (disparado por `ConversasPage` e `TicketsPage` via hook `useMarkTicketAsOpened`) |
+| Atendente envia mensagem em ticket `closed` (outbound) | `closed` → `open` direto (ação explícita) | `TicketController::sendMessage`, `WhatsAppController`, `InstagramController` |
+| Atendente clica em "Reabrir" | `closed` → `open` direto (ação explícita) | `TicketController::reopen` via `LeadTransferService::reopenConversation` |
+| Atendente cria ticket manual (`POST /api/tickets`) | nasce `open` | `TicketController::store` |
+
+**Invariantes importantes:**
+
+- `POST /api/tickets/{ticket}/open` é **idempotente** e **nunca** altera `assigned_user_id` nem `lead.owner_id`. Só mexe em `status`, `first_viewed_at`, `first_viewer_id`.
+- `first_viewer_id` é **métrica de SLA de primeira resposta**, não representa titularidade. O dono continua sendo responsabilidade exclusiva da autodistribuição da fila.
+- Serviços que iteram sobre "tickets ativos" (`LeadTransferService::transferToUser/transferToQueue`, `QueueRoutingService::needsQueueMenu`) usam `whereIn('status', [OPEN, PENDING])` — ambos representam conversa em andamento.
+- SQL de métrica: `SELECT AVG(EXTRACT(EPOCH FROM (first_viewed_at - created_at))) FROM tickets WHERE first_viewed_at IS NOT NULL` → tempo médio de primeira resposta.
+
+**Migration:** `database/migrations/2026_04_09_120000_add_first_view_to_tickets_table.php` adiciona `first_viewed_at TIMESTAMP NULL` + `first_viewer_id UUID NULL` (FK `users`, `onDelete: set null`).
+
+**Broadcast:** `App\Events\TicketStatusChanged` (`ticket.status_changed`) é disparado em `POST /open` nos canais `ticket.{id}`, `lead.{id}`, `tenant.{id}`. O frontend escuta no `useTenantMessages` (`useWebSocket.ts`) pra tirar a conversa da aba "Pendentes" em tempo real nos outros atendentes.
 
 Rotas:
 - `GET/POST /api/tickets`
@@ -172,7 +204,8 @@ Rotas:
   - `PUT /api/tickets/{ticket}/transfer`
   - `PUT /api/tickets/{ticket}/transfer-queue`
   - `PUT /api/tickets/{ticket}/close`
-  - `PUT /api/tickets/{ticket}/reopen`
+  - `PUT /api/tickets/{ticket}/reopen` — reabertura manual (vai direto para `open`)
+  - `POST /api/tickets/{ticket}/open` — primeira abertura: `pending` → `open` (idempotente, não altera `assigned_user_id`)
   - `PUT /api/tickets/{ticket}/toggle-ia`
   - `GET /api/tickets/{ticket}/ia-status`
 

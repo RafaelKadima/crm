@@ -26,6 +26,8 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
   const ChannelIcon = channelIcons[lead.channel?.type || 'whatsapp'] || MessageSquare
   const contactName = lead.contact?.name || 'Sem nome'
   const contactPhone = lead.contact?.phone ? formatPhone(lead.contact.phone) : ''
+  const ticketStatus = lead.tickets?.[0]?.status
+  const isPending = ticketStatus === 'pending'
 
   // Formata data da última mensagem
   const formatLastMessage = (dateStr?: string) => {
@@ -55,7 +57,10 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
         "w-full flex items-start gap-3 p-3 text-left transition-colors rounded-lg",
         isActive && "bg-primary/10 border-l-2 border-primary",
         !isActive && "hover:bg-muted/50",
-        hasUnread && !isActive && "bg-success/10 border-l-2 border-success"
+        hasUnread && !isActive && "bg-success/10 border-l-2 border-success",
+        // Conversa pendente (ninguém abriu ainda) tem destaque âmbar discreto
+        // — só aplica se não estiver ativa nem com unread (que tomam precedência visual)
+        isPending && !isActive && !hasUnread && "border-l-2 border-warning bg-warning/5"
       )}
     >
       {/* Avatar */}
@@ -117,7 +122,6 @@ export function ConversationItem({ lead, isActive, onClick }: ConversationItemPr
 
         {/* Ticket status badge */}
         {(() => {
-          const ticketStatus = lead.tickets?.[0]?.status
           const config = ticketStatus === 'open'
             ? { label: 'Aberto', color: 'text-info bg-info/15' }
             : ticketStatus === 'pending'
