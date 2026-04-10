@@ -402,7 +402,7 @@ export function PipelineManagerModal({
                       }}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                         selectedPipelineId === pipeline.id && !isCreatingNew
-                          ? 'bg-blue-600'
+                          ? 'bg-primary text-primary-foreground'
                           : 'hover:bg-accent'
                       }`}
                     >
@@ -415,7 +415,7 @@ export function PipelineManagerModal({
                             <Lock className="w-3 h-3 text-muted-foreground" />
                           )}
                           {pipeline.is_default && (
-                            <span className="text-xs bg-blue-500/30 text-blue-300 px-1 rounded">
+                            <span className="text-xs bg-primary/30 text-primary-foreground/70 px-1 rounded">
                               Padrão
                             </span>
                           )}
@@ -424,7 +424,7 @@ export function PipelineManagerModal({
                       <span className="text-xs text-muted-foreground">
                         {pipeline.stages?.length || 0} estágios
                         {pipeline.sdr_agent && (
-                          <span className="ml-2 text-blue-400">
+                          <span className="ml-2 text-muted-foreground">
                             <Bot className="w-3 h-3 inline" /> {pipeline.sdr_agent.name}
                           </span>
                         )}
@@ -464,7 +464,7 @@ export function PipelineManagerModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Nome do Pipeline"
-                  className="text-xl font-bold bg-transparent border-b border-transparent hover:border-border focus:border-blue-500 outline-none px-1"
+                  className="text-xl font-bold bg-transparent border-b border-transparent hover:border-border focus:border-foreground outline-none px-1"
                 />
               </div>
               <button
@@ -511,12 +511,12 @@ export function PipelineManagerModal({
 
               {/* SDR Agent Selection */}
               <div className="flex items-center gap-3">
-                <Bot className="w-4 h-4 text-blue-400" />
+                <Bot className="w-4 h-4 text-foreground" />
                 <label className="text-sm text-muted-foreground">Agente SDR:</label>
                 <select
                   value={sdrAgentId || ''}
                   onChange={(e) => setSdrAgentId(e.target.value || null)}
-                  className="flex-1 max-w-xs px-3 py-1.5 bg-accent border border-border rounded-lg text-sm focus:border-blue-500 outline-none"
+                  className="flex-1 max-w-xs px-3 py-1.5 bg-accent border border-border rounded-lg text-sm focus:border-foreground outline-none"
                 >
                   <option value="">Nenhum (sem agente automático)</option>
                   {sdrAgents.map((agent: any) => (
@@ -539,7 +539,7 @@ export function PipelineManagerModal({
                 <button
                   onClick={() => setActiveTab('stages')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
-                    activeTab === 'stages' ? 'bg-blue-600' : 'bg-accent hover:bg-accent'
+                    activeTab === 'stages' ? 'bg-primary text-primary-foreground' : 'bg-accent hover:bg-accent'
                   }`}
                 >
                   <Settings className="w-4 h-4" />
@@ -548,7 +548,7 @@ export function PipelineManagerModal({
                 <button
                   onClick={() => setActiveTab('permissions')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
-                    activeTab === 'permissions' ? 'bg-blue-600' : 'bg-accent hover:bg-accent'
+                    activeTab === 'permissions' ? 'bg-primary text-primary-foreground' : 'bg-accent hover:bg-accent'
                   }`}
                 >
                   <Users className="w-4 h-4" />
@@ -557,7 +557,7 @@ export function PipelineManagerModal({
                 <button
                   onClick={() => setActiveTab('activities')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
-                    activeTab === 'activities' ? 'bg-blue-600' : 'bg-accent hover:bg-accent'
+                    activeTab === 'activities' ? 'bg-primary text-primary-foreground' : 'bg-accent hover:bg-accent'
                   }`}
                 >
                   <ClipboardList className="w-4 h-4" />
@@ -588,7 +588,7 @@ export function PipelineManagerModal({
                         type="text"
                         value={stage.name}
                         onChange={(e) => handleStageChange(index, 'name', e.target.value)}
-                        className="flex-1 px-3 py-1.5 bg-muted-foreground/20 rounded border border-border focus:border-blue-500 outline-none"
+                        className="flex-1 px-3 py-1.5 bg-muted-foreground/20 rounded border border-border focus:border-foreground outline-none"
                       />
 
                       {/* Stage Type Selector */}
@@ -642,7 +642,7 @@ export function PipelineManagerModal({
               {activeTab === 'permissions' && !isCreatingNew && (
                 <div className="space-y-4">
                   {isPublic && (
-                    <div className="p-3 bg-blue-500/20 rounded-lg text-blue-300 text-sm">
+                    <div className="p-3 bg-info/10 rounded-lg text-info text-sm">
                       <Globe className="w-4 h-4 inline mr-2" />
                       Este pipeline é público - todos os usuários podem ver e gerenciar leads.
                     </div>
@@ -758,7 +758,7 @@ export function PipelineManagerModal({
               <button
                 onClick={handleSave}
                 disabled={createPipeline.isPending || updatePipeline.isPending}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-lg transition-colors disabled:opacity-50"
               >
                 {(createPipeline.isPending || updatePipeline.isPending) ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -868,7 +868,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
             onClick={() => onSelectStage(stage.id || null)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
               effectiveStageId === stage.id
-                ? 'bg-blue-600'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-accent hover:bg-accent'
             }`}
           >
@@ -911,7 +911,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
               <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
 
               <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                activity.is_required ? 'bg-blue-500/20 text-blue-400' : 'bg-muted-foreground/20 text-muted-foreground'
+                activity.is_required ? 'bg-primary/20 text-primary-foreground/70' : 'bg-muted-foreground/20 text-muted-foreground'
               }`}>
                 {activity.is_required ? (
                   <CheckSquare className="w-4 h-4" />
@@ -926,7 +926,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
                     type="text"
                     value={editingActivity.title}
                     onChange={(e) => setEditingActivity({ ...editingActivity, title: e.target.value })}
-                    className="flex-1 px-2 py-1 bg-muted-foreground/20 rounded border border-border focus:border-blue-500 outline-none text-sm"
+                    className="flex-1 px-2 py-1 bg-muted-foreground/20 rounded border border-border focus:border-foreground outline-none text-sm"
                   />
                   <label className="flex items-center gap-1 text-xs">
                     <input
@@ -961,7 +961,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
 
                   <span className={`text-xs px-2 py-0.5 rounded ${
                     activity.is_required
-                      ? 'bg-blue-500/20 text-blue-300'
+                      ? 'bg-info/10 text-info'
                       : 'bg-muted-foreground/20 text-muted-foreground'
                   }`}>
                     {activity.is_required ? 'Obrigatória' : 'Opcional'}
@@ -1001,13 +1001,13 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
             value={newActivityName}
             onChange={(e) => setNewActivityName(e.target.value)}
             placeholder="Nome da atividade (ex: Fazer ligação de descoberta)"
-            className="flex-1 px-3 py-2 bg-accent rounded-lg border border-border focus:border-blue-500 outline-none text-sm"
+            className="flex-1 px-3 py-2 bg-accent rounded-lg border border-border focus:border-foreground outline-none text-sm"
             onKeyDown={(e) => e.key === 'Enter' && handleAddActivity()}
           />
           <button
             onClick={handleAddActivity}
             disabled={!newActivityName.trim() || createActivity.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 rounded-lg text-sm transition-colors"
           >
             {createActivity.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1033,7 +1033,7 @@ function StageActivitiesTab({ pipelineId, stages, selectedStageId, onSelectStage
           value={newActivityDescription}
           onChange={(e) => setNewActivityDescription(e.target.value)}
           placeholder="Descrição (opcional)"
-          className="w-full px-3 py-2 bg-accent rounded-lg border border-border focus:border-blue-500 outline-none text-sm"
+          className="w-full px-3 py-2 bg-accent rounded-lg border border-border focus:border-foreground outline-none text-sm"
         />
       </div>
     </div>

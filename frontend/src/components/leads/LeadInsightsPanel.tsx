@@ -195,7 +195,7 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
             {memory.communication_style && (
               <div className="p-3 bg-white dark:bg-muted rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <MessageCircle className="w-4 h-4 text-blue-500" />
+                  <MessageCircle className="w-4 h-4 text-info" />
                   <span className="text-xs text-muted-foreground">Estilo</span>
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">
@@ -258,7 +258,7 @@ export const LeadInsightsPanel: React.FC<LeadInsightsPanelProps> = ({ leadId }) 
               <div className="text-xs text-muted-foreground">Taxa Positiva</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+              <div className="text-lg font-bold text-info">
                 {memory.meeting_attendance_rate || 0}%
               </div>
               <div className="text-xs text-muted-foreground">Comparecimento</div>

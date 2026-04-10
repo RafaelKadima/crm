@@ -44,7 +44,7 @@ const activityLabels: Record<StageActivityType, string> = {
 }
 
 const activityColors: Record<StageActivityType, string> = {
-  call: 'text-blue-500 bg-blue-500/10',
+  call: 'text-info bg-info/10',
   email: 'text-purple-500 bg-purple-500/10',
   meeting: 'text-green-500 bg-green-500/10',
   task: 'text-amber-500 bg-amber-500/10',

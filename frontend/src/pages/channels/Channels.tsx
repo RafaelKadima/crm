@@ -1238,13 +1238,13 @@ export function ChannelsPage() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/20"
+                className="p-4 bg-info/10 rounded-xl border border-info/20"
               >
-                <h4 className="font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
+                <h4 className="font-medium text-info mb-2 flex items-center gap-2">
                   <Zap className="h-4 w-4" />
                   {t('channelsPage.iaModal.aboutEnterprise')}
                 </h4>
-                <ul className="text-sm text-blue-700/80 dark:text-blue-400/80 space-y-1">
+                <ul className="text-sm text-info/80 space-y-1">
                   <li>• {t('channelsPage.iaModal.enterpriseFeature1')}</li>
                   <li>• {t('channelsPage.iaModal.enterpriseFeature2')}</li>
                   <li>• {t('channelsPage.iaModal.enterpriseFeature3')}</li>

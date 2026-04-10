@@ -49,8 +49,8 @@ const typeConfig = {
   },
   suggestion: { 
     icon: Lightbulb, 
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-    iconColor: 'text-blue-600 dark:text-blue-400',
+    bgColor: 'bg-info/10',
+    iconColor: 'text-info',
     borderColor: 'border-l-blue-500'
   },
   anomaly: { 
@@ -64,7 +64,7 @@ const typeConfig = {
 const severityColors = {
   critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  info: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  info: 'bg-info/10 text-info',
   success: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
 };
 
@@ -133,7 +133,7 @@ export default function InsightCard({
                 </p>
                 
                 {insight.recommendation && (
-                  <p className="mt-2 text-sm text-blue-600 dark:text-blue-400">
+                  <p className="mt-2 text-sm text-info">
                     💡 {insight.recommendation}
                   </p>
                 )}

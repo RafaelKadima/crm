@@ -412,8 +412,8 @@ export function IntegrationConfigModal({ isOpen, onClose, integration }: Integra
 
                 {formData.auth_type === 'linx_smart' && (
                   <div className="space-y-4 p-4 bg-accent/50 rounded-lg border border-border">
-                    <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                      <p className="text-sm text-blue-300">
+                    <div className="p-3 bg-info/10 border border-info/30 rounded-lg">
+                      <p className="text-sm text-info">
                         <strong>Linx Smart API:</strong> Configure as credenciais obtidas no Portal Linx.
                         O token será gerado e gerenciado automaticamente pelo CRM.
                       </p>

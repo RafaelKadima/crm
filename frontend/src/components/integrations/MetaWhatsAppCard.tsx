@@ -175,7 +175,7 @@ export function MetaWhatsAppCard() {
               href="https://developers.facebook.com/apps"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300"
+              className="inline-flex items-center gap-1 text-sm text-info hover:text-info/80"
             >
               Criar Meta App
               <ExternalLink className="w-3 h-3" />
@@ -202,7 +202,7 @@ export function MetaWhatsAppCard() {
                           </span>
                           {getStatusBadge(integration)}
                           {integration.is_coexistence && (
-                            <Badge variant="outline" className="flex items-center gap-1 text-blue-400 border-blue-400/30">
+                            <Badge variant="outline" className="flex items-center gap-1 text-info border-info/30">
                               <Smartphone className="w-3 h-3" />
                               Coexistencia
                             </Badge>
@@ -287,7 +287,7 @@ export function MetaWhatsAppCard() {
                 <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-blue-400" />
+                      <Smartphone className="w-4 h-4 text-info" />
                       <span className="text-sm font-medium">Modo Coexistencia</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 ml-6">
@@ -300,10 +300,10 @@ export function MetaWhatsAppCard() {
                   />
                 </div>
                 {coexistenceMode && (
-                  <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <div className="mt-2 p-3 bg-info/10 border border-info/20 rounded-lg">
                     <div className="flex items-start gap-2">
-                      <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                      <div className="text-xs text-blue-300 space-y-1">
+                      <Info className="w-4 h-4 text-info mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-info/80 space-y-1">
                         <p>O numero deve estar em uso no WhatsApp Business App ha pelo menos 7 dias.</p>
                         <p>Mensagens enviadas pelo App serao sincronizadas com o CRM automaticamente.</p>
                         <p>Selo azul (OBA) nao e suportado no modo coexistencia.</p>

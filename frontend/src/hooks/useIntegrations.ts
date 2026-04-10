@@ -198,7 +198,7 @@ export function useIntegrationAvailableFields() {
 export const integrationTypeInfo = {
   erp: {
     label: 'ERP',
-    color: 'bg-blue-500',
+    color: 'bg-info',
     description: 'Sistema de gestao empresarial',
   },
   crm: {

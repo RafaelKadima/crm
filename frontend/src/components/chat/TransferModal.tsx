@@ -90,7 +90,7 @@ export function TransferModal({
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-600/20 text-blue-400">
+                  <div className="p-2 rounded-lg bg-info/10 text-info">
                     <ArrowRightLeft className="h-5 w-5" />
                   </div>
                   <div>
@@ -122,7 +122,7 @@ export function TransferModal({
                         }}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
                           mode === 'user'
-                            ? 'bg-blue-600/20 border-blue-500 text-blue-400'
+                            ? 'bg-info/10 border-info text-info'
                             : 'border-border hover:bg-muted'
                         }`}
                       >
@@ -166,7 +166,7 @@ export function TransferModal({
                               onClick={() => setSelectedUserId(user.id)}
                               className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
                                 selectedUserId === user.id
-                                  ? 'bg-blue-600/20 border-blue-500'
+                                  ? 'bg-info/10 border-info'
                                   : 'border-border hover:bg-muted'
                               }`}
                             >
@@ -178,7 +178,7 @@ export function TransferModal({
                                 <p className="text-xs text-muted-foreground">{user.email}</p>
                               </div>
                               {selectedUserId === user.id && (
-                                <CheckCircle className="h-5 w-5 text-blue-400" />
+                                <CheckCircle className="h-5 w-5 text-info" />
                               )}
                             </button>
                           ))
@@ -230,7 +230,7 @@ export function TransferModal({
                                       </Badge>
                                     )}
                                     {hasOwner && (
-                                      <Badge variant="outline" className="text-xs text-blue-400">
+                                      <Badge variant="outline" className="text-xs text-info">
                                         → {hasOwner.user_name}
                                       </Badge>
                                     )}

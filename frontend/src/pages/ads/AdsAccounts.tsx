@@ -72,7 +72,7 @@ export default function AdsAccounts() {
   const getPlatformIcon = (platform: string) => {
     if (platform === 'meta') {
       return (
-        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
           <span className="text-white font-bold text-lg">f</span>
         </div>
       );
@@ -222,12 +222,12 @@ export default function AdsAccounts() {
                   type="button"
                   onClick={() => setPlatform('meta')}
                   className={`p-4 rounded-lg border-2 flex flex-col items-center gap-2 transition-colors ${
-                    platform === 'meta' 
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                    platform === 'meta'
+                      ? 'border-primary bg-primary/5'
                       : 'border-gray-200 dark:border-border hover:border-gray-300'
                   }`}
                 >
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                     <span className="text-white font-bold text-lg">f</span>
                   </div>
                   <span className="text-sm font-medium">Meta Ads</span>
@@ -266,7 +266,7 @@ export default function AdsAccounts() {
                       href="https://business.facebook.com/settings/system-users" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
+                      className="text-info hover:underline"
                     >
                       Meta Business Settings <ExternalLink className="w-3 h-3 inline" />
                     </a>

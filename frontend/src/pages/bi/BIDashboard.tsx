@@ -278,8 +278,8 @@ export function BIDashboard() {
         <Link to="/bi/reports">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow">
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-blue-500/10">
-                <FileText className="h-6 w-6 text-blue-500" />
+              <div className="p-3 rounded-xl bg-info/10">
+                <FileText className="h-6 w-6 text-info" />
               </div>
               <div>
                 <h3 className="font-semibold">Relatórios</h3>
@@ -354,9 +354,9 @@ export function BIDashboard() {
                   Baseado em tendência atual e sazonalidade
                 </p>
               </div>
-              <div className="p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20">
+              <div className="p-4 rounded-lg bg-gradient-to-r from-info/10 to-info/5 border border-info/20">
                 <p className="text-sm text-muted-foreground">Leads Necessários</p>
-                <p className="text-2xl font-bold text-blue-500">
+                <p className="text-2xl font-bold text-info">
                   {summary.predictions.leads_needed || 0}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">

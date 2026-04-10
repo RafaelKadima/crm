@@ -36,7 +36,7 @@ const typeIcons: Record<ExtractedData['type'], typeof Mail> = {
 
 // Cores para cada tipo
 const typeColors: Record<ExtractedData['type'], string> = {
-  email: 'text-blue-400 bg-blue-400/10',
+  email: 'text-info bg-info/10',
   phone: 'text-green-400 bg-green-400/10',
   cpf: 'text-purple-400 bg-purple-400/10',
   cep: 'text-orange-400 bg-orange-400/10',

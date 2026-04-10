@@ -131,7 +131,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
             <button
               onClick={handleSubmitCorrection}
               disabled={loading}
-              className="flex items-center gap-1 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="flex items-center gap-1 px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:opacity-90 disabled:opacity-50"
             >
               <Send className="w-3 h-3" />
               Enviar

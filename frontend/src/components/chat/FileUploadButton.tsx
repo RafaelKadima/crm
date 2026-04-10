@@ -322,7 +322,7 @@ export function FileUploadButton({
                     <div
                       className={cn(
                         'p-2 rounded',
-                        category === 'image' && 'bg-blue-500/10 text-blue-500',
+                        category === 'image' && 'bg-info/10 text-info',
                         category === 'video' && 'bg-purple-500/10 text-purple-500',
                         category === 'audio' && 'bg-green-500/10 text-green-500',
                         category === 'document' && 'bg-orange-500/10 text-orange-500'

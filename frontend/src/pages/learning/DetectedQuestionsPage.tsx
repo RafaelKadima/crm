@@ -130,7 +130,7 @@ export const DetectedQuestionsPage: React.FC = () => {
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === f
-                ? 'bg-blue-600 text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-gray-100 dark:bg-muted text-muted-foreground dark:text-muted-foreground hover:bg-gray-200 dark:hover:bg-accent'
             }`}
           >

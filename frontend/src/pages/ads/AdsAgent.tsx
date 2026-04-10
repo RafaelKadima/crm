@@ -454,7 +454,7 @@ export default function AdsAgent() {
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">{copy.variation_name}</h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                    <span className="text-xs px-2 py-1 bg-info/10 text-info rounded">
                       {copy.hook_type}
                     </span>
                     <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">

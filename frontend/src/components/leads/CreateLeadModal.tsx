@@ -133,8 +133,8 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
               <form onSubmit={handleSubmit} className="p-5 space-y-4">
                 {/* Pipeline info */}
                 {pipeline && (
-                  <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <p className="text-sm text-blue-400">
+                  <div className="p-3 bg-info/10 border border-info/30 rounded-lg">
+                    <p className="text-sm text-info">
                       Pipeline: <span className="font-medium">{pipeline.name}</span>
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -212,7 +212,7 @@ export function CreateLeadModal({ isOpen, onClose, pipeline, stages }: CreateLea
                     <select
                       value={formData.channel_id}
                       onChange={(e) => handleChange('channel_id', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      className={`w-full pl-10 pr-4 py-2 bg-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
                         errors.channel_id ? 'border-red-500' : 'border-border'
                       }`}
                     >

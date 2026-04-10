@@ -184,7 +184,7 @@ export default function AdsAgentChat() {
                   <div className={cn(
                     'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
                     message.role === 'user'
-                      ? 'bg-blue-500'
+                      ? 'bg-primary'
                       : 'bg-gradient-to-br from-purple-500 to-pink-500'
                   )}>
                     {message.role === 'user' ? (
@@ -202,7 +202,7 @@ export default function AdsAgentChat() {
                     <div className={cn(
                       'rounded-2xl px-4 py-2',
                       message.role === 'user'
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-gray-100 dark:bg-muted text-gray-900 dark:text-white'
                     )}>
                       {message.role === 'assistant' ? (

@@ -175,7 +175,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
               onClick={() => setFormData(prev => ({ ...prev, scope: scope.id }))}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 formData.scope === scope.id
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-gray-100 dark:bg-muted text-gray-700 dark:text-muted-foreground hover:bg-gray-200'
               }`}
             >
@@ -242,7 +242,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
       </div>
 
       {/* Ação */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+      <div className="bg-info/5 p-4 rounded-lg">
         <Label className="text-base font-semibold mb-3 block">ENTÃO (Ação)</Label>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

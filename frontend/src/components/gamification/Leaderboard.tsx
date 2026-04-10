@@ -118,7 +118,7 @@ function LeaderboardRow({ entry, index, showValue }: LeaderboardRowProps) {
               {entry.deals_won} ganhos
             </span>
             <span className="flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-blue-500" />
+              <TrendingUp className="h-3 w-3 text-info" />
               {entry.activities_completed} atividades
             </span>
           </div>

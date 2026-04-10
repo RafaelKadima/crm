@@ -102,9 +102,9 @@ export function ConnectChannelsPage() {
       name: 'Webchat',
       description: t('channels.webchatDesc'),
       icon: Globe,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500',
-      borderColor: 'border-blue-500/30',
+      color: 'text-info',
+      bgColor: 'bg-info',
+      borderColor: 'border-info/30',
       available: false,
     },
   ]
@@ -263,7 +263,7 @@ export function ConnectChannelsPage() {
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-blue-400" />
+                    <Smartphone className="w-4 h-4 text-info" />
                     <span className="font-medium">{t('channels.coexistenceMode')}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1 ml-6">
@@ -276,10 +276,10 @@ export function ConnectChannelsPage() {
                 />
               </div>
               {coexistenceMode && (
-                <div className="mt-2 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                <div className="mt-2 p-4 bg-info/10 border border-info/20 rounded-xl">
                   <div className="flex items-start gap-2">
-                    <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-blue-300 space-y-1">
+                    <Info className="w-4 h-4 text-info mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-info/80 space-y-1">
                       <p>{t('channels.coexistenceInfo1')}</p>
                       <p>{t('channels.coexistenceInfo2')}</p>
                       <p>{t('channels.coexistenceInfo3')}</p>
@@ -428,7 +428,7 @@ export function ConnectChannelsPage() {
                               Meta Cloud API
                             </Badge>
                             {integration.is_coexistence && (
-                              <Badge variant="outline" className="flex items-center gap-1 text-xs text-blue-400 border-blue-400/30">
+                              <Badge variant="outline" className="flex items-center gap-1 text-xs text-info border-info/30">
                                 <Smartphone className="w-3 h-3" />
                                 {t('channels.coexistence')}
                               </Badge>

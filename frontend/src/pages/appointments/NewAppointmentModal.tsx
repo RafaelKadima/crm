@@ -26,7 +26,7 @@ interface Props {
 }
 
 const TYPES = [
-  { value: 'meeting', label: 'Reunião', icon: Video, color: 'bg-blue-500' },
+  { value: 'meeting', label: 'Reunião', icon: Video, color: 'bg-info' },
   { value: 'visit', label: 'Visita à Loja', icon: Building, color: 'bg-purple-500' },
   { value: 'demo', label: 'Demonstração', icon: Eye, color: 'bg-green-500' },
   { value: 'follow_up', label: 'Follow-up', icon: Phone, color: 'bg-orange-500' },

@@ -91,12 +91,12 @@ export default function AdsDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm">Gasto Total</p>
+                <p className="text-primary-foreground/70 text-sm">Gasto Total</p>
                 <p className="text-2xl font-bold mt-1">
                   {formatCurrency(dashboard?.totals.spend || 0)}
                 </p>
               </div>
-              <DollarSign className="w-10 h-10 text-blue-200" />
+              <DollarSign className="w-10 h-10 text-primary-foreground/50" />
             </div>
           </CardContent>
         </Card>
@@ -149,8 +149,8 @@ export default function AdsDashboard() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Eye className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 bg-info/10 rounded-lg">
+                <Eye className="w-5 h-5 text-info" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground dark:text-muted-foreground">Impressões</p>

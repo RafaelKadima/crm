@@ -37,7 +37,7 @@ export default function AppointmentsPage() {
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
 
   const TYPE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-    meeting: { label: t('appointments.types.meeting'), icon: <Video className="w-4 h-4" />, color: 'bg-blue-500' },
+    meeting: { label: t('appointments.types.meeting'), icon: <Video className="w-4 h-4" />, color: 'bg-info' },
     visit: { label: t('appointments.types.visit'), icon: <Building className="w-4 h-4" />, color: 'bg-purple-500' },
     demo: { label: t('appointments.types.demo'), icon: <Eye className="w-4 h-4" />, color: 'bg-green-500' },
     follow_up: { label: t('appointments.types.follow_up'), icon: <Phone className="w-4 h-4" />, color: 'bg-orange-500' },

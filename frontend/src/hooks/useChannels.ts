@@ -204,7 +204,7 @@ export const channelTypeInfo = {
   },
   webchat: {
     label: 'Webchat',
-    color: 'bg-blue-500',
+    color: 'bg-info',
     description: 'Chat do Website',
   },
   other: {
@@ -229,7 +229,7 @@ export const iaModeInfo = {
   enterprise: {
     label: 'Enterprise',
     description: 'IA avançada com workflows',
-    color: 'bg-blue-500',
+    color: 'bg-info',
   },
 }
 

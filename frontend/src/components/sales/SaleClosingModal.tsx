@@ -334,7 +334,7 @@ export function SaleClosingModal({
                         <label className="text-sm font-medium">Produtos</label>
                         <button
                           onClick={addManualItem}
-                          className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                          className="text-sm text-info hover:text-info/80 flex items-center gap-1"
                         >
                           <Plus className="w-4 h-4" />
                           Adicionar item manual

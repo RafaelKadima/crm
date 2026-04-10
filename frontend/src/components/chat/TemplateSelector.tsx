@@ -39,7 +39,7 @@ interface TemplateVariable {
 
 const categoryColors: Record<string, string> = {
   MARKETING: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-  UTILITY: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  UTILITY: 'bg-info/10 text-info border-info/30',
   AUTHENTICATION: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
 }
 
@@ -378,7 +378,7 @@ export function TemplateSelector({ channelId, ticketId, isOpen, onClose, onSent 
                 {variables.length > 0 && (
                   <div className="space-y-3">
                     <label className="text-sm font-medium flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-blue-500" />
+                      <Tag className="h-4 w-4 text-info" />
                       Preencha as variáveis
                     </label>
                     {variables.map((variable, idx) => (

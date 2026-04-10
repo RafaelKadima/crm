@@ -774,7 +774,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                   "p-8 rounded-2xl border shadow-2xl text-center max-w-sm mx-4",
                   transferEffect.isMyLead 
                     ? "bg-gradient-to-br from-emerald-950 to-green-900/80 border-emerald-500/50" 
-                    : "bg-gradient-to-br from-blue-950 to-indigo-900/80 border-blue-500/50"
+                    : "bg-gradient-to-br from-secondary to-muted border-border"
                 )}
               >
                 {/* Ícone animado */}
@@ -785,8 +785,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                   className={cn(
                     "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4",
                     transferEffect.isMyLead 
-                      ? "bg-emerald-500/20 text-emerald-400" 
-                      : "bg-blue-500/20 text-blue-400"
+                      ? "bg-emerald-500/20 text-emerald-400"
+                      : "bg-info/10 text-info"
                   )}
                 >
                   <UserCheck className="w-10 h-10" />
@@ -800,7 +800,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                 >
                   <h3 className={cn(
                     "text-xl font-bold mb-2",
-                    transferEffect.isMyLead ? "text-emerald-300" : "text-blue-300"
+                    transferEffect.isMyLead ? "text-emerald-300" : "text-muted-foreground"
                   )}>
                     {transferEffect.isMyLead ? '🎯 Lead Recebido!' : '↗️ Lead Transferido'}
                   </h3>
@@ -820,8 +820,8 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                   className={cn(
                     "absolute inset-0 rounded-2xl opacity-20",
                     transferEffect.isMyLead 
-                      ? "bg-gradient-to-r from-emerald-500 to-green-500" 
-                      : "bg-gradient-to-r from-blue-500 to-indigo-500"
+                      ? "bg-gradient-to-r from-emerald-500 to-green-500"
+                      : "bg-gradient-to-r from-primary to-primary/60"
                   )}
                   style={{ filter: 'blur(20px)', zIndex: -1 }}
                 />
@@ -912,7 +912,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
             {/* Email */}
             {lead.contact?.email && (
               <div className="flex items-center gap-3 p-3 rounded-lg bg-background hover:bg-muted transition-colors cursor-pointer">
-                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600">
+                <div className="p-2 rounded-lg bg-info/10 text-info">
                   <Mail className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1013,7 +1013,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                 </div>
               )}
               {lead.contact?.email && (
-                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600" title={lead.contact.email}>
+                <div className="p-2 rounded-lg bg-info/10 text-info" title={lead.contact.email}>
                   <Mail className="h-4 w-4" />
                 </div>
               )}
@@ -1307,7 +1307,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
             {activeView === 'edit' && (
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600">
+                  <div className="p-2 rounded-lg bg-info/10 text-info">
                     <Edit className="h-5 w-5" />
                   </div>
                   <div>
@@ -1571,7 +1571,7 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
                                   {msg.status === 'sending' && <Loader2 className="h-3 w-3 animate-spin" />}
                                   {msg.status === 'sent' && <Check className="h-3 w-3" />}
                                   {msg.status === 'delivered' && <CheckCheck className="h-3 w-3" />}
-                                  {msg.status === 'read' && <CheckCheck className="h-3 w-3 text-blue-400" />}
+                                  {msg.status === 'read' && <CheckCheck className="h-3 w-3 text-info" />}
                                 </span>
                               )}
                             </div>

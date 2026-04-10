@@ -23,9 +23,9 @@ type SortDir = 'asc' | 'desc'
 const channelIcons: Record<string, { icon: any; color: string }> = {
   whatsapp: { icon: MessageSquare, color: 'text-green-500' },
   instagram: { icon: MessageCircle, color: 'text-pink-500' },
-  messenger: { icon: MessageCircle, color: 'text-blue-500' },
+  messenger: { icon: MessageCircle, color: 'text-info' },
   telefone: { icon: Phone, color: 'text-muted-foreground' },
-  email: { icon: Mail, color: 'text-blue-400' },
+  email: { icon: Mail, color: 'text-info' },
 }
 
 export function LeadsTable({ leads, stages, onLeadClick }: LeadsTableProps) {
@@ -118,7 +118,7 @@ export function LeadsTable({ leads, stages, onLeadClick }: LeadsTableProps) {
       if (lead.has_new_message) return { label: 'Pendente', variant: 'outline' as const, className: 'text-amber-500 border-amber-500/30' }
       return { label: 'Encerrado', variant: 'outline' as const, className: 'text-muted-foreground border-muted-foreground/30' }
     }
-    return { label: 'Em Atendimento', variant: 'outline' as const, className: 'text-blue-500 border-blue-500/30' }
+    return { label: 'Em Atendimento', variant: 'outline' as const, className: 'text-info border-info/30' }
   }
 
   if (leads.length === 0) {

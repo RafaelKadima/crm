@@ -498,7 +498,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
               "absolute -bottom-0.5 -right-0.5 p-1 rounded-full",
               lead.channel?.type === 'whatsapp' ? 'bg-green-500 text-white' :
               lead.channel?.type === 'instagram' ? 'bg-pink-500 text-white' :
-              'bg-blue-500 text-white'
+              'bg-primary text-primary-foreground'
             )}>
               <ChannelIcon className="h-2.5 w-2.5" />
             </div>
@@ -765,7 +765,7 @@ export function ChatPanel({ lead, onToggleInfo, isInfoOpen }: ChatPanelProps) {
                   {msg.direction === 'outbound' && (
                     <span className="opacity-60">
                       {msg.status === 'read' ? (
-                        <CheckCheck className="h-3 w-3 text-blue-400" />
+                        <CheckCheck className="h-3 w-3 text-info" />
                       ) : msg.status === 'delivered' ? (
                         <CheckCheck className="h-3 w-3" />
                       ) : (

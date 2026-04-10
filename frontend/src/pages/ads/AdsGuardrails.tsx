@@ -84,7 +84,7 @@ const ACTION_TYPES = [
   { value: 'block', label: 'Bloquear', icon: Ban, color: 'text-red-600 bg-red-50' },
   { value: 'require_approval', label: 'Requer Aprovação', icon: CheckCircle, color: 'text-yellow-600 bg-yellow-50' },
   { value: 'warn', label: 'Avisar', icon: AlertCircle, color: 'text-orange-600 bg-orange-50' },
-  { value: 'notify', label: 'Notificar', icon: Bell, color: 'text-blue-600 bg-blue-50' },
+  { value: 'notify', label: 'Notificar', icon: Bell, color: 'text-info bg-info/10' },
 ]
 
 const CONDITION_OPERATORS = [
@@ -347,7 +347,7 @@ export default function AdsGuardrails() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+              <div className="p-2 rounded-lg bg-info/10 text-info">
                 <Shield className="w-5 h-5" />
               </div>
               <div>
@@ -443,7 +443,7 @@ export default function AdsGuardrails() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+                      <div className="p-2 rounded-lg bg-info/10 text-info">
                         <RuleIcon className="w-5 h-5" />
                       </div>
                       
@@ -693,7 +693,7 @@ export default function AdsGuardrails() {
             <div>
               <Label>Dados de Teste (JSON)</Label>
               <textarea
-                className="w-full h-32 p-3 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-32 p-3 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-ring"
                 value={testData}
                 onChange={(e) => setTestData(e.target.value)}
               />

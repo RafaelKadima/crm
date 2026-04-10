@@ -45,7 +45,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
-  scheduled: { label: 'Agendado', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
+  scheduled: { label: 'Agendado', color: 'text-info', bgColor: 'bg-info/20' },
   confirmed: { label: 'Confirmado', color: 'text-green-400', bgColor: 'bg-green-500/20' },
   completed: { label: 'Realizado', color: 'text-muted-foreground', bgColor: 'bg-gray-500/20' },
   cancelled: { label: 'Cancelado', color: 'text-red-400', bgColor: 'bg-red-500/20' },

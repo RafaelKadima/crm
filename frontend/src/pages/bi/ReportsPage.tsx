@@ -37,7 +37,7 @@ const reports: Report[] = [
     description: 'Visão geral com KPIs principais, tendências e alertas',
     formats: ['json', 'pdf', 'excel'],
     icon: BarChart3,
-    color: 'bg-blue-500',
+    color: 'bg-info',
   },
   {
     type: 'sales',
