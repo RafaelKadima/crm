@@ -86,7 +86,7 @@ export default function AdsCampaigns() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+              className="px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
             >
               <option value="">Todos os status</option>
               <option value="ACTIVE">Ativo</option>
@@ -97,7 +97,7 @@ export default function AdsCampaigns() {
             <select
               value={accountFilter}
               onChange={(e) => setAccountFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+              className="px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
             >
               <option value="">Todas as contas</option>
               {accounts?.map((account) => (

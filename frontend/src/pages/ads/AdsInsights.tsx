@@ -158,7 +158,7 @@ export default function AdsInsights() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+              className="px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
             >
               <option value="pending">Pendentes</option>
               <option value="">Todos</option>
@@ -169,7 +169,7 @@ export default function AdsInsights() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+              className="px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
             >
               <option value="">Todos os tipos</option>
               {Object.entries(insightTypeConfig).map(([key, config]) => (
@@ -180,7 +180,7 @@ export default function AdsInsights() {
             <select
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+              className="px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
             >
               <option value="">Todas as severidades</option>
               <option value="critical">Crítico</option>

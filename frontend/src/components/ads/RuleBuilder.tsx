@@ -195,7 +195,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
             <select
               value={formData.condition.metric}
               onChange={(e) => updateCondition('metric', e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+              className="w-full mt-1 px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
             >
               {METRICS.map((m) => (
                 <option key={m.id} value={m.id}>{m.name}</option>
@@ -208,7 +208,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
             <select
               value={formData.condition.operator}
               onChange={(e) => updateCondition('operator', e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+              className="w-full mt-1 px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
             >
               {OPERATORS.map((op) => (
                 <option key={op.id} value={op.id}>{op.name}</option>
@@ -251,7 +251,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
             <select
               value={formData.action.type}
               onChange={(e) => updateAction('type', e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+              className="w-full mt-1 px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
             >
               {ACTIONS.map((action) => (
                 <option key={action.id} value={action.id}>{action.name}</option>
@@ -294,7 +294,7 @@ export default function RuleBuilder({ rule, onSave, onCancel }: RuleBuilderProps
           <select
             value={formData.frequency}
             onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
-            className="w-full mt-1 px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+            className="w-full mt-1 px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
           >
             {FREQUENCIES.map((freq) => (
               <option key={freq.id} value={freq.id}>{freq.name}</option>

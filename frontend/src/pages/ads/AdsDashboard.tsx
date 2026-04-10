@@ -68,7 +68,7 @@ export default function AdsDashboard() {
             <select
               value={days}
               onChange={(e) => setDays(Number(e.target.value))}
-              className="px-3 py-2 bg-white dark:bg-muted border border-gray-300 dark:border-border rounded-lg text-sm"
+              className="px-3 py-2 bg-input text-foreground border border-border rounded-lg text-sm"
             >
               {periodOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>

@@ -298,6 +298,12 @@ code, pre, .mono {
    FOCUS & INTERACTION
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Form elements — always inherit theme colors, never white */
+input, textarea, select {
+  background-color: var(--color-input);
+  color: var(--color-foreground);
+}
+
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--color-foreground);

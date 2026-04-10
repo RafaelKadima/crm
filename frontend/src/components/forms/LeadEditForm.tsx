@@ -282,7 +282,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
                 id="product_id"
                 value={formData.product_id}
                 onChange={(e) => handleChange('product_id', e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-input text-foreground"
               >
                 <option value="">Nenhum produto selecionado</option>
                 {products.map(product => (
@@ -311,7 +311,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
                 value={formData.value}
                 onChange={(e) => handleChange('value', e.target.value)}
                 placeholder="0,00"
-                className="pl-10 bg-gray-50"
+                className="pl-10 bg-input"
                 disabled={!!formData.product_id}
               />
             </div>
@@ -344,7 +344,7 @@ export function LeadEditForm({ lead, onSave, onCancel, onDelete }: LeadEditFormP
                 id="owner_id"
                 value={formData.owner_id}
                 onChange={(e) => handleChange('owner_id', e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-input text-foreground"
               >
                 <option value="">Selecione um responsável</option>
                 {users.map(user => (

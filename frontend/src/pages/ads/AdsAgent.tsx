@@ -239,7 +239,7 @@ export default function AdsAgent() {
             <div className="space-y-2">
               <Label>Descrição do Produto *</Label>
               <textarea
-                className="w-full p-3 rounded-lg border border-gray-300 dark:border-border bg-white dark:bg-muted min-h-[100px]"
+                className="w-full p-3 rounded-lg border border-border bg-input text-foreground min-h-[100px]"
                 placeholder="Descreva seu produto/serviço em detalhes. O que é? Qual problema resolve? Quais os diferenciais?"
                 value={formData.product_description}
                 onChange={(e) => updateFormData('product_description', e.target.value)}
@@ -249,7 +249,7 @@ export default function AdsAgent() {
             <div className="space-y-2">
               <Label>Público-Alvo *</Label>
               <textarea
-                className="w-full p-3 rounded-lg border border-gray-300 dark:border-border bg-white dark:bg-muted min-h-[80px]"
+                className="w-full p-3 rounded-lg border border-border bg-input text-foreground min-h-[80px]"
                 placeholder="Descreva quem é seu cliente ideal. Ex: Empreendedores de 25-45 anos que querem aumentar vendas online..."
                 value={formData.target_audience}
                 onChange={(e) => updateFormData('target_audience', e.target.value)}
@@ -293,7 +293,7 @@ export default function AdsAgent() {
               <div className="space-y-2">
                 <Label>Conta de Anúncio *</Label>
                 <select
-                  className="w-full p-3 rounded-lg border border-gray-300 dark:border-border bg-white dark:bg-muted"
+                  className="w-full p-3 rounded-lg border border-border bg-input text-foreground"
                   value={formData.ad_account_id}
                   onChange={(e) => updateFormData('ad_account_id', e.target.value)}
                 >

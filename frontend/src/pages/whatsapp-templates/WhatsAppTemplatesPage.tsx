@@ -244,7 +244,7 @@ export function WhatsAppTemplatesPage() {
               <select
                 value={selectedChannel}
                 onChange={(e) => setSelectedChannel(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-input text-foreground focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todos os canais</option>
                 {whatsAppChannels.map(channel => (
@@ -263,7 +263,7 @@ export function WhatsAppTemplatesPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-input text-foreground focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todas as categorias</option>
                 <option value="MARKETING">Marketing</option>
@@ -280,7 +280,7 @@ export function WhatsAppTemplatesPage() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-input text-foreground focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todos os status</option>
                 <option value="APPROVED">Aprovado</option>
@@ -401,7 +401,7 @@ export function WhatsAppTemplatesPage() {
                           {template.buttons.map((btn, idx) => (
                             <span
                               key={idx}
-                              className="px-3 py-1 text-sm bg-white dark:bg-accent border border-gray-300 dark:border-border rounded-full text-gray-700 dark:text-muted-foreground"
+                              className="px-3 py-1 text-sm bg-input border border-border rounded-full text-muted-foreground"
                             >
                               {btn.text || btn.type}
                             </span>

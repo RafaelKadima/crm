@@ -95,7 +95,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
             <select
               value={feedbackReason}
               onChange={(e) => setFeedbackReason(e.target.value)}
-              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-border rounded bg-white dark:bg-accent"
+              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-border rounded bg-input text-foreground"
             >
               <option value="">Selecione...</option>
               <option value="tom_inadequado">Tom inadequado</option>

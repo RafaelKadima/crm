@@ -191,7 +191,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-        <div className="bg-white dark:bg-muted rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="bg-card rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200 dark:border-border">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -251,7 +251,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                     id="category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value as WhatsAppTemplateCategory)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-input text-foreground focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="UTILITY">Utilidade - Atualizações e notificações</option>
                     <option value="MARKETING">Marketing - Promoções e ofertas</option>
@@ -269,7 +269,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                     id="language"
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-input text-foreground focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="pt_BR">Português (Brasil)</option>
                     <option value="en_US">English (US)</option>
@@ -288,7 +288,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                   <select
                     value={headerType}
                     onChange={(e) => setHeaderType(e.target.value as 'NONE' | 'TEXT')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-input text-foreground focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2"
                   >
                     <option value="NONE">Sem cabeçalho</option>
                     <option value="TEXT">Texto</option>
@@ -320,7 +320,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                     placeholder="Olá {{1}}! Seu pedido {{2}} está a caminho."
                     rows={5}
                     maxLength={1024}
-                    className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none ${validationErrors.bodyText ? 'border-red-500' : 'border-gray-300 dark:border-border'}`}
+                    className={`w-full px-3 py-2 border rounded-lg bg-input text-foreground focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none ${validationErrors.bodyText ? 'border-red-500' : 'border-border'}`}
                   />
                   {validationErrors.bodyText && (
                     <p className="text-sm text-red-500 mt-1">{validationErrors.bodyText}</p>
@@ -351,7 +351,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                 {/* Preview visual */}
                 <div className="mt-6 p-4 bg-gray-100 dark:bg-accent rounded-lg">
                   <p className="text-sm font-medium text-muted-foreground dark:text-muted-foreground mb-2">Preview:</p>
-                  <div className="bg-white dark:bg-muted rounded-lg p-3 shadow-sm">
+                  <div className="bg-card rounded-lg p-3 shadow-sm">
                     {headerType === 'TEXT' && headerText && (
                       <p className="font-bold text-gray-900 dark:text-white mb-1">{headerText}</p>
                     )}
@@ -408,7 +408,7 @@ export function CreateTemplateModal({ channelId, onClose, onSuccess }: CreateTem
                             <select
                               value={button.type}
                               onChange={(e) => handleButtonChange(index, 'type', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-muted text-gray-900 dark:text-white"
+                              className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground"
                             >
                               <option value="QUICK_REPLY">Resposta Rápida</option>
                               <option value="URL">Link (URL)</option>

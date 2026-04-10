@@ -234,7 +234,7 @@ export const DetectedQuestionsPage: React.FC = () => {
                           value={editedAnswer || question.suggested_answer || ''}
                           onChange={(e) => setEditedAnswer(e.target.value)}
                           rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-border rounded-lg bg-white dark:bg-accent text-gray-900 dark:text-white"
+                          className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground"
                           placeholder="Digite ou edite a resposta..."
                         />
                       ) : (
