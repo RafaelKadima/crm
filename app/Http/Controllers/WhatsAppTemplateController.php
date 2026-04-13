@@ -125,9 +125,13 @@ class WhatsAppTemplateController extends Controller
                 'data' => $request->validated(),
             ]);
 
+            // Bolha o erro real do Meta direto no `message` para a UI.
+            // Frontend lê `data.message || data.error`, então mensagem genérica
+            // sequestrava o feedback útil (ex.: "WABA inválido", "nome duplicado",
+            // "permissão negada"). Toda exception aqui já tem contexto suficiente.
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao criar template.',
+                'message' => $e->getMessage(),
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -156,7 +160,7 @@ class WhatsAppTemplateController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao excluir template.',
+                'message' => $e->getMessage(),
                 'error' => $e->getMessage(),
             ], 500);
         }

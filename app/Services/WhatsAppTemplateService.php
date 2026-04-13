@@ -164,7 +164,13 @@ class WhatsAppTemplateService
     protected function submitToMeta(Channel $channel, array $payload): array
     {
         $config = $channel->config ?? [];
-        $wabaId = $config['business_account_id'] ?? null;
+        // Templates vivem no WhatsApp Business Account (WABA), não no Business Manager pai.
+        // Canais de embedded signup / coexistência têm os dois IDs separados em config:
+        //   - waba_id              → o WABA real (correto para /message_templates)
+        //   - business_account_id  → o Business Manager pai (errado, devolve 400)
+        // Canais legados só têm business_account_id, que historicamente apontava pro WABA,
+        // por isso continua como fallback.
+        $wabaId = $config['waba_id'] ?? $config['business_account_id'] ?? null;
         $accessToken = $config['access_token'] ?? null;
 
         if (!$wabaId || !$accessToken) {
@@ -197,7 +203,7 @@ class WhatsAppTemplateService
     public function listFromMeta(Channel $channel, ?string $category = null): array
     {
         $config = $channel->config ?? [];
-        $wabaId = $config['business_account_id'] ?? null;
+        $wabaId = $config['waba_id'] ?? $config['business_account_id'] ?? null;
         $accessToken = $config['access_token'] ?? null;
 
         if (!$wabaId || !$accessToken) {
@@ -382,7 +388,7 @@ class WhatsAppTemplateService
         $channel = $template->channel;
         $config = $channel->config ?? [];
         $accessToken = $config['access_token'] ?? null;
-        $wabaId = $config['business_account_id'] ?? null;
+        $wabaId = $config['waba_id'] ?? $config['business_account_id'] ?? null;
 
         // Tenta deletar do Meta se existir
         if ($template->meta_template_id && $accessToken && $wabaId) {
