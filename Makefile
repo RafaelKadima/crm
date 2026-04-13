@@ -24,7 +24,21 @@ ssl: ## Configura SSL (HTTPS)
 	@chmod +x deploy/ssl-setup.sh
 	@./deploy/ssl-setup.sh
 
-deploy: ## Deploy/atualização em produção
+# Pre-flight: o que vai entrar nesse deploy?
+# Útil pra detectar commits de outras pessoas que vieram junto no git pull
+# e arquivos críticos (Dockerfile, .env, migrations) que exigem cuidado extra.
+preflight: ## Mostra o que vai mudar antes do deploy (commits + arquivos)
+	@echo "$(GREEN)🔍 Pre-flight check...$(RESET)"
+	@git fetch origin main --quiet
+	@echo ""
+	@echo "$(YELLOW)Commits que entrarão no deploy:$(RESET)"
+	@git log HEAD..origin/main --oneline || echo "(já está em origin/main)"
+	@echo ""
+	@echo "$(YELLOW)Arquivos sensíveis modificados:$(RESET)"
+	@git diff --name-only HEAD origin/main 2>/dev/null | grep -E '(Dockerfile|docker-compose|\.env|migrations/|ai-service/|nginx)' | sed 's/^/  /' || echo "  (nenhum)"
+	@echo ""
+
+deploy: ## Deploy/atualização em produção (com healthcheck automático)
 	@echo "$(GREEN)🚀 Iniciando deploy...$(RESET)"
 	git pull origin main
 	cd frontend && npm run build && cd ..
@@ -33,7 +47,50 @@ deploy: ## Deploy/atualização em produção
 	docker compose exec -T php php artisan migrate --force
 	docker compose exec -T php php artisan optimize
 	docker compose restart queue scheduler reverb
-	@echo "$(GREEN)✅ Deploy concluído!$(RESET)"
+	@echo "$(YELLOW)⏳ Aguardando containers estabilizarem (10s)...$(RESET)"
+	@sleep 10
+	@$(MAKE) verify || ( echo "$(YELLOW)⚠️  Deploy concluiu mas healthcheck FALHOU. Investigue antes de fechar a sessão.$(RESET)"; exit 1 )
+	@echo "$(GREEN)✅ Deploy concluído e validado!$(RESET)"
+
+verify: ## Healthcheck pós-deploy (containers + endpoints + cascata nginx)
+	@echo "$(GREEN)🔬 Verificando saúde da produção...$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)1) Containers em loop de restart (deveria ser vazio):$(RESET)"
+	@RESTARTING=$$(docker compose ps --format '{{.Name}} {{.Status}}' | grep -i 'restarting' || true); \
+	  if [ -n "$$RESTARTING" ]; then echo "  ❌ $$RESTARTING"; exit 1; else echo "  ✅ nenhum"; fi
+	@echo ""
+	@echo "$(YELLOW)2) Containers crítticos UP:$(RESET)"
+	@for c in crm-nginx crm-php crm-ai-service crm-reverb crm-queue; do \
+	  STATUS=$$(docker inspect -f '{{.State.Status}}' $$c 2>/dev/null || echo 'missing'); \
+	  if [ "$$STATUS" = "running" ]; then echo "  ✅ $$c"; else echo "  ❌ $$c ($$STATUS)"; exit 1; fi; \
+	done
+	@echo ""
+	@echo "$(YELLOW)3) Endpoints HTTP (esperando 2xx/3xx):$(RESET)"
+	@CODE=$$(curl -s -o /dev/null -w '%{http_code}' -m 8 https://crm.omnify.center/); \
+	  if echo "$$CODE" | grep -qE '^[23]'; then echo "  ✅ frontend ($$CODE)"; else echo "  ❌ frontend ($$CODE)"; exit 1; fi
+	@CODE=$$(curl -s -o /dev/null -w '%{http_code}' -m 8 https://crm.omnify.center/api/branding); \
+	  if echo "$$CODE" | grep -qE '^[23]'; then echo "  ✅ api/branding ($$CODE)"; else echo "  ❌ api/branding ($$CODE) — Laravel/PHP-FPM down?"; exit 1; fi
+	@CODE=$$(curl -s -o /dev/null -w '%{http_code}' -m 8 -X POST https://crm.omnify.center/api/webhooks/whatsapp); \
+	  if echo "$$CODE" | grep -qE '^[2345]'; then echo "  ✅ webhook whatsapp ($$CODE)"; else echo "  ❌ webhook whatsapp ($$CODE) — Meta vai parar de entregar mensagens"; exit 1; fi
+	@echo ""
+	@echo "$(YELLOW)4) WebSocket Reverb (101 = OK):$(RESET)"
+	@CODE=$$(curl -s --http1.1 -o /dev/null -w '%{http_code}' -m 5 -k \
+	  'https://crm.omnify.center/app/crm-omnify-reverb-key-2024?protocol=7&client=js&version=8.4.0&flash=false' \
+	  -H 'Upgrade: websocket' -H 'Connection: upgrade' \
+	  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Version: 13'); \
+	  if [ "$$CODE" = "101" ]; then echo "  ✅ reverb ($$CODE)"; else echo "  ❌ reverb ($$CODE) — real-time não vai funcionar"; exit 1; fi
+	@echo ""
+	@echo "$(GREEN)✅ Tudo verde!$(RESET)"
+
+rollback: ## Reverte o último commit em produção (git revert HEAD + redeploy)
+	@echo "$(YELLOW)⚠️  Vai reverter o último commit:$(RESET)"
+	@git log -1 --oneline
+	@echo ""
+	@read -p "Confirma rollback? (y/N) " confirm; \
+	  if [ "$$confirm" != "y" ] && [ "$$confirm" != "Y" ]; then echo "Cancelado."; exit 1; fi
+	git revert --no-edit HEAD
+	git push origin main
+	$(MAKE) deploy
 
 # --------------------------------------------------
 # Docker Compose

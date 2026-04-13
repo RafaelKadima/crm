@@ -100,22 +100,74 @@ docker compose up -d nginx
 
 ## 🔄 Atualizações (Deploy)
 
-Para atualizar após mudanças no código:
+### Fluxo padrão (3 passos)
 
 ```bash
 cd /var/www/crm
-make deploy
+make preflight   # 1) ver o que vai mudar (commits + arquivos sensíveis)
+make deploy      # 2) deploy + healthcheck automático
+                 # 3) se algo falhar, make rollback
 ```
 
-Ou manualmente:
+### O que `make deploy` faz
 
-```bash
+```
 git pull origin main
+cd frontend && npm run build && cd ..
 docker compose build
 docker compose up -d
 docker compose exec php php artisan migrate --force
 docker compose exec php php artisan optimize
 docker compose restart queue scheduler reverb
+sleep 10
+make verify      # ⚠️ se falhar, exit 1 — NÃO pinte de verde
+```
+
+### `make verify` — healthcheck automático
+
+Roda no fim do `make deploy`, pode ser invocado isolado:
+
+- ✅ Nenhum container em loop de restart
+- ✅ Containers críticos (`nginx`, `php`, `ai-service`, `reverb`, `queue`) em `running`
+- ✅ Frontend (`/`) responde 2xx/3xx
+- ✅ API (`/api/branding`) responde 2xx/3xx — detecta PHP-FPM down
+- ✅ Webhook WhatsApp (`/api/webhooks/whatsapp`) responde — detecta nginx-cascata
+- ✅ Reverb WebSocket (`/app/crm-omnify-reverb-key-2024`) responde 101
+
+Se qualquer um falhar, o deploy é marcado como FALHO mesmo que o `git pull` e `docker compose` tenham retornado 0. **Não feche a sessão sem investigar.**
+
+### `make rollback` — quando deploy falhou
+
+```bash
+make rollback    # git revert HEAD + git push + make deploy (com confirmação)
+```
+
+### Padrão de cascata `nginx ↔ upstream` (LIÇÃO IMPORTANTE)
+
+O `nginx` tem `proxy_pass ai-service:8001` no upstream. Se o `ai-service` entrar em crash loop:
+
+1. nginx tenta resolver `ai-service:8001` → DNS interno falha → nginx também entra em crash loop
+2. **Toda a aplicação cai** (não só `/ai`): porque sem nginx, nada chega no Laravel
+3. Webhooks da Meta começam a receber 502 → Meta para de entregar mensagens em poucos minutos
+
+**Sintomas no console do navegador:**
+```
+api/* : Failed to load resource: 502 (Bad Gateway)
+WebSocket connection to 'wss://crm.omnify.center/app/...' failed
+```
+
+**Diagnóstico rápido:**
+```bash
+docker compose ps                          # algum em "Restarting"?
+docker logs crm-ai-service --tail 30       # AttributeError? ImportError?
+docker logs crm-nginx --tail 5             # "host not found in upstream"?
+```
+
+**Solução** depois de fixar o ai-service:
+```bash
+docker compose build ai-service            # se mudou código Python
+docker compose up -d ai-service
+docker compose restart nginx               # OBRIGATÓRIO — re-resolve DNS interno
 ```
 
 ---

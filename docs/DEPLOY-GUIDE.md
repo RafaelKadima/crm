@@ -10,7 +10,7 @@
 |-------|-------|
 | **IP** | 212.85.20.129 |
 | **Usuário** | root |
-| **Senha** | Motochefe2025@ |
+| **Auth** | SSH key (nunca commitar senhas em docs) |
 | **Domínio** | crm.omnify.center |
 | **Path** | /var/www/crm |
 | **Git** | git@github.com:RafaelKadima/crm.git |
@@ -71,28 +71,25 @@ Laravel API   WebSocket      Python/FastAPI
 
 ## 1. Conectar na VPS
 
-### Via SSH (com senha)
+### Via SSH key (recomendado)
 
 ```bash
+# Copiar sua chave pública para a VPS (uma vez)
+ssh-copy-id root@212.85.20.129
+
+# Conectar
 ssh root@212.85.20.129
-# Senha: Motochefe2025@
 cd /var/www/crm
 ```
 
-### Via sshpass (sem digitar senha - útil para scripts e Claude Code)
+### Via SSH com key file específica
 
 ```bash
-# Instalar sshpass (macOS)
-brew install hudochenkov/sshpass/sshpass
-
-# Instalar sshpass (Ubuntu/Debian)
-apt install -y sshpass
-
-# Conectar
-sshpass -p 'Motochefe2025@' ssh -o StrictHostKeyChecking=no root@212.85.20.129
+# Conectar com key file
+ssh -i ~/.ssh/id_rsa root@212.85.20.129
 
 # Executar comando direto (sem abrir sessão interativa)
-sshpass -p 'Motochefe2025@' ssh -o StrictHostKeyChecking=no root@212.85.20.129 "cd /var/www/crm && docker compose ps"
+ssh -i ~/.ssh/id_rsa root@212.85.20.129 "cd /var/www/crm && docker compose ps"
 ```
 
 ---
@@ -394,10 +391,61 @@ docker stats --no-stream
 
 ### Erro 502 Bad Gateway
 
+**Sintoma no console do navegador:**
+```
+api/* : Failed to load resource: 502 (Bad Gateway)
+WebSocket connection to 'wss://crm.omnify.center/app/...' failed
+```
+
+**502 NÃO significa só "PHP-FPM caiu".** Tem 3 causas comuns, sempre nessa ordem de investigação:
+
+#### A) Cascata nginx ↔ upstream (causa #1 do incidente de 2026-04-13)
+
+O `nginx` tem `proxy_pass ai-service:8001` no upstream. Se o `ai-service` (ou qualquer outro upstream nominal do nginx) entrar em crash loop, o nginx **não consegue resolver o hostname interno** e entra em crash loop também — derrubando TUDO, inclusive os webhooks da Meta.
+
 ```bash
-# PHP-FPM caiu
+# 1. Existe algum container em "Restarting"?
+docker compose ps
+# Se vir "crm-ai-service ... Restarting" ou "crm-nginx ... Restarting" → é cascata
+
+# 2. Logs do container que está em loop (geralmente um upstream do nginx)
+docker logs crm-ai-service --tail 30
+# Procurar por: AttributeError, ImportError, ModuleNotFoundError, traceback Python
+
+# 3. Logs do nginx confirmam o sintoma
+docker logs crm-nginx --tail 5
+# "[emerg] 1#1: host not found in upstream 'ai-service:8001'" → cascata confirmada
+```
+
+**Padrão recorrente: commit parcial em ai-service.** Se `ai-service/main.py` referencia `settings.x` mas `app/config.py` não declara `x`, a imagem builda OK mas o container morre no startup com `AttributeError`. Foi exatamente o caso do incidente 2026-04-13.
+
+**Correção** após arrumar o código:
+```bash
+docker compose build ai-service       # OBRIGATÓRIO se mudou .py — código vai pra dentro da imagem
+docker compose up -d ai-service       # recriar container com a imagem nova
+docker compose restart nginx          # OBRIGATÓRIO — força nginx a re-resolver DNS interno
+```
+
+#### B) PHP-FPM caiu (causa clássica)
+
+```bash
 docker compose logs php --tail=50
+# Procurar por: "FPM is not running", segfault, OOM
 docker compose restart php
+docker compose restart nginx          # força re-resolução do upstream php:9000
+```
+
+#### C) Recurso esgotado na VPS
+
+```bash
+df -h          # disco cheio? /var/lib/docker pode estar lotado
+free -h        # RAM? Containers reiniciam quando OOM-killed
+docker stats --no-stream
+```
+
+**Limpeza emergencial:**
+```bash
+docker system prune -af --volumes      # libera espaço (CUIDADO em prod)
 ```
 
 ### Erro 504 Gateway Timeout
@@ -751,27 +799,24 @@ docker compose ps
 
 ## 11. Checklist de Deploy
 
+> **Quase tudo nessa lista virou automatizado em `make verify` (rodado pelo `make deploy`).** Use a checklist como referência conceitual; o trabalho de validação é do Makefile.
+
 ### Antes
-- [ ] Código testado localmente
-- [ ] Commit e push no GitHub
+- [ ] `make preflight` — ver commits que vão entrar (e se tem commits de outras pessoas que vieram junto no `git pull`)
+- [ ] Validar arquivos sensíveis listados pelo preflight (`Dockerfile`, `docker-compose.yml`, `.env`, `migrations/`, `ai-service/`)
 - [ ] Sem segredos expostos no commit
 
 ### Durante
-- [ ] `git pull` sem conflitos
-- [ ] Frontend compilou sem erros
-- [ ] Migrations rodaram sem erros
-- [ ] Caches reconstruídos
-- [ ] Containers reiniciados
+- [ ] `make deploy` — faz git pull, build, up, migrate, optimize, restart **e healthcheck**
+- [ ] Acompanhar output até `✅ Deploy concluído e validado!`
 
-### Depois
-- [ ] `docker compose ps` → todos containers `Up`
-- [ ] https://crm.omnify.center carrega
-- [ ] Login funciona
-- [ ] API responde: `curl -s -o /dev/null -w '%{http_code}' https://crm.omnify.center/api/branding` → 200
-- [ ] WebSocket responde: `curl -s --http1.1 -o /dev/null -w '%{http_code}' 'https://crm.omnify.center/app/crm-omnify-reverb-key-2024?protocol=7&client=js&version=8.4.0&flash=false' -H 'Upgrade: websocket' -H 'Connection: upgrade' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Version: 13' --max-time 3 -k` → 101
-- [ ] Testar mensagem no WhatsApp → som + borda verde no Kanban
-- [ ] `docker compose logs --tail=50` sem erros
-- [ ] Reverb mostra hostname correto: `docker compose logs --tail=3 reverb` → `crm.omnify.center`
+### Depois (somente se algo do verify falhou)
+- [ ] Investigar containers em loop: `docker compose ps`
+- [ ] Logs do container suspeito: `docker logs <nome> --tail 30`
+- [ ] Se nginx em loop por "host not found" → ver seção **8.A (Cascata)**
+- [ ] Se não der pra arrumar em < 5 min → `make rollback` (reverte e re-deploya)
+- [ ] Testar mensagem real no WhatsApp → som + borda verde no Kanban
+- [ ] Reverb hostname correto: `docker compose logs --tail=3 reverb` → `crm.omnify.center`
 
 ---
 
@@ -851,10 +896,10 @@ docker compose ps
 docker compose logs --tail=3 reverb
 ```
 
-### Comando único via sshpass (deploy remoto sem interação)
+### Comando único via SSH key (deploy remoto sem interação)
 
 ```bash
-sshpass -p 'Motochefe2025@' ssh -o StrictHostKeyChecking=no root@212.85.20.129 \
+ssh root@212.85.20.129 \
   "cd /var/www/crm && git pull origin main && cd frontend && npm run build && cd .. && docker compose exec -T php php artisan config:cache && docker compose exec -T php php artisan route:cache && docker compose up -d && docker compose restart nginx && docker compose ps"
 ```
 
@@ -867,3 +912,40 @@ sshpass -p 'Motochefe2025@' ssh -o StrictHostKeyChecking=no root@212.85.20.129 \
 | Frontend | https://crm.omnify.center |
 | API | https://crm.omnify.center/api |
 | AI Service | https://crm.omnify.center/ai |
+
+---
+
+## 13. Post-Mortem 2026-04-13 — produção fora por commit parcial em ai-service
+
+### O que aconteceu
+
+1. Deploy de uma feature de tickets puxou junto 4 commits do dia que outra pessoa havia pushado entre meu último deploy e o atual. Um desses commits adicionou `settings.cors_allowed_origins` em `ai-service/main.py:81` mas **esqueceu de declarar** essa setting em `ai-service/app/config.py`.
+2. `make deploy` rodou `docker compose build ai-service` (porque source mudou) → imagem nova foi criada com o código quebrado.
+3. Container `ai-service` iniciou e morreu imediatamente com `AttributeError: 'Settings' object has no attribute 'cors_allowed_origins'` → entrou em **crash loop**.
+4. Container `nginx` tem `proxy_pass ai-service:8001` no upstream; sem `ai-service`, nginx **não conseguiu resolver o hostname interno** e também entrou em crash loop (`[emerg] host not found in upstream "ai-service:8001"`).
+5. **TODA a aplicação caiu**: frontend, APIs, webhooks da Meta. Tempo até detecção: o `make deploy` retornou exit 0 (`✅ Deploy concluído!`) porque o último comando, `docker compose restart queue scheduler reverb`, terminou OK. Ninguém olhou os containers individualmente.
+
+### Por que demorou pra detectar
+
+- `make deploy` antigo **não tinha healthcheck pós-deploy**.
+- Mensagem "✅ Deploy concluído!" deu falso sinal de sucesso.
+- Detecção só veio quando o usuário abriu a UI e viu 502 no console do navegador.
+
+### Correções estruturais já aplicadas
+
+| # | Mudança | Onde |
+|---|---|---|
+| 1 | `make deploy` agora chama `make verify` no fim e falha (exit 1) se algum upstream estiver fora | `Makefile` |
+| 2 | `make verify` testa: containers em restart, containers críticos UP, frontend 200, API 200, webhook WhatsApp respondendo, Reverb 101 | `Makefile` |
+| 3 | `make preflight` mostra commits que vão entrar e marca arquivos sensíveis (`ai-service/`, `Dockerfile`, `migrations/`, `.env`) | `Makefile` |
+| 4 | `make rollback` reverte HEAD + re-deploy com confirmação | `Makefile` |
+| 5 | Seção **8.A Cascata nginx ↔ upstream** documenta o padrão completo de causa→sintoma→fix | este doc |
+| 6 | Hotfix do incidente: `cors_allowed_origins` declarada no `config.py` (commit 550c04a) e `CORS_ALLOWED_ORIGINS` adicionada ao `.env` da VPS | repo + VPS |
+
+### Regras pra evitar repetição
+
+1. **Sempre rodar `make preflight` antes de `make deploy`.** Se o preflight mostrar arquivos em `ai-service/` modificados por commits que não são seus, abrir e revisar o diff antes — commits parciais Python são silenciosos no build, explosivos no runtime.
+2. **Nunca confiar no exit 0 do `make deploy`.** O `make verify` integrado falha alto se algo estiver fora. Se ele falhar, **não fechar a sessão** — investigar imediatamente ou rodar `make rollback`.
+3. **Quando código Python (`ai-service/`) muda → sempre `docker compose build ai-service`** antes de `up -d`. Editar arquivo no host não afeta a imagem (não tem bind mount).
+4. **Quando container é recriado → restart no nginx** (`docker compose restart nginx`). DNS interno do Docker é cacheado e nginx mantém o IP velho.
+5. **Pre-deploy local check** (recomendado): rodar `cd ai-service && python -c "from app.config import Settings; Settings()"` — um import simples já pega a maioria dos `AttributeError`/`ImportError` sem precisar subir o container.
