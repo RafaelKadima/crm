@@ -65,13 +65,15 @@ verify: ## Healthcheck pós-deploy (containers + endpoints + cascata nginx)
 	  if [ "$$STATUS" = "running" ]; then echo "  ✅ $$c"; else echo "  ❌ $$c ($$STATUS)"; exit 1; fi; \
 	done
 	@echo ""
-	@echo "$(YELLOW)3) Endpoints HTTP (esperando 2xx/3xx):$(RESET)"
+	@echo "$(YELLOW)3) Endpoints HTTP (rejeita 5xx e 000):$(RESET)"
+	@# 4xx (401, 404, 405) significa que Laravel/nginx estão UP — só a request foi inválida.
+	@# Quem está realmente fora retorna 5xx (gateway/upstream) ou 000 (não conectou).
 	@CODE=$$(curl -s -o /dev/null -w '%{http_code}' -m 8 https://crm.omnify.center/); \
-	  if echo "$$CODE" | grep -qE '^[23]'; then echo "  ✅ frontend ($$CODE)"; else echo "  ❌ frontend ($$CODE)"; exit 1; fi
+	  if echo "$$CODE" | grep -qE '^[1-4]'; then echo "  ✅ frontend ($$CODE)"; else echo "  ❌ frontend ($$CODE)"; exit 1; fi
 	@CODE=$$(curl -s -o /dev/null -w '%{http_code}' -m 8 https://crm.omnify.center/api/branding); \
-	  if echo "$$CODE" | grep -qE '^[23]'; then echo "  ✅ api/branding ($$CODE)"; else echo "  ❌ api/branding ($$CODE) — Laravel/PHP-FPM down?"; exit 1; fi
+	  if echo "$$CODE" | grep -qE '^[1-4]'; then echo "  ✅ api/branding ($$CODE) — Laravel respondendo"; else echo "  ❌ api/branding ($$CODE) — PHP-FPM ou nginx-cascata"; exit 1; fi
 	@CODE=$$(curl -s -o /dev/null -w '%{http_code}' -m 8 -X POST https://crm.omnify.center/api/webhooks/whatsapp); \
-	  if echo "$$CODE" | grep -qE '^[2345]'; then echo "  ✅ webhook whatsapp ($$CODE)"; else echo "  ❌ webhook whatsapp ($$CODE) — Meta vai parar de entregar mensagens"; exit 1; fi
+	  if echo "$$CODE" | grep -qE '^[1-4]'; then echo "  ✅ webhook whatsapp ($$CODE)"; else echo "  ❌ webhook whatsapp ($$CODE) — Meta vai parar de entregar mensagens"; exit 1; fi
 	@echo ""
 	@echo "$(YELLOW)4) WebSocket Reverb (101 = OK):$(RESET)"
 	@CODE=$$(curl -s --http1.1 -o /dev/null -w '%{http_code}' -m 5 -k \
