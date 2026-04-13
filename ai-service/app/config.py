@@ -73,7 +73,7 @@ class Settings(BaseSettings):
     vps_ssh_host: str = ""           # IP ou hostname da VPS (ex: 212.85.20.129)
     vps_ssh_port: int = 22
     vps_ssh_user: str = "root"       # Usuario SSH
-    vps_ssh_password: str = ""       # Senha SSH (alternativa a chave)
+    # vps_ssh_password removido por segurança — usar apenas SSH key
     vps_ssh_key_path: str = ""       # Caminho para chave privada SSH
     vps_project_path: str = "/var/www/crm"  # Caminho do projeto na VPS
 
@@ -85,6 +85,9 @@ class Settings(BaseSettings):
     # Deploy Config
     deploy_command: str = "git pull && npm run build"  # Comando de deploy
     deploy_pm2_name: str = "crm"     # Nome do processo PM2
+
+    # CORS
+    cors_allowed_origins: str = "http://localhost:5176,http://localhost:8000"
 
     # Support Agent Security
     support_max_ssh_commands_per_hour: int = 50
