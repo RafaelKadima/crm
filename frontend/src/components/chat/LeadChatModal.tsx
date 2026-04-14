@@ -228,8 +228,12 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
       data.message.metadata.document_url
     )
 
-    if (data.message.direction === 'outbound' && data.message.sender_type === 'user' && !hasMedia) {
-      // Apenas atualiza o status da mensagem temporária para 'delivered'
+    // Echo de coexistência: mensagem enviada do celular do operador
+    // (não tem contrapartida otimista local, precisa ser adicionada).
+    const isCoexistenceEcho = data.message.metadata?.coexistence_echo === true
+
+    if (data.message.direction === 'outbound' && data.message.sender_type === 'user' && !hasMedia && !isCoexistenceEcho) {
+      // Caso normal: operador enviou via CRM e já existe uma temp message otimista
       setMessages((prev) => {
         const tempMsg = prev.find(m => m.id.startsWith('temp-') && m.content === data.message.content)
         if (tempMsg) {
@@ -239,9 +243,22 @@ export function LeadChatModal({ lead, stages = [], open, onOpenChange, onStageCh
               : m
           )
         }
-        // Se não encontrou mensagem temporária, verifica duplicata por ID
+        // Fallback: sem temp message e não é echo explícito — adiciona como nova
+        // (cenário: outra aba do CRM, ou echo sem flag). Evita duplicar por ID.
         if (prev.some(m => m.id === data.message.id)) return prev
-        return prev
+        return [
+          ...prev,
+          {
+            id: data.message.id,
+            content: data.message.content,
+            sender_type: data.message.sender_type,
+            direction: data.message.direction,
+            created_at: data.message.sent_at || data.message.created_at,
+            status: 'delivered' as const,
+            metadata: data.message.metadata,
+            ticket_id: data.message.ticket_id || data.ticket_id,
+          },
+        ]
       })
       return
     }
