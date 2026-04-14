@@ -24,12 +24,61 @@ use Illuminate\Support\Str;
  */
 class WhatsAppTemplateService
 {
-    protected string $apiVersion = 'v18.0';
+    protected string $apiVersion;
     protected string $baseUrl;
 
     public function __construct()
     {
+        $this->apiVersion = config('services.whatsapp.api_version', 'v22.0');
         $this->baseUrl = "https://graph.facebook.com/{$this->apiVersion}";
+    }
+
+    /**
+     * Retorna o access_token mais atual para operar na WABA do canal.
+     *
+     * Tenants conectados via OAuth (embedded signup, coexistência) têm o token
+     * renovado guardado em `meta_integrations.access_token` — Channel.config
+     * pode ter um token estático antigo ou com escopo limitado (ex.: sem
+     * whatsapp_business_management, o que trava criação de templates com
+     * "(#100) Need permission on either WhatsApp Business Account").
+     *
+     * Preferência: MetaIntegration > Channel.config.
+     */
+    protected function resolveAccessToken(Channel $channel): ?string
+    {
+        $config = $channel->config ?? [];
+        $phoneNumberId = $config['phone_number_id'] ?? null;
+
+        if ($phoneNumberId) {
+            $integration = \App\Models\MetaIntegration::withoutGlobalScopes()
+                ->where('tenant_id', $channel->tenant_id)
+                ->where('phone_number_id', $phoneNumberId)
+                ->where('status', \App\Enums\MetaIntegrationStatusEnum::ACTIVE)
+                ->first();
+
+            if ($integration && $integration->access_token) {
+                return $integration->access_token;
+            }
+        }
+
+        return $config['access_token'] ?? null;
+    }
+
+    /**
+     * Indica se o canal está em modo coexistência (template via API pode
+     * ter restrições — Meta recomenda criar pelo app do celular).
+     */
+    protected function isCoexistenceChannel(Channel $channel): bool
+    {
+        $config = $channel->config ?? [];
+        $phoneNumberId = $config['phone_number_id'] ?? null;
+        if (!$phoneNumberId) return false;
+
+        return \App\Models\MetaIntegration::withoutGlobalScopes()
+            ->where('tenant_id', $channel->tenant_id)
+            ->where('phone_number_id', $phoneNumberId)
+            ->where('is_coexistence', true)
+            ->exists();
     }
 
     // ==========================================
@@ -171,7 +220,7 @@ class WhatsAppTemplateService
         // Canais legados só têm business_account_id, que historicamente apontava pro WABA,
         // por isso continua como fallback.
         $wabaId = $config['waba_id'] ?? $config['business_account_id'] ?? null;
-        $accessToken = $config['access_token'] ?? null;
+        $accessToken = $this->resolveAccessToken($channel);
 
         if (!$wabaId || !$accessToken) {
             throw new \Exception('Canal não possui WABA ID ou Access Token configurado.');
@@ -183,15 +232,40 @@ class WhatsAppTemplateService
 
         if (!$response->successful()) {
             $error = $response->json();
-            $errorMessage = $error['error']['message'] ?? 'Erro desconhecido ao criar template';
-            
+            $metaMessage = $error['error']['message'] ?? 'Erro desconhecido ao criar template';
+            $metaCode = $error['error']['code'] ?? null;
+
             Log::error('Meta API error creating template', [
                 'status' => $response->status(),
                 'error' => $error,
                 'payload' => $payload,
+                'waba_id' => $wabaId,
+                'is_coexistence' => $this->isCoexistenceChannel($channel),
             ]);
 
-            throw new \Exception($errorMessage);
+            // Tradução de erros mais comuns da Meta para mensagem útil ao operador
+            $userMessage = match (true) {
+                // (#100) sem permissão — em coexistência é o caso mais comum: templates
+                // devem ser criados pelo app do WhatsApp Business no celular.
+                $metaCode === 100 && $this->isCoexistenceChannel($channel) =>
+                    'Em contas coexistentes (WhatsApp Business App + API no mesmo número), a Meta exige que templates sejam criados diretamente pelo app do WhatsApp Business no celular do operador. Abra o app → Ferramentas de mensagens → Modelos de mensagens.',
+
+                $metaCode === 100 =>
+                    'Token sem permissão `whatsapp_business_management` na WABA. Reconecte o canal via OAuth com permissões completas.',
+
+                $metaCode === 2388084 =>
+                    'Combinação de botões inválida. Use QUICK_REPLY, URL, PHONE_NUMBER ou COPY_CODE.',
+
+                str_contains(strtolower($metaMessage), 'param category is required') =>
+                    'Categoria é obrigatória: MARKETING, UTILITY ou AUTHENTICATION.',
+
+                str_contains(strtolower($metaMessage), 'already exists') =>
+                    'Já existe um template com esse nome e idioma. Escolha outro nome.',
+
+                default => $metaMessage,
+            };
+
+            throw new \Exception($userMessage);
         }
 
         return $response->json();
@@ -204,7 +278,7 @@ class WhatsAppTemplateService
     {
         $config = $channel->config ?? [];
         $wabaId = $config['waba_id'] ?? $config['business_account_id'] ?? null;
-        $accessToken = $config['access_token'] ?? null;
+        $accessToken = $this->resolveAccessToken($channel);
 
         if (!$wabaId || !$accessToken) {
             throw new \Exception('Canal não possui WABA ID ou Access Token configurado.');
@@ -351,8 +425,7 @@ class WhatsAppTemplateService
     public function checkStatus(WhatsAppTemplate $template): WhatsAppTemplate
     {
         $channel = $template->channel;
-        $config = $channel->config ?? [];
-        $accessToken = $config['access_token'] ?? null;
+        $accessToken = $this->resolveAccessToken($channel);
 
         if (!$template->meta_template_id || !$accessToken) {
             return $template;
@@ -387,7 +460,7 @@ class WhatsAppTemplateService
     {
         $channel = $template->channel;
         $config = $channel->config ?? [];
-        $accessToken = $config['access_token'] ?? null;
+        $accessToken = $this->resolveAccessToken($channel);
         $wabaId = $config['waba_id'] ?? $config['business_account_id'] ?? null;
 
         // Tenta deletar do Meta se existir
