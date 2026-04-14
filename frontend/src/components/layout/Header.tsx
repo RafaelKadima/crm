@@ -24,11 +24,13 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { Breadcrumbs } from './Breadcrumbs'
 import { useSoundSettings } from '@/hooks/useSounds'
+import { useQueryClient } from '@tanstack/react-query'
 
 export function Header() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
+  const queryClient = useQueryClient()
   const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
   const { theme, setTheme } = useTheme()
   const { enabled: soundEnabled, toggle: toggleSound } = useSoundSettings()
@@ -71,6 +73,9 @@ export function Header() {
   }
 
   const handleLogout = () => {
+    // Limpa cache do React Query para não vazar dados do tenant anterior
+    // (canais, mensagens, tickets etc.) quando o próximo usuário fizer login.
+    queryClient.clear()
     logout()
     navigate('/login')
   }

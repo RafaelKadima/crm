@@ -14,16 +14,22 @@ export function useLogin() {
       authApi.login(email, password),
     onSuccess: (response) => {
       const { access_token, user, tenant } = response.data
+
+      // Garante isolamento entre sessões: se o logout anterior não passou pelo
+      // clear (ex.: token expirou e redirecionou direto pro login), o cache
+      // pode ter dados do tenant antigo. Clear antes de autenticar.
+      queryClient.clear()
+
       setAuth(access_token, user as User, tenant)
       queryClient.invalidateQueries({ queryKey: ['me'] })
-      
+
       // Prefetch dashboard data para carregar instantaneamente
       queryClient.prefetchQuery({
         queryKey: ['dashboard'],
         queryFn: () => dashboardApi.getData(),
         staleTime: 1000 * 60 * 2, // 2 minutes
       })
-      
+
       navigate('/')
     },
   })
