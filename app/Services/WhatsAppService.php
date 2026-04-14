@@ -517,7 +517,13 @@ class WhatsAppService implements WhatsAppProviderInterface
         if (!$entry) return null;
 
         $changes = $entry['changes'][0] ?? null;
-        if (!$changes || $changes['field'] !== 'messages') return null;
+        if (!$changes) return null;
+
+        $field = $changes['field'] ?? null;
+        // Aceita: messages (padrão), smb_message_echoes (coexistência),
+        // message_echoes (Messenger-style echo — fallback)
+        $allowedFields = ['messages', 'smb_message_echoes', 'message_echoes'];
+        if (!in_array($field, $allowedFields, true)) return null;
 
         $value = $changes['value'] ?? null;
         if (!$value) return null;
@@ -528,8 +534,21 @@ class WhatsAppService implements WhatsAppProviderInterface
             return null;
         }
 
-        $message = $value['messages'][0] ?? null;
+        // SMB/Messenger echo fields trazem o array em `message_echoes` em alguns
+        // payloads; outros vêm com `messages`. Normalizamos aqui.
+        $isEchoField = in_array($field, ['smb_message_echoes', 'message_echoes'], true);
+        $messagesArray = $value['message_echoes'] ?? $value['messages'] ?? [];
+        $message = $messagesArray[0] ?? null;
         if (!$message) return null;
+
+        // Echo: delega para o fluxo de coexistência e retorna.
+        if ($isEchoField) {
+            // Monta um value "normalizado" com messages = message_echoes pra reaproveitar processCoexistenceEcho
+            $normalizedPayload = $payload;
+            $normalizedPayload['entry'][0]['changes'][0]['value']['messages'] = $messagesArray;
+            $this->processCoexistenceEcho($normalizedPayload, $channel);
+            return null;
+        }
 
         $contactInfo = $value['contacts'][0] ?? null;
         $phoneNumber = $message['from'];

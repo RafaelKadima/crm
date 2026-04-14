@@ -73,7 +73,7 @@ class WhatsAppController extends Controller
             'field' => $field,
             'waba_id' => $wabaId,
             'phone_number_id' => $phoneNumberId ?? 'unknown',
-            'message_count' => count($value['messages'] ?? []),
+            'message_count' => count($value['messages'] ?? $value['message_echoes'] ?? []),
             'history_chunks' => count($value['history'] ?? []),
         ]);
 
