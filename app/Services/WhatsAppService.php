@@ -543,9 +543,18 @@ class WhatsAppService implements WhatsAppProviderInterface
 
         // Echo: delega para o fluxo de coexistência e retorna.
         if ($isEchoField) {
-            // Monta um value "normalizado" com messages = message_echoes pra reaproveitar processCoexistenceEcho
+            // Normaliza para o formato que processCoexistenceEcho espera:
+            // field='messages' + value.messages (ao invés de value.message_echoes).
             $normalizedPayload = $payload;
+            $normalizedPayload['entry'][0]['changes'][0]['field'] = 'messages';
             $normalizedPayload['entry'][0]['changes'][0]['value']['messages'] = $messagesArray;
+            unset($normalizedPayload['entry'][0]['changes'][0]['value']['message_echoes']);
+
+            Log::info('SMB echo normalized → delegating to processCoexistenceEcho', [
+                'original_field' => $field,
+                'message_count' => count($messagesArray),
+            ]);
+
             $this->processCoexistenceEcho($normalizedPayload, $channel);
             return null;
         }
