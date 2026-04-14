@@ -29,6 +29,7 @@ class TicketMessage extends Model
         'direction',
         'sent_at',
         'metadata',
+        'wa_message_id',
     ];
 
     /**

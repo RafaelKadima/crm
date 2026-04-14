@@ -332,6 +332,8 @@ class TicketController extends Controller
             $renderedBody = $template->renderBody($variables);
 
             // Salva mensagem no banco
+            $waMessageId = $channelResponse['messages'][0]['id'] ?? null;
+
             $ticketMessage = TicketMessage::create([
                 'tenant_id' => $ticket->tenant_id,
                 'ticket_id' => $ticket->id,
@@ -340,11 +342,12 @@ class TicketController extends Controller
                 'message' => $renderedBody,
                 'direction' => MessageDirectionEnum::OUTBOUND,
                 'sent_at' => now(),
+                'wa_message_id' => $waMessageId,
                 'metadata' => [
                     'type' => 'template',
                     'template_id' => $template->id,
                     'template_name' => $template->name,
-                    'whatsapp_message_id' => $channelResponse['messages'][0]['id'] ?? null,
+                    'whatsapp_message_id' => $waMessageId,
                 ],
             ]);
 

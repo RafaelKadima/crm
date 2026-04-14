@@ -211,6 +211,8 @@ class WhatsAppController extends Controller
             $this->whatsAppService->loadFromChannel($channel);
             $result = $this->whatsAppService->sendTextMessage($contact->phone, $validated['message']);
 
+            $waMessageId = $result['messages'][0]['id'] ?? null;
+
             // Save message to database
             $ticketMessage = TicketMessage::create([
                 'tenant_id' => $ticket->tenant_id,
@@ -220,6 +222,8 @@ class WhatsAppController extends Controller
                 'direction' => MessageDirectionEnum::OUTBOUND,
                 'message' => $validated['message'],
                 'sent_at' => now(),
+                'wa_message_id' => $waMessageId,
+                'metadata' => $waMessageId ? ['whatsapp_message_id' => $waMessageId] : null,
             ]);
 
             // Dispatch broadcast event for real-time updates
@@ -420,6 +424,8 @@ class WhatsAppController extends Controller
                 ? "[{$attachment->file_type}: {$attachment->file_name}] {$caption}"
                 : "[{$attachment->file_type}: {$attachment->file_name}]";
 
+            $waMessageId = $result['messages'][0]['id'] ?? null;
+
             $ticketMessage = TicketMessage::create([
                 'tenant_id' => $ticket->tenant_id,
                 'ticket_id' => $ticket->id,
@@ -428,6 +434,7 @@ class WhatsAppController extends Controller
                 'direction' => MessageDirectionEnum::OUTBOUND,
                 'message' => $messageContent,
                 'sent_at' => now(),
+                'wa_message_id' => $waMessageId,
                 'metadata' => [
                     'attachment_id' => $attachment->id,
                     'media_type' => $mediaType,
@@ -435,6 +442,7 @@ class WhatsAppController extends Controller
                     'file_name' => $attachment->file_name,
                     'file_size' => $attachment->file_size,
                     'mime_type' => $attachment->mime_type,
+                    'whatsapp_message_id' => $waMessageId,
                 ],
             ]);
 
@@ -505,6 +513,8 @@ class WhatsAppController extends Controller
                 $validated['components'] ?? []
             );
 
+            $waMessageId = $result['messages'][0]['id'] ?? null;
+
             // Save message to database
             $ticketMessage = TicketMessage::create([
                 'tenant_id' => $ticket->tenant_id,
@@ -514,6 +524,8 @@ class WhatsAppController extends Controller
                 'direction' => MessageDirectionEnum::OUTBOUND,
                 'message' => "[Template: {$validated['template_name']}]",
                 'sent_at' => now(),
+                'wa_message_id' => $waMessageId,
+                'metadata' => $waMessageId ? ['whatsapp_message_id' => $waMessageId] : null,
             ]);
 
             return response()->json([
@@ -649,8 +661,9 @@ class WhatsAppController extends Controller
         ]);
 
         try {
+            $apiVersion = config('services.whatsapp.api_version', 'v22.0');
             $response = \Illuminate\Support\Facades\Http::withToken($validated['access_token'])
-                ->get("https://graph.facebook.com/v18.0/{$validated['phone_number_id']}");
+                ->get("https://graph.facebook.com/{$apiVersion}/{$validated['phone_number_id']}");
 
             if ($response->successful()) {
                 $data = $response->json();

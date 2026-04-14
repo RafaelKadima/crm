@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService implements WhatsAppProviderInterface
 {
-    protected string $apiVersion = 'v18.0';
+    protected string $apiVersion;
     protected string $baseUrl;
     protected ?string $phoneNumberId;
     protected ?string $accessToken;
@@ -26,6 +26,7 @@ class WhatsAppService implements WhatsAppProviderInterface
 
     public function __construct(?Channel $channel = null)
     {
+        $this->apiVersion = config('services.whatsapp.api_version', 'v22.0');
         $this->baseUrl = "https://graph.facebook.com/{$this->apiVersion}";
         
         if ($channel) {
@@ -567,6 +568,19 @@ class WhatsAppService implements WhatsAppProviderInterface
         $metadata = $this->extractMediaMetadata($message, $channel) ?? [];
         $metadata['whatsapp_message_id'] = $messageId;
 
+        // Idempotência: se wamid já existe no tenant, retorna o existente.
+        $existing = TicketMessage::where('tenant_id', $channel->tenant_id)
+            ->where('wa_message_id', $messageId)
+            ->first();
+        if ($existing) {
+            Log::info('Inbound duplicate dropped (wamid exists)', ['wamid' => $messageId]);
+            return $existing;
+        }
+
+        $sentAt = $timestamp
+            ? \Carbon\Carbon::createFromTimestamp((int) $timestamp)
+            : now();
+
         // Create ticket message
         $ticketMessage = TicketMessage::create([
             'tenant_id' => $channel->tenant_id,
@@ -576,8 +590,18 @@ class WhatsAppService implements WhatsAppProviderInterface
             'direction' => MessageDirectionEnum::INBOUND,
             'message' => $content,
             'metadata' => $metadata,
-            'sent_at' => now(),
+            'sent_at' => $sentAt,
+            'wa_message_id' => $messageId,
         ]);
+
+        // Se mídia não baixou síncrono, dispara retry assíncrono dentro do TTL
+        if (!empty($metadata['media_pending']) && !empty($metadata['media_id'])) {
+            \App\Jobs\DownloadWhatsAppMediaJob::dispatch(
+                (string) $ticketMessage->id,
+                (string) $metadata['media_id'],
+                (string) $channel->id,
+            );
+        }
 
         // Update ticket last message
         $ticket->update(['updated_at' => now()]);
@@ -664,6 +688,7 @@ class WhatsAppService implements WhatsAppProviderInterface
 
         $messageType = $message['type'];
         $messageId = $message['id'];
+        $timestamp = $message['timestamp'] ?? null;
 
         // Ignora reactions em echoes
         if ($messageType === 'reaction') {
@@ -717,6 +742,19 @@ class WhatsAppService implements WhatsAppProviderInterface
         $metadata['whatsapp_message_id'] = $messageId;
         $metadata['coexistence_echo'] = true;
 
+        // Idempotência: echo já processado?
+        $existing = TicketMessage::where('tenant_id', $channel->tenant_id)
+            ->where('wa_message_id', $messageId)
+            ->first();
+        if ($existing) {
+            Log::info('Coexistence echo duplicate dropped (wamid exists)', ['wamid' => $messageId]);
+            return $existing;
+        }
+
+        $sentAt = $timestamp
+            ? \Carbon\Carbon::createFromTimestamp((int) $timestamp)
+            : now();
+
         // Salva como mensagem outgoing (enviada pelo operador via App)
         $ticketMessage = TicketMessage::create([
             'tenant_id' => $channel->tenant_id,
@@ -726,8 +764,18 @@ class WhatsAppService implements WhatsAppProviderInterface
             'direction' => MessageDirectionEnum::OUTBOUND,
             'message' => $content,
             'metadata' => $metadata,
-            'sent_at' => now(),
+            'sent_at' => $sentAt,
+            'wa_message_id' => $messageId,
         ]);
+
+        // Se mídia não baixou síncrono, dispara retry assíncrono
+        if (!empty($metadata['media_pending']) && !empty($metadata['media_id'])) {
+            \App\Jobs\DownloadWhatsAppMediaJob::dispatch(
+                (string) $ticketMessage->id,
+                (string) $metadata['media_id'],
+                (string) $channel->id,
+            );
+        }
 
         // Atualiza ticket
         $ticket->update(['updated_at' => now()]);
@@ -856,9 +904,10 @@ class WhatsAppService implements WhatsAppProviderInterface
         if ($messageType === 'reaction') return false;
 
         // Idempotencia: se ja temos essa mensagem (criada por history previo
-        // ou por webhook em tempo real), nao recria
+        // ou por webhook em tempo real), nao recria.
+        // Usa a coluna `wa_message_id` (indexada, UNIQUE parcial em Postgres).
         $exists = TicketMessage::where('tenant_id', $channel->tenant_id)
-            ->whereJsonContains('metadata->whatsapp_message_id', $messageId)
+            ->where('wa_message_id', $messageId)
             ->exists();
 
         if ($exists) return false;
@@ -907,7 +956,7 @@ class WhatsAppService implements WhatsAppProviderInterface
         // Converte timestamp epoch para Carbon
         $sentAt = \Carbon\Carbon::createFromTimestamp((int) $timestamp);
 
-        TicketMessage::create([
+        $ticketMessage = TicketMessage::create([
             'tenant_id' => $channel->tenant_id,
             'ticket_id' => $ticket->id,
             'sender_type' => $isOutgoing ? SenderTypeEnum::USER : SenderTypeEnum::CONTACT,
@@ -916,7 +965,16 @@ class WhatsAppService implements WhatsAppProviderInterface
             'message' => $content,
             'metadata' => $metadata,
             'sent_at' => $sentAt,
+            'wa_message_id' => $messageId,
         ]);
+
+        if (!empty($metadata['media_pending']) && !empty($metadata['media_id'])) {
+            \App\Jobs\DownloadWhatsAppMediaJob::dispatch(
+                (string) $ticketMessage->id,
+                (string) $metadata['media_id'],
+                (string) $channel->id,
+            );
+        }
 
         return true;
     }
@@ -1249,10 +1307,11 @@ class WhatsAppService implements WhatsAppProviderInterface
             return null;
         }
 
-        // Get media URL from Meta API
+        // Get media URL from Meta API (síncrono). Se falhar, marca pending
+        // para job assíncrono retentar dentro da janela de 5min do TTL da URL.
         $mediaUrl = $this->getMediaUrl($mediaId, $channel);
 
-        return [
+        $metadata = [
             'media_type' => $type,
             'media_id' => $mediaId,
             'media_url' => $mediaUrl,
@@ -1262,6 +1321,21 @@ class WhatsAppService implements WhatsAppProviderInterface
             'caption' => $mediaData['caption'] ?? null,
             "{$type}_url" => $mediaUrl, // image_url, video_url, etc.
         ];
+
+        if (!$mediaUrl) {
+            $metadata['media_pending'] = true;
+        }
+
+        return $metadata;
+    }
+
+    /**
+     * Wrapper público para uso em jobs (DownloadWhatsAppMediaJob).
+     * Delega para getMediaUrl que já faz fetch + store.
+     */
+    public function fetchAndStoreMedia(string $mediaId, Channel $channel): ?string
+    {
+        return $this->getMediaUrl($mediaId, $channel);
     }
 
     /**
@@ -1274,7 +1348,7 @@ class WhatsAppService implements WhatsAppProviderInterface
             
             // First, get the media info to get the download URL
             $response = Http::withToken($this->accessToken)
-                ->get("https://graph.facebook.com/v21.0/{$mediaId}");
+                ->get("{$this->baseUrl}/{$mediaId}");
 
             if (!$response->successful()) {
                 Log::error('Failed to get media info', [
@@ -1842,9 +1916,9 @@ class WhatsAppService implements WhatsAppProviderInterface
 
             if (!$targetMessageId) return;
 
-            // Buscar a mensagem original pelo whatsapp_message_id no metadata
+            // Buscar a mensagem original pela coluna indexada wa_message_id
             $ticketMessage = TicketMessage::where('tenant_id', $channel->tenant_id)
-                ->whereJsonContains('metadata->whatsapp_message_id', $targetMessageId)
+                ->where('wa_message_id', $targetMessageId)
                 ->first();
 
             if (!$ticketMessage) {
@@ -1911,8 +1985,8 @@ class WhatsAppService implements WhatsAppProviderInterface
             'full_status' => $status,
         ]);
 
-        // Update message metadata if needed
-        $message = TicketMessage::whereJsonContains('metadata->whatsapp_message_id', $messageId)->first();
+        // Update message metadata if needed (busca via coluna indexada)
+        $message = TicketMessage::where('wa_message_id', $messageId)->first();
         if ($message) {
             $metadata = $message->metadata ?? [];
             $metadata['delivery_status'] = $statusType;

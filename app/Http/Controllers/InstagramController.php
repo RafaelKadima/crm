@@ -276,9 +276,11 @@ class InstagramController extends Controller
         ]);
 
         try {
+            $apiVersion = config('services.instagram.api_version', 'v22.0');
+
             // Get Instagram Business Account linked to the page
             $response = Http::withToken($validated['access_token'])
-                ->get("https://graph.facebook.com/v18.0/{$validated['page_id']}", [
+                ->get("https://graph.facebook.com/{$apiVersion}/{$validated['page_id']}", [
                     'fields' => 'instagram_business_account,name'
                 ]);
 
@@ -295,7 +297,7 @@ class InstagramController extends Controller
 
                 // Get Instagram account info
                 $igResponse = Http::withToken($validated['access_token'])
-                    ->get("https://graph.facebook.com/v18.0/{$igAccount}", [
+                    ->get("https://graph.facebook.com/{$apiVersion}/{$igAccount}", [
                         'fields' => 'username,name,profile_picture_url,followers_count,follows_count'
                     ]);
 
@@ -350,8 +352,9 @@ class InstagramController extends Controller
         }
 
         try {
+            $apiVersion = config('services.instagram.api_version', 'v22.0');
             $response = Http::withToken($accessToken)
-                ->get("https://graph.facebook.com/v18.0/{$pageId}/conversations", [
+                ->get("https://graph.facebook.com/{$apiVersion}/{$pageId}/conversations", [
                     'platform' => 'instagram',
                     'fields' => 'participants,messages{message,from,created_time}'
                 ]);

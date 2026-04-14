@@ -598,6 +598,21 @@ class MetaOAuthService
      * Endpoint: POST /{WABA_ID}/subscribed_apps
      * Doc: https://developers.facebook.com/docs/whatsapp/embedded-signup/steps#step-3
      *
+     * IMPORTANTE — Webhook fields necessários (configurados no Meta App Dashboard
+     * em Webhooks → WhatsApp Business Account):
+     *
+     *   Base (todos os tenants):
+     *     - messages                          (recebimento)
+     *     - message_template_status_update    (aprovação/rejeição de templates)
+     *     - phone_number_quality_update       (qualidade do número)
+     *
+     *   Coexistência (MotoChefe e tenants com is_coexistence=true):
+     *     - smb_message_echoes     (mensagens enviadas pelo app do celular)
+     *     - smb_app_state_sync     (sync de contatos/estado do app)
+     *     - history                (backfill one-shot após onboarding)
+     *
+     * Ref: https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users/
+     *
      * Não lança exceção: se falhar, loga warning para não derrubar o signup.
      * O usuário pode forçar manualmente depois via refresh-token.
      */

@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
 
 class InstagramService
 {
-    protected string $apiVersion = 'v18.0';
+    protected string $apiVersion;
     protected string $baseUrl;
     protected ?string $pageId;
     protected ?string $instagramAccountId;
@@ -25,6 +25,7 @@ class InstagramService
 
     public function __construct(?Channel $channel = null)
     {
+        $this->apiVersion = config('services.instagram.api_version', 'v22.0');
         $this->baseUrl = "https://graph.facebook.com/{$this->apiVersion}";
         
         if ($channel) {

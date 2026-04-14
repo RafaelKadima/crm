@@ -93,45 +93,206 @@ class MetaWebhookController extends Controller
     }
 
     /**
-     * Handle WhatsApp webhook
+     * Handle WhatsApp webhook — rota explicita por `field` antes de parsear.
+     *
+     * Fields tratados:
+     *   messages                        → mensagens de entrada (+ statuses aninhados)
+     *   smb_message_echoes              → mensagens enviadas pelo app do celular (Coexistência)
+     *   message_echoes                  → eco legado (Messenger / fallback coexistência)
+     *   smb_app_state_sync              → sync de contatos/estado do app (Coexistência)
+     *   history                         → backfill one-shot (Coexistência)
+     *   statuses                        → entregues separadamente em alguns payloads
+     *   message_template_status_update  → status de aprovação de templates
+     *   phone_number_quality_update     → qualidade do número
      *
      * Primeiro tenta resolver via MetaIntegration (novo sistema OAuth).
      * Se não encontrar, faz fallback para Channel (sistema legado).
      */
     protected function handleWhatsApp(array $payload): JsonResponse
     {
-        $phoneNumberId = $payload['entry'][0]['changes'][0]['value']['metadata']['phone_number_id'] ?? null;
+        $change = $payload['entry'][0]['changes'][0] ?? [];
+        $field = $change['field'] ?? 'messages';
+        $phoneNumberId = $change['value']['metadata']['phone_number_id'] ?? null;
+
+        Log::info('WhatsApp webhook: field dispatch', [
+            'field' => $field,
+            'phone_number_id' => $phoneNumberId,
+        ]);
 
         if (!$phoneNumberId) {
-            Log::warning('WhatsApp webhook: missing phone_number_id');
+            Log::warning('WhatsApp webhook: missing phone_number_id', ['field' => $field]);
             return response()->json(['status' => 'ignored']);
         }
 
-        // 1. Primeiro tenta MetaIntegration (novo sistema OAuth)
         $metaIntegration = MetaIntegration::findActiveByPhoneNumberId($phoneNumberId);
-
-        if ($metaIntegration) {
-            // Verificar se é echo de coexistence antes de processar
-            if ($metaIntegration->is_coexistence && $this->isCoexistenceEcho($payload)) {
-                return $this->processCoexistenceEcho($payload, $metaIntegration);
-            }
-
-            return $this->processWithMetaIntegration($payload, $metaIntegration);
-        }
-
-        // 2. Fallback: Sistema legado com Channel
         $channel = Channel::where('type', ChannelTypeEnum::WHATSAPP)
             ->whereJsonContains('config->phone_number_id', $phoneNumberId)
             ->first();
 
-        if (!$channel) {
-            Log::warning('WhatsApp webhook: channel not found', ['phone_number_id' => $phoneNumberId]);
+        if (!$metaIntegration && !$channel) {
+            Log::warning('WhatsApp webhook: no MetaIntegration or Channel found', [
+                'phone_number_id' => $phoneNumberId,
+                'field' => $field,
+            ]);
             return response()->json(['status' => 'channel_not_found']);
         }
 
-        $this->whatsAppService->processIncomingWebhook($payload, $channel);
+        $isCoexistence = $metaIntegration?->is_coexistence ?? false;
 
-        return response()->json(['status' => 'success', 'platform' => 'whatsapp']);
+        return match ($field) {
+            // Mensagens de entrada normais (e statuses inline)
+            'messages' => $this->dispatchMessagesField($payload, $metaIntegration, $channel, $isCoexistence),
+
+            // Echo de coexistência — o celular enviou uma mensagem
+            'smb_message_echoes', 'message_echoes' => $this->dispatchEchoField($payload, $metaIntegration, $channel, $field),
+
+            // Backfill de histórico (coexistência) — usa service legado via Channel
+            'history' => $this->dispatchHistoryField($payload, $channel),
+
+            // Sync de contatos/estado do app (coexistência)
+            'smb_app_state_sync' => $this->dispatchAppStateSync($payload, $metaIntegration, $channel),
+
+            // Statuses entregues em payload separado
+            'statuses' => $this->dispatchStatusField($payload, $channel, $metaIntegration),
+
+            // Aprovação/rejeição de template
+            'message_template_status_update' => $this->dispatchTemplateStatus($payload, $metaIntegration, $channel),
+
+            // Qualidade do número — apenas log por enquanto
+            'phone_number_quality_update' => tap(response()->json(['status' => 'logged', 'field' => $field]), fn() => Log::info('WhatsApp quality update', $change['value'] ?? [])),
+
+            // Field desconhecido — log e 200 (Meta não retenta)
+            default => tap(response()->json(['status' => 'unhandled_field', 'field' => $field]), fn() => Log::warning('WhatsApp webhook: unhandled field', ['field' => $field])),
+        };
+    }
+
+    /**
+     * Field `messages` — mensagens de entrada. Em tenants coexistentes,
+     * aplica fallback da heurística antiga (from == display_phone_number)
+     * caso SMB fields ainda não estejam subscritos no App Dashboard.
+     */
+    protected function dispatchMessagesField(array $payload, ?MetaIntegration $integration, ?Channel $channel, bool $isCoexistence): JsonResponse
+    {
+        // Fallback: em coexistência, a Meta pode entregar o echo no próprio
+        // field `messages` (se smb_message_echoes não estiver subscrito).
+        // Mantemos a heurística antiga como safety net até o Dashboard ser atualizado.
+        if ($isCoexistence && $this->isCoexistenceEcho($payload)) {
+            return $this->processCoexistenceEcho($payload, $integration);
+        }
+
+        if ($integration) {
+            return $this->processWithMetaIntegration($payload, $integration);
+        }
+
+        $this->whatsAppService->processIncomingWebhook($payload, $channel);
+        return response()->json(['status' => 'success', 'platform' => 'whatsapp', 'field' => 'messages']);
+    }
+
+    /**
+     * Field `smb_message_echoes` ou `message_echoes` — echo do operador.
+     * Com field explícito, não precisamos da heurística frágil.
+     */
+    protected function dispatchEchoField(array $payload, ?MetaIntegration $integration, ?Channel $channel, string $field): JsonResponse
+    {
+        Log::info('WhatsApp webhook: echo field dispatch', ['field' => $field]);
+
+        $targetChannel = $channel ?? ($integration
+            ? Channel::withoutGlobalScopes()
+                ->where('tenant_id', $integration->tenant_id)
+                ->where('type', ChannelTypeEnum::WHATSAPP)
+                ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
+                ->first()
+            : null);
+
+        if (!$targetChannel) {
+            Log::warning('WhatsApp webhook: echo received but no Channel linked', ['field' => $field]);
+            return response()->json(['status' => 'no_channel', 'field' => $field]);
+        }
+
+        $this->whatsAppService->processCoexistenceEcho($payload, $targetChannel);
+
+        return response()->json([
+            'status' => 'success',
+            'platform' => 'whatsapp',
+            'source' => $field,
+        ]);
+    }
+
+    /**
+     * Field `history` — backfill de mensagens antigas ao conectar coexistência.
+     * Reusa o handler legado em WhatsAppController.
+     */
+    protected function dispatchHistoryField(array $payload, ?Channel $channel): JsonResponse
+    {
+        if (!$channel) {
+            Log::warning('WhatsApp webhook: history received but no Channel linked');
+            return response()->json(['status' => 'no_channel', 'field' => 'history']);
+        }
+
+        try {
+            $this->whatsAppService->processHistorySync($payload, $channel);
+        } catch (\Throwable $e) {
+            Log::error('WhatsApp history sync failed', [
+                'error' => $e->getMessage(),
+                'channel_id' => $channel->id,
+            ]);
+        }
+
+        return response()->json(['status' => 'success', 'field' => 'history']);
+    }
+
+    /**
+     * Field `smb_app_state_sync` — sync de contatos vindos do app do celular.
+     * Por enquanto apenas log estruturado; processamento completo virá em fase posterior.
+     */
+    protected function dispatchAppStateSync(array $payload, ?MetaIntegration $integration, ?Channel $channel): JsonResponse
+    {
+        $value = $payload['entry'][0]['changes'][0]['value'] ?? [];
+        Log::info('WhatsApp app state sync received', [
+            'tenant_id' => $integration?->tenant_id,
+            'channel_id' => $channel?->id,
+            'keys' => array_keys($value),
+        ]);
+        return response()->json(['status' => 'logged', 'field' => 'smb_app_state_sync']);
+    }
+
+    /**
+     * Field `statuses` — entregue fora do `messages`. Roteia para o serviço.
+     */
+    protected function dispatchStatusField(array $payload, ?Channel $channel, ?MetaIntegration $integration): JsonResponse
+    {
+        $targetChannel = $channel ?? ($integration
+            ? Channel::withoutGlobalScopes()
+                ->where('tenant_id', $integration->tenant_id)
+                ->where('type', ChannelTypeEnum::WHATSAPP)
+                ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
+                ->first()
+            : null);
+
+        if (!$targetChannel) {
+            return response()->json(['status' => 'no_channel', 'field' => 'statuses']);
+        }
+
+        // processIncomingWebhook detecta `statuses` no value e roteia internamente
+        $this->whatsAppService->processIncomingWebhook($payload, $targetChannel);
+        return response()->json(['status' => 'success', 'field' => 'statuses']);
+    }
+
+    /**
+     * Field `message_template_status_update` — apenas log por enquanto.
+     * Processamento (atualizar `whatsapp_templates.status`) virá em fase posterior.
+     */
+    protected function dispatchTemplateStatus(array $payload, ?MetaIntegration $integration, ?Channel $channel): JsonResponse
+    {
+        $value = $payload['entry'][0]['changes'][0]['value'] ?? [];
+        Log::info('WhatsApp template status update', [
+            'tenant_id' => $integration?->tenant_id,
+            'channel_id' => $channel?->id,
+            'template_name' => $value['message_template_name'] ?? null,
+            'event' => $value['event'] ?? null,
+            'reason' => $value['reason'] ?? null,
+        ]);
+        return response()->json(['status' => 'logged', 'field' => 'message_template_status_update']);
     }
 
     /**
@@ -169,25 +330,32 @@ class MetaWebhookController extends Controller
      * Mensagens enviadas pelo operador via WhatsApp Business App são salvas
      * com direction = 'outgoing' para manter visibilidade completa da conversa.
      */
-    protected function processCoexistenceEcho(array $payload, MetaIntegration $integration): JsonResponse
+    protected function processCoexistenceEcho(array $payload, ?MetaIntegration $integration): JsonResponse
     {
-        Log::info('WhatsApp webhook: processing coexistence echo', [
-            'integration_id' => $integration->id,
-            'tenant_id' => $integration->tenant_id,
+        Log::info('WhatsApp webhook: processing coexistence echo (heuristic fallback)', [
+            'integration_id' => $integration?->id,
+            'tenant_id' => $integration?->tenant_id,
         ]);
 
-        // Encontra o Channel vinculado
-        $channel = Channel::withoutGlobalScopes()
-            ->where('tenant_id', $integration->tenant_id)
-            ->where('type', ChannelTypeEnum::WHATSAPP)
-            ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
-            ->first();
+        // Tenta via MetaIntegration; se não houver, cai no phone_number_id do payload
+        $phoneNumberId = $payload['entry'][0]['changes'][0]['value']['metadata']['phone_number_id'] ?? null;
+
+        $channel = $integration
+            ? Channel::withoutGlobalScopes()
+                ->where('tenant_id', $integration->tenant_id)
+                ->where('type', ChannelTypeEnum::WHATSAPP)
+                ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
+                ->first()
+            : Channel::where('type', ChannelTypeEnum::WHATSAPP)
+                ->whereJsonContains('config->phone_number_id', $phoneNumberId)
+                ->first();
 
         if ($channel) {
             $this->whatsAppService->processCoexistenceEcho($payload, $channel);
         } else {
             Log::warning('WhatsApp webhook: coexistence echo but no Channel found', [
-                'integration_id' => $integration->id,
+                'integration_id' => $integration?->id,
+                'phone_number_id' => $phoneNumberId,
             ]);
         }
 

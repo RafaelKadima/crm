@@ -14,7 +14,13 @@ use Illuminate\Support\Facades\Log;
 
 class MetaAdsService
 {
-    protected string $baseUrl = 'https://graph.facebook.com/v18.0';
+    protected string $baseUrl;
+
+    public function __construct()
+    {
+        $apiVersion = config('services.meta.api_version', 'v22.0');
+        $this->baseUrl = "https://graph.facebook.com/{$apiVersion}";
+    }
 
     /**
      * Conecta uma conta Meta Ads.
