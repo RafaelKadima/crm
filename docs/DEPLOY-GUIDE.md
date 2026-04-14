@@ -949,3 +949,66 @@ ssh root@212.85.20.129 \
 3. **Quando código Python (`ai-service/`) muda → sempre `docker compose build ai-service`** antes de `up -d`. Editar arquivo no host não afeta a imagem (não tem bind mount).
 4. **Quando container é recriado → restart no nginx** (`docker compose restart nginx`). DNS interno do Docker é cacheado e nginx mantém o IP velho.
 5. **Pre-deploy local check** (recomendado): rodar `cd ai-service && python -c "from app.config import Settings; Settings()"` — um import simples já pega a maioria dos `AttributeError`/`ImportError` sem precisar subir o container.
+
+---
+
+## 14. Post-Mortem 2026-04-14 — Integração WhatsApp coexistência (MotoChefe)
+
+Cliente MotoChefe reportou 8 sintomas (áudios fora de ordem, mensagens do celular não aparecendo no CRM, histórico incompleto, anúncio "not supported", não criar template etc.). Investigação revelou problemas distribuídos em backend + frontend + config Meta. Consolidação das lições:
+
+### Aprendizados operacionais (correções já aplicadas neste commit)
+
+1. **`docker compose restart nginx` agora é automático no `make deploy`.** Toda vez que `php`, `ai-service` ou outro upstream é recriado, nginx cacheia o IP velho e tudo vira 502. Antes era manual; agora o Makefile faz sozinho.
+
+2. **Webhook fields da Meta são controlados no Meta App Dashboard, não em código.** O `subscribeAppToWaba()` habilita a entrega, mas **quais fields** vêm depende do checkbox em `developers.facebook.com → App → WhatsApp → Configuration → Webhooks`. Para coexistência os fields críticos são:
+   - `smb_message_echoes` — mensagens enviadas pelo celular do operador
+   - `smb_app_state_sync` — sync de contatos do app
+   - `history` — backfill one-shot após onboarding
+   - `message_template_status_update` — status de aprovação de template
+   - `phone_number_quality_update` — qualidade do número
+   
+   `message_echoes` (sem `smb_`) é do Messenger — pode estar como "Falha ao assinar" no app WhatsApp, ignorar.
+
+3. **Após mudar código que afeta subscribe → re-executar subscribe em tenants já conectados.** Senão eles continuam com os fields antigos. Comando:
+   ```bash
+   ssh root@212.85.20.129
+   cd /var/www/crm
+   docker compose exec -T php php artisan tinker --execute='
+     foreach (\App\Models\MetaIntegration::where("is_coexistence",true)->get() as $i) {
+       app(\App\Modules\Meta\Services\MetaOAuthService::class)->subscribeAppToWaba($i->waba_id, $i->access_token);
+     }'
+   ```
+
+4. **Hard refresh no browser após deploy de frontend (Ctrl+Shift+R).** O build incrementa hash do bundle, mas browsers podem servir cache em CDN/service worker. Sintoma: "a correção não chegou" — mas chegou, só o browser está com JS antigo.
+
+### Armadilhas de código encontradas (lições para futuras integrações Meta)
+
+5. **Meta usa chaves diferentes no `value` do webhook por field.** `messages` vem em `value.messages[]`, mas `smb_message_echoes` vem em `value.message_echoes[]`. Se o handler faz `$value['messages']`, o SMB echo vira `message_count: 0` no log e é descartado silenciosamente. Normalize sempre antes de processar.
+
+6. **Handlers genéricos (`processCoexistenceEcho`) que checam `field === 'messages'` bloqueiam payloads normalizados.** Ao delegar entre handlers, normalizar **tudo**: o field, o array de mensagens, a chave. Não assumir que só trocar o array resolve.
+
+7. **WhatsApp Graph API: misturar versões v18/v19/v21 em endpoints diferentes é bomba-relógio.** O `getMediaUrl` estava em v21 enquanto o resto em v18 — podia derrubar download de mídia se Meta depreciasse v21. Centralizar versão em `config/services.php:services.{whatsapp,instagram,meta}.api_version` e usar `config(...)` em todos os services. Default atual: **v22.0**.
+
+8. **Idempotência de webhook via `whereJsonContains('metadata->whatsapp_message_id', ...)` é frágil e lento.** Meta entrega webhooks com at-least-once delivery — duplicatas são esperadas. Solução: coluna dedicada `wa_message_id` indexada + UNIQUE parcial em Postgres. Migrado em `2026_04_14_000001_add_wa_message_id_unique_to_ticket_messages.php` com backfill em chunks (não trava base grande).
+
+9. **`sent_at = now()` na criação de TicketMessage causa fora de ordem.** Webhooks não chegam ordenados. Sempre usar `Carbon::createFromTimestamp((int) $message['timestamp'])` — o timestamp do payload é canônico.
+
+10. **URL de download de media da Meta tem TTL de ~5 minutos.** Se download síncrono falha no webhook (timeout, rede), a URL expira e o áudio fica permanentemente indisponível. Mitigação: job em fila `whatsapp-media` com retry exponencial (10s/30s/90s), dispara quando `media_pending=true` e termina dentro do TTL.
+
+11. **WebSocket outbound handler no frontend assumia otimistic UI.** O handler de `message.created` ignorava toda mensagem `direction=outbound + sender_type=user` por achar que era eco da própria request HTTP. Echoes de coexistência (vêm do celular, sem temp message) eram silenciosamente descartados. Fix: detectar `metadata.coexistence_echo === true` e adicionar como nova, além de um fallback pro caso geral de sem temp.
+
+12. **Botões que dependem de seleção não-obrigatória devem ter fallback, não disable.** Ex.: "Criar template" e "Sincronizar" ficavam desabilitados quando usuário deixava "Todos os canais" no dropdown. UX correta: se há pelo menos 1 canal, habilitar o botão e usar o primeiro como default. Disable só quando **não existe** canal configurado.
+
+### Checklist pra próxima integração Meta
+
+Antes de deploy de qualquer mudança que toque webhook/templates/Meta:
+
+- [ ] Versão da Graph API unificada em `config/services.php`?
+- [ ] Payload do webhook tem chave diferente por field? (Chequei doc da Meta para cada field subscrito?)
+- [ ] Inserções de mensagem usam `wa_message_id` para idempotência?
+- [ ] `sent_at` vem do `timestamp` do payload, não `now()`?
+- [ ] Download de media tem fallback async com retry?
+- [ ] Handler WebSocket no frontend trata OUTBOUND vindo do webhook (não só inbound)?
+- [ ] Após mudança em `subscribeAppToWaba` ou campos novos → re-executar subscribe nos tenants existentes?
+- [ ] Botões de ação têm fallback se o estado ainda não carregou?
+

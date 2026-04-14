@@ -133,21 +133,27 @@ export function WhatsAppTemplatesPage() {
     }
   }, [selectedChannel, fetchStats])
 
-  // Auto-seleciona primeiro canal se houver apenas um
+  // Auto-seleciona primeiro canal assim que a lista estiver disponível
+  // (funciona tanto pra 1 canal quanto pra múltiplos — usuário pode trocar depois).
   useEffect(() => {
-    if (whatsAppChannels.length === 1 && !selectedChannel) {
+    if (whatsAppChannels.length > 0 && !selectedChannel) {
       setSelectedChannel(whatsAppChannels[0].id)
     }
   }, [whatsAppChannels, selectedChannel])
 
+  // Fallback: se por algum motivo selectedChannel estiver vazio mas há canais,
+  // usa o primeiro. Evita o usuário ficar travado com os botões desabilitados.
+  const effectiveChannelId = selectedChannel || whatsAppChannels[0]?.id || ''
+  const hasWhatsAppChannel = whatsAppChannels.length > 0
+
   const handleSync = async () => {
-    if (!selectedChannel) return
+    if (!effectiveChannelId) return
     setSyncing(true)
     try {
-      const result = await syncFromMeta(selectedChannel)
+      const result = await syncFromMeta(effectiveChannelId)
       alert(`Sincronização concluída!\n\nCriados: ${result.created}\nAtualizados: ${result.updated}\nTotal: ${result.total}`)
-      fetchTemplates({ channel_id: selectedChannel })
-      fetchStats(selectedChannel)
+      fetchTemplates({ channel_id: effectiveChannelId })
+      fetchStats(effectiveChannelId)
     } catch (err) {
       // Erro já tratado pelo hook
     } finally {
@@ -313,8 +319,9 @@ export function WhatsAppTemplatesPage() {
           <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-border">
             <Button
               onClick={() => setIsCreateModalOpen(true)}
-              disabled={!selectedChannel}
+              disabled={!hasWhatsAppChannel}
               className="bg-green-600 hover:bg-green-700 text-white"
+              title={hasWhatsAppChannel ? '' : 'Configure um canal WhatsApp primeiro'}
             >
               <PlusIcon />
               <span className="ml-2">Novo Template</span>
@@ -322,8 +329,9 @@ export function WhatsAppTemplatesPage() {
 
             <Button
               onClick={handleSync}
-              disabled={!selectedChannel || syncing}
+              disabled={!hasWhatsAppChannel || syncing}
               variant="outline"
+              title={hasWhatsAppChannel ? '' : 'Configure um canal WhatsApp primeiro'}
             >
               {syncing ? <Spinner size="sm" /> : <RefreshIcon />}
               <span className="ml-2">Sincronizar do Meta</span>
@@ -488,9 +496,9 @@ export function WhatsAppTemplatesPage() {
         )}
 
         {/* Modal de criação */}
-        {isCreateModalOpen && selectedChannel && (
+        {isCreateModalOpen && effectiveChannelId && (
           <CreateTemplateModal
-            channelId={selectedChannel}
+            channelId={effectiveChannelId}
             onClose={() => setIsCreateModalOpen(false)}
             onSuccess={handleTemplateCreated}
           />
