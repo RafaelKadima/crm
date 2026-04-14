@@ -2,43 +2,8 @@ import { useEffect, useRef } from 'react'
 import { getEcho, reconnectEcho } from '@/lib/echo'
 import { useNotificationStore } from '@/store/notificationStore'
 import { useQueryClient } from '@tanstack/react-query'
-import { useSoundSettings } from '@/hooks/useSounds'
+import { useSoundSettings, playNotificationBeep } from '@/hooks/useSounds'
 import { useAuthStore } from '@/store/authStore'
-
-/**
- * Toca um som de notificação usando Web Audio API (sem arquivo externo)
- */
-async function playNotificationSound(volume: number) {
-  try {
-    const ctx = new AudioContext()
-    if (ctx.state === 'suspended') await ctx.resume()
-
-    const gain = ctx.createGain()
-    gain.connect(ctx.destination)
-
-    const osc1 = ctx.createOscillator()
-    osc1.connect(gain)
-    osc1.type = 'sine'
-    osc1.frequency.setValueAtTime(880, ctx.currentTime)
-    osc1.start(ctx.currentTime)
-    osc1.stop(ctx.currentTime + 0.15)
-
-    const osc2 = ctx.createOscillator()
-    osc2.connect(gain)
-    osc2.type = 'sine'
-    osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.15)
-    osc2.start(ctx.currentTime + 0.15)
-    osc2.stop(ctx.currentTime + 0.35)
-
-    gain.gain.setValueAtTime(volume * 0.8, ctx.currentTime)
-    gain.gain.setValueAtTime(volume * 0.8, ctx.currentTime + 0.15)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
-
-    osc2.onended = () => ctx.close()
-  } catch {
-    // Silently fail — browser may block audio without user gesture
-  }
-}
 
 interface MessageEvent {
   message: {
@@ -227,7 +192,7 @@ export function useTenantMessages(tenantId: string | null) {
             addUnreadMessage(data.lead_id, data.message.content)
 
             if (soundEnabledRef.current) {
-              playNotificationSound(soundVolumeRef.current)
+              playNotificationBeep(soundVolumeRef.current)
             }
 
             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {

@@ -90,6 +90,119 @@ if (typeof window !== 'undefined') {
   window.addEventListener('keydown', preloadOnInteraction, { once: true })
 }
 
+/**
+ * AudioContext único, reusado entre notificações.
+ *
+ * Problemas resolvidos:
+ * 1. Browsers limitam ~6 AudioContexts simultâneos — antes o código criava
+ *    um novo por notificação e não fechava deterministicamente.
+ * 2. Autoplay policy: AudioContext começa "suspended" e só pode tocar som
+ *    após gesture do usuário. O listener de `click`/`keydown` acima chama
+ *    `unlockAudioContext()` na primeira interação.
+ */
+let sharedAudioContext: AudioContext | null = null
+let audioContextUnlocked = false
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null
+  if (!sharedAudioContext) {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioCtx) return null
+    try {
+      sharedAudioContext = new AudioCtx()
+    } catch (e) {
+      console.warn('[sound] AudioContext creation failed', e)
+      return null
+    }
+  }
+  return sharedAudioContext
+}
+
+async function unlockAudioContext() {
+  const ctx = getAudioContext()
+  if (!ctx) return
+  if (ctx.state === 'suspended') {
+    try {
+      await ctx.resume()
+      audioContextUnlocked = true
+      console.debug('[sound] AudioContext unlocked via user gesture')
+    } catch (e) {
+      console.warn('[sound] AudioContext resume failed', e)
+    }
+  } else {
+    audioContextUnlocked = true
+  }
+}
+
+if (typeof window !== 'undefined') {
+  const onFirstInteraction = () => {
+    unlockAudioContext()
+    window.removeEventListener('click', onFirstInteraction)
+    window.removeEventListener('keydown', onFirstInteraction)
+    window.removeEventListener('touchstart', onFirstInteraction)
+  }
+  window.addEventListener('click', onFirstInteraction, { once: true })
+  window.addEventListener('keydown', onFirstInteraction, { once: true })
+  window.addEventListener('touchstart', onFirstInteraction, { once: true })
+}
+
+/**
+ * Toca um "ding" de notificação usando oscilador Web Audio (sem arquivo).
+ *
+ * Pode ser chamada de qualquer contexto (inclusive WebSocket listeners
+ * fora de React). Se o browser ainda não recebeu gesture do usuário,
+ * loga warning no console — antes falhava silenciosamente com `catch {}`.
+ */
+export async function playNotificationBeep(volume: number = 0.8): Promise<void> {
+  const ctx = getAudioContext()
+  if (!ctx) {
+    console.warn('[sound] AudioContext not available in this browser')
+    return
+  }
+
+  if (ctx.state === 'suspended') {
+    // Tenta resumir mesmo sem gesture formal (alguns browsers permitem
+    // após qualquer interação anterior).
+    try {
+      await ctx.resume()
+    } catch {
+      console.warn('[sound] Notificação bloqueada — usuário precisa clicar na página primeiro (autoplay policy)')
+      return
+    }
+  }
+
+  try {
+    const gain = ctx.createGain()
+    gain.connect(ctx.destination)
+    gain.gain.setValueAtTime(Math.max(0, Math.min(1, volume)) * 0.8, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
+
+    const osc1 = ctx.createOscillator()
+    osc1.connect(gain)
+    osc1.type = 'sine'
+    osc1.frequency.setValueAtTime(880, ctx.currentTime)
+    osc1.start(ctx.currentTime)
+    osc1.stop(ctx.currentTime + 0.15)
+
+    const osc2 = ctx.createOscillator()
+    osc2.connect(gain)
+    osc2.type = 'sine'
+    osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.15)
+    osc2.start(ctx.currentTime + 0.15)
+    osc2.stop(ctx.currentTime + 0.35)
+  } catch (error) {
+    console.warn('[sound] Oscillator failed:', error)
+  }
+}
+
+/**
+ * Alias legado que aceita qualquer SoundType (ignora e toca o beep único).
+ * Mantém compat com chamadas existentes se houver.
+ */
+export async function playSoundFile(_type: SoundType, volume: number = 0.8): Promise<void> {
+  return playNotificationBeep(volume)
+}
+
 // Main hook
 export function useSounds() {
   const { enabled, volume } = useSoundSettings()
