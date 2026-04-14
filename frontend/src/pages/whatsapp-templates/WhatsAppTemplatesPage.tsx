@@ -133,10 +133,15 @@ export function WhatsAppTemplatesPage() {
     }
   }, [selectedChannel, fetchStats])
 
-  // Auto-seleciona primeiro canal assim que a lista estiver disponível
-  // (funciona tanto pra 1 canal quanto pra múltiplos — usuário pode trocar depois).
+  // Auto-seleciona primeiro canal assim que a lista estiver disponível.
+  // Também corrige o caso de troca de conta/tenant: se o selectedChannel
+  // guardado não está mais na lista do usuário atual, reseta para o primeiro
+  // disponível (evita enviar channel_id de outro tenant → 404 no backend).
   useEffect(() => {
-    if (whatsAppChannels.length > 0 && !selectedChannel) {
+    if (whatsAppChannels.length === 0) return
+
+    const currentIsValid = selectedChannel && whatsAppChannels.some(c => c.id === selectedChannel)
+    if (!currentIsValid) {
       setSelectedChannel(whatsAppChannels[0].id)
     }
   }, [whatsAppChannels, selectedChannel])
