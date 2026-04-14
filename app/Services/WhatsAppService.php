@@ -606,7 +606,7 @@ class WhatsAppService implements WhatsAppProviderInterface
         }
 
         $sentAt = $timestamp
-            ? \Carbon\Carbon::createFromTimestamp((int) $timestamp)
+            ? \Carbon\Carbon::createFromTimestamp((int) $timestamp, config('app.timezone'))
             : now();
 
         // Create ticket message
@@ -780,7 +780,7 @@ class WhatsAppService implements WhatsAppProviderInterface
         }
 
         $sentAt = $timestamp
-            ? \Carbon\Carbon::createFromTimestamp((int) $timestamp)
+            ? \Carbon\Carbon::createFromTimestamp((int) $timestamp, config('app.timezone'))
             : now();
 
         // Salva como mensagem outgoing (enviada pelo operador via App)
@@ -982,7 +982,7 @@ class WhatsAppService implements WhatsAppProviderInterface
         }
 
         // Converte timestamp epoch para Carbon
-        $sentAt = \Carbon\Carbon::createFromTimestamp((int) $timestamp);
+        $sentAt = \Carbon\Carbon::createFromTimestamp((int) $timestamp, config('app.timezone'));
 
         $ticketMessage = TicketMessage::create([
             'tenant_id' => $channel->tenant_id,
