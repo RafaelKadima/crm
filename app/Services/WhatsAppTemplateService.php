@@ -245,10 +245,14 @@ class WhatsAppTemplateService
 
             // Tradução de erros mais comuns da Meta para mensagem útil ao operador
             $userMessage = match (true) {
-                // (#100) sem permissão — em coexistência é o caso mais comum: templates
-                // devem ser criados pelo app do WhatsApp Business no celular.
+                // (#100) sem permissão — em coexistência o token do OAuth embedded
+                // não vem com whatsapp_business_management por padrão. Duas saídas:
+                // criar via Business Manager (web) e sincronizar, ou pedir ao admin
+                // pra conceder a permissão ao app no Business Manager.
                 $metaCode === 100 && $this->isCoexistenceChannel($channel) =>
-                    'Em contas coexistentes (WhatsApp Business App + API no mesmo número), a Meta exige que templates sejam criados diretamente pelo app do WhatsApp Business no celular do operador. Abra o app → Ferramentas de mensagens → Modelos de mensagens.',
+                    "Contas coexistentes não permitem criar templates via API sem permissão extra. Duas opções:\n\n"
+                    ."1) Crie pelo Meta Business Manager: https://business.facebook.com/wa/manage/message-templates (entre com a conta Meta do cliente, selecione a WABA, crie o template). Depois clique em \"Sincronizar do Meta\" no CRM — ele aparece aqui automaticamente.\n\n"
+                    ."2) Para criar direto pelo CRM, peça ao admin da conta Meta para conceder a permissão \"Gerenciar templates\" (whatsapp_business_management) ao nosso app em business.facebook.com → Configurações → Integrações → Apps.",
 
                 $metaCode === 100 =>
                     'Token sem permissão `whatsapp_business_management` na WABA. Reconecte o canal via OAuth com permissões completas.',
