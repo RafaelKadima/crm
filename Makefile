@@ -47,6 +47,10 @@ deploy: ## Deploy/atualização em produção (com healthcheck automático)
 	docker compose exec -T php php artisan migrate --force
 	docker compose exec -T php php artisan optimize
 	docker compose restart queue scheduler reverb
+	@# Recria do DNS: quando ai-service/php são recriados, o nginx mantém IP antigo
+	@# em cache e todo upstream vira 502. Restart do nginx força re-resolve.
+	@# Ver: docs/DEPLOY-GUIDE.md seção 13 (incidente 2026-04-13).
+	docker compose restart nginx
 	@echo "$(YELLOW)⏳ Aguardando containers estabilizarem (10s)...$(RESET)"
 	@sleep 10
 	@$(MAKE) verify || ( echo "$(YELLOW)⚠️  Deploy concluiu mas healthcheck FALHOU. Investigue antes de fechar a sessão.$(RESET)"; exit 1 )
