@@ -15,11 +15,6 @@ services:
       - ./docker/nginx/sites:/etc/nginx/conf.d:ro
       - ./docker/nginx/ssl:/etc/nginx/ssl:ro
       - ./frontend/dist:/var/www/frontend:ro
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
     depends_on:
       - php
       - reverb
@@ -50,14 +45,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme_in_production}
       REVERB_HOST: reverb
       REVERB_PORT: 8080
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
     depends_on:
       redis:
         condition: service_healthy
@@ -87,7 +76,6 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme_in_production}
       REVERB_APP_ID: ${REVERB_APP_ID}
       REVERB_APP_KEY: ${REVERB_APP_KEY}
       REVERB_APP_SECRET: ${REVERB_APP_SECRET}
@@ -96,11 +84,6 @@ services:
       REVERB_SCHEME: ${VITE_REVERB_SCHEME:-https}
       REVERB_SERVER_HOST: 0.0.0.0
       REVERB_SERVER_PORT: 8080
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
     depends_on:
       php:
         condition: service_started
@@ -132,15 +115,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme_in_production}
       REVERB_HOST: reverb
       REVERB_PORT: 8080
       REVERB_SCHEME: http
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
     depends_on:
       php:
         condition: service_started
@@ -172,12 +149,6 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme_in_production}
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.25'
     depends_on:
       php:
         condition: service_started
@@ -193,19 +164,14 @@ services:
     image: redis:7-alpine
     container_name: crm-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme_in_production}
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_in_production}", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
     networks:
       - crm-network
 
@@ -227,19 +193,12 @@ services:
       DATABASE_URL: postgresql+asyncpg://${DB_USERNAME}:${AI_DB_PASSWORD_ENCODED:-${DB_PASSWORD}}@${DB_HOST}:5432/${DB_DATABASE}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme_in_production}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5176,http://localhost:8000}
       LARAVEL_API_URL: http://nginx
       LARAVEL_INTERNAL_KEY: ${INTERNAL_API_KEY}
       # Content Creator Agent
       TAVILY_API_KEY: ${TAVILY_API_KEY}
       GROQ_API_KEY: ${GROQ_API_KEY}
       GROQ_WHISPER_MODEL: ${GROQ_WHISPER_MODEL:-whisper-large-v3}
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
     depends_on:
       redis:
         condition: service_healthy
@@ -264,18 +223,10 @@ services:
       nginx:
         condition: service_started
     healthcheck:
-      # 127.0.0.1 explícito — "localhost" no Alpine/BusyBox resolve IPv6 (::1)
-      # antes de IPv4 e o Fiber escuta só em 0.0.0.0, resultando em
-      # "Connection refused" falso-positivo no healthcheck.
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
     networks:
       - crm-network
     volumes:
