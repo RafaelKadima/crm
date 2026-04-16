@@ -737,20 +737,28 @@ class WhatsAppService implements WhatsAppProviderInterface
             return null;
         }
 
-        // Encontra o contato destinatário
+        // Encontra o contato destinatário — se não existe, cria.
+        // Antes o echo era descartado; mas quando operador responde primeiro
+        // (auto-resposta do app, ou novo lead), os echoes chegam antes da
+        // mensagem inbound. Descartar = perder histórico da conversa.
         $formattedPhone = $this->formatPhoneNumber($recipientPhone);
         $contact = Contact::where('tenant_id', $channel->tenant_id)
             ->where('phone', $formattedPhone)
             ->first();
 
         if (!$contact) {
-            Log::info('Coexistence echo: contact not found, skipping', [
+            Log::info('Coexistence echo: contact not found, creating', [
                 'phone' => $formattedPhone,
             ]);
-            return null;
+            $contact = Contact::create([
+                'tenant_id' => $channel->tenant_id,
+                'name' => $contactInfo['profile']['name'] ?? "WhatsApp {$recipientPhone}",
+                'phone' => $formattedPhone,
+            ]);
         }
 
-        // Encontra ticket aberto para o contato
+        // Encontra ticket aberto — se não existe, usa findOrCreateTicket
+        // (mesma lógica do flow inbound, garante Lead + Ticket consistentes).
         $ticket = Ticket::where('tenant_id', $channel->tenant_id)
             ->where('contact_id', $contact->id)
             ->where('channel_id', $channel->id)
@@ -758,10 +766,10 @@ class WhatsAppService implements WhatsAppProviderInterface
             ->first();
 
         if (!$ticket) {
-            Log::info('Coexistence echo: no open ticket found, skipping', [
+            Log::info('Coexistence echo: no open ticket, creating via findOrCreateTicket', [
                 'contact_id' => $contact->id,
             ]);
-            return null;
+            $ticket = $this->findOrCreateTicket($channel, $contact);
         }
 
         // Extrai conteúdo da mensagem
@@ -1295,6 +1303,13 @@ class WhatsAppService implements WhatsAppProviderInterface
             'contacts' => '[Contato compartilhado]',
             'interactive' => $this->extractInteractiveContent($message['interactive'] ?? []),
             'button' => $message['button']['text'] ?? '[Botão]',
+            // Edição de mensagem (feature nova do WhatsApp, 2024+). Payload vem
+            // com o novo texto em `edit.body` e referência à mensagem original
+            // em `edit.edited_message_id` (opcional). Mostramos o novo conteúdo
+            // com indicação visual de que foi editado.
+            'edit' => '✏️ ' . ($message['edit']['body'] ?? $message['edit']['text'] ?? '[mensagem editada]'),
+            // Mensagem deletada pelo remetente
+            'unsupported' => '[mensagem não suportada]',
             default => "[{$type}]",
         };
     }
