@@ -205,9 +205,9 @@ class WhatsAppService implements WhatsAppProviderInterface
 
         // For audio files that should be sent as voice notes, convert to OGG OPUS
         if ($isAudio && $asVoiceNote) {
-            Log::error('[PTT DEBUG] Starting conversion', ['filePath' => $filePath, 'mimeType' => $mimeType]);
+            Log::info('[PTT] Starting conversion', ['filePath' => $filePath, 'mimeType' => $mimeType]);
             $convertedPath = $this->convertToOggOpus($disk, $filePath);
-            Log::error('[PTT DEBUG] Conversion result', ['convertedPath' => $convertedPath]);
+            Log::info('[PTT] Conversion result', ['convertedPath' => $convertedPath]);
             if ($convertedPath) {
                 $filePath = $convertedPath;
                 $fileContents = $disk->get($filePath);
@@ -219,7 +219,7 @@ class WhatsAppService implements WhatsAppProviderInterface
                 $fileName = $fileNameWithoutExt . '.ogg'; // Force .ogg extension for iOS compatibility
                 $normalizedMimeType = 'audio/ogg'; // NO parameters! Mobile rejects ; codecs=opus
                 $isVoiceNote = true;
-                Log::error('[PTT DEBUG] Conversion successful, using OGG container', [
+                Log::info('[PTT] Conversion successful, using OGG container', [
                     'new_path' => $filePath,
                     'mime_type' => $normalizedMimeType,
                     'file_name' => $fileName,
@@ -261,7 +261,7 @@ class WhatsAppService implements WhatsAppProviderInterface
             $normalizedMimeType = 'audio/mp4';
         }
 
-        Log::error('[PTT DEBUG] Uploading media to WhatsApp', [
+        Log::info('[PTT] Uploading media to WhatsApp', [
             'original_mime' => $mimeType,
             'normalized_mime' => $normalizedMimeType,
             'file_name' => $fileName,
@@ -1226,7 +1226,7 @@ class WhatsAppService implements WhatsAppProviderInterface
                     ->first();
             }
 
-            // Create the lead
+            // Create the lead — registra o modo de IA do canal na criação para rastreio/conversão.
             $lead = Lead::create([
                 'tenant_id' => $channel->tenant_id,
                 'contact_id' => $contact->id,
@@ -1234,6 +1234,7 @@ class WhatsAppService implements WhatsAppProviderInterface
                 'pipeline_id' => $pipeline?->id,
                 'stage_id' => $firstStage?->id,
                 'status' => \App\Enums\LeadStatusEnum::OPEN,
+                'ia_mode_at_creation' => $channel->ia_mode,
                 'name' => $contact->name,
                 'phone' => $contact->phone,
             ]);
@@ -1577,13 +1578,13 @@ class WhatsAppService implements WhatsAppProviderInterface
      */
     protected function convertToOggOpus($disk, string $inputPath): ?string
     {
-        Log::error('[PTT DEBUG] convertToOggOpus called', ['inputPath' => $inputPath]);
+        Log::info('[PTT] convertToOggOpus called', ['inputPath' => $inputPath]);
 
         // Check if FFmpeg is available
         $ffmpegPath = $this->findFfmpeg();
-        Log::error('[PTT DEBUG] FFmpeg path', ['ffmpegPath' => $ffmpegPath]);
+        Log::info('[PTT] FFmpeg path', ['ffmpegPath' => $ffmpegPath]);
         if (!$ffmpegPath) {
-            Log::error('[PTT DEBUG] FFmpeg not found');
+            Log::info('[PTT] FFmpeg not found');
             return null;
         }
 
@@ -1616,13 +1617,13 @@ class WhatsAppService implements WhatsAppProviderInterface
                 $outputFile
             );
 
-            Log::error('[PTT DEBUG] Running FFmpeg', ['command' => $command]);
+            Log::info('[PTT] Running FFmpeg', ['command' => $command]);
             $output = shell_exec($command);
-            Log::error('[PTT DEBUG] FFmpeg output', ['output' => substr($output ?? '', -500)]);
+            Log::info('[PTT] FFmpeg output', ['output' => substr($output ?? '', -500)]);
 
             // Check if output file was created
             if (!file_exists($outputFile) || filesize($outputFile) === 0) {
-                Log::error('[PTT DEBUG] FFmpeg failed - no output file', ['output' => $output]);
+                Log::info('[PTT] FFmpeg failed - no output file', ['output' => $output]);
                 @unlink($inputFile);
                 return null;
             }
@@ -1632,10 +1633,10 @@ class WhatsAppService implements WhatsAppProviderInterface
             if ($ffprobePath) {
                 $probeCommand = sprintf('"%s" -v error -show_format -show_streams -of json "%s" 2>&1', $ffprobePath, $outputFile);
                 $probeOutput = shell_exec($probeCommand);
-                Log::error('[PTT DEBUG] FFprobe verification', ['output' => $probeOutput]);
+                Log::info('[PTT] FFprobe verification', ['output' => $probeOutput]);
             }
 
-            Log::error('[PTT DEBUG] FFmpeg success', ['size' => filesize($outputFile)]);
+            Log::info('[PTT] FFmpeg success', ['size' => filesize($outputFile)]);
 
             // Generate output path with .ogg extension
             $basePath = preg_replace('/\.[^.]+$/', '', $inputPath);

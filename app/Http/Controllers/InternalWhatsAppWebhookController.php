@@ -360,6 +360,7 @@ class InternalWhatsAppWebhookController extends Controller
                 'pipeline_id' => $pipeline?->id,
                 'stage_id' => $firstStage?->id,
                 'status' => LeadStatusEnum::OPEN,
+                'ia_mode_at_creation' => $channel->ia_mode,
                 'name' => $contact->name,
                 'phone' => $contact->phone,
             ]);

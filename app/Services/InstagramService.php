@@ -393,7 +393,7 @@ class InstagramService
                     ->first();
             }
 
-            // Create the lead
+            // Create the lead — registra o modo de IA do canal para rastreio de conversão.
             $lead = Lead::create([
                 'tenant_id' => $channel->tenant_id,
                 'contact_id' => $contact->id,
@@ -401,6 +401,7 @@ class InstagramService
                 'pipeline_id' => $pipeline?->id,
                 'stage_id' => $firstStage?->id,
                 'status' => \App\Enums\LeadStatusEnum::OPEN,
+                'ia_mode_at_creation' => $channel->ia_mode,
                 'name' => $contact->name,
                 'phone' => $contact->phone,
             ]);
