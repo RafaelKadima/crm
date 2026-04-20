@@ -295,11 +295,8 @@ class LeadController extends Controller
         $oldStage = $lead->stage;
         $newStage = PipelineStage::find($validated['stage_id']);
 
-        // Move o lead e dispara evento GTM automaticamente
+        // Move o lead — o listener RegisterLeadActivity já grava a atividade via evento LeadStageChanged.
         $lead->moveToStage($newStage, auth()->user(), 'user');
-
-        // Registra atividade
-        LeadActivity::stageChanged($lead, $oldStage, $newStage, auth()->user(), ActivitySourceEnum::USER);
 
         $lead->load(['contact', 'pipeline', 'stage', 'channel', 'owner']);
 

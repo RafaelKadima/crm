@@ -59,16 +59,8 @@ class AgentActionsController extends Controller
 
         $oldStage = $lead->stage;
 
-        // Usa moveToStage para disparar eventos de integração
+        // Move o lead — o listener RegisterLeadActivity grava a atividade via evento LeadStageChanged.
         $lead->moveToStage($stage, null, 'ia');
-
-        // Registra atividade
-        $lead->activities()->create([
-            'type' => 'stage_changed',
-            'description' => "Lead movido de '{$oldStage->name}' para '{$stage->name}'" .
-                ($validated['reason'] ? " - Motivo: {$validated['reason']}" : ''),
-            'source' => 'ia',
-        ]);
 
         Log::info('Agent moved lead stage', [
             'lead_id' => $lead->id,

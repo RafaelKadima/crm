@@ -33,10 +33,8 @@ class IaWebhookController extends Controller
         $oldStage = $lead->stage;
         $newStage = PipelineStage::find($validated['stage_id']);
 
-        $lead->moveToStage($newStage);
-
-        // Registra atividade como IA
-        LeadActivity::stageChanged($lead, $oldStage, $newStage, null, ActivitySourceEnum::IA);
+        // Move o lead — o listener RegisterLeadActivity grava a atividade via evento LeadStageChanged.
+        $lead->moveToStage($newStage, null, 'ia');
 
         $lead->load(['contact', 'pipeline', 'stage', 'channel', 'owner']);
 
