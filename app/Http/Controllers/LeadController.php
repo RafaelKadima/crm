@@ -109,7 +109,9 @@ class LeadController extends Controller
         $query->orderByRaw('last_message_at DESC NULLS LAST')
               ->orderByDesc('created_at');
 
-        $leads = $query->paginate(min((int) $request->get('per_page', 15), 100));
+        // Cap alto o suficiente para o kanban carregar todos os leads de um pipeline
+        // (tenants típicos ficam bem abaixo de 500). Listagens menores continuam usando per_page=15 default.
+        $leads = $query->paginate(min((int) $request->get('per_page', 15), 500));
 
         return response()->json($leads);
     }

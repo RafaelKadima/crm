@@ -64,10 +64,21 @@ export function LeadsKanbanPage() {
   const {
     data: leadsData,
     isLoading: leadsLoading,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
   } = useInfiniteLeads({
-    per_page: 200,
+    per_page: 500,
     search: debouncedSearch.length >= 3 ? debouncedSearch : undefined
   })
+
+  // Kanban precisa mostrar TODOS os leads do pipeline. Busca próximas páginas
+  // automaticamente até acabar — sem isso, etapas com leads mais antigos ficam vazias.
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
   const { data: pipelines, isLoading: pipelinesLoading } = usePipelines()
   const updateStageMutation = useUpdateLeadStage()
 
