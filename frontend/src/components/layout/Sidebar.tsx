@@ -114,6 +114,23 @@ const navEntries: NavEntry[] = [
     ],
   },
 
+  // GERENCIAL — Suite de Funil (Topo/Meio/Fim)
+  {
+    type: 'group',
+    id: 'managerial',
+    label: 'Gerencial',
+    icon: PieChart,
+    defaultOpen: false,
+    items: [
+      { icon: TrendingUp, label: 'Relatório Gerencial', path: '/managerial/funnel' },
+      { icon: TrendingUp, label: 'Análise de Perdas', path: '/managerial/losses' },
+      { icon: Clock, label: 'Velocity', path: '/managerial/velocity' },
+      { icon: Target, label: 'Forecast', path: '/managerial/forecast' },
+      { icon: PieChart, label: 'Coorte por Canal', path: '/managerial/cohort' },
+      { icon: Settings, label: 'Mapeamento do Funil', path: '/managerial/funnel-mapping' },
+    ],
+  },
+
   { type: 'separator' },
 
   // SDR com IA - colapsável

@@ -37,7 +37,7 @@ DB_HOST=aws-0-sa-east-1.pooler.supabase.com
 DB_PORT=5432
 DB_DATABASE=postgres
 DB_USERNAME=postgres.psxxeizqtwiizxozisqz
-DB_PASSWORD=Motochefe2025@
+DB_PASSWORD=CHANGE_ME_USE_ENV_OR_SECRETS_MANAGER
 
 # Redis (Docker Local)
 REDIS_CLIENT=phpredis
@@ -66,7 +66,7 @@ VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
 
 # OpenAI
-OPENAI_API_KEY=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
+OPENAI_API_KEY=sk-proj-CHANGE_ME
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_DEFAULT_MODEL=gpt-4o-mini
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
@@ -127,11 +127,11 @@ APP_NAME="CRM Omnify AI Agent"
 DEBUG=false
 API_KEY=gMmBDXkDg20g5LLXaeY63w16w4hikk8ZndqQUepivLo=
 
-OPENAI_API_KEY=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
+OPENAI_API_KEY=sk-proj-CHANGE_ME
 OPENAI_MODEL=gpt-4o-mini
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
-DATABASE_URL=postgresql+asyncpg://postgres.psxxeizqtwiizxozisqz:Motochefe2025%40@aws-0-sa-east-1.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql+asyncpg://DB_USER:DB_PASSWORD@DB_HOST:5432/DB_NAME
 
 REDIS_HOST=redis
 REDIS_PORT=6379
@@ -482,7 +482,7 @@ DB_HOST=aws-0-sa-east-1.pooler.supabase.com
 DB_PORT=5432
 DB_DATABASE=postgres
 DB_USERNAME=postgres.psxxeizqtwiizxozisqz
-DB_PASSWORD=Motochefe2025@
+DB_PASSWORD=CHANGE_ME_USE_ENV_OR_SECRETS_MANAGER
 REDIS_CLIENT=phpredis
 REDIS_HOST=redis
 REDIS_PASSWORD=null
@@ -503,7 +503,7 @@ VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
 VITE_REVERB_HOST="crm.omnify.center"
 VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
-OPENAI_API_KEY=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
+OPENAI_API_KEY=sk-proj-CHANGE_ME
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_DEFAULT_MODEL=gpt-4o-mini
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small

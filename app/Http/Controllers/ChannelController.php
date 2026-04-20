@@ -103,17 +103,20 @@ class ChannelController extends Controller
      */
     public function destroy(Channel $channel): JsonResponse
     {
-        // Check if channel has leads or tickets
-        if ($channel->leads()->count() > 0 || $channel->tickets()->count() > 0) {
-            return response()->json([
-                'message' => 'Não é possível remover um canal com leads ou tickets vinculados.',
-            ], 422);
+        $linkedLeads = $channel->leads()->count();
+        $linkedTickets = $channel->tickets()->count();
+
+        if ($linkedLeads > 0) {
+            $channel->leads()->update(['channel_id' => null]);
+        }
+        if ($linkedTickets > 0) {
+            $channel->tickets()->update(['channel_id' => null]);
         }
 
         $channel->delete();
 
         return response()->json([
-            'message' => 'Canal removido com sucesso.',
+            'message' => "Canal removido. {$linkedLeads} leads e {$linkedTickets} tickets desvinculados.",
         ]);
     }
 

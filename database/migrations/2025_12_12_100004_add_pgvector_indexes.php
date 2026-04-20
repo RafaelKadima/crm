@@ -12,6 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // pgvector só existe em PostgreSQL — no-op em outros SGBDs (dev/test local)
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         // Verifica se a extensão pgvector está instalada
         $hasPgvector = DB::select("SELECT 1 FROM pg_extension WHERE extname = 'vector'");
         

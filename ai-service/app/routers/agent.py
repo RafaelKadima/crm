@@ -91,7 +91,7 @@ async def health_check():
 
 
 @router.get("/cache/stats")
-async def cache_stats():
+async def cache_stats(api_key: str = Depends(verify_api_key)):
     """
     Retorna estatísticas do cache Redis.
     Útil para monitorar economia de tokens.

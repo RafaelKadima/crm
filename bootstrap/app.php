@@ -9,7 +9,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,6 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->api(prepend: [
+            \App\Http\Middleware\TokenFromCookie::class,
+            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
+        ]);
+
         $middleware->alias([
             'tenant' => ResolveTenant::class,
             'super_admin' => SuperAdminMiddleware::class,
@@ -49,6 +57,45 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => 'Unauthenticated.',
                     'error' => 'Token de autenticação inválido ou expirado.',
                 ], 401);
+            }
+        });
+
+        // Model not found → 404
+        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'error' => 'Recurso não encontrado.',
+                ], 404);
+            }
+        });
+
+        // Validation → 422 (Laravel já faz isso, mas garantimos o formato)
+        $exceptions->render(function (ValidationException $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'error' => 'Dados inválidos.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+        });
+
+        // Generic exceptions → 500 sem detalhes internos em produção
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                if ($e instanceof HttpException) {
+                    return response()->json([
+                        'error' => $e->getMessage() ?: 'Erro no servidor.',
+                    ], $e->getStatusCode());
+                }
+
+                // Em produção, nunca vazar mensagem interna
+                $message = app()->environment('production')
+                    ? 'Erro interno do servidor.'
+                    : $e->getMessage();
+
+                return response()->json([
+                    'error' => $message,
+                ], 500);
             }
         });
     })->create();

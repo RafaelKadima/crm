@@ -478,20 +478,17 @@ async def ssh_execute(command: str, timeout: int = 30, **kwargs) -> Dict[str, An
                 "error": f"Comando '{cmd_base}' nao permitido. Permitidos: {', '.join(allowed)}"
             }
 
-        # Monta comando SSH
+        # Monta comando SSH (apenas key-based auth)
         host = settings.vps_ssh_host
         port = settings.vps_ssh_port
         user = settings.vps_ssh_user
-        password = settings.vps_ssh_password
+        key_path = settings.vps_ssh_key_path
 
         if not host:
             return {"success": False, "error": "VPS_SSH_HOST nao configurado"}
 
-        # Usa sshpass se tiver senha, senao assume chave SSH
-        if password:
-            ssh_cmd = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -p {port} {user}@{host} \"{command}\""
-        else:
-            ssh_cmd = f"ssh -o StrictHostKeyChecking=no -p {port} {user}@{host} \"{command}\""
+        key_flag = f"-i {key_path} " if key_path else ""
+        ssh_cmd = f"ssh {key_flag}-o StrictHostKeyChecking=no -p {port} {user}@{host} \"{command}\""
 
         result = subprocess.run(
             ssh_cmd,

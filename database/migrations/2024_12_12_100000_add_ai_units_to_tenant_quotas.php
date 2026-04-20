@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('tenant_quotas')) {
+            return;
+        }
         Schema::table('tenant_quotas', function (Blueprint $table) {
             // Franquia de Unidades de IA por mês
             $table->integer('max_ai_units_month')->default(0)->after('max_ai_cost_month');

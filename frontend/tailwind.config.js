@@ -62,6 +62,18 @@ export default {
           foreground: "var(--sidebar-foreground)",
           accent: "var(--sidebar-accent)",
         },
+        success: {
+          DEFAULT: "var(--success)",
+          foreground: "var(--success-foreground)",
+        },
+        warning: {
+          DEFAULT: "var(--warning)",
+          foreground: "var(--warning-foreground)",
+        },
+        info: {
+          DEFAULT: "var(--info)",
+          foreground: "var(--info-foreground)",
+        },
       },
       borderRadius: {
         lg: "var(--radius, 12px)",
@@ -70,7 +82,7 @@ export default {
       },
       fontFamily: {
         sans: ['Exo 2', 'system-ui', 'sans-serif'],
-        display: ['Orbitron', 'sans-serif'],
+        display: ['Space Grotesk', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       keyframes: {

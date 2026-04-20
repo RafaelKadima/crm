@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FunnelCategoryEnum;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,6 +36,7 @@ class PipelineStage extends Model
         'color',
         'gtm_event_key',
         'stage_type',
+        'funnel_category',
         'probability',
         'kpi_weight',
         'counts_for_goal',
@@ -49,6 +51,7 @@ class PipelineStage extends Model
             'probability' => 'integer',
             'kpi_weight' => 'integer',
             'counts_for_goal' => 'boolean',
+            'funnel_category' => FunnelCategoryEnum::class,
         ];
     }
 
@@ -73,6 +76,13 @@ class PipelineStage extends Model
                 }
 
                 $stage->slug = $slug;
+            }
+
+            if (empty($stage->funnel_category)) {
+                $stage->funnel_category = FunnelCategoryEnum::guessFromStageName(
+                    $stage->name,
+                    $stage->stage_type ?? 'open'
+                );
             }
         });
     }
@@ -201,6 +211,22 @@ class PipelineStage extends Model
     public function activityTemplates(): HasMany
     {
         return $this->hasMany(StageActivityTemplate::class, 'stage_id');
+    }
+
+    /**
+     * Scope para estágios que participam do funil gerencial (qualquer categoria mapeada).
+     */
+    public function scopeMappedToFunnel($query)
+    {
+        return $query->where('funnel_category', '!=', FunnelCategoryEnum::UNMAPPED->value);
+    }
+
+    /**
+     * Scope para estágios de uma categoria gerencial específica.
+     */
+    public function scopeInFunnelCategory($query, FunnelCategoryEnum $category)
+    {
+        return $query->where('funnel_category', $category->value);
     }
 }
 

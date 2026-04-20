@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('tenant_usage_stats')) {
+            return;
+        }
         Schema::table('tenant_usage_stats', function (Blueprint $table) {
             // Total de Unidades de IA consumidas no mês
             $table->decimal('ai_units_used', 12, 2)->default(0)->after('ai_cost_brl');

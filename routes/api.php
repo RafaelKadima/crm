@@ -9,6 +9,9 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadImportController;
 use App\Http\Controllers\PipelineController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ManagerialFunnelController;
+use App\Http\Controllers\PipelineFunnelMappingController;
+use App\Http\Controllers\LostReasonController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
@@ -440,6 +443,30 @@ Route::middleware('auth:api')->group(function () {
             Route::get('productivity', [ReportController::class, 'productivity']);
             Route::get('ia', [ReportController::class, 'ia']);
             Route::get('distribution', [ReportController::class, 'distribution']);
+        });
+
+        // =============================================================================
+        // Suite Gerencial de Funil — Topo / Meio / Fim universal por categoria
+        // =============================================================================
+        Route::prefix('managerial')->group(function () {
+            Route::get('funnel', [ManagerialFunnelController::class, 'funnel']);
+            Route::get('funnel/drill-down', [ManagerialFunnelController::class, 'drillDown']);
+            Route::get('losses', [ManagerialFunnelController::class, 'losses']);
+            Route::get('velocity', [ManagerialFunnelController::class, 'velocity']);
+            Route::get('forecast', [ManagerialFunnelController::class, 'forecast']);
+            Route::get('cohort', [ManagerialFunnelController::class, 'cohort']);
+        });
+
+        // Configuração do mapeamento stage → categoria gerencial por pipeline
+        Route::get('pipelines/{pipeline}/funnel-mapping', [PipelineFunnelMappingController::class, 'show']);
+        Route::put('pipelines/{pipeline}/funnel-mapping', [PipelineFunnelMappingController::class, 'update']);
+
+        // Motivos de perda (configurados por tenant)
+        Route::prefix('lost-reasons')->group(function () {
+            Route::get('/', [LostReasonController::class, 'index']);
+            Route::post('/', [LostReasonController::class, 'store']);
+            Route::put('{lostReason}', [LostReasonController::class, 'update']);
+            Route::delete('{lostReason}', [LostReasonController::class, 'destroy']);
         });
 
         // =============================================================================

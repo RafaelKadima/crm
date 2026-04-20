@@ -38,6 +38,14 @@ import { BIDashboard, ActionApprovalQueue, AIAnalystChat, ReportsPage as BIRepor
 import { ContentDashboard, ContentAgentChat, ContentCreators, ViralVideoSearch, BrandSettings, AnalyzeVideo, GenerateScript, AutoDiscover } from '@/pages/content'
 import { GoalsDashboard, GoalForm } from '@/pages/goals'
 import { QuickRepliesPage } from '@/pages/quick-replies/QuickRepliesPage'
+import {
+  FunnelUnifiedPage,
+  PipelineFunnelMappingPage,
+  LossAnalysisPage,
+  VelocityPage,
+  ForecastPage,
+  ChannelCohortPage,
+} from '@/pages/managerial'
 import { ConversasPage } from '@/pages/conversas/ConversasPage'
 import { PrivacyPolicyPage } from '@/pages/legal/PrivacyPolicyPage'
 import { TermsOfUsePage } from '@/pages/legal/TermsOfUsePage'
@@ -182,6 +190,14 @@ function AppRoutes() {
         <Route path="quick-replies" element={<QuickRepliesPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="reports/activity-effectiveness" element={<ActivityEffectivenessPage />} />
+
+        {/* Suite Gerencial de Funil */}
+        <Route path="managerial/funnel" element={<FunnelUnifiedPage />} />
+        <Route path="managerial/losses" element={<LossAnalysisPage />} />
+        <Route path="managerial/velocity" element={<VelocityPage />} />
+        <Route path="managerial/forecast" element={<ForecastPage />} />
+        <Route path="managerial/cohort" element={<ChannelCohortPage />} />
+        <Route path="managerial/funnel-mapping" element={<PipelineFunnelMappingPage />} />
         <Route path="settings/*" element={<SettingsPage />} />
         <Route path="groups" element={<GroupsPage />} />
         <Route path="channels" element={<ChannelsPage />} />

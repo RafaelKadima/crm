@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\CalculateKpisJob;
+use App\Jobs\DailyFunnelAggregateJob;
 use App\Jobs\ProcessScheduledTasks;
 use App\Jobs\Ads\SyncAdMetricsJob;
 use App\Jobs\Ads\ProcessAdsAutomationJob;
@@ -60,3 +61,10 @@ Schedule::job(new CalculateKpisJob(
 
 // Renova tokens Meta que estão próximos de expirar (menos de 7 dias)
 Schedule::job(new RefreshMetaTokenJob)->dailyAt('03:00')->withoutOverlapping();
+
+// =============================================================================
+// SUITE GERENCIAL DE FUNIL
+// =============================================================================
+
+// Agrega snapshots de funil do dia anterior às 03:30 (depois de Meta refresh)
+Schedule::job(new DailyFunnelAggregateJob())->dailyAt('03:30')->withoutOverlapping();

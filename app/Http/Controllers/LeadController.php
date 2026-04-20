@@ -207,6 +207,8 @@ class LeadController extends Controller
             'value' => 'nullable|numeric|min:0',
             'expected_close_date' => 'nullable|date',
             'product_id' => 'nullable|uuid|exists:products,id',
+            'lost_reason_id' => 'nullable|uuid|exists:lost_reasons,id',
+            'lost_reason_note' => 'nullable|string|max:1000',
         ]);
 
         // Se foi selecionado um produto, atualiza o relacionamento

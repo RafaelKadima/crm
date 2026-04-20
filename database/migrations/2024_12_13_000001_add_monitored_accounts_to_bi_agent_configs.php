@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('bi_agent_configs')) {
+            return;
+        }
         Schema::table('bi_agent_configs', function (Blueprint $table) {
             if (!Schema::hasColumn('bi_agent_configs', 'monitored_accounts')) {
                 $table->json('monitored_accounts')->nullable()->after('thresholds')

@@ -17,30 +17,33 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie', 'oauth/*'],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 
-    'allowed_origins' => [
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:5175',
-        'http://localhost:5176',
-        'http://localhost:5177',
-        'http://localhost:5178',
-        'http://localhost:5179',
-        'http://localhost:5180',
-        'http://127.0.0.1:5173',
-        'http://127.0.0.1:5174',
-        'http://127.0.0.1:5175',
-        'http://127.0.0.1:5176',
-        'http://127.0.0.1:5177',
-        'http://127.0.0.1:5178',
-        'http://127.0.0.1:5179',
-        'http://127.0.0.1:5180',
-    ],
+    'allowed_origins' => array_filter(array_merge(
+        in_array(env('APP_ENV'), ['local', 'testing'], true) ? [
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:5175',
+            'http://localhost:5176',
+            'http://localhost:5177',
+            'http://localhost:5178',
+            'http://localhost:5179',
+            'http://localhost:5180',
+            'http://127.0.0.1:5173',
+            'http://127.0.0.1:5174',
+            'http://127.0.0.1:5175',
+            'http://127.0.0.1:5176',
+            'http://127.0.0.1:5177',
+            'http://127.0.0.1:5178',
+            'http://127.0.0.1:5179',
+            'http://127.0.0.1:5180',
+        ] : [],
+        array_filter(explode(',', env('CORS_ALLOWED_ORIGINS', '')))
+    )),
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'X-Internal-Key', 'X-CSRF-TOKEN'],
 
     'exposed_headers' => [],
 

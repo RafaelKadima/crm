@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('ai_usage_logs')) {
+            return;
+        }
         Schema::table('ai_usage_logs', function (Blueprint $table) {
             // Unidades de IA consumidas nesta chamada
             $table->decimal('ai_units', 10, 2)->default(0)->after('cost_brl');

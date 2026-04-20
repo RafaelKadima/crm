@@ -1,0 +1,6 @@
+export { FunnelUnifiedPage } from './FunnelUnified'
+export { PipelineFunnelMappingPage } from './PipelineFunnelMapping'
+export { LossAnalysisPage } from './LossAnalysis'
+export { VelocityPage } from './Velocity'
+export { ForecastPage } from './Forecast'
+export { ChannelCohortPage } from './ChannelCohort'

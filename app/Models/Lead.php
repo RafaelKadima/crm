@@ -33,6 +33,8 @@ class Lead extends Model
         'queue_id',
         'owner_id',
         'status',
+        'lost_reason_id',
+        'lost_reason_note',
         'value',
         'expected_close_date',
         'ia_mode_at_creation',
@@ -216,6 +218,14 @@ class Lead extends Model
     }
 
     /**
+     * Motivo da perda (quando status=lost).
+     */
+    public function lostReason(): BelongsTo
+    {
+        return $this->belongsTo(LostReason::class);
+    }
+
+    /**
      * Atividades da etapa atual.
      */
     public function currentStageActivities(): HasMany
@@ -298,9 +308,13 @@ class Lead extends Model
     /**
      * Marca o lead como perdido.
      */
-    public function markAsLost(): void
+    public function markAsLost(?string $lostReasonId = null, ?string $note = null): void
     {
-        $this->update(['status' => LeadStatusEnum::LOST]);
+        $this->update([
+            'status' => LeadStatusEnum::LOST,
+            'lost_reason_id' => $lostReasonId,
+            'lost_reason_note' => $note,
+        ]);
     }
 
     /**

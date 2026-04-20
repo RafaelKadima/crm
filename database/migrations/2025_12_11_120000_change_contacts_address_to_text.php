@@ -10,10 +10,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Primeiro altera o tipo da coluna de json para text
-        DB::statement('ALTER TABLE contacts ALTER COLUMN address TYPE TEXT USING address::TEXT');
-        
-        // Limpa valores 'null' como string
+        // Específico de PostgreSQL — em SQLite a coluna já aceita texto sem cast explícito.
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE contacts ALTER COLUMN address TYPE TEXT USING address::TEXT');
+        }
+
+        // Limpa valores 'null' como string (funciona em qualquer SGBD)
         DB::statement("UPDATE contacts SET address = NULL WHERE address = 'null' OR address = ''");
     }
 

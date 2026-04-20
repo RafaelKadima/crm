@@ -93,13 +93,13 @@ class ContactSeeder extends Seeder
                 'cpf' => $contactData['cpf'] ?? null,
                 'source' => $contactData['source'],
                 'owner_id' => $ownerId,
-                'address' => [
+                'address' => json_encode([
                     'street' => 'Rua das Flores',
                     'number' => (string) ($index + 100),
                     'city' => 'São Paulo',
                     'state' => 'SP',
                     'zip' => '01234-567',
-                ],
+                ]),
             ]);
         }
     }
