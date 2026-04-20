@@ -20,9 +20,9 @@ class WhatsAppService implements WhatsAppProviderInterface
 {
     protected string $apiVersion;
     protected string $baseUrl;
-    protected ?string $phoneNumberId;
-    protected ?string $accessToken;
-    protected ?string $businessAccountId;
+    protected ?string $phoneNumberId = null;
+    protected ?string $accessToken = null;
+    protected ?string $businessAccountId = null;
 
     public function __construct(?Channel $channel = null)
     {

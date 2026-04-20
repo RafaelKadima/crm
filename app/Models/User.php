@@ -225,8 +225,9 @@ class User extends Authenticatable
         }
 
         // Verifica permissões customizadas do usuário primeiro
+        // customPermissions() já é belongsToMany(Permission::class), então filtrar direto na chave.
         $customPermission = $this->customPermissions()
-            ->whereHas('permission', fn($q) => $q->where('key', $permissionKey))
+            ->where('key', $permissionKey)
             ->first();
 
         if ($customPermission) {
