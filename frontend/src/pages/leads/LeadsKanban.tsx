@@ -15,6 +15,7 @@ import { ImportLeadsModal } from './ImportLeadsModal'
 import { LeadsTable } from '@/components/leads/LeadsTable'
 import { SaleClosingModal } from '@/components/sales/SaleClosingModal'
 import { useInfiniteLeads, useUpdateLeadStage } from '@/hooks/useLeads'
+import { useBatchStageProgress } from '@/hooks/useStageActivities'
 import { usePipelines, type Pipeline } from '@/hooks/usePipelines'
 import { useNotificationStore } from '@/store/notificationStore'
 // useTenantMessages moved to MainLayout (global)
@@ -99,6 +100,11 @@ export function LeadsKanbanPage() {
     if (!leadsData?.pages) return []
     return leadsData.pages.flatMap(page => page.data || [])
   }, [leadsData])
+
+  // Pré-carrega progresso de atividades de todos os leads em 1 request (evita N+1 no kanban).
+  // Resultado popula o cache React Query que KanbanCard::useLeadStageProgress consome.
+  const allLeadIds = useMemo(() => allLeads.map((l: Lead) => l.id), [allLeads])
+  useBatchStageProgress(allLeadIds)
 
   // Sync API data with local state
   useEffect(() => {

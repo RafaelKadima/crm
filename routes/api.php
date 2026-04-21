@@ -174,6 +174,9 @@ Route::middleware('auth:api')->group(function () {
             Route::post('{lead}/customer-data', [CustomerDataController::class, 'store']);
 
             // Atividades da etapa do lead
+            // IMPORTANTE: batch DEVE vir antes de {lead}/stage-progress senão Laravel matcha
+            // stage-progress como {lead}='stage-progress'.
+            Route::get('stage-progress/batch', [DealStageActivityController::class, 'batchProgress']);
             Route::get('{lead}/stage-activities', [DealStageActivityController::class, 'index']);
             Route::get('{lead}/stage-activities/all', [DealStageActivityController::class, 'all']);
             Route::get('{lead}/stage-progress', [DealStageActivityController::class, 'progress']);

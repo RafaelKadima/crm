@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { stageActivityTemplatesApi, dealStageActivitiesApi, activitiesDashboardApi } from '@/api/endpoints'
+import api from '@/api/axios'
 import type { StageActivityTemplate, DealStageActivity } from '@/types'
 
 // =============================================================================
@@ -98,6 +99,38 @@ export function useLeadStageProgress(leadId: string) {
       return response.data
     },
     enabled: !!leadId,
+    // Se o batch já populou o cache, fica fresh por 60s e evita refetch no card.
+    staleTime: 1000 * 60,
+  })
+}
+
+/**
+ * Versão batch: busca progresso de N leads em uma única request.
+ * Usada pelo kanban para evitar N+1 (estourava rate limit em pipelines grandes).
+ *
+ * Em caso de sucesso, popula o cache individual ['lead-stage-progress', id]
+ * de cada lead, então os KanbanCards que chamam useLeadStageProgress(id) leem
+ * direto do cache sem disparar request.
+ */
+export function useBatchStageProgress(leadIds: string[]) {
+  const queryClient = useQueryClient()
+  return useQuery({
+    queryKey: ['batch-stage-progress', [...leadIds].sort().join(',')],
+    enabled: leadIds.length > 0,
+    staleTime: 1000 * 30,
+    queryFn: async () => {
+      // Cap de segurança no cliente (backend também valida)
+      const ids = leadIds.slice(0, 500).join(',')
+      const { data } = await api.get<{ progress: Record<string, any> }>(
+        `/leads/stage-progress/batch?ids=${ids}`
+      )
+      const progress = data.progress || {}
+      // Pré-popula o cache individual de cada lead para os cards consumirem sem refetch
+      Object.entries(progress).forEach(([leadId, p]) => {
+        queryClient.setQueryData(['lead-stage-progress', leadId], p)
+      })
+      return progress
+    },
   })
 }
 

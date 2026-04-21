@@ -2,6 +2,8 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Phone, Mail, MessageSquare, Clock, MessageCircle } from 'lucide-react'
 import { cn, formatCurrency, formatPhone } from '@/lib/utils'
+import { StageProgressBar } from '@/components/stage-activities/StageProgressBar'
+import { useLeadStageProgress } from '@/hooks/useStageActivities'
 import type { Lead } from '@/types'
 
 interface KanbanCardProps {
@@ -28,9 +30,10 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
     isDragging: isSortableDragging,
   } = useSortable({ id: lead.id })
 
-  // Stage progress removido do card: gerava 1 request por card → estourava rate limit
-  // com pipelines grandes (kanban com 500+ leads = 500+ requests). Mini-barra
-  // renderiza quando houver endpoint batch. A barra completa segue no modal do lead.
+  // Progress lido do cache: o LeadsKanban faz 1 request batch (useBatchStageProgress)
+  // que pré-popula ['lead-stage-progress', id] para cada card consumir sem refetch.
+  // staleTime de 60s no hook individual evita que o card dispare request no mount.
+  const { data: progress } = useLeadStageProgress(lead.id)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -108,7 +111,12 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
         </div>
       )}
 
-      {/* Stage Activities Progress — removido (rate limit). Ver comentário no topo. */}
+      {/* Stage Activities Progress */}
+      {progress && progress.total > 0 && (
+        <div className="mb-2">
+          <StageProgressBar progress={progress} variant="minimal" />
+        </div>
+      )}
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-1.5 border-t border-border">

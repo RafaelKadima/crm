@@ -35,6 +35,31 @@ class DealStageActivityController extends Controller
     }
 
     /**
+     * Retorna progresso de múltiplos leads em uma única request (batch).
+     *
+     * Usado pelo kanban para evitar N+1. Aceita ids=uuid1,uuid2,... (até 500).
+     * O TenantScope global nos models já garante isolamento por tenant.
+     */
+    public function batchProgress(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => 'required|string',
+        ]);
+
+        $ids = array_filter(array_map('trim', explode(',', $validated['ids'])));
+
+        if (count($ids) > 500) {
+            return response()->json([
+                'error' => 'Máximo de 500 IDs por requisição. Divida em lotes.',
+            ], 422);
+        }
+
+        $progress = $this->stageActivityService->getBatchStageProgress($ids);
+
+        return response()->json(['progress' => $progress]);
+    }
+
+    /**
      * Retorna todas as atividades do lead (todas as etapas).
      */
     public function all(Lead $lead): JsonResponse

@@ -63,13 +63,73 @@ class StageActivityService
             ->with('template')
             ->get();
 
+        return $this->buildProgressFromActivities($activities);
+    }
+
+    /**
+     * Retorna progresso de múltiplos leads em uma única query.
+     *
+     * Usado pelo kanban para evitar N+1 (1 request por card) que estourava
+     * o rate limiter. Retorna mapa ['lead_id' => progress_array].
+     *
+     * Leads sem atividades (ou que não existem) voltam como progresso vazio
+     * (total=0) para o frontend tratar igual à versão single.
+     */
+    public function getBatchStageProgress(array $leadIds): array
+    {
+        if (empty($leadIds)) {
+            return [];
+        }
+
+        // Busca stage_id atual de cada lead em uma query
+        $leads = Lead::whereIn('id', $leadIds)
+            ->get(['id', 'stage_id'])
+            ->keyBy('id');
+
+        if ($leads->isEmpty()) {
+            return [];
+        }
+
+        // Busca todas as activities da STAGE ATUAL de cada lead em uma query
+        // (pair-matching via whereIn tuplas compatível com Postgres)
+        $pairs = $leads->map(fn ($l) => [$l->id, $l->stage_id])
+            ->filter(fn ($p) => $p[1] !== null)
+            ->values()
+            ->all();
+
+        $activitiesByLead = collect();
+        if (!empty($pairs)) {
+            $activitiesByLead = DealStageActivity::where(function ($q) use ($pairs) {
+                foreach ($pairs as [$leadId, $stageId]) {
+                    $q->orWhere(function ($sub) use ($leadId, $stageId) {
+                        $sub->where('lead_id', $leadId)->where('stage_id', $stageId);
+                    });
+                }
+            })->with('template')->get()->groupBy('lead_id');
+        }
+
+        $result = [];
+        foreach ($leadIds as $id) {
+            $activities = $activitiesByLead->get($id, collect());
+            $result[$id] = $this->buildProgressFromActivities($activities);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Monta o payload de progresso a partir de uma coleção de activities.
+     * Compartilhado entre getStageProgress (single) e getBatchStageProgress (batch).
+     */
+    private function buildProgressFromActivities($activities): array
+    {
         $total = $activities->count();
         $completed = $activities->where('status', 'completed')->count();
         $pending = $activities->where('status', 'pending')->count();
         $skipped = $activities->where('status', 'skipped')->count();
 
-        $requiredTotal = $activities->filter(fn($a) => $a->isRequired())->count();
-        $requiredCompleted = $activities->filter(fn($a) => $a->isRequired() && $a->isCompleted())->count();
+        $requiredTotal = $activities->filter(fn ($a) => $a->isRequired())->count();
+        $requiredCompleted = $activities->filter(fn ($a) => $a->isRequired() && $a->isCompleted())->count();
         $requiredPending = $requiredTotal - $requiredCompleted;
 
         $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;
