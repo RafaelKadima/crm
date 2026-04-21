@@ -92,6 +92,9 @@ export interface Lead {
   unread_messages?: number
   has_new_message?: boolean
   last_message_at?: string
+  // Stale flag (appended pelo model Laravel) — aberto e sem atividade há >90d
+  is_stale?: boolean
+  stale_age_days?: number | null
 }
 
 // Contact Types

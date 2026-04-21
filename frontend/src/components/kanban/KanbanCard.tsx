@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Phone, Mail, MessageSquare, Clock, MessageCircle } from 'lucide-react'
+import { Phone, Mail, MessageSquare, Clock, MessageCircle, AlertCircle } from 'lucide-react'
 import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import { StageProgressBar } from '@/components/stage-activities/StageProgressBar'
 import { useLeadStageProgress } from '@/hooks/useStageActivities'
@@ -108,6 +108,17 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
           <span className="text-[11px] text-muted-foreground font-medium truncate block">
             {lead.owner.name}
           </span>
+        </div>
+      )}
+
+      {/* Stale flag — lead aberto sem atividade há >90 dias (só sinalização, não fecha) */}
+      {lead.is_stale && (
+        <div
+          className="mb-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-medium"
+          title="Lead aberto e sem atividade há mais de 90 dias"
+        >
+          <AlertCircle className="h-3 w-3" />
+          Parado há {lead.stale_age_days}d
         </div>
       )}
 

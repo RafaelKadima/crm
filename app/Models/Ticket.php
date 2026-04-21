@@ -220,6 +220,34 @@ class Ticket extends Model
             'closed_at' => null,
         ]);
     }
+
+    /**
+     * Dias desde a criação/última atualização do ticket aberto.
+     */
+    public function getStaleAgeDaysAttribute(): ?int
+    {
+        if ($this->status === TicketStatusEnum::CLOSED) {
+            return null;
+        }
+        $reference = $this->updated_at ?? $this->created_at;
+        if (!$reference) {
+            return null;
+        }
+        return (int) $reference->diffInDays(now());
+    }
+
+    /**
+     * Ticket "parado": aberto há mais de 30 dias sem atualização.
+     * Apenas sinalização — sem auto-close nesta fase.
+     */
+    public function getIsStaleAttribute(): bool
+    {
+        $age = $this->stale_age_days;
+        return $age !== null && $age > 30;
+    }
+
+    /** @var array<int, string> */
+    protected $appends = ['is_stale', 'stale_age_days'];
 }
 
 

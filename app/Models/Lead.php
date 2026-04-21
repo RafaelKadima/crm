@@ -327,6 +327,35 @@ class Lead extends Model
             'last_interaction_source' => $source,
         ]);
     }
+
+    /**
+     * Dias desde a última atividade relevante. Usado para flag de lead parado.
+     * Prefere last_message_at (atividade real), fallback para updated_at.
+     */
+    public function getStaleAgeDaysAttribute(): ?int
+    {
+        if (!$this->isOpen()) {
+            return null;
+        }
+        $reference = $this->last_message_at ?? $this->updated_at;
+        if (!$reference) {
+            return null;
+        }
+        return (int) $reference->diffInDays(now());
+    }
+
+    /**
+     * Lead "parado": aberto e sem atividade há mais de 90 dias.
+     * Apenas sinalização visual — nenhum fechamento automático.
+     */
+    public function getIsStaleAttribute(): bool
+    {
+        $age = $this->stale_age_days;
+        return $age !== null && $age > 90;
+    }
+
+    /** @var array<int, string> */
+    protected $appends = ['is_stale', 'stale_age_days'];
 }
 
 
