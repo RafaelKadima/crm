@@ -105,6 +105,29 @@ export function useLeadStageProgress(leadId: string) {
 }
 
 /**
+ * Lê progresso APENAS do cache React Query (nunca dispara request).
+ *
+ * Usado pelo KanbanCard: o LeadsKanban faz 1 request batch que popula
+ * o cache. O card lê sem nunca fazer fetch próprio — sem N+1, sem 429.
+ * Se o batch ainda não respondeu, retorna undefined (barra não renderiza
+ * até ele chegar).
+ */
+export function useLeadStageProgressFromCache(leadId: string) {
+  const queryClient = useQueryClient()
+  return useQuery({
+    queryKey: ['lead-stage-progress', leadId],
+    queryFn: () => queryClient.getQueryData(['lead-stage-progress', leadId]) ?? null,
+    enabled: !!leadId,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    // Crítico: nunca refazer fetch. Apenas observa o cache.
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
+}
+
+/**
  * Versão batch: busca progresso de N leads em uma única request.
  * Usada pelo kanban para evitar N+1 (estourava rate limit em pipelines grandes).
  *

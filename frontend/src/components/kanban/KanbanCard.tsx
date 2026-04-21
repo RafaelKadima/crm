@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Phone, Mail, MessageSquare, Clock, MessageCircle, AlertCircle } from 'lucide-react'
 import { cn, formatCurrency, formatPhone } from '@/lib/utils'
 import { StageProgressBar } from '@/components/stage-activities/StageProgressBar'
-import { useLeadStageProgress } from '@/hooks/useStageActivities'
+import { useLeadStageProgressFromCache } from '@/hooks/useStageActivities'
 import type { Lead } from '@/types'
 
 interface KanbanCardProps {
@@ -30,10 +30,10 @@ export function KanbanCard({ lead, isDragging, onClick }: KanbanCardProps) {
     isDragging: isSortableDragging,
   } = useSortable({ id: lead.id })
 
-  // Progress lido do cache: o LeadsKanban faz 1 request batch (useBatchStageProgress)
-  // que pré-popula ['lead-stage-progress', id] para cada card consumir sem refetch.
-  // staleTime de 60s no hook individual evita que o card dispare request no mount.
-  const { data: progress } = useLeadStageProgress(lead.id)
+  // Progress SOMENTE do cache — o LeadsKanban faz 1 request batch que pré-popula.
+  // Este hook nunca dispara request próprio (evita N+1 → 429 com pipelines grandes).
+  // Se o batch ainda não respondeu, o card não mostra a mini-barra (ok, melhor que derrubar).
+  const { data: progress } = useLeadStageProgressFromCache(lead.id)
 
   const style = {
     transform: CSS.Transform.toString(transform),
