@@ -212,6 +212,8 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/', [UserController::class, 'profile']);
             Route::put('/', [UserController::class, 'updateProfile']);
             Route::post('change-password', [UserController::class, 'changePassword']);
+            // ON/OFF de recebimento de leads (self-service, pro vendedor marcar folga)
+            Route::patch('availability', [UserController::class, 'toggleAvailability']);
         });
 
         // Usuários do tenant

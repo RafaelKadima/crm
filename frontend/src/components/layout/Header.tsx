@@ -14,9 +14,12 @@ import {
   Menu,
   MessageSquare,
   X,
+  Circle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
+import api from '@/api/axios'
+import { toast } from 'sonner'
 import { useUIStore } from '@/store/uiStore'
 import { useTheme } from '@/hooks/useTheme'
 import { useNotificationStore } from '@/store/notificationStore'
@@ -29,7 +32,23 @@ import { useQueryClient } from '@tanstack/react-query'
 export function Header() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
+  const { user, logout, updateUser } = useAuthStore()
+  const [togglingAvailability, setTogglingAvailability] = useState(false)
+
+  const handleToggleAvailability = async () => {
+    if (!user || togglingAvailability) return
+    const next = !(user.is_available_for_leads ?? true)
+    setTogglingAvailability(true)
+    try {
+      const { data } = await api.patch('/profile/availability', { is_available_for_leads: next })
+      updateUser({ is_available_for_leads: data.is_available_for_leads })
+      toast.success(data.message)
+    } catch {
+      toast.error('Não foi possível alterar disponibilidade.')
+    } finally {
+      setTogglingAvailability(false)
+    }
+  }
   const queryClient = useQueryClient()
   const { sidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useUIStore()
   const { theme, setTheme } = useTheme()
@@ -278,6 +297,43 @@ export function Header() {
                   className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden futuristic-card"
                 >
                   <div className="p-2">
+                    {/* Toggle ON/OFF de recebimento de leads */}
+                    {user && user.role !== 'admin' && (
+                      <>
+                        <button
+                          onClick={handleToggleAvailability}
+                          disabled={togglingAvailability}
+                          className={cn(
+                            "flex items-center justify-between gap-3 w-full px-3 py-2 rounded-lg transition-all duration-200",
+                            "hover:bg-accent",
+                            togglingAvailability && "opacity-50 cursor-wait"
+                          )}
+                          title={
+                            (user.is_available_for_leads ?? true)
+                              ? 'Você está recebendo leads. Clique para desligar (folga).'
+                              : 'Você NÃO está recebendo leads. Clique para voltar a receber.'
+                          }
+                        >
+                          <div className="flex items-center gap-3">
+                            <Circle
+                              className={cn(
+                                "h-3 w-3 fill-current",
+                                (user.is_available_for_leads ?? true)
+                                  ? "text-emerald-500"
+                                  : "text-zinc-500"
+                              )}
+                            />
+                            <span className="text-sm">
+                              {(user.is_available_for_leads ?? true) ? 'Disponível' : 'De folga'}
+                            </span>
+                          </div>
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                            {(user.is_available_for_leads ?? true) ? 'ON' : 'OFF'}
+                          </span>
+                        </button>
+                        <div className="my-1 border-t border-border" />
+                      </>
+                    )}
                     <button
                       onClick={() => {
                         setShowUserMenu(false)

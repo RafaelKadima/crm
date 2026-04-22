@@ -132,6 +132,7 @@ class LeadAssignmentService
         return User::where('tenant_id', $tenantId)
             ->where('role', RoleEnum::VENDEDOR)
             ->where('is_active', true)
+            ->where('is_available_for_leads', true)
             ->pluck('id')
             ->toArray();
     }

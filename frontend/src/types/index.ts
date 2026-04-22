@@ -10,6 +10,7 @@ export interface User {
   role: 'admin' | 'gestor' | 'vendedor'
   tenant_id: string
   is_active: boolean
+  is_available_for_leads?: boolean
   is_super_admin?: boolean
   // Campos de integracao Linx
   linx_empresa_id?: string

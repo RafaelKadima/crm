@@ -195,19 +195,21 @@ class Pipeline extends Model
      */
     public function getUserIdsWithLeadPermission(): array
     {
-        // Se pipeline é público, retorna todos os vendedores ativos
+        // Se pipeline é público, retorna todos os vendedores ativos e disponíveis
         if ($this->is_public) {
             return User::where('tenant_id', $this->tenant_id)
                 ->where('role', \App\Enums\RoleEnum::VENDEDOR)
                 ->where('is_active', true)
+                ->where('is_available_for_leads', true)
                 ->pluck('id')
                 ->toArray();
         }
 
-        // Pipeline privado: retorna apenas usuários com permissão can_manage_leads
+        // Pipeline privado: retorna apenas usuários com permissão can_manage_leads e disponíveis
         return $this->users()
             ->where('pipeline_user.can_manage_leads', true)
             ->where('users.is_active', true)
+            ->where('users.is_available_for_leads', true)
             ->where('users.role', \App\Enums\RoleEnum::VENDEDOR)
             ->pluck('users.id')
             ->toArray();

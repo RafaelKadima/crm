@@ -103,6 +103,7 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'avatar' => 'nullable|url',
             'is_active' => 'sometimes|boolean',
+            'is_available_for_leads' => 'sometimes|boolean',
         ]);
 
         // Apenas admin pode alterar para admin
@@ -216,6 +217,30 @@ class UserController extends Controller
         return response()->json([
             'message' => 'Perfil atualizado com sucesso.',
             'user' => $user->fresh(),
+        ]);
+    }
+
+    /**
+     * Liga/desliga recebimento de leads do usuário logado (ON/OFF de folga).
+     *
+     * Quando OFF, o LeadAssignmentService ignora o vendedor em todas as filas/
+     * pipelines mesmo que ele esteja cadastrado. Quando volta ON, recebe normal.
+     * Não afeta login nem acesso — apenas a distribuição round-robin.
+     */
+    public function toggleAvailability(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'is_available_for_leads' => 'required|boolean',
+        ]);
+
+        $user = auth()->user();
+        $user->update(['is_available_for_leads' => $validated['is_available_for_leads']]);
+
+        return response()->json([
+            'message' => $validated['is_available_for_leads']
+                ? 'Você está ON — voltará a receber leads.'
+                : 'Você está OFF — não receberá novos leads até voltar a ficar ON.',
+            'is_available_for_leads' => $user->is_available_for_leads,
         ]);
     }
 

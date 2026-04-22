@@ -32,6 +32,7 @@ class User extends Authenticatable
         'phone',
         'avatar',
         'is_active',
+        'is_available_for_leads',
         'is_super_admin',
         // Campos de integracao Linx
         'linx_empresa_id',
@@ -63,6 +64,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => RoleEnum::class,
             'is_active' => 'boolean',
+            'is_available_for_leads' => 'boolean',
             'is_super_admin' => 'boolean',
             'external_integrations' => 'array',
         ];

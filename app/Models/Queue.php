@@ -114,6 +114,7 @@ class Queue extends Model
     {
         return $this->activeUsers()
             ->where('users.is_active', true)
+            ->where('users.is_available_for_leads', true)
             ->orderBy('queue_user.priority', 'desc')
             ->pluck('users.id')
             ->toArray();
