@@ -68,3 +68,13 @@ Schedule::job(new RefreshMetaTokenJob)->dailyAt('03:00')->withoutOverlapping();
 
 // Agrega snapshots de funil do dia anterior às 03:30 (depois de Meta refresh)
 Schedule::job(new DailyFunnelAggregateJob())->dailyAt('03:30')->withoutOverlapping();
+
+// =============================================================================
+// AUTO-FECHAMENTO (sub-fase 3b: SEMPRE dry-run por agora)
+// =============================================================================
+// Roda diariamente em dry-run para popular storage/logs/auto-close-*.log com o
+// que SERIA fechado. Nenhum dado é modificado. Ao avaliar os logs por alguns dias
+// e decidir ativar de verdade, promover para --no-dry-run (sub-fase 3c) — e os
+// tenants precisam ter auto_close_stale_enabled=true (opt-in explícito).
+Schedule::command('tickets:auto-close --dry-run')->dailyAt('04:00')->withoutOverlapping();
+Schedule::command('leads:auto-disqualify --dry-run')->dailyAt('04:15')->withoutOverlapping();
