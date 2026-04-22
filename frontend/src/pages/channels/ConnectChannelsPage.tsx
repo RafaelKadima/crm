@@ -31,6 +31,15 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Switch } from '@/components/ui/Switch'
+import { Input } from '@/components/ui/Input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/Dialog'
 import {
   useMetaStatus,
   useMetaIntegrations,
@@ -44,6 +53,7 @@ import {
 } from '@/hooks/useMetaEmbeddedSignup'
 import {
   useChannels,
+  useCreateChannel,
   useDeleteChannel,
   useToggleChannelActive,
   channelTypeInfo,
@@ -112,6 +122,8 @@ export function ConnectChannelsPage() {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false)
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null)
   const [coexistenceMode, setCoexistenceMode] = useState(false)
+  const [isCreateInternalOpen, setIsCreateInternalOpen] = useState(false)
+  const [newInternalName, setNewInternalName] = useState('')
 
   // Meta hooks
   const { data: metaStatus, isLoading: loadingStatus } = useMetaStatus()
@@ -121,6 +133,7 @@ export function ConnectChannelsPage() {
 
   // Channel hooks
   const { data: channels = [], isLoading: loadingChannels } = useChannels()
+  const createChannel = useCreateChannel()
   const deleteChannel = useDeleteChannel()
   const toggleActive = useToggleChannelActive()
 
@@ -152,9 +165,33 @@ export function ConnectChannelsPage() {
   }
 
   const handleConnectQR = () => {
-    // Para QR, precisamos de um canal interno criado primeiro
-    // Navegar para a página de canais para criar um canal interno
-    toast.info(t('channels.qrCodeInstructions'))
+    setNewInternalName('')
+    setIsCreateInternalOpen(true)
+  }
+
+  const handleCreateInternalChannel = async () => {
+    const name = newInternalName.trim()
+    if (!name) {
+      toast.error(t('channels.channelNameRequired'))
+      return
+    }
+    try {
+      const channel = await createChannel.mutateAsync({
+        name,
+        type: 'whatsapp',
+        provider_type: 'internal',
+        identifier: name,
+        is_active: true,
+      })
+      setIsCreateInternalOpen(false)
+      setNewInternalName('')
+      setQrChannel(channel)
+      setIsQRModalOpen(true)
+    } catch (error) {
+      const message = (error as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message
+      toast.error(message || t('channels.errorCreatingChannel'))
+    }
   }
 
   const handleDisconnectMeta = async (id: string) => {
@@ -698,6 +735,64 @@ export function ConnectChannelsPage() {
           </div>
         </>
       )}
+
+      {/* Create Internal Channel Modal */}
+      <Dialog
+        open={isCreateInternalOpen}
+        onOpenChange={(open) => {
+          if (!createChannel.isPending) setIsCreateInternalOpen(open)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('channels.createInternalTitle')}</DialogTitle>
+            <DialogDescription>{t('channels.createInternalDesc')}</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="text-sm font-medium mb-2 block">
+              {t('channels.channelNameLabel')}
+            </label>
+            <Input
+              autoFocus
+              placeholder={t('channels.channelNamePlaceholder')}
+              value={newInternalName}
+              onChange={(e) => setNewInternalName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !createChannel.isPending && newInternalName.trim()) {
+                  handleCreateInternalChannel()
+                }
+              }}
+              disabled={createChannel.isPending}
+              maxLength={255}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreateInternalOpen(false)}
+              disabled={createChannel.isPending}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={handleCreateInternalChannel}
+              disabled={createChannel.isPending || !newInternalName.trim()}
+            >
+              {createChannel.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {t('common.processing')}
+                </>
+              ) : (
+                <>
+                  <QrCode className="h-4 w-4 mr-2" />
+                  {t('channels.createAndConnect')}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* QR Code Modal */}
       {qrChannel && (
