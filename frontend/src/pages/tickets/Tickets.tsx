@@ -1,10 +1,7 @@
 import { useState, useMemo } from 'react'
-import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { Search, MessageSquare, Clock, User, Loader2, MessageCircle, CheckCircle2, Inbox, AlertCircle } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
-import { Card, CardContent } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { formatDateTime } from '@/lib/utils'
 import { useTickets } from '@/hooks/useTickets'
@@ -12,65 +9,49 @@ import { useMarkTicketAsOpened } from '@/hooks/useTicketActions'
 import { LeadChatModal } from '@/components/chat/LeadChatModal'
 import type { Lead } from '@/types'
 
-const statusConfig: Record<string, { label: string; variant: 'info' | 'warning' | 'secondary' | 'success' | 'destructive' }> = {
-  open: { label: 'Aberto', variant: 'info' },
-  pending: { label: 'Pendente', variant: 'warning' },
-  in_progress: { label: 'Em Atendimento', variant: 'warning' },
-  waiting_customer: { label: 'Aguardando', variant: 'secondary' },
-  closed: { label: 'Encerrado', variant: 'success' },
+const statusConfig: Record<string, { label: string; accent: string }> = {
+  open:             { label: 'Aberto',         accent: 'var(--color-info)' },
+  pending:          { label: 'Pendente',       accent: 'var(--color-warning)' },
+  in_progress:      { label: 'Em Atendimento', accent: 'var(--color-warning)' },
+  waiting_customer: { label: 'Aguardando',     accent: 'var(--color-muted-foreground)' },
+  closed:           { label: 'Encerrado',      accent: 'var(--color-success)' },
 }
 
-// Filtros simplificados
 type StatusFilterType = 'all' | 'waiting_queue' | 'pending' | 'open' | 'closed'
 
-const filterTabs: { key: StatusFilterType; label: string; icon: any; color: string }[] = [
-  { key: 'all', label: 'Todos', icon: Inbox, color: 'text-muted-foreground' },
-  { key: 'waiting_queue', label: 'Aguardando Fila', icon: AlertCircle, color: 'text-red-400' },
-  { key: 'pending', label: 'Pendentes', icon: AlertCircle, color: 'text-amber-400' },
-  { key: 'open', label: 'Em Atendimento', icon: MessageCircle, color: 'text-blue-400' },
-  { key: 'closed', label: 'Encerrados', icon: CheckCircle2, color: 'text-green-400' },
+const filterTabs: { key: StatusFilterType; label: string; icon: any }[] = [
+  { key: 'all',           label: 'Todos',           icon: Inbox },
+  { key: 'waiting_queue', label: 'Aguardando Fila', icon: AlertCircle },
+  { key: 'pending',       label: 'Pendentes',       icon: AlertCircle },
+  { key: 'open',          label: 'Em Atendimento',  icon: MessageCircle },
+  { key: 'closed',        label: 'Encerrados',      icon: CheckCircle2 },
 ]
 
 export function TicketsPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilterType>('pending') // Default: pendentes (caixa de atenção)
+  const [statusFilter, setStatusFilter] = useState<StatusFilterType>('pending')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const markTicketAsOpened = useMarkTicketAsOpened()
 
-  // Busca tickets normais
   const { data: ticketsData, isLoading, refetch } = useTickets({})
-
-  // Busca tickets aguardando fila (separado)
   const { data: waitingQueueData, isLoading: isLoadingWaiting } = useTickets({ waiting_queue: true })
 
   const allTickets = ticketsData?.data || []
   const waitingQueueTickets = waitingQueueData?.data || []
 
-  // Função para determinar o status do ticket
   const getTicketStatus = (ticket: any): 'pending' | 'open' | 'closed' => {
     if (ticket.status === 'closed') return 'closed'
     if (ticket.status === 'pending') return 'pending'
-    // open + waiting_customer caem em "em atendimento"
     return 'open'
   }
 
-  // Verifica se o ticket está aguardando fila
-  const isWaitingQueue = (ticket: any): boolean => {
-    return !ticket.lead?.queue_id && ticket.status !== 'closed'
-  }
-
-  // Verifica se tem mensagem não respondida (para destacar)
   const hasUnreadMessage = (ticket: any): boolean => {
-    // Usa last_message do backend (mais eficiente)
     const lastMessage = ticket.last_message || ticket.lastMessage
     if (!lastMessage) return false
-
-    // Mensagem do cliente não respondida = precisa piscar
     return lastMessage?.direction === 'inbound' || lastMessage?.sender_type === 'contact'
   }
 
-  // Contadores (calculados a partir de todos os tickets)
   const counts = useMemo(() => {
     let waiting_queue = waitingQueueTickets.length
     let pending = 0
@@ -87,54 +68,34 @@ export function TicketsPage() {
     return { waiting_queue, pending, open, closed, total: allTickets.length }
   }, [allTickets, waitingQueueTickets])
 
-  // Filtra por status selecionado
   const ticketsByStatus = useMemo(() => {
-    // Se for "aguardando fila", usa a lista separada
-    if (statusFilter === 'waiting_queue') {
-      return waitingQueueTickets
-    }
-
+    if (statusFilter === 'waiting_queue') return waitingQueueTickets
     if (statusFilter === 'all') return allTickets
-
-    return allTickets.filter((ticket: any) => {
-      const status = getTicketStatus(ticket)
-      return status === statusFilter
-    })
+    return allTickets.filter((ticket: any) => getTicketStatus(ticket) === statusFilter)
   }, [allTickets, waitingQueueTickets, statusFilter])
 
-  // Filtra localmente por busca
   const filteredTickets = useMemo(() => {
     if (!searchQuery) return ticketsByStatus
     const query = searchQuery.toLowerCase()
-    return ticketsByStatus.filter((ticket: any) =>
-      ticket.contact?.name?.toLowerCase().includes(query) ||
-      ticket.contact?.phone?.includes(query) ||
-      ticket.subject?.toLowerCase().includes(query)
+    return ticketsByStatus.filter(
+      (ticket: any) =>
+        ticket.contact?.name?.toLowerCase().includes(query) ||
+        ticket.contact?.phone?.includes(query) ||
+        ticket.subject?.toLowerCase().includes(query)
     )
   }, [ticketsByStatus, searchQuery])
 
-  // Abre o chat do ticket
   const handleTicketClick = (ticket: any) => {
-    // Transição pending → open: se o ticket está pendente, marca como aberto
-    // (idempotente, fire-and-forget — não bloqueia abertura do modal).
-    // NÃO altera ownership; só status + first_viewed_at/first_viewer_id.
     if (ticket?.id && ticket.status === 'pending') {
       markTicketAsOpened.mutate(ticket.id)
     }
 
-    // Se o ticket tem um lead associado, usa ele diretamente
     if (ticket.lead) {
-      // Garante que o lead tem o ticket associado
-      const leadWithTicket = {
-        ...ticket.lead,
-        tickets: [ticket],
-      }
-      setSelectedLead(leadWithTicket)
+      setSelectedLead({ ...ticket.lead, tickets: [ticket] })
       setIsModalOpen(true)
       return
     }
 
-    // Caso contrário, monta um objeto lead a partir do ticket
     const lead = {
       id: ticket.lead_id || ticket.id,
       tenant_id: ticket.tenant_id,
@@ -160,196 +121,250 @@ export function TicketsPage() {
     setIsModalOpen(open)
     if (!open) {
       setTimeout(() => setSelectedLead(null), 200)
-      refetch() // Atualiza a lista após fechar
+      refetch()
     }
   }
 
   if (isLoading || isLoadingWaiting) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-[calc(100vh-200px)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--color-bold-ink)' }} />
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <PageHeader
-        title="Conversas"
-        subtitle={`${filteredTickets.length} ${
-          statusFilter === 'waiting_queue' ? 'aguardando fila' :
-          statusFilter === 'pending' ? 'pendentes' :
-          statusFilter === 'open' ? 'em atendimento' :
-          statusFilter === 'closed' ? 'encerradas' :
-          'no total'
-        }`}
-      />
+      {/* Hero header */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <p className="eyebrow">INBOX · CONVERSAS</p>
+        <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
+          Conversas
+        </h1>
+        <p className="mt-2 text-[13px] text-muted-foreground">
+          <span className="font-display text-[16px] leading-none tracking-[-0.015em]">
+            {filteredTickets.length}
+          </span>{' '}
+          {statusFilter === 'waiting_queue' ? 'aguardando fila' :
+           statusFilter === 'pending' ? 'pendentes' :
+           statusFilter === 'open' ? 'em atendimento' :
+           statusFilter === 'closed' ? 'encerradas' :
+           'no total'}
+        </p>
+      </motion.div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Status Tabs */}
-        <div className="flex bg-muted/50 rounded-lg p-1 gap-1 flex-wrap">
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="flex flex-col gap-3 lg:flex-row lg:items-center"
+      >
+        <div
+          className="flex flex-wrap items-center gap-1 rounded-[12px] p-1"
+          style={{ background: 'var(--color-secondary)' }}
+        >
           {filterTabs.map((tab) => {
             const Icon = tab.icon
             const isActive = statusFilter === tab.key
-            const count = tab.key === 'waiting_queue' ? counts.waiting_queue :
-                         tab.key === 'pending' ? counts.pending :
-                         tab.key === 'open' ? counts.open :
-                         tab.key === 'closed' ? counts.closed : counts.total
+            const count =
+              tab.key === 'waiting_queue' ? counts.waiting_queue :
+              tab.key === 'pending' ? counts.pending :
+              tab.key === 'open' ? counts.open :
+              tab.key === 'closed' ? counts.closed : counts.total
+            const isUrgent = tab.key === 'waiting_queue' && counts.waiting_queue > 0
+
             return (
               <button
                 key={tab.key}
                 onClick={() => setStatusFilter(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
-                  isActive
-                    ? 'bg-accent text-white shadow-md'
-                    : 'text-muted-foreground hover:text-white hover:bg-accent/50'
+                className={`flex items-center gap-1.5 rounded-[9px] px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+                  isUrgent && !isActive ? 'animate-pulse' : ''
                 }`}
+                style={
+                  isActive
+                    ? { background: 'var(--color-bold-ink)', color: '#0A0A0C' }
+                    : { color: 'var(--color-muted-foreground)' }
+                }
               >
-                <Icon className={`h-4 w-4 ${isActive ? tab.color : ''}`} />
-                <span className="font-medium">{tab.label}</span>
-                {tab.key !== 'all' && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    isActive ? 'bg-muted-foreground/20' : 'bg-accent'
-                  } ${tab.key === 'waiting_queue' && counts.waiting_queue > 0 ? 'bg-red-500/30 text-red-300 animate-pulse' : ''} ${tab.key === 'pending' && counts.pending > 0 ? 'bg-amber-500/30 text-amber-300' : ''}`}>
-                    {count}
-                  </span>
-                )}
+                <Icon className="h-3.5 w-3.5" />
+                <span>{tab.label}</span>
+                <span
+                  className="rounded-full px-1.5 py-0 text-[10.5px] font-bold"
+                  style={{
+                    background: isActive ? 'rgba(10,10,12,0.12)' : 'var(--color-card)',
+                    color: isActive ? '#0A0A0C' : 'var(--color-muted-foreground)',
+                  }}
+                >
+                  {count}
+                </span>
               </button>
             )
           })}
         </div>
 
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por nome ou telefone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="h-10 rounded-[10px] pl-10 text-[13.5px]"
           />
         </div>
-      </div>
+      </motion.div>
 
-      {/* Alerta para tickets aguardando fila */}
+      {/* Waiting queue alert */}
       {statusFilter === 'waiting_queue' && filteredTickets.length > 0 && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+        <div
+          className="flex items-start gap-3 rounded-[12px] border p-4"
+          style={{
+            background: 'rgba(220, 38, 38, 0.07)',
+            borderColor: 'rgba(220, 38, 38, 0.28)',
+          }}
+        >
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" style={{ color: '#DC2626' }} />
           <div>
-            <p className="font-medium text-red-400">Atenção: Clientes aguardando seleção de fila</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Estes clientes receberam o menu de filas mas ainda não selecionaram uma opção.
-              Você pode abrir o chat e atribuí-los manualmente a uma fila.
+            <p className="text-[13.5px] font-semibold" style={{ color: '#B91C1C' }}>
+              Atenção · clientes aguardando seleção de fila
+            </p>
+            <p className="mt-1 text-[12.5px] text-muted-foreground">
+              Estes clientes receberam o menu de filas e ainda não selecionaram uma opção. Abra o
+              chat e atribua manualmente.
             </p>
           </div>
         </div>
       )}
 
-      {/* Tickets List */}
-      <div className="space-y-3">
-        {filteredTickets.map((ticket: any, index: number) => (
-          <motion.div
-            key={ticket.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-          >
-            <Card
-              className={`hover:shadow-lg transition-shadow cursor-pointer hover:border-blue-500/50 relative ${
-                hasUnreadMessage(ticket) ? 'ring-2 ring-green-500/50 border-green-500/30' : ''
-              } ${statusFilter === 'waiting_queue' ? 'border-red-500/30' : ''} ${
-                ticket.status === 'pending' ? 'border-l-2 border-l-amber-500' : ''
-              }`}
-              onClick={() => handleTicketClick(ticket)}
+      {/* Tickets list */}
+      <div className="space-y-2">
+        {filteredTickets.map((ticket: any, index: number) => {
+          const cfg = statusConfig[ticket.status] || { label: ticket.status, accent: 'var(--color-muted-foreground)' }
+          const unread = hasUnreadMessage(ticket)
+          return (
+            <motion.div
+              key={ticket.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03, duration: 0.35 }}
             >
-              {/* Badge piscando para mensagem não respondida */}
-              {hasUnreadMessage(ticket) && (
-                <div className="absolute -top-2 -right-2 z-10">
-                  <span className="relative flex h-5 w-5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex items-center justify-center rounded-full h-5 w-5 bg-green-500 text-white text-[10px] font-bold">
-                      !
-                    </span>
-                  </span>
-                </div>
-              )}
-              {/* Badge para aguardando fila */}
-              {statusFilter === 'waiting_queue' && (
-                <div className="absolute -top-2 -left-2 z-10">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
-                    <AlertCircle className="h-3 w-3" />
-                    Sem fila
-                  </span>
-                </div>
-              )}
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="relative">
-                      <Avatar fallback={ticket.contact?.name || 'T'} size="md" />
-                      {hasUnreadMessage(ticket) && (
-                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-card"></span>
+              <div
+                onClick={() => handleTicketClick(ticket)}
+                className="group relative cursor-pointer rounded-[12px] border p-4 transition-all hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
+                style={{
+                  background: 'var(--color-card)',
+                  borderColor: unread ? 'var(--color-bold-ink)' : 'var(--color-border)',
+                  boxShadow: unread ? '0 0 0 1px rgba(220,255,0,0.3), 0 0 16px rgba(220,255,0,0.12)' : undefined,
+                }}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="relative shrink-0">
+                    <Avatar fallback={ticket.contact?.name || 'T'} size="md" />
+                    {unread && (
+                      <span
+                        className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2"
+                        style={{ background: 'var(--color-bold-ink)', boxShadow: '0 0 0 2px var(--color-card)' }}
+                      />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate text-[14px] font-semibold">{ticket.contact?.name || 'Sem nome'}</h3>
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                        style={{
+                          background: cfg.accent + '1a',
+                          color: cfg.accent,
+                        }}
+                      >
+                        <span
+                          aria-hidden
+                          className="h-1 w-1 rounded-full"
+                          style={{ background: cfg.accent }}
+                        />
+                        {cfg.label}
+                      </span>
+                      {statusFilter === 'waiting_queue' && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]"
+                          style={{
+                            background: 'rgba(220,38,38,0.08)',
+                            borderColor: 'rgba(220,38,38,0.3)',
+                            color: '#DC2626',
+                          }}
+                        >
+                          <AlertCircle className="h-2.5 w-2.5" /> Sem fila
+                        </span>
+                      )}
+                      {unread && (
+                        <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--color-foreground)' }}>
+                          Nova mensagem
+                        </span>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold truncate">{ticket.contact?.name || 'Sem nome'}</h3>
-                        <Badge variant={statusConfig[ticket.status]?.variant || 'secondary'}>
-                          {statusConfig[ticket.status]?.label || ticket.status}
-                        </Badge>
-                        {hasUnreadMessage(ticket) && (
-                          <span className="text-xs text-green-500 font-medium animate-pulse">
-                            Nova mensagem!
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        {ticket.contact?.phone && (
-                          <span className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {ticket.contact.phone}
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="h-3 w-3" />
-                          {ticket.messages_count ?? ticket.messages?.length ?? 0} mensagens
+                    <div className="mt-1.5 flex items-center gap-4 text-[11.5px] text-muted-foreground">
+                      {ticket.contact?.phone && (
+                        <span className="inline-flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span className="font-mono">{ticket.contact.phone}</span>
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatDateTime(ticket.created_at)}
-                        </span>
-                      </div>
+                      )}
+                      <span className="inline-flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        {ticket.messages_count ?? ticket.messages?.length ?? 0} msgs
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {formatDateTime(ticket.created_at)}
+                      </span>
                     </div>
                   </div>
-                  <Badge variant="outline">{ticket.channel?.name || 'Direto'}</Badge>
+                  <span
+                    className="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10.5px] font-medium"
+                    style={{
+                      borderColor: 'var(--color-border)',
+                      color: 'var(--color-muted-foreground)',
+                    }}
+                  >
+                    {ticket.channel?.name || 'Direto'}
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+              </div>
+            </motion.div>
+          )
+        })}
       </div>
 
       {filteredTickets.length === 0 && !isLoading && (
-        <div className="text-center py-12 text-muted-foreground">
-          <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg">Nenhum ticket encontrado</p>
-          <p className="text-sm mt-1">
-            {searchQuery ? 'Tente ajustar sua busca' :
-             statusFilter === 'waiting_queue' ? 'Nenhum cliente aguardando seleção de fila' :
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="py-16 text-center"
+        >
+          <div
+            className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full"
+            style={{ background: 'var(--color-secondary)' }}
+          >
+            <MessageSquare className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <p className="eyebrow mb-2">INBOX VAZIA</p>
+          <h3 className="font-display text-[26px] leading-[1.1] tracking-[-0.015em]">
+            Nenhum ticket encontrado
+          </h3>
+          <p className="mx-auto mt-2 max-w-[400px] text-[13.5px] text-muted-foreground">
+            {searchQuery ? 'Tente ajustar sua busca.' :
+             statusFilter === 'waiting_queue' ? 'Nenhum cliente aguardando seleção de fila.' :
              statusFilter === 'pending' ? 'Nenhuma conversa pendente. Tudo sob controle.' :
-             statusFilter === 'open' ? 'Nenhum chat aberto no momento' : 'Nenhum chat encerrado'}
+             statusFilter === 'open' ? 'Nenhum chat aberto no momento.' : 'Nenhum chat encerrado.'}
           </p>
-        </div>
+        </motion.div>
       )}
 
-      {/* Modal de Chat */}
-      <LeadChatModal
-        lead={selectedLead}
-        open={isModalOpen}
-        onOpenChange={handleModalClose}
-      />
+      <LeadChatModal lead={selectedLead} open={isModalOpen} onOpenChange={handleModalClose} />
     </div>
   )
 }

@@ -1,7 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Plus, Search, Loader2, Bell, Settings2, ChevronDown, Upload, MessageCircle, CheckCircle2, Inbox, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -35,7 +33,6 @@ export function LeadsKanbanPage() {
     { key: 'open', label: t('leads.inServiceLabel'), icon: MessageCircle, color: 'text-muted-foreground', description: t('leads.activeConversations') },
     { key: 'closed', label: t('leads.closedLabel'), icon: CheckCircle2, color: 'text-muted-foreground', description: t('leads.finishedConversations') },
   ]
-  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('') // Busca com debounce para API
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
@@ -362,37 +359,50 @@ export function LeadsKanbanPage() {
     )
   }
 
+  const subtitleCount = `${filteredLeads.length} ${
+    ticketFilter === 'pending' ? t('leads.pending') :
+    ticketFilter === 'open' ? t('leads.inService') :
+    ticketFilter === 'closed' ? t('leads.closed') :
+    t('leads.inFunnel')
+  }`
+
   return (
-    <div className="flex-1 flex flex-col gap-4 min-h-0">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
-        <div className="flex items-center gap-4">
-          <PageHeader
-            title={t('leads.title')}
-            subtitle={`${filteredLeads.length} ${
-              ticketFilter === 'pending' ? t('leads.pending') :
-              ticketFilter === 'open' ? t('leads.inService') :
-              ticketFilter === 'closed' ? t('leads.closed') :
-              t('leads.inFunnel')
-            }`}
-          />
-          
-          {/* Pipeline Selector - Mostra apenas se admin/gestor OU se tem mais de 1 pipeline */}
+    <div className="flex-1 flex flex-col gap-5 min-h-0">
+      {/* ═══════════ HERO HEADER ═══════════ */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="shrink-0 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+      >
+        <div>
+          <p className="eyebrow">LEADS · PIPELINE</p>
+          <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
+            {t('leads.title')}
+          </h1>
+          <p className="mt-2 text-[13px] text-muted-foreground">
+            {subtitleCount}
+          </p>
+
+          {/* Pipeline selector inline under title */}
           {(user?.role === 'admin' || user?.role === 'gestor' || pipelinesArray.length > 1) && (
-            <div className="relative">
+            <div className="relative mt-3 inline-block">
               <button
                 onClick={() => setShowPipelineSelector(!showPipelineSelector)}
-                className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-accent rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 rounded-[10px] border px-3 py-1.5 text-[12.5px] font-medium transition-colors hover:bg-muted"
+                style={{ borderColor: 'var(--color-border)' }}
               >
-                <span className="font-medium">{currentPipeline?.name || t('leads.selectPipeline')}</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showPipelineSelector ? 'rotate-180' : ''}`} />
+                <span className="text-muted-foreground">Pipeline:</span>
+                <span>{currentPipeline?.name || t('leads.selectPipeline')}</span>
+                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${showPipelineSelector ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {showPipelineSelector && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute top-full left-0 mt-2 w-64 bg-muted rounded-lg shadow-xl border border-border z-50 overflow-hidden"
+                  className="absolute left-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-[12px] border shadow-lg"
+                  style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)' }}
                 >
                   <div className="max-h-60 overflow-y-auto">
                     {pipelinesArray.map((pipeline: Pipeline) => (
@@ -402,33 +412,35 @@ export function LeadsKanbanPage() {
                           setSelectedPipelineId(pipeline.id)
                           setShowPipelineSelector(false)
                         }}
-                        className={`w-full text-left px-4 py-3 hover:bg-accent transition-colors flex items-center justify-between ${
+                        className={`flex w-full items-center justify-between px-3.5 py-2.5 text-left transition-colors hover:bg-muted ${
                           pipeline.id === selectedPipelineId ? 'bg-muted' : ''
                         }`}
                       >
-                        <div>
-                          <p className="font-medium">{pipeline.name}</p>
-                          <p className="text-xs text-muted-foreground">{pipeline.stages?.length || 0} {t('leads.stages')}</p>
+                        <div className="min-w-0">
+                          <p className="truncate text-[13px] font-medium">{pipeline.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{pipeline.stages?.length || 0} {t('leads.stages')}</p>
                         </div>
                         {pipeline.is_default && (
-                          <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
+                          <span
+                            className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                            style={{ background: 'var(--color-secondary)', color: 'var(--color-muted-foreground)' }}
+                          >
                             {t('common.default')}
                           </span>
                         )}
                       </button>
                     ))}
                   </div>
-                  {/* Só mostra gerenciar pipelines para admin/gestor */}
                   {(user?.role === 'admin' || user?.role === 'gestor') && (
-                    <div className="border-t border-border p-2">
+                    <div className="border-t p-2" style={{ borderColor: 'var(--color-border)' }}>
                       <button
                         onClick={() => {
                           setShowPipelineSelector(false)
                           setIsPipelineManagerOpen(true)
                         }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/30 rounded-lg text-sm transition-colors"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-[8px] px-3 py-2 text-[12px] font-medium transition-colors hover:bg-muted"
                       >
-                        <Settings2 className="w-4 h-4" />
+                        <Settings2 className="h-3.5 w-3.5" />
                         {t('leads.managePipelines')}
                       </button>
                     </div>
@@ -438,18 +450,22 @@ export function LeadsKanbanPage() {
             </div>
           )}
         </div>
-        
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-2">
           {/* View mode toggle */}
-          <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+          <div
+            className="flex items-center gap-1 rounded-[10px] p-1"
+            style={{ background: 'var(--color-secondary)' }}
+          >
             <button
               onClick={() => setViewMode('kanban')}
               className={cn(
-                "p-2 rounded-md transition-all",
+                'rounded-[7px] p-1.5 transition-all',
                 viewMode === 'kanban'
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? 'shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
+              style={viewMode === 'kanban' ? { background: 'var(--color-card)', color: 'var(--color-foreground)' } : undefined}
               title="Kanban"
             >
               <LayoutGrid className="h-4 w-4" />
@@ -457,90 +473,99 @@ export function LeadsKanbanPage() {
             <button
               onClick={() => setViewMode('table')}
               className={cn(
-                "p-2 rounded-md transition-all",
+                'rounded-[7px] p-1.5 transition-all',
                 viewMode === 'table'
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? 'shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
+              style={viewMode === 'table' ? { background: 'var(--color-card)', color: 'var(--color-foreground)' } : undefined}
               title="Tabela"
             >
               <List className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Pipeline settings button */}
           {currentPipeline?.user_permissions?.is_admin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsPipelineManagerOpen(true)}
-            >
-              <Settings2 className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" onClick={() => setIsPipelineManagerOpen(true)}>
+              <Settings2 className="mr-1.5 h-4 w-4" />
               {t('common.manage')}
             </Button>
           )}
-          
-          {/* Notification indicator */}
+
           {totalUnread > 0 && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="flex items-center gap-2"
-            >
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={markAllAsRead}
-                className="relative"
-              >
-                <Bell className="h-4 w-4 mr-2" />
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+              <Button variant="outline" size="sm" onClick={markAllAsRead} className="relative">
+                <Bell className="mr-1.5 h-4 w-4" />
                 <span className="font-medium">{totalUnread} {t('leads.newMessages', { count: totalUnread })}</span>
-                <span className="absolute -top-1 -right-1 h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success/60"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-success"></span>
+                <span className="absolute -right-1 -top-1 h-2.5 w-2.5">
+                  <span
+                    className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
+                    style={{ background: 'var(--color-bold-ink)' }}
+                  />
+                  <span
+                    className="relative inline-flex h-2.5 w-2.5 rounded-full"
+                    style={{ background: 'var(--color-bold-ink)' }}
+                  />
                 </span>
               </Button>
             </motion.div>
           )}
-          <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
+
+          <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(true)}>
+            <Upload className="mr-1.5 h-4 w-4" />
             {t('common.import')}
           </Button>
-          <Button onClick={() => setIsCreateLeadOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button variant="bold" size="sm" onClick={() => setIsCreateLeadOpen(true)}>
+            <Plus className="mr-1.5 h-4 w-4" />
             {t('leads.newLead')}
           </Button>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Filters */}
+      {/* ═══════════ FILTERS ═══════════ */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row gap-4 shrink-0"
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center"
       >
-        {/* Status Tabs - Filtro por status do ticket */}
-        <div className="flex bg-muted/50 rounded-lg p-1 gap-1">
+        {/* Status tabs — pill neon for active */}
+        <div
+          className="flex items-center gap-1 rounded-[12px] p-1"
+          style={{ background: 'var(--color-secondary)' }}
+        >
           {ticketFilterTabs.map((tab) => {
             const Icon = tab.icon
             const isActive = ticketFilter === tab.key
+            const count =
+              tab.key === 'pending' ? ticketCounts.pending :
+              tab.key === 'open' ? ticketCounts.open :
+              tab.key === 'closed' ? ticketCounts.closed : null
+
             return (
               <button
                 key={tab.key}
                 onClick={() => setTicketFilter(tab.key)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm cursor-pointer ${
+                className={cn(
+                  'flex items-center gap-1.5 rounded-[9px] px-3 py-1.5 text-[12.5px] font-medium transition-colors'
+                )}
+                style={
                   isActive
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                }`}
+                    ? { background: 'var(--color-bold-ink)', color: '#0A0A0C' }
+                    : { color: 'var(--color-muted-foreground)' }
+                }
               >
-                <Icon className="h-4 w-4" />
-                <span className="font-medium">{tab.label}</span>
-                {tab.key !== 'all' && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    isActive ? 'bg-background/20' : 'bg-muted'
-                  }`}>
-                    {tab.key === 'pending' ? ticketCounts.pending : tab.key === 'open' ? ticketCounts.open : ticketCounts.closed}
+                <Icon className="h-3.5 w-3.5" />
+                <span>{tab.label}</span>
+                {count != null && (
+                  <span
+                    className="rounded-full px-1.5 py-0 text-[10.5px] font-bold"
+                    style={{
+                      background: isActive ? 'rgba(10,10,12,0.12)' : 'var(--color-card)',
+                      color: isActive ? '#0A0A0C' : 'var(--color-muted-foreground)',
+                    }}
+                  >
+                    {count}
                   </span>
                 )}
               </button>
@@ -549,13 +574,13 @@ export function LeadsKanbanPage() {
         </div>
 
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t('leads.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="h-10 rounded-[10px] pl-10 text-[13.5px]"
           />
         </div>
       </motion.div>

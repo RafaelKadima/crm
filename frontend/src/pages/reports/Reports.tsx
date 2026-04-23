@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PageHeader } from '@/components/layout/PageHeader'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -16,10 +15,10 @@ import {
   Cell,
   Legend,
 } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Label } from '@/components/ui/Label'
 import { Input } from '@/components/ui/Input'
-import { Loader2, Users, Filter, Bot, ArrowRight } from 'lucide-react'
+import { Loader2, Users, Filter, Bot, ArrowRight, Sparkles } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import api from '@/api/axios'
 import { Link } from 'react-router-dom'
@@ -29,8 +28,8 @@ const channelColors: Record<string, string> = {
   instagram: '#E4405F',
   facebook: '#1877F2',
   email: '#EA4335',
-  telefone: '#6366f1',
-  outros: '#6B7280',
+  telefone: '#8AA4FF',
+  outros: '#97928B',
 }
 
 export function ReportsPage() {
@@ -86,120 +85,160 @@ export function ReportsPage() {
     distributionData?.by_channel?.map((channel: any) => ({
       name: channel.channel_name || channel.channel_type || 'Outros',
       value: channel.leads_count || 0,
-      color: channelColors[channel.channel_type?.toLowerCase()] || '#6B7280',
+      color: channelColors[channel.channel_type?.toLowerCase()] || '#97928B',
     })) || []
 
   const isLoading = loadingProductivity || loadingDistribution || loadingIa
 
   if (isLoading && !productivityData) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-[calc(100vh-200px)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--color-bold-ink)' }} />
       </div>
     )
   }
 
   const ia = iaData?.ia_performance
 
+  const tooltipStyle = {
+    backgroundColor: 'var(--color-card)',
+    border: '1px solid var(--color-border)',
+    borderRadius: '10px',
+    fontSize: '12px',
+    color: 'var(--color-foreground)',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t('reports.title')}
-        subtitle="Produtividade por vendedor, distribuição de canais e performance do agente IA. Para análise de funil (conversão, velocity, forecast), use o Relatório Gerencial."
-      />
+      {/* Hero header */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <p className="eyebrow">COMERCIAL · RELATÓRIOS</p>
+        <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
+          {t('reports.title')}
+        </h1>
+        <p className="mt-2 max-w-[620px] text-[13.5px] leading-[1.5] text-muted-foreground">
+          Produtividade por vendedor, distribuição de canais e performance do agente IA. Para
+          análise de funil completo (conversão, velocity, forecast), use o Relatório Gerencial.
+        </p>
+      </motion.div>
 
-      {/* Link para o Relatório Gerencial */}
+      {/* Managerial link — editorial bold block */}
       <Link
         to="/managerial/funnel"
-        className="group block rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/[0.02] to-transparent p-4 hover:border-primary/40 transition-colors"
+        className="group relative block overflow-hidden rounded-[14px] border bold-glow"
+        style={{ background: 'var(--color-bold)', borderColor: 'transparent' }}
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10 text-primary">
-            <ArrowRight className="h-4 w-4" />
+        <div className="relative z-10 flex items-center gap-4 p-5">
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            style={{ background: 'var(--color-bold-ink)', color: '#0A0A0C' }}
+          >
+            <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold">Procurando análise de funil?</p>
-            <p className="text-xs text-muted-foreground">
-              Topo/meio/fim, taxas de conversão, velocity e forecast agora vivem no{' '}
-              <span className="text-primary font-medium">Relatório Gerencial</span>.
+            <p
+              className="text-[10.5px] font-bold uppercase tracking-[0.14em]"
+              style={{ color: 'var(--color-bold-ink)' }}
+            >
+              RELATÓRIO GERENCIAL
+            </p>
+            <h3 className="mt-1 font-display text-[22px] leading-[1.1] tracking-[-0.015em]" style={{ color: '#F4F3EF' }}>
+              Procurando análise de funil?
+            </h3>
+            <p className="mt-1 text-[12.5px]" style={{ color: 'rgba(244,243,239,0.55)' }}>
+              Topo/meio/fim, conversão, velocity e forecast vivem no Relatório Gerencial agora.
             </p>
           </div>
+          <ArrowRight
+            className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"
+            style={{ color: 'var(--color-bold-ink)' }}
+          />
         </div>
       </Link>
 
-      {/* Filtros */}
+      {/* Filters */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Filter className="h-4 w-4" />
-              <span className="text-sm font-medium">Período:</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em]">Período</span>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs">{t('reports.startDate')}</Label>
+              <Label className="text-[11px] font-medium text-muted-foreground">
+                {t('reports.startDate')}
+              </Label>
               <Input
                 type="date"
                 value={filters.date_from}
                 onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
-                className="w-[160px]"
+                className="w-[160px] rounded-[8px]"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs">{t('reports.endDate')}</Label>
+              <Label className="text-[11px] font-medium text-muted-foreground">
+                {t('reports.endDate')}
+              </Label>
               <Input
                 type="date"
                 value={filters.date_to}
                 onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
-                className="w-[160px]"
+                className="w-[160px] rounded-[8px]"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Distribuição por Canal */}
+      {/* Top grid: channels + AI */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-purple-400" />
-                {t('reports.leadsByChannel')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Card className="h-full">
+            <div
+              className="flex items-center justify-between border-b px-6 py-4"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <div>
+                <p className="eyebrow">DISTRIBUIÇÃO</p>
+                <h3 className="mt-1 font-display text-[20px] leading-[1.15] tracking-[-0.015em]">
+                  {t('reports.leadsByChannel')}
+                </h3>
+              </div>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <CardContent className="p-4">
               {channelChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
                     <Pie
                       data={channelChartData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
+                      innerRadius={55}
+                      outerRadius={95}
+                      paddingAngle={4}
                       dataKey="value"
                       label={({ name, percent }: any) =>
                         `${name} ${((percent || 0) * 100).toFixed(0)}%`
                       }
                     >
                       {channelChartData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--color-card)" strokeWidth={2} />
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                      }}
+                      contentStyle={tooltipStyle}
                       formatter={(value: any) => [`${value} leads`, t('reports.quantity')]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                <div className="flex h-[280px] items-center justify-center text-[13px] text-muted-foreground">
                   {t('reports.noDataAvailable')}
                 </div>
               )}
@@ -207,108 +246,130 @@ export function ReportsPage() {
           </Card>
         </motion.div>
 
-        {/* Performance IA */}
+        {/* AI Performance — charcoal + neon */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.08 }}
         >
-          <Card className="bg-gradient-to-br from-violet-500/5 to-transparent border-violet-500/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-violet-400" />
-                Agente SDR (IA)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Leads criados pela IA
-                  </p>
-                  <p className="text-2xl font-semibold tracking-tight mt-1">
-                    {(ia?.total_ia_leads ?? 0).toLocaleString('pt-BR')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Ganhos pela IA
-                  </p>
-                  <p className="text-2xl font-semibold tracking-tight text-emerald-400 mt-1">
-                    {(ia?.won_ia_leads ?? 0).toLocaleString('pt-BR')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Taxa de conversão IA
-                  </p>
-                  <p className="text-2xl font-semibold tracking-tight mt-1">
-                    {ia?.conversion_rate ?? 0}%
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Última interação IA
-                  </p>
-                  <p className="text-2xl font-semibold tracking-tight mt-1">
-                    {(ia?.last_ia_interaction_leads ?? 0).toLocaleString('pt-BR')}
-                  </p>
-                </div>
+          <div
+            className="relative h-full overflow-hidden rounded-[14px] border bold-glow"
+            style={{ background: 'var(--color-bold)', borderColor: 'transparent', color: '#F4F3EF' }}
+          >
+            <div
+              className="relative z-10 flex items-center justify-between border-b px-6 py-4"
+              style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+            >
+              <div>
+                <p
+                  className="text-[10.5px] font-bold uppercase tracking-[0.14em]"
+                  style={{ color: 'var(--color-bold-ink)' }}
+                >
+                  AGENTE SDR · IA
+                </p>
+                <h3
+                  className="mt-1 font-display text-[20px] leading-[1.15] tracking-[-0.015em]"
+                  style={{ color: '#F4F3EF' }}
+                >
+                  Performance autônoma
+                </h3>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Productivity Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="lg:col-span-2"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-green-400" />
-                {t('reports.productivityBySeller')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {productivityChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={productivityChartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="leads" fill="#3b82f6" name="Leads" radius={[4, 4, 0, 0]} />
-                    <Bar
-                      dataKey="conversoes"
-                      fill="#22c55e"
-                      name={t('reports.conversions')}
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar dataKey="tickets" fill="#8b5cf6" name="Tickets" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  {t('reports.noSellerFound')}
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full"
+                style={{ background: 'var(--color-bold-ink)', color: '#0A0A0C' }}
+              >
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={2.25} />
+              </div>
+            </div>
+            <div className="relative z-10 grid grid-cols-2 gap-5 p-6">
+              {[
+                { l: 'Leads criados',  v: ia?.total_ia_leads ?? 0 },
+                { l: 'Ganhos IA',      v: ia?.won_ia_leads ?? 0, accent: true },
+                { l: 'Conversão IA',   v: `${ia?.conversion_rate ?? 0}%` },
+                { l: 'Últ. interação', v: ia?.last_ia_interaction_leads ?? 0 },
+              ].map((kpi) => (
+                <div key={kpi.l}>
+                  <p
+                    className="text-[10.5px] font-bold uppercase tracking-[0.12em]"
+                    style={{ color: 'rgba(244,243,239,0.5)' }}
+                  >
+                    {kpi.l}
+                  </p>
+                  <p
+                    className="mt-1.5 font-display text-[36px] leading-none tracking-[-0.02em]"
+                    style={{ color: kpi.accent ? 'var(--color-bold-ink)' : '#F4F3EF' }}
+                  >
+                    {typeof kpi.v === 'number' ? kpi.v.toLocaleString('pt-BR') : kpi.v}
+                  </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          </div>
         </motion.div>
       </div>
 
-      {/* Detalhe por vendedor */}
+      {/* Productivity chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <Card>
+          <div
+            className="flex items-center justify-between border-b px-6 py-4"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
+            <div>
+              <p className="eyebrow">TIME COMERCIAL</p>
+              <h3 className="mt-1 font-display text-[20px] leading-[1.15] tracking-[-0.015em]">
+                {t('reports.productivityBySeller')}
+              </h3>
+            </div>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <CardContent className="p-4">
+            {productivityChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={productivityChartData} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={{ stroke: 'var(--color-border)' }}
+                  />
+                  <YAxis
+                    tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={{ stroke: 'var(--color-border)' }}
+                  />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(220,255,0,0.05)' }} />
+                  <Legend wrapperStyle={{ fontSize: 12, color: 'var(--color-muted-foreground)' }} />
+                  <Bar dataKey="leads" fill="var(--color-foreground)" name="Leads" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="conversoes"
+                    fill="var(--color-bold-ink)"
+                    name={t('reports.conversions')}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="tickets"
+                    fill="var(--color-muted-foreground)"
+                    name="Tickets"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-[13px] text-muted-foreground">
+                {t('reports.noSellerFound')}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Detail by seller */}
       {productivityData?.productivity && productivityData.productivity.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -316,23 +377,42 @@ export function ReportsPage() {
           transition={{ delay: 0.2 }}
         >
           <Card>
-            <CardHeader>
-              <CardTitle>{t('reports.detailBySeller')}</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <div
+              className="border-b px-6 py-4"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <p className="eyebrow">RANKING · INDIVIDUAL</p>
+              <h3 className="mt-1 font-display text-[20px] leading-[1.15] tracking-[-0.015em]">
+                {t('reports.detailBySeller')}
+              </h3>
+            </div>
+            <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-[13px]">
                   <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-medium">{t('reports.seller')}</th>
-                      <th className="text-center py-3 px-4 font-medium">Leads</th>
-                      <th className="text-center py-3 px-4 font-medium">{t('reports.won')}</th>
-                      <th className="text-center py-3 px-4 font-medium">{t('reports.lost')}</th>
-                      <th className="text-center py-3 px-4 font-medium">
+                    <tr
+                      className="border-b"
+                      style={{ borderColor: 'var(--color-border)', background: 'var(--color-secondary)' }}
+                    >
+                      <th className="px-6 py-3 text-left text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        {t('reports.seller')}
+                      </th>
+                      <th className="px-4 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        Leads
+                      </th>
+                      <th className="px-4 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        {t('reports.won')}
+                      </th>
+                      <th className="px-4 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        {t('reports.lost')}
+                      </th>
+                      <th className="px-4 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                         {t('reports.conversion')}
                       </th>
-                      <th className="text-center py-3 px-4 font-medium">Tickets</th>
-                      <th className="text-right py-3 px-4 font-medium">
+                      <th className="px-4 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        Tickets
+                      </th>
+                      <th className="px-6 py-3 text-right text-[10.5px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                         {t('reports.totalValue')}
                       </th>
                     </tr>
@@ -341,29 +421,32 @@ export function ReportsPage() {
                     {productivityData.productivity.map((user: any, index: number) => (
                       <tr
                         key={user.user_id || index}
-                        className="border-b border-border/50 hover:bg-muted/50"
+                        className="border-b transition-colors hover:bg-muted"
+                        style={{ borderColor: 'var(--color-border)' }}
                       >
-                        <td className="py-3 px-4 font-medium">{user.user_name}</td>
-                        <td className="text-center py-3 px-4">{user.leads?.total || 0}</td>
-                        <td className="text-center py-3 px-4 text-green-400">
+                        <td className="px-6 py-3.5 font-medium">{user.user_name}</td>
+                        <td className="px-4 py-3.5 text-center">{user.leads?.total || 0}</td>
+                        <td className="px-4 py-3.5 text-center font-semibold" style={{ color: 'var(--color-success)' }}>
                           {user.leads?.won || 0}
                         </td>
-                        <td className="text-center py-3 px-4 text-red-400">
+                        <td className="px-4 py-3.5 text-center" style={{ color: 'var(--color-destructive)' }}>
                           {user.leads?.lost || 0}
                         </td>
-                        <td className="text-center py-3 px-4">
+                        <td className="px-4 py-3.5 text-center">
                           <span
-                            className={
-                              user.leads?.conversion_rate > 20
-                                ? 'text-green-400'
-                                : 'text-yellow-400'
-                            }
+                            className="font-semibold"
+                            style={{
+                              color:
+                                user.leads?.conversion_rate > 20
+                                  ? 'var(--color-success)'
+                                  : 'var(--color-warning)',
+                            }}
                           >
                             {user.leads?.conversion_rate || 0}%
                           </span>
                         </td>
-                        <td className="text-center py-3 px-4">{user.tickets?.total || 0}</td>
-                        <td className="text-right py-3 px-4 font-medium text-emerald-400">
+                        <td className="px-4 py-3.5 text-center">{user.tickets?.total || 0}</td>
+                        <td className="px-6 py-3.5 text-right font-display text-[15px] tracking-[-0.015em]">
                           {formatCurrency(user.leads?.total_value || 0)}
                         </td>
                       </tr>
