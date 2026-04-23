@@ -182,15 +182,15 @@ export function ViralVideoSearch() {
   const creators = creatorsData?.creators || []
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Hero header */}
       <div>
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <TrendingUp className="h-8 w-8 text-orange-500" />
+        <p className="eyebrow">CONTEÚDO · BUSCA VIRAL</p>
+        <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
           Busca de Vídeos Virais
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Encontre vídeos virais para inspiração e adicione aos seus criadores
+        <p className="mt-2 text-[13.5px] text-muted-foreground">
+          Encontre vídeos virais para inspiração e adicione aos seus criadores.
         </p>
       </div>
 

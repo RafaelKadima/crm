@@ -137,20 +137,20 @@ ${script.hashtags ? `HASHTAGS:\n${script.hashtags.join(' ')}` : ''}
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
+      {/* Hero header */}
+      <div className="flex items-start gap-3">
         <Link to="/content">
           <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Zap className="h-8 w-8 text-orange-500" />
+          <p className="eyebrow">CONTEÚDO · AUTO-DESCOBERTA</p>
+          <h1 className="mt-2 font-display text-[36px] leading-[1.05] tracking-[-0.02em]">
             Auto-Descoberta
           </h1>
-          <p className="text-muted-foreground mt-1">
-            A IA busca videos virais e gera roteiros automaticamente
+          <p className="mt-2 text-[13.5px] text-muted-foreground">
+            A IA busca vídeos virais e gera roteiros automaticamente.
           </p>
         </div>
       </div>

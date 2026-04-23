@@ -141,106 +141,122 @@ export function GroupDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      {/* Header */}
-      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link
-                to="/super-admin/groups"
-                className="p-2 hover:bg-accent/50 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl">
-                  <Users2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="text-xl font-bold bg-muted border border-border rounded px-2 py-1"
-                      autoFocus
-                    />
-                  ) : (
-                    <h1 className="text-xl font-bold">{group.name}</h1>
-                  )}
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value)}
-                      placeholder="Descrição do grupo..."
-                      className="text-sm text-muted-foreground bg-muted border border-border rounded px-2 py-1 mt-1 w-64"
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{group.description || group.slug}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+    <div>
+      <div>
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <Link
+              to="/super-admin/groups"
+              className="mt-1 rounded-[8px] p-1.5 transition-colors hover:bg-muted"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+            <div className="min-w-0">
+              <p className="eyebrow">SUPER-ADMIN · GRUPO</p>
               {isEditing ? (
-                <>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-lg transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleSaveEdit}
-                    disabled={updateGroup.isPending}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
-                  >
-                    {updateGroup.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Salvar
-                  </button>
-                </>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="mt-2 rounded-[8px] border bg-input px-3 py-1.5 font-display text-[32px] leading-[1.1] tracking-[-0.02em]"
+                  style={{ borderColor: 'var(--color-border)' }}
+                  autoFocus
+                />
               ) : (
-                <button
-                  onClick={handleStartEdit}
-                  className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-muted-foreground/20 rounded-lg transition-colors"
-                >
-                  <Edit className="w-4 h-4" />
-                  Editar
-                </button>
+                <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em]">
+                  {group.name}
+                </h1>
+              )}
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Descrição do grupo..."
+                  className="mt-2 w-full max-w-md rounded-[8px] border bg-input px-3 py-1.5 text-[13px]"
+                  style={{ borderColor: 'var(--color-border)' }}
+                />
+              ) : (
+                <p className="mt-2 text-[13.5px] text-muted-foreground">
+                  {group.description || group.slug}
+                </p>
               )}
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            {isEditing ? (
+              <>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="inline-flex items-center gap-1.5 rounded-[10px] px-3.5 py-2 text-[12.5px] font-medium text-muted-foreground transition-colors hover:bg-muted"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={updateGroup.isPending}
+                  className="inline-flex items-center gap-1.5 rounded-[10px] px-3.5 py-2 text-[12.5px] font-semibold transition-all"
+                  style={{ background: 'var(--color-bold)', color: 'var(--color-bold-ink)' }}
+                >
+                  {updateGroup.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Salvar
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleStartEdit}
+                className="inline-flex items-center gap-1.5 rounded-[10px] border px-3.5 py-2 text-[12.5px] font-medium transition-colors hover:bg-muted"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
+                <Edit className="h-4 w-4" />
+                Editar
+              </button>
+            )}
+          </div>
+        </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 mt-4">
-            {[
-              { key: 'empresas', label: 'Empresas', icon: Building2, count: group.tenants?.length || 0 },
-              { key: 'usuarios', label: 'Usuários', icon: Users, count: group.users?.length || 0 },
-              { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-            ].map((tab) => (
+        {/* Tabs */}
+        <div
+          className="flex gap-0 border-b"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
+          {[
+            { key: 'empresas',  label: 'Empresas',  icon: Building2, count: group.tenants?.length || 0 },
+            { key: 'usuarios',  label: 'Usuários',  icon: Users,     count: group.users?.length || 0 },
+            { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key
+            return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as TabType)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors ${
-                  activeTab === tab.key
-                    ? 'bg-muted text-foreground'
-                    : 'text-muted-foreground hover:text-white hover:bg-muted/50'
-                }`}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-[12.5px] font-medium transition-colors"
+                style={{
+                  color: isActive ? 'var(--color-foreground)' : 'var(--color-muted-foreground)',
+                  borderBottom: `2px solid ${isActive ? 'var(--color-bold-ink)' : 'transparent'}`,
+                  marginBottom: -1,
+                }}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="h-3.5 w-3.5" />
                 {tab.label}
                 {tab.count !== undefined && (
-                  <span className="text-xs bg-accent px-2 py-0.5 rounded-full">{tab.count}</span>
+                  <span
+                    className="rounded-full px-1.5 py-0 text-[10.5px] font-bold"
+                    style={{
+                      background: 'var(--color-secondary)',
+                      color: 'var(--color-muted-foreground)',
+                    }}
+                  >
+                    {tab.count}
+                  </span>
                 )}
               </button>
-            ))}
-          </div>
+            )
+          })}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="mt-6">
         {/* Empresas Tab */}
         {activeTab === 'empresas' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

@@ -125,19 +125,19 @@ ${script.hashtags ? `HASHTAGS:\n${script.hashtags.join(' ')}` : ''}
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-3">
         <Link to="/content">
           <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Sparkles className="h-8 w-8 text-purple-500" />
+          <p className="eyebrow">CONTEÚDO · GERAR ROTEIRO</p>
+          <h1 className="mt-2 font-display text-[36px] leading-[1.05] tracking-[-0.02em]">
             Gerar Roteiro Viral
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Crie roteiros baseados em videos de referencia
+          <p className="mt-2 text-[13.5px] text-muted-foreground">
+            Crie roteiros baseados em vídeos de referência.
           </p>
         </div>
       </div>

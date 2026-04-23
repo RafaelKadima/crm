@@ -132,46 +132,64 @@ export function ActionApprovalQueue() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Hero header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Bot className="h-8 w-8 text-purple-500" />
+          <p className="eyebrow">IA · APROVAÇÃO DE AÇÕES</p>
+          <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
             Ações Sugeridas
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Revise e aprove ações sugeridas pelo BI Agent
+          <p className="mt-2 max-w-[520px] text-[13.5px] text-muted-foreground">
+            Revise e aprove ações sugeridas pelo BI Agent.
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <Badge variant="outline" className="text-red-500 border-red-500">
-            {stats.critical || 0} Críticas
-          </Badge>
-          <Badge variant="outline" className="text-orange-500 border-orange-500">
-            {stats.high || 0} Altas
-          </Badge>
-          <Badge variant="outline" className="text-yellow-500 border-yellow-500">
-            {stats.medium || 0} Médias
-          </Badge>
+        <div className="flex items-center gap-1.5">
+          {[
+            { k: 'Críticas', n: stats.critical || 0, accent: 'var(--color-destructive)' },
+            { k: 'Altas',    n: stats.high || 0,     accent: 'var(--color-warning)' },
+            { k: 'Médias',   n: stats.medium || 0,   accent: 'var(--color-info)' },
+          ].map((b) => (
+            <span
+              key={b.k}
+              className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold"
+              style={{
+                borderColor: b.accent,
+                color: b.accent,
+                background: `${b.accent}0f`,
+              }}
+            >
+              <span className="font-display text-[14px] leading-none tracking-[-0.015em]">{b.n}</span>
+              <span>{b.k}</span>
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="flex gap-2">
-        {(['pending', 'approved', 'rejected', 'all'] as const).map((f) => (
-          <Button
-            key={f}
-            variant={filter === f ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter(f)}
-          >
-            {f === 'pending' && 'Pendentes'}
-            {f === 'approved' && 'Aprovadas'}
-            {f === 'rejected' && 'Rejeitadas'}
-            {f === 'all' && 'Todas'}
-          </Button>
-        ))}
+      {/* Filtros — pills neon */}
+      <div
+        className="inline-flex items-center gap-1 rounded-[12px] p-1"
+        style={{ background: 'var(--color-secondary)' }}
+      >
+        {(['pending', 'approved', 'rejected', 'all'] as const).map((f) => {
+          const isActive = filter === f
+          const label =
+            f === 'pending' ? 'Pendentes' : f === 'approved' ? 'Aprovadas' : f === 'rejected' ? 'Rejeitadas' : 'Todas'
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className="rounded-[9px] px-3 py-1.5 text-[12.5px] font-medium transition-colors"
+              style={
+                isActive
+                  ? { background: 'var(--color-bold-ink)', color: '#0A0A0C' }
+                  : { color: 'var(--color-muted-foreground)' }
+              }
+            >
+              {label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Lista de Ações */}

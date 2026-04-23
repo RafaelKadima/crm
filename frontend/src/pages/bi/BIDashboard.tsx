@@ -44,37 +44,41 @@ function KPICard({ title, value, change, changeLabel, icon: Icon, color }: KPICa
       animate={{ opacity: 1, y: 0 }}
       className="relative overflow-hidden"
     >
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-background to-muted/50">
+      <Card className="h-full">
         <CardContent className="p-6">
           <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">{title}</p>
-              <p className="text-3xl font-bold mt-2">{value}</p>
+            <div className="min-w-0">
+              <p className="eyebrow">{title}</p>
+              <p className="mt-3 font-display text-[36px] leading-none tracking-[-0.02em]">{value}</p>
               {change !== undefined && (
-                <div className="flex items-center gap-1 mt-2">
+                <div className="mt-3 flex items-center gap-1">
                   {isPositive ? (
-                    <TrendingUp className="h-4 w-4 text-green-500" />
+                    <TrendingUp className="h-3.5 w-3.5" style={{ color: 'var(--color-success)' }} />
                   ) : isNegative ? (
-                    <TrendingDown className="h-4 w-4 text-red-500" />
+                    <TrendingDown className="h-3.5 w-3.5" style={{ color: 'var(--color-destructive)' }} />
                   ) : null}
-                  <span className={cn(
-                    "text-sm font-medium",
-                    isPositive && "text-green-500",
-                    isNegative && "text-red-500"
-                  )}>
+                  <span
+                    className="text-[12px] font-semibold"
+                    style={{
+                      color: isPositive
+                        ? 'var(--color-success)'
+                        : isNegative
+                          ? 'var(--color-destructive)'
+                          : 'var(--color-muted-foreground)',
+                    }}
+                  >
                     {isPositive && '+'}{change}%
                   </span>
                   {changeLabel && (
-                    <span className="text-xs text-muted-foreground">{changeLabel}</span>
+                    <span className="text-[11px] text-muted-foreground">{changeLabel}</span>
                   )}
                 </div>
               )}
             </div>
-            <div className={cn(
-              "p-3 rounded-xl",
-              color
-            )}>
-              <Icon className="h-6 w-6 text-white" />
+            <div
+              className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]', color)}
+            >
+              <Icon className="h-5 w-5 text-white" />
             </div>
           </div>
         </CardContent>
@@ -107,35 +111,36 @@ export function BIDashboard() {
   const kpis = summary?.kpis || {}
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Hero header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <BarChart3 className="h-8 w-8 text-primary" />
+          <p className="eyebrow">IA · INTELIGÊNCIA DE NEGÓCIO</p>
+          <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
             Business Intelligence
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Análise inteligente do seu negócio com IA
+          <p className="mt-2 max-w-[520px] text-[13.5px] text-muted-foreground">
+            Análise inteligente do seu negócio com IA. Métricas, alertas e recomendações acionáveis.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
-            className="px-4 py-2 rounded-lg border bg-background"
+            className="rounded-[10px] border px-3 py-2 text-[12.5px] font-medium"
+            style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
           >
             <option value="7d">Últimos 7 dias</option>
             <option value="30d">Últimos 30 dias</option>
             <option value="90d">Últimos 90 dias</option>
           </select>
-          <Button variant="outline" onClick={() => refetch()}>
-            <RefreshCcw className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCcw className="mr-1.5 h-4 w-4" />
             Atualizar
           </Button>
           <Link to="/bi/analyst">
-            <Button>
-              <Bot className="h-4 w-4 mr-2" />
+            <Button variant="bold" size="sm">
+              <Bot className="mr-1.5 h-4 w-4" />
               Analista IA
             </Button>
           </Link>

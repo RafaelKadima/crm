@@ -206,16 +206,22 @@ export function ContentAgentChat() {
   return (
     <div className="h-[calc(100vh-140px)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div
+        className="flex items-center justify-between border-b px-5 py-4"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500">
-            <Bot className="h-6 w-6 text-white" />
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-[10px]"
+            style={{ background: 'var(--color-bold-ink)', color: '#0A0A0C' }}
+          >
+            <Bot className="h-4 w-4" strokeWidth={2.25} />
           </div>
           <div>
-            <h1 className="text-xl font-bold">Agente de Conteúdo</h1>
-            <p className="text-sm text-muted-foreground">
-              Crie roteiros virais com IA
-            </p>
+            <p className="eyebrow">IA · AGENTE DE CONTEÚDO</p>
+            <h1 className="mt-0.5 font-display text-[20px] leading-[1.1] tracking-[-0.015em]">
+              Agente de Conteúdo
+            </h1>
           </div>
         </div>
 

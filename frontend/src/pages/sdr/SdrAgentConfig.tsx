@@ -112,71 +112,84 @@ Sempre mantenha um tom profissional e empático.`,
 
   if (isLoading && !isNew) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
+          style={{ borderColor: 'var(--color-bold-ink)', borderTopColor: 'transparent' }}
+        />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
-      <div className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+    <div>
+      {/* Sticky header */}
+      <div
+        className="sticky top-0 z-10 border-b backdrop-blur"
+        style={{
+          borderColor: 'var(--color-border)',
+          background: 'color-mix(in srgb, var(--color-background) 85%, transparent)',
+        }}
+      >
+        <div className="mx-auto max-w-[1600px] px-2 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
               <button
                 onClick={() => navigate('/sdr')}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                className="rounded-[8px] p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
               </button>
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl">
-                  <Bot className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-white">
-                    {isNew ? 'Novo SDR Agent' : formData.name || 'Configurar SDR Agent'}
-                  </h1>
-                  <p className="text-sm text-slate-400">
-                    {isNew ? 'Crie um novo agente de IA' : 'Configure seu agente de IA'}
-                  </p>
-                </div>
+              <div className="min-w-0">
+                <p className="eyebrow">IA · SDR AGENT · {isNew ? 'NOVO' : 'CONFIGURAÇÃO'}</p>
+                <h1 className="mt-1 truncate font-display text-[28px] leading-[1.1] tracking-[-0.015em]">
+                  {isNew ? 'Novo SDR Agent' : formData.name || 'Configurar SDR Agent'}
+                </h1>
               </div>
             </div>
             <button
               onClick={handleSave}
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl hover:from-violet-500 hover:to-purple-500 transition-all shadow-lg shadow-purple-500/25 font-medium disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-[10px] px-5 py-2.5 text-[13px] font-semibold transition-all disabled:opacity-50"
+              style={{
+                background: 'var(--color-bold)',
+                color: 'var(--color-bold-ink)',
+              }}
             >
               {(createMutation.isPending || updateMutation.isPending) ? (
-                <RefreshCw className="h-5 w-5 animate-spin" />
+                <RefreshCw className="h-4 w-4 animate-spin" />
               ) : (
-                <Save className="h-5 w-5" />
+                <Save className="h-4 w-4" />
               )}
               Salvar
             </button>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 mt-4 -mb-px">
+          {/* Tabs — underline style */}
+          <div className="-mb-px mt-4 flex gap-0 border-b" style={{ borderColor: 'transparent' }}>
             {tabs.map((tab) => {
               const Icon = tab.icon
               const isDisabled = isNew && tab.id !== 'config'
+              const isActive = activeTab === tab.id
               return (
                 <button
                   key={tab.id}
                   onClick={() => !isDisabled && setActiveTab(tab.id as TabType)}
                   disabled={isDisabled}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors ${activeTab === tab.id
-                      ? 'bg-slate-800 text-white border-b-2 border-violet-500'
+                  className="flex items-center gap-1.5 px-4 py-2.5 text-[12.5px] font-medium transition-colors"
+                  style={{
+                    color: isActive
+                      ? 'var(--color-foreground)'
                       : isDisabled
-                        ? 'text-slate-600 cursor-not-allowed'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                    }`}
+                        ? 'var(--color-muted-foreground)'
+                        : 'var(--color-muted-foreground)',
+                    borderBottom: `2px solid ${isActive ? 'var(--color-bold-ink)' : 'transparent'}`,
+                    marginBottom: -1,
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    opacity: isDisabled ? 0.4 : 1,
+                  }}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5" />
                   {tab.label}
                 </button>
               )
@@ -186,7 +199,7 @@ Sempre mantenha um tom profissional e empático.`,
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="mx-auto max-w-[1600px] px-2 py-6">
         {activeTab === 'config' && (
           <ConfigTab
             formData={formData}

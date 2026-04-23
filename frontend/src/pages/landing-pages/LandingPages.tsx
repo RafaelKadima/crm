@@ -100,16 +100,22 @@ export function LandingPagesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Hero header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{t('landingPages.title')}</h1>
-          <p className="text-muted-foreground mt-1">
-            {landingPages.length} {t('landingPages.usedOf', { total: limit })}
+          <p className="eyebrow">MARKETING · LANDING PAGES</p>
+          <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
+            {t('landingPages.title')}
+          </h1>
+          <p className="mt-2 text-[13px] text-muted-foreground">
+            <span className="font-display text-[16px] leading-none tracking-[-0.015em]">
+              {landingPages.length}
+            </span>{' '}
+            {t('landingPages.usedOf', { total: limit })}
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} disabled={!canCreate}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button variant="bold" size="sm" onClick={() => setIsCreateModalOpen(true)} disabled={!canCreate}>
+          <Plus className="mr-1.5 h-4 w-4" />
           {t('landingPages.newLandingPage')}
         </Button>
       </div>

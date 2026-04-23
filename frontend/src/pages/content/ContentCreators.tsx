@@ -130,23 +130,20 @@ export function ContentCreators() {
   const creators = creatorsData?.creators || []
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Hero header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Users className="h-8 w-8 text-purple-500" />
+          <p className="eyebrow">CONTEÚDO · CRIADORES</p>
+          <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
             Gerenciar Criadores
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Adicione criadores para modelar o estilo dos seus roteiros
+          <p className="mt-2 text-[13.5px] text-muted-foreground">
+            Adicione criadores para modelar o estilo dos seus roteiros.
           </p>
         </div>
-        <Button
-          onClick={() => setIsAddModalOpen(true)}
-          className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600"
-        >
-          <Plus className="h-4 w-4" />
+        <Button variant="bold" size="sm" onClick={() => setIsAddModalOpen(true)}>
+          <Plus className="mr-1.5 h-4 w-4" />
           Novo Criador
         </Button>
       </div>

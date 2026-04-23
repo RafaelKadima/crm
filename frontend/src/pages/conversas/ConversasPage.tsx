@@ -136,13 +136,19 @@ export function ConversasPage() {
 function EmptyState() {
   const { t } = useTranslation()
   return (
-    <div className="flex-1 flex items-center justify-center bg-muted/10">
-      <div className="text-center">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/30 flex items-center justify-center">
-          <MessageSquare className="w-10 h-10 text-muted-foreground" />
+    <div className="flex flex-1 items-center justify-center" style={{ background: 'var(--color-muted)' }}>
+      <div className="max-w-sm text-center">
+        <div
+          className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full"
+          style={{ background: 'var(--color-secondary)' }}
+        >
+          <MessageSquare className="h-7 w-7 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">{t('empty.noConversationSelected')}</h3>
-        <p className="text-muted-foreground max-w-sm">
+        <p className="eyebrow mb-2">INBOX · ESPERANDO</p>
+        <h3 className="font-display text-[26px] leading-[1.1] tracking-[-0.015em]">
+          {t('empty.noConversationSelected')}
+        </h3>
+        <p className="mt-2 text-[13.5px] text-muted-foreground">
           {t('empty.selectConversationToStart')}
         </p>
       </div>

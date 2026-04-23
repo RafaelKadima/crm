@@ -77,16 +77,14 @@ export function UserRewardsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-500" />
-            Resgates de Prêmios
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Gerencie os prêmios solicitados pelos usuários
-          </p>
-        </div>
+      <div>
+        <p className="eyebrow">GAMIFICAÇÃO · RESGATES</p>
+        <h2 className="mt-2 font-display text-[30px] leading-[1.1] tracking-[-0.015em]">
+          Resgates de Prêmios
+        </h2>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          Gerencie os prêmios solicitados pelos usuários.
+        </p>
       </div>
 
       {success && (

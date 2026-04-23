@@ -60,31 +60,27 @@ export function CreateTenantPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      {/* Header */}
-      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/super-admin/tenants"
-              className="p-2 hover:bg-accent/50 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">Nova Empresa</h1>
-                <p className="text-sm text-muted-foreground">Criar um novo tenant no sistema</p>
-              </div>
-            </div>
-          </div>
+    <div>
+      {/* Hero header */}
+      <div className="mx-auto mb-8 flex max-w-4xl items-start gap-3">
+        <Link
+          to="/super-admin/tenants"
+          className="mt-1 rounded-[8px] p-1.5 transition-colors hover:bg-muted"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Link>
+        <div>
+          <p className="eyebrow">SUPER-ADMIN · NOVA EMPRESA</p>
+          <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em]">
+            Nova Empresa
+          </h1>
+          <p className="mt-2 text-[13.5px] text-muted-foreground">
+            Criar um novo tenant no sistema.
+          </p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="mx-auto max-w-4xl">
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Erro */}
           {error && (

@@ -296,21 +296,39 @@ export function AIAnalystChat() {
       {/* Área do Chat */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b flex items-center justify-between">
+        <div
+          className="flex items-center justify-between border-b px-5 py-4"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500">
-              <Bot className="h-6 w-6 text-white" />
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-[10px]"
+              style={{ background: 'var(--color-bold-ink)', color: '#0A0A0C' }}
+            >
+              <Bot className="h-4 w-4" strokeWidth={2.25} />
             </div>
             <div>
-              <h1 className="font-semibold">Analista de BI</h1>
-              <p className="text-xs text-muted-foreground">
-                Pergunte sobre seus dados e receba insights
-              </p>
+              <p className="eyebrow">IA · ANALISTA</p>
+              <h1 className="mt-0.5 font-display text-[20px] leading-[1.1] tracking-[-0.015em]">
+                Analista de BI
+              </h1>
             </div>
           </div>
-          <Badge variant="secondary" className="bg-green-500/10 text-green-500">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold"
+            style={{
+              background: 'rgba(94,224,142,0.1)',
+              borderColor: 'rgba(94,224,142,0.3)',
+              color: 'var(--color-success)',
+            }}
+          >
+            <span
+              aria-hidden
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ background: 'var(--color-success)', boxShadow: '0 0 6px rgba(94,224,142,0.4)' }}
+            />
             Online
-          </Badge>
+          </span>
         </div>
 
         {/* Barra de Filtros */}

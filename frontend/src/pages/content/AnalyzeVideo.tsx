@@ -75,20 +75,20 @@ export function AnalyzeVideo() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
+      {/* Hero header */}
+      <div className="flex items-start gap-3">
         <Link to="/content">
           <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Search className="h-8 w-8 text-blue-500" />
-            Analisar Video Viral
+          <p className="eyebrow">CONTEÚDO · ANÁLISE</p>
+          <h1 className="mt-2 font-display text-[36px] leading-[1.05] tracking-[-0.02em]">
+            Analisar Vídeo Viral
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Descubra a estrutura de videos virais do YouTube e TikTok
+          <p className="mt-2 text-[13.5px] text-muted-foreground">
+            Descubra a estrutura de vídeos virais do YouTube e TikTok.
           </p>
         </div>
       </div>

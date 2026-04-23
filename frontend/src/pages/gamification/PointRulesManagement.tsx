@@ -163,21 +163,22 @@ export function PointRulesManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Star className="w-6 h-6 text-yellow-500" />
+          <p className="eyebrow">GAMIFICAÇÃO · REGRAS DE PONTOS</p>
+          <h2 className="mt-2 font-display text-[30px] leading-[1.1] tracking-[-0.015em]">
             Regras de Pontos
           </h2>
-          <p className="text-muted-foreground mt-1">
-            Defina quantos pontos cada ação vale
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Defina quantos pontos cada ação vale.
           </p>
         </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded-lg transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-[10px] px-3.5 py-2 text-[12.5px] font-semibold transition-all"
+          style={{ background: 'var(--color-bold)', color: 'var(--color-bold-ink)' }}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="h-4 w-4" />
           Nova Regra
         </button>
       </div>

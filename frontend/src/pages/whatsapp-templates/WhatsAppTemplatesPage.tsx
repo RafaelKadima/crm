@@ -198,15 +198,16 @@ export function WhatsAppTemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+    <div>
+      <div>
+        {/* Hero header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="eyebrow">MARKETING · WHATSAPP</p>
+          <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
             Templates do WhatsApp
           </h1>
-          <p className="mt-2 text-muted-foreground dark:text-muted-foreground">
-            Gerencie seus templates de mensagem do WhatsApp Business
+          <p className="mt-2 text-[13.5px] text-muted-foreground">
+            Gerencie seus templates de mensagem do WhatsApp Business API.
           </p>
         </div>
 

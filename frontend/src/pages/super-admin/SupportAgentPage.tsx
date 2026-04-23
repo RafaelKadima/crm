@@ -94,25 +94,35 @@ export function SupportAgentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex">
+    <div className="flex min-h-[calc(100vh-120px)]">
       {/* Sidebar - Sessions */}
-      <div className="w-80 border-r border-border bg-background/50 flex flex-col">
+      <div
+        className="flex w-80 flex-col border-r"
+        style={{ background: 'var(--color-muted)', borderColor: 'var(--color-border)' }}
+      >
         {/* Header */}
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl">
-              <Bot className="w-6 h-6 text-white" />
+        <div className="border-b p-4" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="mb-4 flex items-center gap-3">
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-[10px]"
+              style={{ background: 'var(--color-bold-ink)', color: '#0A0A0C' }}
+            >
+              <Bot className="h-4 w-4" strokeWidth={2.25} />
             </div>
             <div>
-              <h1 className="text-lg font-bold">Agente de Suporte</h1>
-              <p className="text-xs text-muted-foreground">IA para resolver problemas</p>
+              <p className="eyebrow">IA · SUPORTE</p>
+              <h1 className="mt-0.5 font-display text-[18px] leading-[1.1] tracking-[-0.015em]">
+                Agente de Suporte
+              </h1>
             </div>
           </div>
 
           <Button
+            variant="bold"
+            size="sm"
             onClick={handleCreateSession}
             disabled={createSession.isPending}
-            className="w-full bg-purple-600 hover:bg-purple-700"
+            className="w-full"
           >
             {createSession.isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

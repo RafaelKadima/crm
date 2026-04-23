@@ -112,12 +112,15 @@ export function QueuesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      {/* Hero header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
           <div>
-            <h1 className="text-3xl font-bold">{t('queuesPage.title')}</h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="eyebrow">ATENDIMENTO · FILAS</p>
+            <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
+              {t('queuesPage.title')}
+            </h1>
+            <p className="mt-2 text-[13.5px] text-muted-foreground">
               {t('queuesPage.subtitle')}
             </p>
           </div>

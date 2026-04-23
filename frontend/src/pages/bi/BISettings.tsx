@@ -209,18 +209,21 @@ export default function BISettings() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Configurações do BI Agent</h2>
-          <p className="text-muted-foreground">
-            Configure as contas monitoradas e a frequência de análise automática
+          <p className="eyebrow">IA · BI AGENT · CONFIGURAÇÕES</p>
+          <h2 className="mt-2 font-display text-[34px] leading-[1.05] tracking-[-0.02em]">
+            Configurações do BI Agent
+          </h2>
+          <p className="mt-2 max-w-[520px] text-[13.5px] text-muted-foreground">
+            Configure as contas monitoradas e a frequência de análise automática.
           </p>
         </div>
-        <Button 
+        <Button
+          variant="bold"
+          size="lg"
           onClick={handleRunAnalysis}
           disabled={runAnalysisMutation.isPending}
-          size="lg"
           className="gap-2"
         >
           {runAnalysisMutation.isPending ? (

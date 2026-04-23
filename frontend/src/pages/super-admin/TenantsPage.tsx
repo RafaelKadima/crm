@@ -44,49 +44,48 @@ export function TenantsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      {/* Header */}
-      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link
-                to="/super-admin"
-                className="p-2 hover:bg-accent/50 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                  <Building2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold">Empresas</h1>
-                  <p className="text-sm text-muted-foreground">Gerenciar tenants do sistema</p>
-                </div>
-              </div>
+    <div>
+      <div>
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <Link
+              to="/super-admin"
+              className="mt-1 rounded-[8px] p-1.5 transition-colors hover:bg-muted"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+            <div className="min-w-0">
+              <p className="eyebrow">SUPER-ADMIN · TENANTS</p>
+              <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
+                Empresas
+              </h1>
+              <p className="mt-2 text-[13.5px] text-muted-foreground">
+                Gerenciar tenants do sistema.
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Link
-                to="/super-admin/groups"
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
-              >
-                <Users2 className="w-4 h-4" />
-                Grupos
-              </Link>
-              <Link
-                to="/super-admin/tenants/new"
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Nova Empresa
-              </Link>
-            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/super-admin/groups"
+              className="inline-flex items-center gap-1.5 rounded-[10px] border px-3.5 py-2 text-[12.5px] font-medium transition-colors hover:bg-muted"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <Users2 className="h-4 w-4" />
+              Grupos
+            </Link>
+            <Link
+              to="/super-admin/tenants/new"
+              className="inline-flex items-center gap-1.5 rounded-[10px] px-3.5 py-2 text-[12.5px] font-semibold transition-all"
+              style={{ background: 'var(--color-bold)', color: 'var(--color-bold-ink)' }}
+            >
+              <Plus className="h-4 w-4" />
+              Nova Empresa
+            </Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div>
         {/* Filters */}
         <div className="flex flex-wrap gap-4 mb-6">
           <div className="relative flex-1 min-w-[200px]">

@@ -55,32 +55,29 @@ export function SuperAdminDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      {/* Header */}
-      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
-                <Crown className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">Super Admin</h1>
-                <p className="text-sm text-muted-foreground">Painel de Controle</p>
-              </div>
-            </div>
-            <Link
-              to="/"
-              className="flex items-center gap-2 px-4 py-2 bg-accent/50 hover:bg-accent rounded-lg transition-colors"
-            >
-              <Shield className="w-4 h-4" />
-              Voltar ao CRM
-            </Link>
-          </div>
+    <div>
+      {/* Hero header */}
+      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="eyebrow">PLATFORM · SUPER-ADMIN</p>
+          <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
+            Painel de Controle
+          </h1>
+          <p className="mt-2 text-[13.5px] text-muted-foreground">
+            Métricas de plataforma, tenants, grupos e atividade administrativa.
+          </p>
         </div>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 rounded-[10px] border px-3.5 py-2 text-[12.5px] font-medium transition-colors hover:bg-muted"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
+          <Shield className="h-4 w-4" />
+          Voltar ao CRM
+        </Link>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="space-y-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat, index) => (
@@ -258,14 +255,24 @@ export function SuperAdminDashboard() {
 
 function StatCard({ stat }: { stat: any }) {
   return (
-    <div className="bg-muted/50 rounded-xl border border-border p-6 hover:border-muted-foreground/20 transition-colors">
+    <div
+      className="rounded-[14px] border p-6 transition-colors"
+      style={{
+        background: 'var(--color-card)',
+        borderColor: 'var(--color-border)',
+      }}
+    >
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">{stat.title}</p>
-          <p className="text-3xl font-bold mt-2">{stat.value.toLocaleString()}</p>
+        <div className="min-w-0">
+          <p className="eyebrow">{stat.title}</p>
+          <p className="mt-3 font-display text-[36px] leading-none tracking-[-0.02em]">
+            {stat.value.toLocaleString()}
+          </p>
         </div>
-        <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color}`}>
-          <stat.icon className="w-6 h-6 text-white" />
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br ${stat.color}`}
+        >
+          <stat.icon className="h-5 w-5 text-white" />
         </div>
       </div>
     </div>

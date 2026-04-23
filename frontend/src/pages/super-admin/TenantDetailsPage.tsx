@@ -247,43 +247,43 @@ export function TenantDetailsPage() {
   const tenant = tenantData.tenant
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      {/* Header */}
-      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link
-                to="/super-admin/tenants"
-                className="p-2 hover:bg-accent/50 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                  <Building2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold">{tenant.name}</h1>
-                  <p className="text-sm text-muted-foreground">ID: {tenant.id}</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                tenant.is_active 
-                  ? 'bg-green-500/20 text-green-400' 
-                  : 'bg-red-500/20 text-red-400'
-              }`}>
-                {tenant.is_active ? 'Ativa' : 'Inativa'}
-              </span>
-            </div>
+    <div>
+      {/* Hero header */}
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <Link
+            to="/super-admin/tenants"
+            className="mt-1 rounded-[8px] p-1.5 transition-colors hover:bg-muted"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Link>
+          <div className="min-w-0">
+            <p className="eyebrow">SUPER-ADMIN · TENANT</p>
+            <h1 className="mt-2 truncate font-display text-[40px] leading-[1.02] tracking-[-0.02em]">
+              {tenant.name}
+            </h1>
+            <p className="mt-1 font-mono text-[11.5px] text-muted-foreground">ID: {tenant.id}</p>
           </div>
         </div>
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold"
+          style={{
+            background: tenant.is_active ? 'rgba(94,224,142,0.1)' : 'rgba(251,113,133,0.1)',
+            borderColor: tenant.is_active ? 'rgba(94,224,142,0.3)' : 'rgba(251,113,133,0.3)',
+            color: tenant.is_active ? 'var(--color-success)' : 'var(--color-destructive)',
+          }}
+        >
+          <span
+            aria-hidden
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ background: tenant.is_active ? 'var(--color-success)' : 'var(--color-destructive)' }}
+          />
+          {tenant.is_active ? 'Ativa' : 'Inativa'}
+        </span>
       </div>
 
       {/* Stats */}
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-muted/50 rounded-xl border border-border p-4">
             <div className="flex items-center gap-3">

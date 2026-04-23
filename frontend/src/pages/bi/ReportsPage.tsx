@@ -139,24 +139,25 @@ export function ReportsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Hero header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <FileText className="h-8 w-8 text-primary" />
+          <p className="eyebrow">BI · EXPORTAÇÃO</p>
+          <h1 className="mt-2 font-display text-[40px] leading-[1.02] tracking-[-0.02em] md:text-[48px]">
             Relatórios
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Gere relatórios detalhados em PDF, Excel ou JSON
+          <p className="mt-2 max-w-[520px] text-[13.5px] text-muted-foreground">
+            Gere relatórios detalhados em PDF, Excel ou JSON.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Calendar className="h-5 w-5 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
-            className="px-4 py-2 rounded-lg border bg-background"
+            className="rounded-[10px] border px-3 py-2 text-[12.5px] font-medium"
+            style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
           >
             <option value="7d">Últimos 7 dias</option>
             <option value="30d">Últimos 30 dias</option>
