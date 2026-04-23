@@ -44,7 +44,6 @@ import { useAuthStore } from '@/store/authStore'
 import { useMyFeatures } from '@/hooks/useFeatures'
 import { useBranding } from '@/hooks/useBranding'
 import { usePermissions } from '@/hooks/usePermissions'
-import { OmnifyLogo } from '@/components/OmnifyLogo'
 
 interface NavItem {
   icon: LucideIcon
@@ -59,7 +58,6 @@ interface NavItem {
   hideOnMobile?: boolean
 }
 
-// Navigation entry types
 type NavEntry =
   | { type: 'item'; item: NavItem }
   | { type: 'separator' }
@@ -67,12 +65,10 @@ type NavEntry =
   | { type: 'group'; id: string; label: string; icon: LucideIcon; items: NavItem[]; defaultOpen?: boolean }
 
 const navEntries: NavEntry[] = [
-  // Dashboard - item direto
   { type: 'item', item: { icon: LayoutDashboard, label: 'nav.dashboard', path: '/' } },
 
   { type: 'separator' },
 
-  // ATENDIMENTO - section flat
   {
     type: 'section',
     label: 'sidebar.service',
@@ -89,7 +85,6 @@ const navEntries: NavEntry[] = [
 
   { type: 'separator' },
 
-  // MARKETING - section flat
   {
     type: 'section',
     label: 'sidebar.marketing',
@@ -104,7 +99,6 @@ const navEntries: NavEntry[] = [
 
   { type: 'separator' },
 
-  // VENDAS - section flat
   {
     type: 'section',
     label: 'sidebar.sales',
@@ -114,7 +108,6 @@ const navEntries: NavEntry[] = [
     ],
   },
 
-  // GERENCIAL — Suite de Funil (Topo/Meio/Fim)
   {
     type: 'group',
     id: 'managerial',
@@ -133,7 +126,6 @@ const navEntries: NavEntry[] = [
 
   { type: 'separator' },
 
-  // SDR com IA - colapsável
   {
     type: 'group',
     id: 'sdr',
@@ -145,7 +137,6 @@ const navEntries: NavEntry[] = [
     ],
   },
 
-  // Ads Intelligence - colapsável
   {
     type: 'group',
     id: 'ads',
@@ -163,7 +154,6 @@ const navEntries: NavEntry[] = [
     ],
   },
 
-  // Criador de Conteúdo - colapsável
   {
     type: 'group',
     id: 'content',
@@ -178,7 +168,6 @@ const navEntries: NavEntry[] = [
     ],
   },
 
-  // BI Analytics - colapsável, admin only
   {
     type: 'group',
     id: 'bi',
@@ -194,13 +183,9 @@ const navEntries: NavEntry[] = [
 
   { type: 'separator' },
 
-  // Canais - item direto
   { type: 'item', item: { icon: Plug, label: 'nav.channels', path: '/connect-channels' } },
-
-  // Configurações - item direto
   { type: 'item', item: { icon: Settings, label: 'nav.settings', path: '/settings', permission: 'settings.view' } },
 
-  // Administração - colapsável
   {
     type: 'group',
     id: 'admin',
@@ -215,8 +200,32 @@ const navEntries: NavEntry[] = [
   },
 ]
 
-// ─── Render Components ─────────────────────────────────────────────
+// ─── Bold wordmark ────────────────────────────────────────────────
+function BoldWordmark({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div className="flex items-center gap-2.5 min-w-0">
+      <div
+        aria-hidden
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] font-display text-[20px] leading-none"
+        style={{ background: 'var(--color-bold-ink)', color: '#0A0A0C' }}
+      >
+        O
+      </div>
+      {!collapsed && (
+        <div className="min-w-0 leading-none">
+          <div className="omnify-logo-text">
+            <span className="omni">Omni</span>
+            <span className="fy">Fy</span>
+            <span className="dot">.</span>
+            <span className="hub">HUB</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
+// ─── Nav item (bold style) ────────────────────────────────────────
 function NavItemLink({
   item,
   isCollapsed,
@@ -233,31 +242,20 @@ function NavItemLink({
     <NavLink
       to={item.path}
       className={cn(
-        'group items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150',
-        'hover:bg-muted',
-        isActive && 'bg-muted text-foreground',
+        'group relative flex items-center gap-2.5 rounded-[10px] transition-colors duration-150',
+        'px-2.5 py-[7px]',
+        isActive
+          ? 'bg-[var(--color-bold-ink)] text-[#0A0A0C] font-semibold'
+          : 'text-[rgba(244,243,239,0.65)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#F4F3EF]',
         item.hideOnMobile ? 'hidden md:flex' : 'flex'
       )}
     >
-      <item.icon className={cn(
-        'h-[18px] w-[18px] shrink-0 transition-colors',
-        isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
-      )} />
-      <AnimatePresence mode="wait">
-        {!isCollapsed && (
-          <motion.span
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: 'auto' }}
-            exit={{ opacity: 0, width: 0 }}
-            className={cn(
-              'text-[13px] whitespace-nowrap',
-              isActive ? 'text-foreground font-medium' : 'text-sidebar-foreground'
-            )}
-          >
-            {t(item.label)}
-          </motion.span>
-        )}
-      </AnimatePresence>
+      <item.icon className="h-[16px] w-[16px] shrink-0" strokeWidth={isActive ? 2.25 : 1.75} />
+      {!isCollapsed && (
+        <span className="text-[13px] whitespace-nowrap truncate">
+          {t(item.label)}
+        </span>
+      )}
     </NavLink>
   )
 }
@@ -265,26 +263,28 @@ function NavItemLink({
 function SectionLabel({ label, isCollapsed }: { label: string; isCollapsed: boolean }) {
   const { t } = useTranslation()
   if (isCollapsed) return null
-
   return (
-    <div className="px-3 pt-2 pb-1">
-      <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+    <div className="px-2.5 pt-4 pb-1.5">
+      <span
+        className="text-[10px] font-bold uppercase tracking-[0.14em]"
+        style={{ color: 'rgba(244,243,239,0.38)' }}
+      >
         {t(label)}
       </span>
     </div>
   )
 }
 
-function SeparatorLine({ isCollapsed }: { isCollapsed: boolean }) {
+function SeparatorLine({ isCollapsed: _c }: { isCollapsed: boolean }) {
   return (
-    <div className={cn('my-2', isCollapsed ? 'mx-3' : 'mx-3')}>
-      <div className="h-px bg-border" />
+    <div className="my-2 mx-2.5">
+      <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
     </div>
   )
 }
 
 function CollapsibleGroup({
-  id,
+  id: _id,
   label,
   icon: Icon,
   items,
@@ -309,11 +309,8 @@ function CollapsibleGroup({
     (item) => currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path))
   )
 
-  // Single item in group - render as direct link
   if (items.length === 1) {
-    return (
-      <NavItemLink item={items[0]} isCollapsed={isCollapsed} currentPath={currentPath} />
-    )
+    return <NavItemLink item={items[0]} isCollapsed={isCollapsed} currentPath={currentPath} />
   }
 
   return (
@@ -321,39 +318,21 @@ function CollapsibleGroup({
       <button
         onClick={onToggle}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150',
-          'hover:bg-muted text-left cursor-pointer'
+          'group w-full flex items-center gap-2.5 rounded-[10px] px-2.5 py-[7px] text-left transition-colors duration-150',
+          hasActiveItem
+            ? 'text-[#F4F3EF] font-medium'
+            : 'text-[rgba(244,243,239,0.65)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#F4F3EF]'
         )}
       >
-        <Icon className={cn(
-          'h-[18px] w-[18px] shrink-0 transition-colors',
-          hasActiveItem ? 'text-accent' : 'text-muted-foreground'
-        )} />
-        <AnimatePresence mode="wait">
-          {!isCollapsed && (
-            <>
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                className={cn(
-                  'text-[13px] whitespace-nowrap flex-1',
-                  hasActiveItem ? 'text-foreground font-medium' : 'text-sidebar-foreground'
-                )}
-              >
-                {t(label)}
-              </motion.span>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, rotate: isOpen ? 180 : 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/50" />
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        <Icon className="h-[16px] w-[16px] shrink-0" strokeWidth={1.75} />
+        {!isCollapsed && (
+          <>
+            <span className="flex-1 text-[13px] whitespace-nowrap truncate">{t(label)}</span>
+            <motion.span animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.15 }}>
+              <ChevronDown className="h-3 w-3 opacity-50" />
+            </motion.span>
+          </>
+        )}
       </button>
 
       <AnimatePresence initial={false}>
@@ -362,13 +341,16 @@ function CollapsibleGroup({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             className="overflow-hidden"
           >
-            <ul className={cn(
-              'mt-0.5 space-y-0.5',
-              !isCollapsed && 'ml-4 pl-3 border-l border-border'
-            )}>
+            <ul
+              className={cn(
+                'mt-0.5 space-y-0.5',
+                !isCollapsed && 'ml-4 pl-3 border-l'
+              )}
+              style={!isCollapsed ? { borderColor: 'rgba(255,255,255,0.08)' } : undefined}
+            >
               {items.map((item) => (
                 <li key={item.path}>
                   <NavItemLink item={item} isCollapsed={isCollapsed} currentPath={currentPath} />
@@ -393,13 +375,10 @@ export function Sidebar() {
   const { data: branding } = useBranding()
   const { hasPermission, hasAnyPermission, isAdmin, isSuperAdmin, isLoading: permissionsLoading } = usePermissions()
 
-  // State for collapsible groups
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}
     navEntries.forEach((entry) => {
-      if (entry.type === 'group') {
-        initial[entry.id] = entry.defaultOpen ?? false
-      }
+      if (entry.type === 'group') initial[entry.id] = entry.defaultOpen ?? false
     })
     return initial
   })
@@ -408,7 +387,6 @@ export function Sidebar() {
     setOpenGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }))
   }
 
-  // Filter items based on features, permissions, roles
   const filterItems = (items: NavItem[]): NavItem[] => {
     return items.filter((item) => {
       if (item.superAdminOnly) {
@@ -460,7 +438,6 @@ export function Sidebar() {
     })
   }
 
-  // Check if single item is visible
   const isItemVisible = (item: NavItem): boolean => {
     return filterItems([item]).length > 0
   }
@@ -468,59 +445,50 @@ export function Sidebar() {
   const companyName = branding?.name || tenant?.name || 'OmniFy HUB'
   const logoUrl = branding?.logo_dark_url || branding?.logo_url
 
+  const userInitials = (user?.name || 'U')
+    .split(' ')
+    .map((w: string) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
   return (
     <motion.aside
       initial={false}
-      animate={{ width: sidebarCollapsed ? 72 : 280 }}
+      animate={{ width: sidebarCollapsed ? 72 : 244 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       className={cn(
         'fixed left-0 top-0 z-40 h-screen flex-col',
         'bg-sidebar',
-        // Mobile: hidden by default, shown as overlay when menu is open
         mobileMenuOpen ? 'flex' : 'hidden md:flex'
       )}
-      style={{
-        borderRight: '1px solid var(--color-border)',
-      }}
       onClick={(e) => {
-        // Close mobile menu when clicking a link
         if ((e.target as HTMLElement).closest('a')) {
           setMobileMenuOpen(false)
         }
       }}
     >
-      {/* Logo */}
-      <div className="relative h-16 flex items-center justify-between px-4 border-b border-border">
-        <AnimatePresence mode="wait">
-          {logoUrl ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center gap-3"
-            >
-              <img src={logoUrl} alt={companyName} className="h-8 object-contain" />
-              {!sidebarCollapsed && (
-                <span className="font-display font-semibold text-lg tracking-wide">
-                  {companyName}
-                </span>
-              )}
-            </motion.div>
-          ) : (
-            <OmnifyLogo
-              collapsed={sidebarCollapsed}
-              size="md"
-              animated={true}
-            />
-          )}
-        </AnimatePresence>
+      {/* Header / Logo */}
+      <div
+        className="relative flex items-center justify-between px-4 py-4"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        {logoUrl ? (
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img src={logoUrl} alt={companyName} className="h-8 w-8 object-contain rounded-[9px]" />
+            {!sidebarCollapsed && (
+              <span className="font-display text-[20px] leading-none text-[#F4F3EF] truncate">
+                {companyName}
+              </span>
+            )}
+          </div>
+        ) : (
+          <BoldWordmark collapsed={sidebarCollapsed} />
+        )}
 
         <button
           onClick={toggleSidebar}
-          className={cn(
-            'p-1.5 rounded-lg transition-colors duration-150',
-            'hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer'
-          )}
+          className="cursor-pointer rounded-[8px] p-1.5 text-[rgba(244,243,239,0.55)] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-[#F4F3EF]"
         >
           {sidebarCollapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -530,24 +498,36 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Tenant Info */}
+      {/* Workspace switcher */}
       {tenant && !sidebarCollapsed && (
-        <div className="relative px-4 py-3 border-b border-border">
-          <p className="text-[11px] text-muted-foreground tracking-wide uppercase">{t('sidebar.company')}</p>
-          <p className="text-sm font-medium truncate mt-0.5">{tenant.name}</p>
-          {featuresData?.plan_label && (
-            <span className={cn(
-              'inline-flex items-center mt-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium',
-              'bg-foreground/10 text-foreground/70 border border-foreground/10'
-            )}>
-              {featuresData.plan_label}
-            </span>
-          )}
+        <div className="px-3 pt-3">
+          <div
+            className="flex items-center gap-2 rounded-[10px] px-2.5 py-2"
+            style={{ background: 'rgba(255,255,255,0.06)' }}
+          >
+            <div
+              className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] text-[10px] font-bold"
+              style={{ background: 'var(--color-bold-ink)', color: '#0A0A0C' }}
+            >
+              {(tenant.name || 'A')[0].toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11.5px] font-semibold leading-tight text-[#F4F3EF] truncate">
+                {tenant.name}
+              </div>
+              {featuresData?.plan_label && (
+                <div className="text-[10px] leading-tight text-[rgba(244,243,239,0.5)]">
+                  {featuresData.plan_label}
+                </div>
+              )}
+            </div>
+            <ChevronDown className="h-3 w-3 shrink-0 text-[rgba(244,243,239,0.5)]" />
+          </div>
         </div>
       )}
 
       {/* Navigation */}
-      <nav className="relative flex-1 py-3 overflow-y-auto scrollbar-thin">
+      <nav className="relative flex-1 overflow-y-auto scrollbar-thin py-3">
         <div className="px-3 space-y-0.5">
           {navEntries.map((entry, idx) => {
             if (entry.type === 'separator') {
@@ -609,6 +589,28 @@ export function Sidebar() {
         </div>
       </nav>
 
+      {/* User card */}
+      {user && !sidebarCollapsed && (
+        <div
+          className="flex items-center gap-2.5 px-3 py-3"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
+            style={{ background: '#F2D59A', color: '#14110F' }}
+          >
+            {userInitials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[12.5px] font-semibold leading-tight text-[#F4F3EF] truncate">
+              {user.name || 'Usuário'}
+            </div>
+            <div className="text-[10.5px] leading-tight text-[rgba(244,243,239,0.55)] truncate">
+              {user.role === 'admin' ? t('sidebar.admin', { defaultValue: 'Admin' }) : user.email || ''}
+            </div>
+          </div>
+        </div>
+      )}
     </motion.aside>
   )
 }

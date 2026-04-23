@@ -1,115 +1,143 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   OMNIFY HUB — WARM PREMIUM DESIGN SYSTEM
-   Direction B: Editorial warmth. Serif display. Lavender accent.
-   Inspired by: Superhuman, Notion, Mercury, Stripe
+   OMNIFY CRM — BOLD DESIGN SYSTEM
+   Direction: Warm bege + charcoal black + neon lime (#DCFF00).
+   Editorial serif display, humanist sans body, sidebar always dark.
+   Inspired by: Linear, Stripe, Vercel, Airbnb editorial.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DESIGN TOKENS — DARK (default)
+   Warm blacks, neon accent, monochrome discipline.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
   /* Surfaces — warm blacks, never cool */
-  --color-background: #111110;
-  --color-foreground: #EDEDEC;
-  --color-card: #1C1C1A;
-  --color-card-foreground: #EDEDEC;
-  --color-popover: #1C1C1A;
-  --color-popover-foreground: #EDEDEC;
+  --color-background: #16161A;
+  --color-foreground: #F4F3EF;
+  --color-card: #202026;
+  --color-card-foreground: #F4F3EF;
+  --color-popover: #202026;
+  --color-popover-foreground: #F4F3EF;
 
-  /* Primary — warm white on warm black */
-  --color-primary: #EDEDEC;
-  --color-primary-foreground: #111110;
+  /* Primary — neon lime on charcoal (the bold accent) */
+  --color-primary: #DCFF00;
+  --color-primary-foreground: #0A0A0C;
 
   /* Secondary surfaces */
-  --color-secondary: #232320;
-  --color-secondary-foreground: #B5B3AD;
+  --color-secondary: #26262C;
+  --color-secondary-foreground: #A8A5A0;
 
   /* Muted — warm grays */
-  --color-muted: #1E1E1C;
-  --color-muted-foreground: #7C7A75;
+  --color-muted: #1D1D22;
+  --color-muted-foreground: #A8A5A0;
 
-  /* Accent — monochrome, depth via contrast not color */
-  --color-accent: #EDEDEC;
-  --color-accent-foreground: #111110;
+  /* Accent = neon, mirrors primary */
+  --color-accent: #DCFF00;
+  --color-accent-foreground: #0A0A0C;
 
   /* Destructive */
-  --color-destructive: #E5484D;
-  --color-destructive-foreground: #FFFFFF;
+  --color-destructive: #FB7185;
+  --color-destructive-foreground: #1A0F10;
 
   /* Borders — warm, subtle */
-  --color-border: rgba(255, 255, 255, 0.06);
-  --color-input: #232320;
-  --color-ring: rgba(237, 237, 236, 0.2);
+  --color-border: #2E2E35;
+  --color-input: #26262C;
+  --color-ring: rgba(220, 255, 0, 0.35);
 
-  /* Sidebar — slightly deeper than background */
-  --color-sidebar: #0E0E0D;
-  --color-sidebar-foreground: #A09D98;
-  --color-sidebar-accent: #EDEDEC;
+  /* Sidebar — ALWAYS charcoal (same in light & dark). Signature move. */
+  --color-sidebar: #0A0A0C;
+  --color-sidebar-foreground: rgba(244, 243, 239, 0.65);
+  --color-sidebar-accent: #DCFF00;
 
   /* Status — intentional, not decorative */
-  --color-success: #3DD68C;
-  --color-success-foreground: #111110;
-  --color-warning: #FFB224;
-  --color-warning-foreground: #111110;
-  --color-info: #52A9FF;
-  --color-info-foreground: #FFFFFF;
+  --color-success: #5EE08E;
+  --color-success-foreground: #0F1A12;
+  --color-warning: #FBBF24;
+  --color-warning-foreground: #1A1308;
+  --color-info: #8AA4FF;
+  --color-info-foreground: #0D1222;
 
-  /* Radius — only two values. Discipline. */
-  --radius-lg: 16px;
-  --radius-md: 8px;
+  /* Bold tokens (the signature palette) */
+  --color-bold: #141414;
+  --color-bold-foreground: #F4F3EF;
+  --color-bold-ink: #DCFF00;
+
+  /* Warm bege (for light surfaces & hero bands even on dark) */
+  --color-warm: #F7F7F5;
+  --color-warm-subtle: #EFEEEA;
+  --color-warm-ink: #14110F;
+  --color-warm-muted: #6B6660;
+  --color-warm-border: #E6E4DF;
+
+  /* Radius */
+  --radius-lg: 14px;
+  --radius-md: 10px;
   --radius-sm: 8px;
 
-  /* Typography — Serif display, warm sans body */
-  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  /* Typography */
+  --font-sans: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
   --font-display: 'Instrument Serif', Georgia, serif;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   LIGHT THEME — warm cream, not cold white
+   LIGHT THEME — warm bege, not cold white. Sidebar stays charcoal.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 html.light {
   color-scheme: light;
 
-  --color-background: #F6F5F4;
-  --color-foreground: #1C1B1A;
+  --color-background: #F7F7F5;
+  --color-foreground: #14110F;
   --color-card: #FFFFFF;
-  --color-card-foreground: #1C1B1A;
+  --color-card-foreground: #14110F;
   --color-popover: #FFFFFF;
-  --color-popover-foreground: #1C1B1A;
+  --color-popover-foreground: #14110F;
 
-  --color-primary: #1C1B1A;
-  --color-primary-foreground: #FFFFFF;
+  --color-primary: #14110F;
+  --color-primary-foreground: #F4F3EF;
 
-  --color-secondary: #EFEEED;
-  --color-secondary-foreground: #5C5A56;
+  --color-secondary: #EFEEEA;
+  --color-secondary-foreground: #6B6660;
 
-  --color-muted: #F0EFEE;
-  --color-muted-foreground: #8C8A85;
+  --color-muted: #EFEEEA;
+  --color-muted-foreground: #6B6660;
 
-  --color-accent: #1C1B1A;
-  --color-accent-foreground: #FFFFFF;
+  --color-accent: #DCFF00;
+  --color-accent-foreground: #0A0A0C;
 
-  --color-destructive: #E5484D;
+  --color-destructive: #DC2626;
   --color-destructive-foreground: #FFFFFF;
 
-  --color-border: rgba(0, 0, 0, 0.06);
-  --color-input: #F0EFEE;
-  --color-ring: rgba(28, 27, 26, 0.15);
+  --color-border: #E6E4DF;
+  --color-input: #FAFAF8;
+  --color-ring: rgba(20, 17, 15, 0.18);
 
-  --color-sidebar: #FFFFFF;
-  --color-sidebar-foreground: #5C5A56;
-  --color-sidebar-accent: #1C1B1A;
+  /* Sidebar stays dark — intentional contrast with warm canvas */
+  --color-sidebar: #0A0A0C;
+  --color-sidebar-foreground: rgba(244, 243, 239, 0.65);
+  --color-sidebar-accent: #DCFF00;
 
-  --color-success: #30A46C;
-  --color-warning: #E5930B;
-  --color-info: #0091FF;
+  --color-success: #16A34A;
+  --color-success-foreground: #F0FDF4;
+  --color-warning: #D97706;
+  --color-warning-foreground: #FFFBEB;
+  --color-info: #2D5BFF;
+  --color-info-foreground: #F5F8FF;
+
+  --color-bold: #141414;
+  --color-bold-foreground: #F4F3EF;
+  --color-bold-ink: #DCFF00;
+
+  --color-warm: #F7F7F5;
+  --color-warm-subtle: #EFEEEA;
+  --color-warm-ink: #14110F;
+  --color-warm-muted: #6B6660;
+  --color-warm-border: #E6E4DF;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -135,10 +163,11 @@ html {
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-feature-settings: 'kern' 1;
+  font-family: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'kern' 1, 'ss01' 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
 }
 
 #root {
@@ -149,25 +178,101 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TYPOGRAPHY — Serif display creates instant differentiation
+   TYPOGRAPHY — Serif display creates instant editorial differentiation.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-h1, h2 {
+h1, h2, .font-display, .display {
   font-family: 'Instrument Serif', Georgia, serif;
   font-weight: 400;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
 }
 
 h3, h4, h5, h6 {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: 'Inter Tight', system-ui, sans-serif;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 code, pre, .mono {
   font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: 'ss02' 1;
 }
+
+/* Eyebrow — tiny uppercase label, like magazine kickers */
+.eyebrow {
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+/* Display measurements used in hero numbers (MRR, totals) */
+.display-xl { font-size: clamp(3rem, 6vw, 4.5rem); line-height: 0.95; }
+.display-lg { font-size: clamp(2.25rem, 4vw, 3rem); line-height: 1; }
+.display-md { font-size: clamp(1.75rem, 2.8vw, 2.25rem); line-height: 1.05; }
+
+/* Italic display — for editorial pull quotes / emphasis in titles */
+.display-italic {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOLD UTILITY SURFACES — charcoal + neon recipes used across hero bands,
+   AI recommend cards, SDR panels.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.surface-bold {
+  background-color: var(--color-bold);
+  color: var(--color-bold-foreground);
+}
+
+.surface-bold-ink {
+  background-color: var(--color-bold-ink);
+  color: #0A0A0C;
+}
+
+.surface-warm {
+  background-color: var(--color-warm);
+  color: var(--color-warm-ink);
+}
+
+.text-ink { color: var(--color-bold-ink); }
+.text-warm-muted { color: var(--color-warm-muted); }
+.bg-bold { background-color: var(--color-bold); }
+.bg-bold-ink { background-color: var(--color-bold-ink); }
+.border-warm { border-color: var(--color-warm-border); }
+
+/* Neon underline — editorial flourish on italic titles */
+.neon-mark {
+  color: var(--color-bold-ink);
+  font-style: italic;
+  font-family: 'Instrument Serif', Georgia, serif;
+}
+
+/* Grid texture used on dark hero blocks */
+.bold-grid {
+  background-image:
+    linear-gradient(to right, rgba(220, 255, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(220, 255, 0, 0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* Neon radial glow — diffused, low opacity, gives dark blocks atmosphere */
+.bold-glow::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle at 70% 20%, rgba(220, 255, 0, 0.14), transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bold-glow > * { position: relative; z-index: 1; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    CHAT & MODAL CONTAINERS
@@ -218,7 +323,7 @@ code, pre, .mono {
 .glass {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  background: rgba(28, 28, 26, 0.88);
+  background: rgba(32, 32, 38, 0.88);
   border: 1px solid var(--color-border);
 }
 
@@ -230,9 +335,9 @@ code, pre, .mono {
   background-clip: text;
 }
 
-/* Depth via borders, not shadows — Superhuman approach */
+/* Depth via borders, not shadows */
 .futuristic-card {
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--color-card);
   border: 1px solid var(--color-border);
 }
@@ -245,15 +350,16 @@ code, pre, .mono {
 
 /* Outbound message bubble — warm neutral tint */
 .chat-bubble-outbound {
-  background: rgba(237, 237, 236, 0.06);
+  background: rgba(244, 243, 239, 0.06);
   color: var(--color-foreground);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Nav active — subtle warmth */
+/* Nav active — neon ink pill on dark sidebar */
 .nav-active {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-bold-ink);
+  color: #0A0A0C;
+  border: 1px solid var(--color-bold-ink);
 }
 
 /* Sidebar border — whisper thin */
@@ -264,41 +370,47 @@ code, pre, .mono {
   right: 0;
   width: 1px;
   height: 100%;
-  background: var(--color-border);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-/* Logo */
+/* Logo — serif wordmark, neon dot */
 .omnify-logo-text {
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 700;
-  font-size: 1.15rem;
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  font-size: 1.35rem;
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .omnify-logo-text .omni { color: var(--color-foreground); }
-.omnify-logo-text .fy { color: var(--color-muted-foreground); }
+.omnify-logo-text .fy { color: var(--color-foreground); font-style: italic; }
+.omnify-logo-text .dot { color: var(--color-bold-ink); }
 .omnify-logo-text .hub {
   color: var(--color-muted-foreground);
-  font-weight: 400;
-  font-size: 0.65em;
-  margin-left: 4px;
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 0.55em;
+  margin-left: 6px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: 3px;
 }
 
 /* Status dots */
 .status-online {
   background: var(--color-success);
-  box-shadow: 0 0 6px rgba(61, 214, 140, 0.4);
+  box-shadow: 0 0 6px rgba(94, 224, 142, 0.4);
 }
 .status-offline {
   background: var(--color-destructive);
-  box-shadow: 0 0 6px rgba(229, 72, 77, 0.4);
+  box-shadow: 0 0 6px rgba(251, 113, 133, 0.4);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    FOCUS & INTERACTION
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Form elements — always inherit theme colors, never white */
+/* Form elements — inherit theme colors */
 input, textarea, select {
   background-color: var(--color-input);
   color: var(--color-foreground);
@@ -311,12 +423,12 @@ input:focus, textarea:focus, select:focus {
 }
 
 ::selection {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(220, 255, 0, 0.25);
   color: var(--color-foreground);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   ANIMATIONS — Restrained. No shimmer. No spin. No glow.
+   ANIMATIONS — Restrained. Editorial. One delightful hero reveal, no shimmer.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @keyframes fade-in-up {
@@ -329,6 +441,18 @@ input:focus, textarea:focus, select:focus {
   to { opacity: 1; }
 }
 
+@keyframes stagger-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-rise { animation: stagger-rise 0.55s cubic-bezier(0.21, 0.87, 0.35, 1) both; }
+.animate-rise-1 { animation-delay: 60ms; }
+.animate-rise-2 { animation-delay: 120ms; }
+.animate-rise-3 { animation-delay: 180ms; }
+.animate-rise-4 { animation-delay: 240ms; }
+.animate-rise-5 { animation-delay: 300ms; }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    COMPACT MODE
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -339,14 +463,14 @@ input:focus, textarea:focus, select:focus {
 .compact .gap-6 { gap: 1rem; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TOAST NOTIFICATIONS — Clean, no scan lines, no shimmer
+   TOAST NOTIFICATIONS
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .futuristic-toast {
-  font-family: 'DM Sans', system-ui, sans-serif !important;
+  font-family: 'Inter Tight', system-ui, sans-serif !important;
   background: var(--color-card) !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 16px !important;
+  border-radius: 14px !important;
   padding: 16px 20px !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
   position: relative !important;
@@ -354,7 +478,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .futuristic-toast-title {
-  font-family: 'DM Sans', system-ui, sans-serif !important;
+  font-family: 'Inter Tight', system-ui, sans-serif !important;
   font-weight: 600 !important;
   font-size: 14px !important;
   letter-spacing: -0.01em !important;
@@ -363,13 +487,12 @@ input:focus, textarea:focus, select:focus {
 }
 
 .futuristic-toast-description {
-  font-family: 'DM Sans', system-ui, sans-serif !important;
+  font-family: 'Inter Tight', system-ui, sans-serif !important;
   font-size: 13px !important;
   color: var(--color-muted-foreground) !important;
   line-height: 1.4 !important;
 }
 
-/* Toast variants — left accent border only */
 .futuristic-toast-success { border-left: 3px solid var(--color-success) !important; }
 .futuristic-toast-success .futuristic-toast-title { color: var(--color-success) !important; }
 
@@ -437,7 +560,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .light .gradient-text {
-  background: linear-gradient(135deg, #1C1B1A 0%, #8C8A85 100%);
+  background: linear-gradient(135deg, #14110F 0%, #6B6660 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -448,37 +571,37 @@ input:focus, textarea:focus, select:focus {
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
+/* Sidebar stays dark — keep same nav-active treatment */
 .light .nav-active {
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--color-bold-ink);
+  color: #0A0A0C;
+  border: 1px solid var(--color-bold-ink);
 }
 
 .light .sidebar-futuristic::after {
-  background: var(--color-border);
+  background: rgba(255, 255, 255, 0.06);
 }
-
-.light .omnify-logo-text .fy { color: #1C1B1A; }
 
 .light input:focus,
 .light textarea:focus,
 .light select:focus {
-  border-color: #1C1B1A;
-  box-shadow: 0 0 0 2px rgba(28, 27, 26, 0.08);
+  border-color: #14110F;
+  box-shadow: 0 0 0 2px rgba(20, 17, 15, 0.1);
 }
 
 .light ::selection {
-  background: rgba(28, 27, 26, 0.1);
-  color: #1C1B1A;
+  background: rgba(220, 255, 0, 0.35);
+  color: #14110F;
 }
 
 .light .chat-container-premium {
   box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.06),
+    0 24px 48px rgba(20, 17, 15, 0.06),
     0 0 0 1px var(--color-border);
 }
 
 .light .futuristic-toast {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 4px 24px rgba(20, 17, 15, 0.06) !important;
 }
 
 /* Remove legacy glow/grid classes — they no longer exist in this design */

@@ -32,7 +32,7 @@ export function MainLayout() {
 
       <motion.main
         initial={false}
-        animate={{ marginLeft: sidebarCollapsed ? 72 : 280 }}
+        animate={{ marginLeft: sidebarCollapsed ? 72 : 244 }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
         className={cn("pt-14 flex-1 flex flex-col min-h-0 max-md:!ml-0")}
       >
