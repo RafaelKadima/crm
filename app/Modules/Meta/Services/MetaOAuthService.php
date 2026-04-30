@@ -18,6 +18,8 @@ class MetaOAuthService
     protected string $appSecret;
     protected string $embeddedAppId;
     protected string $embeddedAppSecret;
+    protected ?string $coexistenceAppId;
+    protected ?string $coexistenceAppSecret;
     protected string $redirectUri;
     protected array $scopes;
 
@@ -28,6 +30,8 @@ class MetaOAuthService
         $this->appSecret = config('services.meta.app_secret');
         $this->embeddedAppId = config('services.meta.embedded_app_id', $this->appId);
         $this->embeddedAppSecret = config('services.meta.embedded_app_secret', $this->appSecret);
+        $this->coexistenceAppId = config('services.meta.coexistence_app_id');
+        $this->coexistenceAppSecret = config('services.meta.coexistence_app_secret');
         $this->redirectUri = config('services.meta.redirect_uri');
         $this->scopes = config('services.meta.scopes', [
             'whatsapp_business_management',
@@ -129,6 +133,7 @@ class MetaOAuthService
                 'display_phone_number' => $businessData['display_phone_number'],
                 'verified_name' => $businessData['verified_name'],
                 'access_token' => $accessToken,
+                'meta_app_id' => $this->appId,
                 'expires_at' => $expiresAt,
                 'status' => MetaIntegrationStatusEnum::ACTIVE,
                 'scopes' => $this->scopes,
@@ -175,22 +180,51 @@ class MetaOAuthService
     }
 
     /**
-     * Troca um short-lived token por um long-lived token.
+     * Resolve as credenciais (app_id + app_secret) do app que deve operar pra
+     * uma integração nova baseado no fluxo:
+     *   - coexistence → coexistence_app_id (obrigatório, sem fallback)
+     *   - embedded    → embedded_app_id   (com fallback pro regular)
+     *   - regular     → app_id
+     *
+     * @param  'regular'|'embedded'|'coexistence'  $flow
+     * @return array{app_id: string, app_secret: string}
      */
-    protected function exchangeForLongLivedToken(string $shortLivedToken, bool $useEmbeddedCredentials = false): array
+    protected function appCredentialsForFlow(string $flow): array
     {
-        $clientId = $useEmbeddedCredentials ? $this->embeddedAppId : $this->appId;
-        $clientSecret = $useEmbeddedCredentials ? $this->embeddedAppSecret : $this->appSecret;
+        if ($flow === 'coexistence') {
+            if (empty($this->coexistenceAppId) || empty($this->coexistenceAppSecret)) {
+                throw new \RuntimeException(
+                    'Fluxo coexistence solicitado mas META_COEXISTENCE_APP_ID / META_COEXISTENCE_APP_SECRET não estão configurados.'
+                );
+            }
+            return ['app_id' => $this->coexistenceAppId, 'app_secret' => $this->coexistenceAppSecret];
+        }
+
+        if ($flow === 'embedded') {
+            return ['app_id' => $this->embeddedAppId, 'app_secret' => $this->embeddedAppSecret];
+        }
+
+        return ['app_id' => $this->appId, 'app_secret' => $this->appSecret];
+    }
+
+    /**
+     * Troca um short-lived token por um long-lived token usando as credenciais
+     * do fluxo informado.
+     */
+    protected function exchangeForLongLivedToken(string $shortLivedToken, string $flow = 'regular'): array
+    {
+        $creds = $this->appCredentialsForFlow($flow);
 
         $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", [
             'grant_type' => 'fb_exchange_token',
-            'client_id' => $clientId,
-            'client_secret' => $clientSecret,
+            'client_id' => $creds['app_id'],
+            'client_secret' => $creds['app_secret'],
             'fb_exchange_token' => $shortLivedToken,
         ]);
 
         if (!$response->successful()) {
             Log::warning('Meta long-lived token exchange failed, using short-lived', [
+                'flow' => $flow,
                 'error' => $response->json(),
             ]);
             return ['access_token' => $shortLivedToken];
@@ -427,18 +461,21 @@ class MetaOAuthService
         bool $isCoexistence = false,
         ?string $pageUrl = null
     ): MetaIntegration {
+        $flow = $isCoexistence ? 'coexistence' : 'embedded';
+
         Log::info('Processing Embedded Signup', [
             'tenant_id' => $tenantId,
             'waba_id' => $wabaId,
             'phone_number_id' => $phoneNumberId,
+            'flow' => $flow,
         ]);
 
-        // 1. Troca o code por access_token
-        $tokenData = $this->exchangeCodeForTokenEmbedded($code, $pageUrl);
+        // 1. Troca o code por access_token usando as credenciais do fluxo correto
+        $tokenData = $this->exchangeCodeForTokenEmbedded($code, $pageUrl, $flow);
 
-        // 2. Obtém long-lived token (usa credenciais do app embedded)
+        // 2. Obtém long-lived token usando as mesmas credenciais
         if (!isset($tokenData['expires_in']) || $tokenData['expires_in'] < 5184000) {
-            $tokenData = $this->exchangeForLongLivedToken($tokenData['access_token'], true);
+            $tokenData = $this->exchangeForLongLivedToken($tokenData['access_token'], $flow);
         }
 
         $accessToken = $tokenData['access_token'];
@@ -466,6 +503,8 @@ class MetaOAuthService
         }
 
         // 5. Cria ou atualiza a integração
+        $flowCreds = $this->appCredentialsForFlow($flow);
+
         $integration = MetaIntegration::withoutGlobalScopes()->updateOrCreate(
             [
                 'tenant_id' => $tenantId,
@@ -477,13 +516,14 @@ class MetaOAuthService
                 'display_phone_number' => $displayPhoneNumber,
                 'verified_name' => $verifiedName,
                 'access_token' => $accessToken,
+                'meta_app_id' => $flowCreds['app_id'],
                 'expires_at' => $expiresAt,
                 'status' => MetaIntegrationStatusEnum::ACTIVE,
                 'is_coexistence' => $isCoexistence,
                 'scopes' => $this->scopes,
                 'metadata' => [
                     'connected_at' => now()->toIso8601String(),
-                    'app_id' => $this->embeddedAppId,
+                    'app_id' => $flowCreds['app_id'],
                     'signup_method' => $isCoexistence ? 'embedded_coexistence' : 'embedded',
                     'is_coexistence' => $isCoexistence,
                 ],
@@ -514,15 +554,18 @@ class MetaOAuthService
         ?string $phoneNumberId = null,
         bool $isCoexistence = false
     ): MetaIntegration {
+        $flow = $isCoexistence ? 'coexistence' : 'embedded';
+
         Log::info('Processing Embedded Signup with direct access_token', [
             'tenant_id' => $tenantId,
             'waba_id' => $wabaId,
             'phone_number_id' => $phoneNumberId,
+            'flow' => $flow,
         ]);
 
-        // Tenta obter long-lived token (usa credenciais do app embedded)
+        // Tenta obter long-lived token usando credenciais do fluxo correto
         try {
-            $tokenData = $this->exchangeForLongLivedToken($accessToken, true);
+            $tokenData = $this->exchangeForLongLivedToken($accessToken, $flow);
             $accessToken = $tokenData['access_token'];
             $expiresAt = isset($tokenData['expires_in'])
                 ? Carbon::now()->addSeconds($tokenData['expires_in'])
@@ -553,6 +596,7 @@ class MetaOAuthService
 
         // Cria ou atualiza a integração (usa waba_id para evitar duplicatas)
         $matchCriteria = ['tenant_id' => $tenantId, 'waba_id' => $wabaId];
+        $flowCreds = $this->appCredentialsForFlow($flow);
 
         $integration = MetaIntegration::withoutGlobalScopes()->updateOrCreate(
             $matchCriteria,
@@ -563,13 +607,14 @@ class MetaOAuthService
                 'display_phone_number' => $displayPhoneNumber,
                 'verified_name' => $verifiedName,
                 'access_token' => $accessToken,
+                'meta_app_id' => $flowCreds['app_id'],
                 'expires_at' => $expiresAt,
                 'status' => MetaIntegrationStatusEnum::ACTIVE,
                 'is_coexistence' => $isCoexistence,
                 'scopes' => $this->scopes,
                 'metadata' => [
                     'connected_at' => now()->toIso8601String(),
-                    'app_id' => $this->embeddedAppId,
+                    'app_id' => $flowCreds['app_id'],
                     'signup_method' => $isCoexistence ? 'embedded_coexistence' : 'embedded_direct_token',
                     'is_coexistence' => $isCoexistence,
                 ],
@@ -646,12 +691,16 @@ class MetaOAuthService
     /**
      * Troca o code por token para Embedded Signup.
      * Usa redirect_uri configurado pois Meta exige que seja idêntico ao usado no dialog.
+     *
+     * @param  'embedded'|'coexistence'  $flow  Determina qual par de credenciais usar.
      */
-    protected function exchangeCodeForTokenEmbedded(string $code, ?string $pageUrl = null): array
+    protected function exchangeCodeForTokenEmbedded(string $code, ?string $pageUrl = null, string $flow = 'embedded'): array
     {
+        $creds = $this->appCredentialsForFlow($flow);
+
         $params = [
-            'client_id' => $this->embeddedAppId,
-            'client_secret' => $this->embeddedAppSecret,
+            'client_id' => $creds['app_id'],
+            'client_secret' => $creds['app_secret'],
             'code' => $code,
         ];
 

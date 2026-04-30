@@ -45,16 +45,14 @@ class AuditWhatsAppTemplateScopesCommand extends Command
 
     public function handle(): int
     {
-        $appId = config('services.meta.app_id');
-        $appSecret = config('services.meta.app_secret');
         $apiVersion = config('services.meta.api_version', 'v22.0');
+        $apps = config('services.meta.apps', []);
 
-        if (!$appId || !$appSecret) {
-            $this->error('META_APP_ID / META_APP_SECRET não configurados em config/services.php → meta.');
+        if (empty($apps)) {
+            $this->error('Nenhum Meta App configurado em services.meta.apps. Verifique META_APP_ID / META_EMBEDDED_APP_ID / META_COEXISTENCE_APP_ID no .env.');
             return self::FAILURE;
         }
 
-        $appAccessToken = "{$appId}|{$appSecret}";
         $debugUrl = "https://graph.facebook.com/{$apiVersion}/debug_token";
 
         $query = MetaIntegration::withoutGlobalScopes()->active();
@@ -87,6 +85,16 @@ class AuditWhatsAppTemplateScopesCommand extends Command
 
             if (empty($userToken)) {
                 $rows[] = $this->buildRow($integration, null, 'sem_token', 'access_token vazio');
+                $errorCount++;
+                continue;
+            }
+
+            try {
+                // Resolve as credenciais do app que emitiu o token desta integração.
+                // Sem isso /debug_token retorna (#100) "did not match the Viewing App".
+                $appAccessToken = $integration->metaAppAccessToken();
+            } catch (\RuntimeException $e) {
+                $rows[] = $this->buildRow($integration, null, 'app_nao_configurado', $e->getMessage());
                 $errorCount++;
                 continue;
             }

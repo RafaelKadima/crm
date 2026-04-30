@@ -11,18 +11,15 @@ use Illuminate\Support\Facades\Log;
 class MetaTokenService
 {
     protected string $apiVersion;
-    protected string $appId;
-    protected string $appSecret;
 
     public function __construct()
     {
         $this->apiVersion = config('services.meta.api_version', 'v19.0');
-        $this->appId = config('services.meta.app_id');
-        $this->appSecret = config('services.meta.app_secret');
     }
 
     /**
-     * Renova o token de uma integração específica.
+     * Renova o token de uma integração específica usando as credenciais do
+     * Meta App que emitiu o token (lookup via meta_app_id da row).
      */
     public function refreshToken(MetaIntegration $integration): bool
     {
@@ -34,11 +31,20 @@ class MetaTokenService
         }
 
         try {
-            // Tenta obter um novo long-lived token
+            $creds = $integration->metaAppCredentials();
+        } catch (\RuntimeException $e) {
+            Log::error('Meta token refresh: credenciais do app indisponíveis', [
+                'integration_id' => $integration->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+
+        try {
             $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/oauth/access_token", [
                 'grant_type' => 'fb_exchange_token',
-                'client_id' => $this->appId,
-                'client_secret' => $this->appSecret,
+                'client_id' => $creds['app_id'],
+                'client_secret' => $creds['app_secret'],
                 'fb_exchange_token' => $integration->access_token,
             ]);
 
@@ -49,11 +55,11 @@ class MetaTokenService
 
                 Log::error('Meta token refresh failed', [
                     'integration_id' => $integration->id,
+                    'meta_app_id' => $creds['app_id'],
                     'error_code' => $errorCode,
                     'error_message' => $errorMessage,
                 ]);
 
-                // Se o token é inválido ou expirado, marca como reauth_required
                 if (in_array($errorCode, [190, 102, 463])) {
                     $integration->markAsReauthRequired("Token refresh failed: {$errorMessage}");
                 }
@@ -73,6 +79,7 @@ class MetaTokenService
 
             Log::info('Meta token refreshed successfully', [
                 'integration_id' => $integration->id,
+                'meta_app_id' => $creds['app_id'],
                 'expires_at' => $expiresAt?->toIso8601String(),
             ]);
 
@@ -107,7 +114,6 @@ class MetaTokenService
         $stats['total'] = $integrations->count();
 
         foreach ($integrations as $integration) {
-            // Verifica se a integração ainda está ativa
             if ($integration->status !== MetaIntegrationStatusEnum::ACTIVE) {
                 $stats['skipped']++;
                 continue;
@@ -121,8 +127,7 @@ class MetaTokenService
                 $stats['failed']++;
             }
 
-            // Pequena pausa para não sobrecarregar a API
-            usleep(100000); // 100ms
+            usleep(100000);
         }
 
         Log::info('Meta tokens refresh batch completed', $stats);
@@ -131,7 +136,9 @@ class MetaTokenService
     }
 
     /**
-     * Valida se um token está funcionando.
+     * Valida se um token está funcionando via /debug_token, usando o app
+     * access token do app que emitiu o token (caso contrário a Meta retorna
+     * "App_id in the input_token did not match the Viewing App").
      */
     public function validateToken(MetaIntegration $integration): bool
     {
@@ -140,11 +147,20 @@ class MetaTokenService
         }
 
         try {
-            $response = Http::withToken($integration->access_token)
-                ->get("https://graph.facebook.com/{$this->apiVersion}/debug_token", [
-                    'input_token' => $integration->access_token,
-                    'access_token' => "{$this->appId}|{$this->appSecret}",
-                ]);
+            $appAccessToken = $integration->metaAppAccessToken();
+        } catch (\RuntimeException $e) {
+            Log::error('Meta token validate: credenciais do app indisponíveis', [
+                'integration_id' => $integration->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+
+        try {
+            $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/debug_token", [
+                'input_token' => $integration->access_token,
+                'access_token' => $appAccessToken,
+            ]);
 
             if (!$response->successful()) {
                 return false;
@@ -152,13 +168,11 @@ class MetaTokenService
 
             $data = $response->json()['data'] ?? [];
 
-            // Verifica se o token é válido
             if (!($data['is_valid'] ?? false)) {
                 $integration->markAsReauthRequired('Token validation failed: token is invalid');
                 return false;
             }
 
-            // Verifica se o token expirou
             if (isset($data['expires_at']) && $data['expires_at'] > 0) {
                 $expiresAt = Carbon::createFromTimestamp($data['expires_at']);
 
@@ -167,7 +181,6 @@ class MetaTokenService
                     return false;
                 }
 
-                // Atualiza a data de expiração se diferente
                 if (!$integration->expires_at || !$integration->expires_at->eq($expiresAt)) {
                     $integration->update(['expires_at' => $expiresAt]);
                 }
@@ -186,7 +199,7 @@ class MetaTokenService
     }
 
     /**
-     * Obtém informações detalhadas sobre o token.
+     * Obtém informações detalhadas sobre o token via /debug_token.
      */
     public function getTokenInfo(MetaIntegration $integration): ?array
     {
@@ -195,9 +208,19 @@ class MetaTokenService
         }
 
         try {
+            $appAccessToken = $integration->metaAppAccessToken();
+        } catch (\RuntimeException $e) {
+            Log::error('Meta token info: credenciais do app indisponíveis', [
+                'integration_id' => $integration->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+
+        try {
             $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/debug_token", [
                 'input_token' => $integration->access_token,
-                'access_token' => "{$this->appId}|{$this->appSecret}",
+                'access_token' => $appAccessToken,
             ]);
 
             if (!$response->successful()) {
@@ -230,10 +253,10 @@ class MetaTokenService
     }
 
     /**
-     * Verifica se as credenciais do app estão configuradas.
+     * Verifica se há ao menos um Meta App configurado no registry.
      */
     public function isConfigured(): bool
     {
-        return !empty($this->appId) && !empty($this->appSecret);
+        return !empty(config('services.meta.apps', []));
     }
 }

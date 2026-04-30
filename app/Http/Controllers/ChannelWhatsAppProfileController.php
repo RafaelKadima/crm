@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Channel;
+use App\Models\MetaIntegration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -163,13 +164,26 @@ class ChannelWhatsAppProfileController extends Controller
             $accessToken = $config['access_token'] ?? null;
             $phoneNumberId = $config['phone_number_id'] ?? null;
 
-            // Use Meta App ID for upload session (required by Graph API)
-            $appId = config('services.meta.app_id');
+            // Upload session da Graph API exige o app_id do app que emitiu o token.
+            // Resolve via MetaIntegration (canonical) — channels.config é apenas
+            // denormalização cacheada e não guarda meta_app_id.
+            $integration = $phoneNumberId
+                ? MetaIntegration::findActiveByPhoneNumberId($phoneNumberId)
+                : null;
 
-            if (!$appId) {
+            if (!$integration) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Meta App ID not configured',
+                    'message' => "Nenhuma MetaIntegration ativa encontrada para phone_number_id {$phoneNumberId}",
+                ], 400);
+            }
+
+            try {
+                $appId = $integration->metaAppCredentials()['app_id'];
+            } catch (\RuntimeException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
                 ], 400);
             }
 

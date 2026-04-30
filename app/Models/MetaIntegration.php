@@ -27,6 +27,7 @@ class MetaIntegration extends Model
         'display_phone_number',
         'verified_name',
         'access_token',
+        'meta_app_id',
         'expires_at',
         'status',
         'is_coexistence',
@@ -201,5 +202,53 @@ class MetaIntegration extends Model
             ->where('phone_number_id', $phoneNumberId)
             ->where('status', MetaIntegrationStatusEnum::ACTIVE)
             ->first();
+    }
+
+    /**
+     * Retorna o par {app_id, app_secret} do Meta App que emitiu o token desta
+     * integração. Resolve via registry config('services.meta.apps') usando
+     * meta_app_id como chave.
+     *
+     * Falha alto e cedo quando o app não está configurado — operações
+     * server-to-server (debug_token, message_templates, refresh) precisam
+     * absolutamente das credenciais corretas, não há fallback útil.
+     *
+     * @return array{app_id: string, app_secret: string}
+     */
+    public function metaAppCredentials(): array
+    {
+        $appId = $this->meta_app_id;
+
+        if (empty($appId)) {
+            throw new \RuntimeException(
+                "MetaIntegration {$this->id} sem meta_app_id — rode a migration de backfill."
+            );
+        }
+
+        $apps = config('services.meta.apps', []);
+
+        if (!isset($apps[$appId])) {
+            $configured = empty($apps) ? '(nenhum)' : implode(', ', array_keys($apps));
+            throw new \RuntimeException(
+                "Meta App {$appId} não está configurado em services.meta.apps. " .
+                "Apps configurados: {$configured}. Verifique META_APP_ID / " .
+                "META_EMBEDDED_APP_ID / META_COEXISTENCE_APP_ID no .env."
+            );
+        }
+
+        return [
+            'app_id' => $appId,
+            'app_secret' => $apps[$appId]['app_secret'],
+        ];
+    }
+
+    /**
+     * Conveniência: retorna a string `{app_id}|{app_secret}` no formato que a
+     * Graph API aceita como app access token (input pra debug_token, etc).
+     */
+    public function metaAppAccessToken(): string
+    {
+        $creds = $this->metaAppCredentials();
+        return "{$creds['app_id']}|{$creds['app_secret']}";
     }
 }
