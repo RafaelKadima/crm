@@ -5,15 +5,12 @@ import {
   MessageSquare,
   Instagram,
   Globe,
-  QrCode,
   Plus,
   CheckCircle,
   XCircle,
   Loader2,
   Phone,
   Shield,
-  Wifi,
-  WifiOff,
   Settings,
   Trash2,
   RefreshCw,
@@ -31,15 +28,6 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Switch } from '@/components/ui/Switch'
-import { Input } from '@/components/ui/Input'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/Dialog'
 import {
   useMetaStatus,
   useMetaIntegrations,
@@ -53,13 +41,11 @@ import {
 } from '@/hooks/useMetaEmbeddedSignup'
 import {
   useChannels,
-  useCreateChannel,
   useDeleteChannel,
   useToggleChannelActive,
   channelTypeInfo,
   type Channel,
 } from '@/hooks/useChannels'
-import { QRCodeModal } from '@/components/channels/QRCodeModal'
 import { Link } from 'react-router-dom'
 
 interface ChannelType {
@@ -88,16 +74,6 @@ export function ConnectChannelsPage() {
       available: true,
     },
     {
-      id: 'whatsapp-internal',
-      name: 'WhatsApp (QR Code)',
-      description: t('channels.whatsappQrDesc'),
-      icon: QrCode,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-500',
-      borderColor: 'border-orange-500/30',
-      available: true,
-    },
-    {
       id: 'instagram',
       name: 'Instagram Direct',
       description: t('channels.instagramDesc'),
@@ -118,12 +94,8 @@ export function ConnectChannelsPage() {
       available: false,
     },
   ]
-  const [qrChannel, setQrChannel] = useState<Channel | null>(null)
-  const [isQRModalOpen, setIsQRModalOpen] = useState(false)
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null)
   const [coexistenceMode, setCoexistenceMode] = useState(false)
-  const [isCreateInternalOpen, setIsCreateInternalOpen] = useState(false)
-  const [newInternalName, setNewInternalName] = useState('')
 
   // Meta hooks
   const { data: metaStatus, isLoading: loadingStatus } = useMetaStatus()
@@ -133,7 +105,6 @@ export function ConnectChannelsPage() {
 
   // Channel hooks
   const { data: channels = [], isLoading: loadingChannels } = useChannels()
-  const createChannel = useCreateChannel()
   const deleteChannel = useDeleteChannel()
   const toggleActive = useToggleChannelActive()
 
@@ -162,36 +133,6 @@ export function ConnectChannelsPage() {
       configId,
       featureType: coexistenceMode ? 'whatsapp_business_app_onboarding' : '',
     })
-  }
-
-  const handleConnectQR = () => {
-    setNewInternalName('')
-    setIsCreateInternalOpen(true)
-  }
-
-  const handleCreateInternalChannel = async () => {
-    const name = newInternalName.trim()
-    if (!name) {
-      toast.error(t('channels.channelNameRequired'))
-      return
-    }
-    try {
-      const channel = await createChannel.mutateAsync({
-        name,
-        type: 'whatsapp',
-        provider_type: 'internal',
-        identifier: name,
-        is_active: true,
-      })
-      setIsCreateInternalOpen(false)
-      setNewInternalName('')
-      setQrChannel(channel)
-      setIsQRModalOpen(true)
-    } catch (error) {
-      const message = (error as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message
-      toast.error(message || t('channels.errorCreatingChannel'))
-    }
   }
 
   const handleDisconnectMeta = async (id: string) => {
@@ -269,8 +210,7 @@ export function ConnectChannelsPage() {
 
   const isLoading = loadingStatus || loadingIntegrations || loadingChannels
   const whatsappChannels = channels.filter((c) => c.type === 'whatsapp')
-  const internalChannels = whatsappChannels.filter((c) => c.provider_type === 'internal')
-  const metaChannels = whatsappChannels.filter((c) => c.provider_type === 'meta')
+  const metaChannels = whatsappChannels
   const hasConnectedChannels = whatsappChannels.length > 0 || (metaIntegrations && metaIntegrations.length > 0)
 
   return (
@@ -347,7 +287,6 @@ export function ConnectChannelsPage() {
                     onClick={() => {
                       if (!type.available) return
                       if (type.id === 'whatsapp-meta') handleConnectWhatsApp()
-                      if (type.id === 'whatsapp-internal') handleConnectQR()
                     }}
                   >
                     <div className={`absolute top-0 left-0 right-0 h-1 ${type.bgColor}`} />
@@ -564,80 +503,6 @@ export function ConnectChannelsPage() {
                   )
                 })}
 
-                {/* Internal WhatsApp Channels */}
-                {internalChannels.map((channel) => (
-                  <motion.div
-                    key={channel.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border hover:border-border/80 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-orange-500 text-white">
-                        <QrCode className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold">{channel.name}</span>
-                          {channel.is_active ? (
-                            <Badge variant="success" className="flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3" />
-                              {t('channels.status.active')}
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">{t('channels.status.inactive')}</Badge>
-                          )}
-                          <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
-                            QR Code
-                          </Badge>
-                          {channel.config?.internal_connected ? (
-                            <Badge className="bg-green-500 text-white text-xs">
-                              <Wifi className="h-3 w-3 mr-1" />
-                              {t('channels.status.connected')}
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-xs">
-                              <WifiOff className="h-3 w-3 mr-1" />
-                              {t('channels.status.disconnected')}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {channel.identifier}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setQrChannel(channel)
-                          setIsQRModalOpen(true)
-                        }}
-                      >
-                        <QrCode className="h-4 w-4 mr-1" />
-                        {channel.config?.internal_connected ? t('channels.reconnect') : t('channels.connect')}
-                      </Button>
-                      <Link to="/channels">
-                        <Button variant="ghost" size="sm" title={t('channels.configure')}>
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleChannel(channel)}
-                        title={channel.is_active ? t('channels.deactivate') : t('channels.activate')}
-                        className={channel.is_active ? 'text-green-500' : 'text-muted-foreground'}
-                      >
-                        {channel.is_active ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
-
                 {/* Meta channels without integration (orphaned) */}
                 {metaChannels
                   .filter((c) => !metaIntegrations?.some((i) => i.phone_number_id === c.config?.phone_number_id))
@@ -736,75 +601,6 @@ export function ConnectChannelsPage() {
         </>
       )}
 
-      {/* Create Internal Channel Modal */}
-      <Dialog
-        open={isCreateInternalOpen}
-        onOpenChange={(open) => {
-          if (!createChannel.isPending) setIsCreateInternalOpen(open)
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('channels.createInternalTitle')}</DialogTitle>
-            <DialogDescription>{t('channels.createInternalDesc')}</DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <label className="text-sm font-medium mb-2 block">
-              {t('channels.channelNameLabel')}
-            </label>
-            <Input
-              autoFocus
-              placeholder={t('channels.channelNamePlaceholder')}
-              value={newInternalName}
-              onChange={(e) => setNewInternalName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !createChannel.isPending && newInternalName.trim()) {
-                  handleCreateInternalChannel()
-                }
-              }}
-              disabled={createChannel.isPending}
-              maxLength={255}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsCreateInternalOpen(false)}
-              disabled={createChannel.isPending}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              onClick={handleCreateInternalChannel}
-              disabled={createChannel.isPending || !newInternalName.trim()}
-            >
-              {createChannel.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {t('common.processing')}
-                </>
-              ) : (
-                <>
-                  <QrCode className="h-4 w-4 mr-2" />
-                  {t('channels.createAndConnect')}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* QR Code Modal */}
-      {qrChannel && (
-        <QRCodeModal
-          channel={qrChannel}
-          isOpen={isQRModalOpen}
-          onClose={() => {
-            setIsQRModalOpen(false)
-            setQrChannel(null)
-          }}
-        />
-      )}
     </div>
   )
 }

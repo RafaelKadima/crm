@@ -91,8 +91,8 @@ class BroadcastService
 
         $channel = Channel::findOrFail($data['channel_id']);
 
-        if ($channel->type->value !== 'whatsapp' || ($channel->provider_type ?? 'meta') !== 'meta') {
-            throw new \InvalidArgumentException('Canal precisa ser WhatsApp Meta para broadcasts.');
+        if ($channel->type->value !== 'whatsapp') {
+            throw new \InvalidArgumentException('Canal precisa ser WhatsApp para broadcasts.');
         }
 
         $contacts = $this->resolveRecipients($data['filters'] ?? [], $user);

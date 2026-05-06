@@ -69,11 +69,11 @@ export function CreateBroadcastModal({ open, onOpenChange }: CreateBroadcastModa
   const createMutation = useCreateBroadcast()
   const previewMutation = useBroadcastPreview()
 
-  // Filter WhatsApp Meta channels
+  // Filter WhatsApp channels
   const whatsappChannels = useMemo(() => {
     const channels = channelsData?.data || channelsData || []
     return (Array.isArray(channels) ? channels : []).filter(
-      (c: Channel) => c.type === 'whatsapp' && (c.provider_type ?? 'meta') === 'meta'
+      (c: Channel) => c.type === 'whatsapp'
     )
   }, [channelsData])
 
