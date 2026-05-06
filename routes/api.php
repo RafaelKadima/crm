@@ -65,8 +65,8 @@ Route::get('files/{attachment}/download', [\App\Http\Controllers\FileUploadContr
     ->name('files.download')
     ->middleware('auth:api');
 
-// Rotas protegidas por autenticação (+ kill switch via tokens_invalidated_at)
-Route::middleware(['auth:api', 'token.valid'])->group(function () {
+// Rotas protegidas por autenticação (+ kill switch via tokens_invalidated_at + session tracking)
+Route::middleware(['auth:api', 'token.valid', 'session.track'])->group(function () {
 
     // Broadcasting auth para WebSockets
     Route::post('broadcasting/auth', function (\Illuminate\Http\Request $request) {
@@ -84,6 +84,10 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
         Route::get('permissions', [AuthController::class, 'permissions']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::post('revoke-all-tokens', [AuthController::class, 'revokeAllTokens']);
+
+        // Sessões ativas (devices) — granular: revoga 1 device sem matar outros
+        Route::get('sessions', [AuthController::class, 'sessions']);
+        Route::post('sessions/{id}/revoke', [AuthController::class, 'revokeSession']);
 
         // 2FA management (autenticado — verify fica nas rotas públicas)
         Route::post('2fa/enable', [\App\Http\Controllers\TwoFactorController::class, 'enable']);

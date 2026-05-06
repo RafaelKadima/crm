@@ -140,6 +140,51 @@ class AuthController extends Controller
     }
 
     /**
+     * Lista as sessões ativas do user logado (todos os devices que
+     * têm token válido + revoked_at IS NULL).
+     */
+    public function sessions(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $sessions = \App\Models\UserSession::query()
+            ->where('user_id', $user->id)
+            ->whereNull('revoked_at')
+            ->orderByDesc('last_activity_at')
+            ->get(['id', 'ip', 'device_name', 'user_agent', 'last_activity_at', 'created_at', 'token_id']);
+
+        $currentTokenId = $user->token()->id ?? null;
+
+        return response()->json([
+            'data' => $sessions->map(fn ($s) => [
+                'id' => $s->id,
+                'ip' => $s->ip,
+                'device_name' => $s->device_name,
+                'last_activity_at' => $s->last_activity_at?->toIso8601String(),
+                'created_at' => $s->created_at?->toIso8601String(),
+                'is_current' => $s->token_id === (string) $currentTokenId,
+            ]),
+        ]);
+    }
+
+    /**
+     * Revoga uma sessão específica (granular). Diferente de
+     * revoke-all-tokens — esse só mata 1 device.
+     */
+    public function revokeSession(Request $request, string $sessionId): JsonResponse
+    {
+        $user = $request->user();
+        $session = \App\Models\UserSession::query()
+            ->where('id', $sessionId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $session->update(['revoked_at' => now()]);
+        \Illuminate\Support\Facades\Cache::forget("user_session:{$session->token_id}");
+
+        return response()->json(['message' => 'Sessão revogada.']);
+    }
+
+    /**
      * Mapa de permissões resolvidas pro user atual — frontend usa pra
      * decidir o que mostrar/esconder. Inclui custom profile + role
      * fallback + ADMIN_ONLY_ACTIONS gates.

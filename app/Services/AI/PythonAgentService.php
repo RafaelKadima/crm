@@ -25,6 +25,16 @@ class PythonAgentService
     protected string $apiKey;
     protected int $timeout;
 
+    /**
+     * Circuit breaker — janela de 60s, abre depois de N falhas seguidas.
+     * Quando aberto, requests são curto-circuitadas por COOLDOWN_SECONDS.
+     */
+    protected const FAILURE_THRESHOLD = 5;
+    protected const FAILURE_WINDOW_SECONDS = 60;
+    protected const COOLDOWN_SECONDS = 30;
+    protected const CIRCUIT_KEY = 'ai_service:circuit:open';
+    protected const FAILURE_COUNTER_KEY = 'ai_service:failures';
+
     public function __construct()
     {
         $this->baseUrl = config('services.ai_agent.url', 'http://localhost:8001');
@@ -42,11 +52,19 @@ class PythonAgentService
         SdrAgent $agent,
         Channel $channel
     ): ?array {
+        // Circuit breaker — se aberto, retorna null sem nem tentar.
+        // Evita queue worker travar com timeouts em cascata quando o
+        // ai-service está down.
+        if ($this->isCircuitOpen()) {
+            Log::warning('Python agent circuit breaker OPEN — skipping request', [
+                'lead_id' => $lead->id,
+            ]);
+            return null;
+        }
+
         try {
-            // Monta payload
             $payload = $this->buildPayload($message, $ticket, $lead, $agent, $channel);
 
-            // Chama o microserviço Python
             $response = Http::timeout($this->timeout)
                 ->withHeaders([
                     'X-API-Key' => $this->apiKey,
@@ -55,6 +73,7 @@ class PythonAgentService
                 ->post("{$this->baseUrl}/agent/run", $payload);
 
             if (!$response->successful()) {
+                $this->recordFailure();
                 Log::error('Python agent request failed', [
                     'status' => $response->status(),
                     'body' => $response->body(),
@@ -62,20 +81,61 @@ class PythonAgentService
                 return null;
             }
 
+            $this->recordSuccess();
             $result = $response->json();
-
-            // Log da interação
             $this->logInteraction($lead, $agent, $message, $result);
 
             return $result;
 
         } catch (\Exception $e) {
+            $this->recordFailure();
             Log::error('Python agent service error', [
                 'error' => $e->getMessage(),
                 'lead_id' => $lead->id,
             ]);
             return null;
         }
+    }
+
+    /**
+     * Verifica se circuit breaker está aberto. Cache::has em vez de get
+     * pra evitar deserializar valor; TTL controla quanto tempo fica
+     * aberto antes do próximo half-open attempt.
+     */
+    protected function isCircuitOpen(): bool
+    {
+        return Cache::has(self::CIRCUIT_KEY);
+    }
+
+    /**
+     * Sucesso reseta o counter — sequência de successes "fecha" o
+     * circuito naturalmente.
+     */
+    protected function recordSuccess(): void
+    {
+        Cache::forget(self::FAILURE_COUNTER_KEY);
+    }
+
+    /**
+     * Conta falhas em janela rolante. Quando atinge threshold, abre
+     * circuit breaker por COOLDOWN_SECONDS.
+     */
+    protected function recordFailure(): void
+    {
+        $current = (int) Cache::get(self::FAILURE_COUNTER_KEY, 0);
+        $current++;
+
+        if ($current >= self::FAILURE_THRESHOLD) {
+            Cache::put(self::CIRCUIT_KEY, true, self::COOLDOWN_SECONDS);
+            Cache::forget(self::FAILURE_COUNTER_KEY);
+            Log::warning('Python agent circuit breaker OPENED', [
+                'failures' => $current,
+                'cooldown_seconds' => self::COOLDOWN_SECONDS,
+            ]);
+            return;
+        }
+
+        Cache::put(self::FAILURE_COUNTER_KEY, $current, self::FAILURE_WINDOW_SECONDS);
     }
 
     /**
