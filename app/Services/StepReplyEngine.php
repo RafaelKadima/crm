@@ -417,20 +417,70 @@ class StepReplyEngine
             return;
         }
 
+        $channel = $ticket->channel;
+        if (!$channel || !$ticket->contact?->phone) return;
+
+        /** @var \App\Services\WhatsAppService $whatsApp */
+        $whatsApp = app(\App\Services\WhatsAppService::class)->loadFromChannel($channel);
+        $phone = $ticket->contact->phone;
+
+        // Cloud API Interactive Lists suporta até 10 rows. Usa quando
+        // possível pra ter UI nativa (chip clicável → drawer); cai no
+        // texto numerado simples como fallback.
+        $isWhatsapp = $channel->type instanceof \App\Enums\ChannelTypeEnum
+            ? $channel->type === \App\Enums\ChannelTypeEnum::WHATSAPP
+            : (string) $channel->type === 'whatsapp';
+
+        if ($isWhatsapp && count($options) <= 10 && !($config['force_text'] ?? false)) {
+            try {
+                $rows = array_map(function ($opt, $i) {
+                    return [
+                        'id' => (string) ($opt['value'] ?? $i + 1),
+                        'title' => (string) ($opt['label'] ?? "Opção " . ($i + 1)),
+                        'description' => $opt['description'] ?? null,
+                    ];
+                }, $options, array_keys($options));
+
+                $whatsApp->sendInteractiveList(
+                    to: $phone,
+                    body: $prompt !== '' ? $prompt : 'Escolha uma opção',
+                    buttonText: $config['button_text'] ?? 'Ver opções',
+                    rows: $rows,
+                    header: $config['header'] ?? null,
+                    footer: $config['footer'] ?? null,
+                );
+
+                // Persiste como TicketMessage com snapshot pra histórico
+                $persistedText = $prompt . "\n" . collect($options)
+                    ->map(fn ($o, $i) => "• " . ($o['label'] ?? "Opção " . ($i + 1)))
+                    ->implode("\n");
+
+                $this->persistOutbound($ticket, $persistedText, [
+                    'step_reply_execution_id' => $execution->id,
+                    'branch_prompt' => true,
+                    'interactive' => true,
+                ]);
+                return;
+            } catch (\Throwable $e) {
+                Log::warning('Interactive list failed, falling back to text', [
+                    'execution_id' => $execution->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // continua no fallback de texto
+            }
+        }
+
+        // Fallback: texto numerado (sempre funciona, sem dependência de
+        // canal/feature support)
         $lines = [$prompt, ''];
         foreach ($options as $i => $opt) {
             $label = $opt['label'] ?? "Opção " . ($i + 1);
             $value = $opt['value'] ?? ($i + 1);
             $lines[] = "{$value}. {$label}";
         }
-
         $text = implode("\n", $lines);
-        $channel = $ticket->channel;
-        if (!$channel) return;
 
-        /** @var WhatsAppService $whatsApp */
-        $whatsApp = app(WhatsAppService::class)->loadFromChannel($channel);
-        $whatsApp->sendTextMessage($ticket->contact->phone, $text);
+        $whatsApp->sendTextMessage($phone, $text);
 
         $this->persistOutbound($ticket, $text, [
             'step_reply_execution_id' => $execution->id,
