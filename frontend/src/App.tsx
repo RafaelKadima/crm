@@ -42,6 +42,10 @@ import { UsagePage as AiUsagePage } from '@/pages/settings/ai/UsagePage'
 import { LinxPage } from '@/pages/settings/integrations/LinxPage'
 import { AnalyticsPage as IntegrationsAnalyticsPage } from '@/pages/settings/integrations/AnalyticsPage'
 import { OthersPage as IntegrationsOthersPage } from '@/pages/settings/integrations/OthersPage'
+import { AuditLogsPage } from '@/pages/settings/admin/AuditLogsPage'
+import { SecurityIncidentsPage } from '@/pages/settings/admin/SecurityIncidentsPage'
+import { CustomProfilesPage as AdminCustomProfilesPage } from '@/pages/settings/admin/CustomProfilesPage'
+import { GamificationPage as AdminGamificationPage } from '@/pages/settings/admin/GamificationPage'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
 import { ProductsPage } from '@/pages/products/Products'
@@ -277,6 +281,15 @@ function AppRoutes() {
           <Route path="analytics" element={<IntegrationsAnalyticsPage />} />
           <Route path="others" element={<IntegrationsOthersPage />} />
         </Route>
+        <Route path="settings/admin" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="audit-logs" replace />} />
+          <Route path="audit-logs" element={<AuditLogsPage />} />
+          <Route path="security-incidents" element={<SecurityIncidentsPage />} />
+          <Route path="custom-profiles" element={<AdminCustomProfilesPage />} />
+          <Route path="gamification" element={<AdminGamificationPage />} />
+        </Route>
+        {/* Default redirect — /settings → /settings/account/profile */}
+        <Route path="settings" element={<Navigate to="/settings/account/profile" replace />} />
         {/* Catch-all para rotas ainda não migradas — usa SettingsPage antigo */}
         <Route path="settings/*" element={<SettingsPage />} />
         <Route path="groups" element={<GroupsPage />} />
