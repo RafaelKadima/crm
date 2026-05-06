@@ -81,6 +81,7 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
+        Route::get('permissions', [AuthController::class, 'permissions']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::post('revoke-all-tokens', [AuthController::class, 'revokeAllTokens']);
 
@@ -93,6 +94,17 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
     // Audit logs (admin/super_admin only — controller também valida)
     Route::get('audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index']);
     Route::get('audit-logs/{id}', [\App\Http\Controllers\AuditLogController::class, 'show']);
+
+    // Custom Profiles (RBAC v2) — admin/super_admin only via permission users_manage
+    Route::prefix('custom-profiles')->group(function () {
+        Route::get('catalog', [\App\Http\Controllers\CustomProfileController::class, 'catalog']);
+        Route::get('/', [\App\Http\Controllers\CustomProfileController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\CustomProfileController::class, 'store']);
+        Route::get('{id}', [\App\Http\Controllers\CustomProfileController::class, 'show']);
+        Route::put('{id}', [\App\Http\Controllers\CustomProfileController::class, 'update']);
+        Route::delete('{id}', [\App\Http\Controllers\CustomProfileController::class, 'destroy']);
+        Route::post('{id}/assign', [\App\Http\Controllers\CustomProfileController::class, 'assignToUser']);
+    });
 
     // Rotas que requerem tenant ativo
     Route::middleware('tenant')->group(function () {

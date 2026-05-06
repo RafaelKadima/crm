@@ -140,6 +140,25 @@ class AuthController extends Controller
     }
 
     /**
+     * Mapa de permissões resolvidas pro user atual — frontend usa pra
+     * decidir o que mostrar/esconder. Inclui custom profile + role
+     * fallback + ADMIN_ONLY_ACTIONS gates.
+     */
+    public function permissions(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'permissions' => $user->permissionMap(),
+            'custom_profile' => $user->customProfile?->only(['id', 'name', 'description']),
+            'custom_profile_enabled' => (bool) $user->custom_profile_enabled,
+            'role' => $user->role?->value,
+            'is_admin' => $user->isAdmin(),
+            'is_super_admin' => $user->isSuperAdmin(),
+        ]);
+    }
+
+    /**
      * Atualiza o token de acesso.
      */
     public function refresh(Request $request): JsonResponse
