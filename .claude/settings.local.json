@@ -66,7 +66,31 @@
       "WebFetch(domain:blog.logrocket.com)",
       "WebFetch(domain:jetbase.io)",
       "WebFetch(domain:developers.facebook.com)",
-      "WebFetch(domain:www.wuseller.com)"
+      "WebFetch(domain:www.wuseller.com)",
+      "Bash(make help:*)",
+      "WebFetch(domain:docs.360dialog.com)",
+      "Bash(git branch *)",
+      "Bash(git revert *)",
+      "Bash(php --version)",
+      "Bash(ls .env*)",
+      "Bash(ls docker-compose*.yml)",
+      "Bash(composer --version)",
+      "Bash(npm --version)",
+      "Bash(awk '{print $NF, $5\" bytes\"}')",
+      "Bash(composer install *)",
+      "Bash(APP_DEBUG=true php -d display_errors=1 artisan key:generate -vvv)",
+      "Bash(mkdir -p bootstrap/cache)",
+      "Bash(chmod +w bootstrap/cache)",
+      "Bash(ls database/migrations/*add_monitored_accounts* database/migrations/*create_bi_agent*)",
+      "Bash(sqlite3 database/database.sqlite \".tables\")",
+      "Bash(rm -f database/database.sqlite)",
+      "Bash(touch database/database.sqlite)",
+      "Bash(git fetch *)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(npx eslint *)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('frontend/src/i18n/locales/pt-BR.json','utf8'\\)\\);console.log\\('pt-BR OK'\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('frontend/src/i18n/locales/en-US.json','utf8'\\)\\);console.log\\('en-US OK'\\)\")"
     ]
   }
 }

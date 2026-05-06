@@ -37,3 +37,15 @@ __pycache__/
 *.pyc
 
 .cursor/mcp.json
+
+# Claude Code state local
+.claude/scheduled_tasks.lock
+.playwright-mcp/
+
+# Scripts ad-hoc com credenciais ou tokens (NUNCA commitar)
+.ssh_*.py
+*_temp.php
+check_*_temp.*
+
+# Screenshots de debug
+review-*.png
