@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\TwoFactorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +40,18 @@ class AuthController extends Controller
         if ($user->tenant && !$user->tenant->is_active) {
             throw ValidationException::withMessages([
                 'email' => ['O tenant desta conta está inativo.'],
+            ]);
+        }
+
+        // Se 2FA habilitado, NÃO emite token ainda — devolve pending session
+        // pra cliente trocar pelo token via /auth/2fa/verify
+        if ($user->hasTwoFactorEnabled()) {
+            $pendingSessionId = app(TwoFactorService::class)->createPendingSession($user);
+
+            return response()->json([
+                'requires_2fa' => true,
+                'pending_session_id' => $pendingSessionId,
+                'message' => 'Informe o código do seu app de autenticação.',
             ]);
         }
 

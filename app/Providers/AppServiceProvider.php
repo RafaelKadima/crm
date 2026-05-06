@@ -8,6 +8,7 @@ use App\Models\Pipeline;
 use App\Models\Tenant;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Enums\SecurityIncidentTypeEnum;
 use App\Observers\LeadObserver;
 use App\Observers\TenantObserver;
 use App\Observers\TicketObserver;
@@ -17,6 +18,7 @@ use App\Policies\LeadPolicy;
 use App\Policies\PipelinePolicy;
 use App\Policies\UserPolicy;
 use App\Scopes\TenantScope;
+use App\Services\SecurityIncidentService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -73,11 +75,32 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Pipeline::class, PipelinePolicy::class);
         Gate::policy(Channel::class, ChannelPolicy::class);
 
-        // Super admin bypassa todas as policies
-        Gate::before(function ($user) {
-            if ($user->isSuperAdmin()) {
-                return true;
+        // Super admin bypassa todas as policies. Gate::before é chamado várias
+        // vezes por request, então deduplicamos via flag de request — só registra
+        // o SecurityIncident UMA vez por request, com a primeira ability vista.
+        Gate::before(function ($user, $ability) {
+            if (!$user->isSuperAdmin()) {
+                return null;
             }
+
+            $request = request();
+            if (!$request->attributes->get('super_admin_bypass_logged')) {
+                $request->attributes->set('super_admin_bypass_logged', true);
+
+                app(SecurityIncidentService::class)->record(
+                    type: SecurityIncidentTypeEnum::GATE_BYPASS_SUPER_ADMIN,
+                    metadata: [
+                        'first_ability' => $ability,
+                        'method' => $request->method(),
+                        'route' => optional($request->route())->getName() ?? $request->path(),
+                    ],
+                    tenantId: $user->tenant_id,
+                    actorId: $user->id,
+                    actorEmail: $user->email,
+                );
+            }
+
+            return true;
         });
     }
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\SecurityIncidentTypeEnum;
+use App\Services\SecurityIncidentService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -42,6 +44,16 @@ class EnsureTokenIsValid
         }
 
         if ($token->created_at->lt($invalidatedAt)) {
+            app(SecurityIncidentService::class)->record(
+                type: SecurityIncidentTypeEnum::TOKEN_REVOKED_USED,
+                metadata: [
+                    'token_created_at' => $token->created_at->toIso8601String(),
+                    'invalidated_at' => $invalidatedAt->toIso8601String(),
+                ],
+                tenantId: $user->tenant_id,
+                actorId: $user->id,
+                actorEmail: $user->email,
+            );
             abort(401, 'Token revoked. Please log in again.');
         }
 

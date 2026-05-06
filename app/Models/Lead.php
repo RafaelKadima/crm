@@ -6,6 +6,7 @@ use App\Enums\IaModeEnum;
 use App\Enums\InteractionSourceEnum;
 use App\Enums\LeadStatusEnum;
 use App\Events\LeadStageChanged;
+use App\Traits\Auditable;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lead extends Model
 {
-    use HasFactory, HasUuids, BelongsToTenant;
+    use HasFactory, HasUuids, BelongsToTenant, Auditable;
 
     /**
      * The attributes that are mass assignable.

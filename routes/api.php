@@ -55,6 +55,8 @@ Route::middleware('throttle:login')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::prefix('auth')->group(function () {
         Route::post('login', [AuthController::class, 'login']);
+        // 2FA verify durante login — não exige auth, só pending_session_id válido
+        Route::post('2fa/verify', [\App\Http\Controllers\TwoFactorController::class, 'verify']);
     });
 });
 
@@ -81,7 +83,16 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::post('revoke-all-tokens', [AuthController::class, 'revokeAllTokens']);
+
+        // 2FA management (autenticado — verify fica nas rotas públicas)
+        Route::post('2fa/enable', [\App\Http\Controllers\TwoFactorController::class, 'enable']);
+        Route::post('2fa/confirm', [\App\Http\Controllers\TwoFactorController::class, 'confirm']);
+        Route::post('2fa/disable', [\App\Http\Controllers\TwoFactorController::class, 'disable']);
     });
+
+    // Audit logs (admin/super_admin only — controller também valida)
+    Route::get('audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index']);
+    Route::get('audit-logs/{id}', [\App\Http\Controllers\AuditLogController::class, 'show']);
 
     // Rotas que requerem tenant ativo
     Route::middleware('tenant')->group(function () {

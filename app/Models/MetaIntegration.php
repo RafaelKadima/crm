@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MetaIntegrationStatusEnum;
+use App\Traits\Auditable;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Carbon\Carbon;
 
 class MetaIntegration extends Model
 {
-    use HasFactory, HasUuids, BelongsToTenant;
+    use HasFactory, HasUuids, BelongsToTenant, Auditable;
 
     /**
      * The attributes that are mass assignable.

@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\SecurityIncidentTypeEnum;
+use App\Services\SecurityIncidentService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -41,11 +43,13 @@ class VerifyMetaWebhookSignature
         }
 
         if (empty($signature) || !str_starts_with($signature, 'sha256=')) {
-            Log::warning('Meta webhook: missing or malformed X-Hub-Signature-256', [
-                'path' => $request->path(),
-                'ip' => $request->ip(),
-                'has_header' => !empty($signature),
-            ]);
+            app(SecurityIncidentService::class)->record(
+                type: SecurityIncidentTypeEnum::INVALID_WEBHOOK_SIGNATURE,
+                metadata: [
+                    'reason' => empty($signature) ? 'missing_header' : 'malformed_header',
+                    'has_header' => !empty($signature),
+                ],
+            );
             abort(401, 'Invalid webhook signature');
         }
 
@@ -56,13 +60,14 @@ class VerifyMetaWebhookSignature
             }
         }
 
-        Log::warning('Meta webhook: HMAC signature mismatch', [
-            'path' => $request->path(),
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'body_size' => strlen($body),
-            'secrets_tried' => count($secrets),
-        ]);
+        app(SecurityIncidentService::class)->record(
+            type: SecurityIncidentTypeEnum::INVALID_WEBHOOK_SIGNATURE,
+            metadata: [
+                'reason' => 'signature_mismatch',
+                'body_size' => strlen($body),
+                'secrets_tried' => count($secrets),
+            ],
+        );
 
         abort(401, 'Invalid webhook signature');
     }
