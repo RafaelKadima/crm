@@ -150,6 +150,23 @@ class AuthController extends Controller
             'token_type' => 'Bearer',
         ]);
     }
+
+    /**
+     * Kill switch: invalida TODOS os tokens emitidos antes deste momento
+     * (em todos os devices). User precisa fazer login de novo em todo lugar.
+     */
+    public function revokeAllTokens(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->invalidateAllTokens();
+
+        // Remove o cookie do device atual também
+        Cookie::queue(Cookie::forget('crm_token'));
+
+        return response()->json([
+            'message' => 'Todas as sessões foram encerradas. Faça login novamente.',
+        ]);
+    }
 }
 
 

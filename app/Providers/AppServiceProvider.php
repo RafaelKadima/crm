@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Observers\LeadObserver;
 use App\Observers\TenantObserver;
 use App\Observers\TicketObserver;
+use App\Observers\UserObserver;
 use App\Policies\ChannelPolicy;
 use App\Policies\LeadPolicy;
 use App\Policies\PipelinePolicy;
@@ -46,6 +47,7 @@ class AppServiceProvider extends ServiceProvider
         Lead::observe(LeadObserver::class);
         Tenant::observe(TenantObserver::class);
         Ticket::observe(TicketObserver::class);
+        User::observe(UserObserver::class);
 
         // Custom route model binding para Ticket
         // Remove o TenantScope durante o binding mas verifica o tenant manualmente
