@@ -657,9 +657,32 @@ class WhatsAppService implements WhatsAppProviderInterface
         }
 
         // =====================
-        // 🤖 RESPOSTA DA IA (após roteamento de filas)
+        // ⚡ AUTO-REPLY (keyword-based) — antes de qualquer IA, atalho determinístico
+        // Se há match com `skip_ai_after_match=true`, IA não é acionada.
         // =====================
-        if ($channel->hasIa() && $ticket->lead) {
+        $autoReplyMatched = app(\App\Services\AutoReplyService::class)
+            ->matchAndRespond($ticketMessage, $ticket, $channel);
+
+        $skipAi = $autoReplyMatched && $autoReplyMatched->skip_ai_after_match;
+
+        // =====================
+        // 🌐 EXTERNAL AI (Dialogflow/Dify) — handoff antes do agente interno
+        // Se o channel tem external_ai_config configurado e o trigger
+        // dispara, encaminha pro provider externo. Adapter pode devolver
+        // shouldHandoffHuman → desliga handoff e cai no humano direto.
+        // =====================
+        if (!$skipAi) {
+            $externalResponse = app(\App\Services\ExternalAi\ExternalAiService::class)
+                ->handleInbound($ticketMessage, $ticket, $channel);
+            if ($externalResponse) {
+                $skipAi = true; // external IA respondeu — pula agente interno
+            }
+        }
+
+        // =====================
+        // 🤖 RESPOSTA DA IA (interna, após roteamento + auto-reply + external)
+        // =====================
+        if (!$skipAi && $channel->hasIa() && $ticket->lead) {
             if ($ticket->hasIaEnabled()) {
                 // IA habilitada: responde automaticamente
                 $this->triggerSdrResponse($ticketMessage, $ticket, $ticket->lead, $channel);
@@ -670,7 +693,7 @@ class WhatsAppService implements WhatsAppProviderInterface
                     'lead_id' => $ticket->lead_id,
                     'disabled_by' => $ticket->ia_disabled_by,
                 ]);
-                
+
                 // Salva contexto para memória/aprendizado mesmo sem responder
                 $this->saveContextForLearning($ticketMessage, $ticket, $channel);
             }

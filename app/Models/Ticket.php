@@ -40,6 +40,9 @@ class Ticket extends Model
         'transferred_from_user_id',
         'transferred_at',
         'transfer_reason',
+        'external_ai_provider',
+        'external_ai_session_id',
+        'external_ai_handoff_at',
     ];
 
     /**
@@ -58,7 +61,13 @@ class Ticket extends Model
             'paused_at' => 'datetime',
             'transferred_at' => 'datetime',
             'value' => 'decimal:2',
+            'external_ai_handoff_at' => 'datetime',
         ];
+    }
+
+    public function hasExternalAiActive(): bool
+    {
+        return !empty($this->external_ai_provider) && !is_null($this->external_ai_handoff_at);
     }
 
     /**
