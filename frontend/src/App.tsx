@@ -31,6 +31,10 @@ import { WhatsAppPage as ChannelsWhatsAppPage } from '@/pages/settings/channels/
 import { InstagramPage as ChannelsInstagramPage } from '@/pages/settings/channels/InstagramPage'
 import { ExternalAIPage } from '@/pages/settings/channels/ExternalAIPage'
 import { WebhooksPage as ChannelsWebhooksPage } from '@/pages/settings/channels/WebhooksPage'
+import { PipelinesPage as SalesPipelinesPage } from '@/pages/settings/sales/PipelinesPage'
+import { BroadcastsPage as SalesBroadcastsPage } from '@/pages/settings/sales/BroadcastsPage'
+import { LandingPagesPage as SalesLandingPagesPage } from '@/pages/settings/sales/LandingPagesPage'
+import { ProductsPage as SalesProductsPage } from '@/pages/settings/sales/ProductsPage'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
 import { ProductsPage } from '@/pages/products/Products'
@@ -245,6 +249,13 @@ function AppRoutes() {
           <Route path="instagram" element={<ChannelsInstagramPage />} />
           <Route path="external-ai" element={<ExternalAIPage />} />
           <Route path="webhooks" element={<ChannelsWebhooksPage />} />
+        </Route>
+        <Route path="settings/sales" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="pipelines" replace />} />
+          <Route path="pipelines" element={<SalesPipelinesPage />} />
+          <Route path="broadcasts" element={<SalesBroadcastsPage />} />
+          <Route path="landing-pages" element={<SalesLandingPagesPage />} />
+          <Route path="products" element={<SalesProductsPage />} />
         </Route>
         {/* Catch-all para rotas ainda não migradas — usa SettingsPage antigo */}
         <Route path="settings/*" element={<SettingsPage />} />
