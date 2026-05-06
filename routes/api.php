@@ -95,6 +95,14 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
     Route::get('audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index']);
     Route::get('audit-logs/{id}', [\App\Http\Controllers\AuditLogController::class, 'show']);
 
+    // Tags (CRUD por tenant)
+    Route::prefix('tags')->controller(\App\Http\Controllers\TagController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::put('{id}', 'update');
+        Route::delete('{id}', 'destroy');
+    });
+
     // Custom Profiles (RBAC v2) — admin/super_admin only via permission users_manage
     Route::prefix('custom-profiles')->group(function () {
         Route::get('catalog', [\App\Http\Controllers\CustomProfileController::class, 'catalog']);
@@ -366,6 +374,14 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
             Route::post('{ticket}/pause', [TicketController::class, 'pause']);
             Route::post('{ticket}/resume', [TicketController::class, 'resume']);
             Route::get('{ticket}/pause-history', [TicketController::class, 'pauseHistory']);
+            // Share — atendimento conjunto (multi-atendente)
+            Route::post('{ticket}/share', [TicketController::class, 'share']);
+            Route::delete('{ticket}/share/{userId}', [TicketController::class, 'unshare']);
+            // Value (deal monetário)
+            Route::put('{ticket}/value', [TicketController::class, 'updateValue']);
+            // Tags
+            Route::post('{ticket}/tags', [\App\Http\Controllers\TagController::class, 'attachToTicket']);
+            Route::delete('{ticket}/tags/{tagId}', [\App\Http\Controllers\TagController::class, 'detachFromTicket']);
             // Toggle IA para atendimento humano
             Route::put('{ticket}/toggle-ia', [TicketController::class, 'toggleIa']); // Toggle IA on/off
             Route::get('{ticket}/ia-status', [TicketController::class, 'iaStatus']); // Status da IA
@@ -757,6 +773,7 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
         Route::get('/{broadcast}', 'show');
         Route::post('/{broadcast}/start', 'start');
         Route::post('/{broadcast}/pause', 'pause');
+        Route::post('/{broadcast}/resume', 'resume');
         Route::post('/{broadcast}/cancel', 'cancel');
         Route::delete('/{broadcast}', 'destroy');
     });

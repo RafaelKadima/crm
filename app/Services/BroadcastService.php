@@ -170,6 +170,22 @@ class BroadcastService
     }
 
     /**
+     * Retoma o envio de um broadcast pausado — volta pra SENDING e
+     * re-enfileira ProcessBroadcastJob que continua a partir das
+     * mensagens PENDING que ainda não foram enviadas.
+     */
+    public function resumeBroadcast(Broadcast $broadcast): void
+    {
+        if ($broadcast->status !== BroadcastStatusEnum::PAUSED) {
+            throw new \InvalidArgumentException("Broadcast não está pausado (status: {$broadcast->status->value}).");
+        }
+
+        $broadcast->update(['status' => BroadcastStatusEnum::SENDING]);
+
+        ProcessBroadcastJob::dispatch($broadcast);
+    }
+
+    /**
      * Cancela o broadcast.
      */
     public function cancelBroadcast(Broadcast $broadcast): void

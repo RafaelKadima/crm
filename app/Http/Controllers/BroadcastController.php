@@ -152,6 +152,29 @@ class BroadcastController extends Controller
     }
 
     /**
+     * Retoma envio pausado — re-enfileira ProcessBroadcastJob que vai
+     * continuar de onde parou (mensagens PENDING).
+     *
+     * POST /api/broadcasts/{broadcast}/resume
+     */
+    public function resume(Request $request, Broadcast $broadcast): JsonResponse
+    {
+        $this->authorizeAccess($request, $broadcast);
+
+        try {
+            $this->broadcastService->resumeBroadcast($broadcast);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Broadcast retomado.',
+                'data' => $broadcast->fresh(),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
      * Cancela broadcast.
      *
      * POST /api/broadcasts/{broadcast}/cancel
