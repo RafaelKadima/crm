@@ -21,12 +21,17 @@ class LeadTransferService
      * Funciona com ou sem fila associada.
      * Atualiza a carteirização para manter o histórico.
      */
-    public function transferToUser(Lead $lead, User $newUser, ?User $transferredBy = null): array
-    {
+    public function transferToUser(
+        Lead $lead,
+        User $newUser,
+        ?User $transferredBy = null,
+        ?string $reason = null,
+    ): array {
         $queue = $lead->queue;
 
-        return DB::transaction(function () use ($lead, $queue, $newUser, $transferredBy) {
+        return DB::transaction(function () use ($lead, $queue, $newUser, $transferredBy, $reason) {
             $previousOwner = $lead->owner;
+            $previousOwnerId = $previousOwner?->id;
 
             // Atualiza o owner do lead
             $lead->update(['owner_id' => $newUser->id]);
@@ -37,18 +42,25 @@ class LeadTransferService
             }
 
             // Atualiza TODOS os tickets ATIVOS do lead (não apenas um).
-            // Ativo = open OU pending — ambos representam conversa em andamento.
+            // Popula colunas de transfer log (Sprint 5 backend) — permite
+            // reconstituir cronologia de quem transferiu pra quem.
             $lead->tickets()
                 ->whereIn('status', [TicketStatusEnum::OPEN, TicketStatusEnum::PENDING])
-                ->update(['assigned_user_id' => $newUser->id]);
+                ->update([
+                    'assigned_user_id' => $newUser->id,
+                    'transferred_from_user_id' => $previousOwnerId,
+                    'transferred_at' => now(),
+                    'transfer_reason' => $reason,
+                ]);
 
             Log::info('Lead transferred to user', [
                 'lead_id' => $lead->id,
                 'queue_id' => $queue?->id,
-                'from_user' => $previousOwner?->id,
+                'from_user' => $previousOwnerId,
                 'to_user' => $newUser->id,
                 'transferred_by' => $transferredBy?->id,
                 'has_queue' => $queue !== null,
+                'reason' => $reason,
             ]);
 
             return [
@@ -63,10 +75,16 @@ class LeadTransferService
      * Transfere um lead para outra fila.
      * Se não especificar usuário, usa a carteirização existente ou autodistribui.
      */
-    public function transferToQueue(Lead $lead, Queue $newQueue, ?User $newUser = null, ?User $transferredBy = null): array
-    {
-        return DB::transaction(function () use ($lead, $newQueue, $newUser, $transferredBy) {
+    public function transferToQueue(
+        Lead $lead,
+        Queue $newQueue,
+        ?User $newUser = null,
+        ?User $transferredBy = null,
+        ?string $reason = null,
+    ): array {
+        return DB::transaction(function () use ($lead, $newQueue, $newUser, $transferredBy, $reason) {
             $previousQueue = $lead->queue;
+            $previousOwnerId = $lead->owner?->id;
 
             // Se não especificou usuário, verifica se já tem dono nessa fila
             if (!$newUser) {
@@ -94,13 +112,19 @@ class LeadTransferService
                 LeadQueueOwner::setOwnerForQueue($lead, $newQueue, $newUser);
             }
 
-            // Atualiza o ticket ativo (se houver).
-            // Ativo = open OU pending — ambos representam conversa em andamento.
+            // Atualiza o ticket ativo (se houver) + transfer log.
+            // Reason inclui contexto da fila destino pra audit trail rico.
+            $effectiveReason = $reason ?? "Transferido para fila '{$newQueue->name}'";
             $ticket = $lead->tickets()
                 ->whereIn('status', [TicketStatusEnum::OPEN, TicketStatusEnum::PENDING])
                 ->first();
             if ($ticket) {
-                $ticket->update(['assigned_user_id' => $newUser?->id]);
+                $ticket->update([
+                    'assigned_user_id' => $newUser?->id,
+                    'transferred_from_user_id' => $previousOwnerId,
+                    'transferred_at' => now(),
+                    'transfer_reason' => $effectiveReason,
+                ]);
             }
 
             Log::info('Lead transferred to queue', [
@@ -109,6 +133,7 @@ class LeadTransferService
                 'to_queue' => $newQueue->id,
                 'new_user' => $newUser?->id,
                 'transferred_by' => $transferredBy?->id,
+                'reason' => $effectiveReason,
             ]);
 
             return [
