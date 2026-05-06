@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\CalculateKpisJob;
+use App\Jobs\CheckStepReplyTimeoutsJob;
 use App\Jobs\DailyFunnelAggregateJob;
 use App\Jobs\ProcessScheduledTasks;
 use App\Jobs\RecalculateQueuePositionsJob;
@@ -24,6 +25,9 @@ Schedule::job(new ProcessScheduledTasks)->everyFiveMinutes()->withoutOverlapping
 
 // Recalcula posições visíveis na fila + avg_response_time (1min)
 Schedule::job(new RecalculateQueuePositionsJob)->everyMinute()->withoutOverlapping(2);
+
+// Verifica timeouts de StepReply executions (wait_input/branch)
+Schedule::job(new CheckStepReplyTimeoutsJob)->everyMinute()->withoutOverlapping(2);
 
 // Limpa tokens expirados diariamente
 Schedule::command('sanctum:prune-expired --hours=24')->daily();
