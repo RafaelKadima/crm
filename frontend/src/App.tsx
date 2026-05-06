@@ -35,6 +35,10 @@ import { PipelinesPage as SalesPipelinesPage } from '@/pages/settings/sales/Pipe
 import { BroadcastsPage as SalesBroadcastsPage } from '@/pages/settings/sales/BroadcastsPage'
 import { LandingPagesPage as SalesLandingPagesPage } from '@/pages/settings/sales/LandingPagesPage'
 import { ProductsPage as SalesProductsPage } from '@/pages/settings/sales/ProductsPage'
+import { AgentsPage as AiAgentsPage } from '@/pages/settings/ai/AgentsPage'
+import { KnowledgePage as AiKnowledgePage } from '@/pages/settings/ai/KnowledgePage'
+import { GuardrailsPage as AiGuardrailsPage } from '@/pages/settings/ai/GuardrailsPage'
+import { UsagePage as AiUsagePage } from '@/pages/settings/ai/UsagePage'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
 import { ProductsPage } from '@/pages/products/Products'
@@ -256,6 +260,13 @@ function AppRoutes() {
           <Route path="broadcasts" element={<SalesBroadcastsPage />} />
           <Route path="landing-pages" element={<SalesLandingPagesPage />} />
           <Route path="products" element={<SalesProductsPage />} />
+        </Route>
+        <Route path="settings/ai" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="agents" replace />} />
+          <Route path="agents" element={<AiAgentsPage />} />
+          <Route path="knowledge" element={<AiKnowledgePage />} />
+          <Route path="guardrails" element={<AiGuardrailsPage />} />
+          <Route path="usage" element={<AiUsagePage />} />
         </Route>
         {/* Catch-all para rotas ainda não migradas — usa SettingsPage antigo */}
         <Route path="settings/*" element={<SettingsPage />} />
