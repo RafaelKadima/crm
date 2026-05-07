@@ -76,6 +76,15 @@ return [
         'coexistence_app_id' => env('META_COEXISTENCE_APP_ID'),
         'coexistence_app_secret' => env('META_COEXISTENCE_APP_SECRET'),
 
+        // App "legacy" — usado por canais criados antes do Embedded Signup
+        // (sistema antigo onde o token era colado direto em Channel.config).
+        // Esses canais têm o app pai deles inscrito como webhook receiver
+        // da WABA, e os webhooks chegam assinados pelo secret desse app.
+        // Sem o secret aqui, o middleware HMAC rejeita os webhooks legítimos.
+        // Ver post-mortem 2026-05-07 (canal "Oficial 0" — Empresa Demo).
+        'legacy_app_id' => env('META_LEGACY_APP_ID'),
+        'legacy_app_secret' => env('META_LEGACY_APP_SECRET'),
+
         'api_version' => env('META_API_VERSION', 'v22.0'),
         'verify_token' => env('META_VERIFY_TOKEN', 'crm_meta_verify_token'),
         'redirect_uri' => env('META_REDIRECT_URI', env('APP_URL') . '/api/meta/callback'),
@@ -93,6 +102,7 @@ return [
             ['app_id' => env('META_APP_ID'), 'app_secret' => env('META_APP_SECRET'), 'label' => 'regular'],
             ['app_id' => env('META_EMBEDDED_APP_ID'), 'app_secret' => env('META_EMBEDDED_APP_SECRET'), 'label' => 'embedded'],
             ['app_id' => env('META_COEXISTENCE_APP_ID'), 'app_secret' => env('META_COEXISTENCE_APP_SECRET'), 'label' => 'coexistence'],
+            ['app_id' => env('META_LEGACY_APP_ID'), 'app_secret' => env('META_LEGACY_APP_SECRET'), 'label' => 'legacy'],
         ])
             ->filter(fn ($a) => !empty($a['app_id']) && !empty($a['app_secret']))
             ->groupBy('app_id')
