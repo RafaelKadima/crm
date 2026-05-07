@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BroadcastStatusEnum;
+use App\Traits\Auditable;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Broadcast extends Model
 {
-    use HasFactory, HasUuids, BelongsToTenant, SoftDeletes;
+    use HasFactory, HasUuids, BelongsToTenant, SoftDeletes, Auditable;
 
     protected $fillable = [
         'tenant_id',

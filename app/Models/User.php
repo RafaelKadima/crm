@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RoleEnum;
+use App\Traits\Auditable;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasUuids, Notifiable, BelongsToTenant;
+    use HasApiTokens, HasFactory, HasUuids, Notifiable, BelongsToTenant, Auditable;
 
     /**
      * The attributes that are mass assignable.
@@ -50,6 +51,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -68,7 +71,18 @@ class User extends Authenticatable
             'is_super_admin' => 'boolean',
             'external_integrations' => 'array',
             'tokens_invalidated_at' => 'datetime',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Verifica se o usuário tem 2FA habilitado e confirmado.
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return !is_null($this->two_factor_confirmed_at) && !empty($this->two_factor_secret);
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ChannelTypeEnum;
 use App\Enums\IaModeEnum;
+use App\Traits\Auditable;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Channel extends Model
 {
-    use HasFactory, HasUuids, BelongsToTenant;
+    use HasFactory, HasUuids, BelongsToTenant, Auditable;
 
     /**
      * The attributes that are mass assignable.
