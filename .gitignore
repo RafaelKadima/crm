@@ -49,3 +49,9 @@ check_*_temp.*
 
 # Screenshots de debug
 review-*.png
+
+# Certificados SSL — gerados pelo certbot (ou montados via volume) por ambiente.
+# Cada VPS tem o próprio cert renovado periodicamente; commitar deixaria o repo
+# dirty toda renovação e arrastaria certs antigos pra novos ambientes.
+docker/nginx/ssl/*.pem
+!docker/nginx/ssl/.gitkeep
