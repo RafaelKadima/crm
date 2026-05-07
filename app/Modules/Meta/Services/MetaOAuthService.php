@@ -182,11 +182,17 @@ class MetaOAuthService
     /**
      * Resolve as credenciais (app_id + app_secret) do app que deve operar pra
      * uma integração nova baseado no fluxo:
-     *   - coexistence → coexistence_app_id (obrigatório, sem fallback)
-     *   - embedded    → embedded_app_id   (com fallback pro regular)
-     *   - regular     → app_id
+     *   - coexistence    → coexistence_app_id (obrigatório, sem fallback)
+     *   - embedded       → embedded_app_id    (com fallback pro regular)
+     *   - omnify_oauth   → embedded_app_id    (Sprint 5 — white-label;
+     *                                          tenant não tem Meta App próprio,
+     *                                          usa o app credenciado pelo Omnify.
+     *                                          Por enquanto reusa `embedded` que
+     *                                          já cumpre esse papel; pode virar
+     *                                          env vars dedicadas no futuro)
+     *   - regular        → app_id
      *
-     * @param  'regular'|'embedded'|'coexistence'  $flow
+     * @param  'regular'|'embedded'|'coexistence'|'omnify_oauth'  $flow
      * @return array{app_id: string, app_secret: string}
      */
     protected function appCredentialsForFlow(string $flow): array
@@ -200,11 +206,61 @@ class MetaOAuthService
             return ['app_id' => $this->coexistenceAppId, 'app_secret' => $this->coexistenceAppSecret];
         }
 
-        if ($flow === 'embedded') {
+        if ($flow === 'embedded' || $flow === 'omnify_oauth') {
             return ['app_id' => $this->embeddedAppId, 'app_secret' => $this->embeddedAppSecret];
         }
 
         return ['app_id' => $this->appId, 'app_secret' => $this->appSecret];
+    }
+
+    /**
+     * Resolve credenciais a partir de uma MetaIntegration existente,
+     * respeitando o `webhook_origin` setado no schema (Sprint 5).
+     *
+     * Regra:
+     *   - webhook_origin='omnify_oauth' → app credenciado do Omnify
+     *     (white-label — tenant usa app único do produto, não Meta App próprio)
+     *   - default ('own_app') → tenta resolver via metaAppCredentials() do
+     *     model (que olha meta_app_id stored e mapeia pra config('services.meta.apps'))
+     *
+     * Use este método em vez de appCredentialsForFlow() pra operações
+     * sobre integrações já existentes (refresh token, validar webhook, etc).
+     *
+     * @return array{app_id: string, app_secret: string}
+     */
+    public function appCredentialsForIntegration(MetaIntegration $integration): array
+    {
+        $origin = $integration->webhook_origin ?? MetaIntegration::ORIGIN_OWN_APP;
+
+        if ($origin === MetaIntegration::ORIGIN_OMNIFY_OAUTH) {
+            return $this->appCredentialsForFlow('omnify_oauth');
+        }
+
+        // own_app — usa credentials registradas no momento do OAuth
+        // (meta_app_id no model resolve via metaAppCredentials helper)
+        try {
+            return $integration->metaAppCredentials();
+        } catch (\Throwable $e) {
+            Log::warning('Meta integration: falling back pra app_id default', [
+                'integration_id' => $integration->id,
+                'webhook_origin' => $origin,
+                'error' => $e->getMessage(),
+            ]);
+            return ['app_id' => $this->appId, 'app_secret' => $this->appSecret];
+        }
+    }
+
+    /**
+     * Resolve o redirect_uri pra uma integração — respeita
+     * `oauth_redirect_uri` custom quando setado em modo white-label,
+     * cai no default do app caso contrário.
+     */
+    public function redirectUriForIntegration(MetaIntegration $integration): string
+    {
+        if ($integration->usesOmnifyOauth() && !empty($integration->oauth_redirect_uri)) {
+            return $integration->oauth_redirect_uri;
+        }
+        return $this->redirectUri;
     }
 
     /**
