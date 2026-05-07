@@ -36,6 +36,10 @@ class Ticket extends Model
         'paused_at',
         'pause_reason',
         'paused_by',
+        'value',
+        'transferred_from_user_id',
+        'transferred_at',
+        'transfer_reason',
     ];
 
     /**
@@ -52,6 +56,8 @@ class Ticket extends Model
             'ia_enabled' => 'boolean',
             'ia_disabled_at' => 'datetime',
             'paused_at' => 'datetime',
+            'transferred_at' => 'datetime',
+            'value' => 'decimal:2',
         ];
     }
 
@@ -68,6 +74,30 @@ class Ticket extends Model
     public function pauseLogs(): HasMany
     {
         return $this->hasMany(TicketPauseLog::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Tags polimórficas (compartilha tabela com Lead).
+     */
+    public function tags(): \Illuminate\Database\Eloquent\Relations\MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable')->withTimestamps();
+    }
+
+    /**
+     * Atendentes adicionais que compartilham este ticket — recebem
+     * broadcasts e podem responder. Titular continua sendo
+     * assigned_user_id.
+     */
+    public function sharedUsers(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'ticket_shared_users', 'ticket_id', 'user_id')
+            ->withPivot(['shared_by', 'shared_at']);
+    }
+
+    public function transferredFromUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'transferred_from_user_id');
     }
 
     /**

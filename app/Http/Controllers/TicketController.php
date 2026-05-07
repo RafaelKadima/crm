@@ -550,6 +550,64 @@ class TicketController extends Controller
     }
 
     /**
+     * Compartilha o ticket com outros atendentes (visualização +
+     * resposta). Não muda titular (assigned_user_id).
+     */
+    public function share(Request $request, Ticket $ticket): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user->hasPermission('tickets_transfer')) {
+            abort(403, 'Sem permissão para compartilhar tickets.');
+        }
+
+        $validated = $request->validate([
+            'user_ids' => 'required|array|min:1',
+            'user_ids.*' => 'uuid|exists:users,id',
+        ]);
+
+        $shareData = [];
+        foreach ($validated['user_ids'] as $uid) {
+            $shareData[$uid] = ['shared_by' => $user->id, 'shared_at' => now()];
+        }
+
+        $ticket->sharedUsers()->syncWithoutDetaching($shareData);
+
+        return response()->json([
+            'message' => 'Ticket compartilhado.',
+            'shared_users' => $ticket->fresh()->sharedUsers()->get(['users.id', 'users.name', 'users.email']),
+        ]);
+    }
+
+    /**
+     * Remove um atendente do compartilhamento.
+     */
+    public function unshare(Request $request, Ticket $ticket, string $userId): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user->hasPermission('tickets_transfer')) {
+            abort(403, 'Sem permissão para alterar compartilhamento.');
+        }
+
+        $ticket->sharedUsers()->detach($userId);
+
+        return response()->json(['message' => 'Compartilhamento removido.']);
+    }
+
+    /**
+     * Atualiza o valor monetário do ticket.
+     */
+    public function updateValue(Request $request, Ticket $ticket): JsonResponse
+    {
+        $validated = $request->validate([
+            'value' => 'nullable|numeric|min:0|max:99999999.99',
+        ]);
+
+        $ticket->update(['value' => $validated['value']]);
+
+        return response()->json(['data' => $ticket->fresh()]);
+    }
+
+    /**
      * Marca o ticket como aberto pela primeira vez.
      *
      * Chamado pelo frontend quando um atendente clica numa conversa pendente.

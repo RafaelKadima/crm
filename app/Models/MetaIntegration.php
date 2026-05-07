@@ -34,6 +34,10 @@ class MetaIntegration extends Model
         'is_coexistence',
         'scopes',
         'metadata',
+        'webhook_origin',
+        'oauth_proxy_enabled',
+        'oauth_redirect_uri',
+        'webhook_needs_revalidation',
     ];
 
     /**
@@ -59,7 +63,36 @@ class MetaIntegration extends Model
             'is_coexistence' => 'boolean',
             'scopes' => 'array',
             'metadata' => 'array',
+            'oauth_proxy_enabled' => 'boolean',
+            'webhook_needs_revalidation' => 'boolean',
         ];
+    }
+
+    /**
+     * Modos de operação OAuth disponíveis. Mantenha alinhado com a
+     * coluna webhook_origin (default 'own_app').
+     */
+    public const ORIGIN_OWN_APP = 'own_app';
+    public const ORIGIN_OMNIFY_OAUTH = 'omnify_oauth';
+
+    public function usesOmnifyOauth(): bool
+    {
+        return $this->webhook_origin === self::ORIGIN_OMNIFY_OAUTH;
+    }
+
+    public function needsRevalidation(): bool
+    {
+        return (bool) $this->webhook_needs_revalidation;
+    }
+
+    /**
+     * Marca a integração como precisando de re-OAuth — usado quando
+     * admin troca o webhook_origin (own_app ↔ omnify_oauth) e o
+     * próximo callback precisa renovar credenciais.
+     */
+    public function flagForRevalidation(): void
+    {
+        $this->forceFill(['webhook_needs_revalidation' => true])->save();
     }
 
     /**

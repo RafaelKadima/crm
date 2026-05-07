@@ -34,6 +34,22 @@ class ProcessBroadcastJob implements ShouldQueue
             return;
         }
 
+        // Send-window check: se está fora da janela permitida, posterga
+        // pro próximo horário válido em vez de queimar tentativas.
+        if (!$broadcast->isWithinSendWindow()) {
+            $next = $broadcast->nextAllowedSendAt();
+            $delaySeconds = $next ? max(60, $next->diffInSeconds(now())) : 3600;
+
+            Log::info('[Broadcast] Fora da send_window, postergando', [
+                'broadcast_id' => $broadcast->id,
+                'next_at' => $next?->toIso8601String(),
+                'delay_seconds' => $delaySeconds,
+            ]);
+
+            $this->release($delaySeconds);
+            return;
+        }
+
         Log::info('[Broadcast] Iniciando envio', [
             'broadcast_id' => $broadcast->id,
             'total' => $broadcast->total_recipients,
