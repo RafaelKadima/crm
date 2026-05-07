@@ -23,7 +23,12 @@ class CalculateKpisJob implements ShouldQueue
     public function __construct(
         public ?string $tenantId = null,
         public ?string $period = null,
-        public string $periodType = 'month'
+        // Vocabulário do schema: daily/weekly/monthly/quarterly/yearly (vide
+        // check constraint kpi_values_period_type_check). Antes desse fix
+        // o default era 'month' (singular), o que disparava SQLSTATE[23514]
+        // em todo INSERT — junto do bug de visibility, fazia o Job morrer
+        // silenciosamente todo dia.
+        public string $periodType = 'monthly'
     ) {
         $this->period = $period ?? Carbon::now()->format('Y-m');
     }
