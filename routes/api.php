@@ -63,8 +63,8 @@ Route::get('files/{attachment}/download', [\App\Http\Controllers\FileUploadContr
     ->name('files.download')
     ->middleware('auth:api');
 
-// Rotas protegidas por autenticação
-Route::middleware('auth:api')->group(function () {
+// Rotas protegidas por autenticação (+ kill switch via tokens_invalidated_at)
+Route::middleware(['auth:api', 'token.valid'])->group(function () {
 
     // Broadcasting auth para WebSockets
     Route::post('broadcasting/auth', function (\Illuminate\Http\Request $request) {
@@ -80,6 +80,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
         Route::post('refresh', [AuthController::class, 'refresh']);
+        Route::post('revoke-all-tokens', [AuthController::class, 'revokeAllTokens']);
     });
 
     // Rotas que requerem tenant ativo
@@ -1228,20 +1229,24 @@ Route::prefix('lp')->group(function () {
 // Webhooks públicos (sem autenticação, rate limited: 120/min por IP)
 Route::middleware('throttle:webhooks')->prefix('webhooks')->group(function () {
     // WhatsApp webhook (Meta Cloud API)
+    // GET (verify) usa hub_verify_token; POST (events) exige HMAC X-Hub-Signature-256
     Route::get('whatsapp', [WhatsAppController::class, 'verifyWebhook']);
-    Route::post('whatsapp', [WhatsAppController::class, 'receiveWebhook']);
+    Route::post('whatsapp', [WhatsAppController::class, 'receiveWebhook'])
+        ->middleware('meta.signature');
 
     // Simulação de mensagem WhatsApp para testes locais
     Route::post('simulate-message', [WhatsAppController::class, 'simulateMessage']);
 
     // Instagram webhook
     Route::get('instagram', [InstagramController::class, 'verifyWebhook']);
-    Route::post('instagram', [InstagramController::class, 'receiveWebhook']);
+    Route::post('instagram', [InstagramController::class, 'receiveWebhook'])
+        ->middleware('meta.signature');
 
     // Meta unified webhook (WhatsApp + Instagram + Facebook)
     // Use este endpoint único se preferir configurar apenas um webhook no Meta
     Route::get('meta', [MetaWebhookController::class, 'verify']);
-    Route::post('meta', [MetaWebhookController::class, 'receive']);
+    Route::post('meta', [MetaWebhookController::class, 'receive'])
+        ->middleware('meta.signature');
 });
 
 // Media proxy (serve files from S3)

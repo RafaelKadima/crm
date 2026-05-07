@@ -2,9 +2,12 @@
 
 use App\Http\Middleware\CheckFeature;
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\EnsureTokenIsValid;
 use App\Http\Middleware\InternalApiMiddleware;
 use App\Http\Middleware\ResolveTenant;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SuperAdminMiddleware;
+use App\Http\Middleware\VerifyMetaWebhookSignature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -28,12 +31,17 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
         ]);
 
+        // Security headers em toda resposta (espelha config do nginx — defesa em profundidade)
+        $middleware->append(SecurityHeaders::class);
+
         $middleware->alias([
             'tenant' => ResolveTenant::class,
             'super_admin' => SuperAdminMiddleware::class,
             'feature' => CheckFeature::class,
             'permission' => CheckPermission::class,
             'internal.api' => InternalApiMiddleware::class,
+            'meta.signature' => VerifyMetaWebhookSignature::class,
+            'token.valid' => EnsureTokenIsValid::class,
         ]);
         
         // Para APIs, retornar 401 JSON ao invés de redirecionar para login

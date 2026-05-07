@@ -67,7 +67,20 @@ class User extends Authenticatable
             'is_available_for_leads' => 'boolean',
             'is_super_admin' => 'boolean',
             'external_integrations' => 'array',
+            'tokens_invalidated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Kill switch de tokens Passport. Invalida todos os tokens emitidos
+     * antes deste instante e incrementa token_version pra audit/log.
+     */
+    public function invalidateAllTokens(): void
+    {
+        $this->forceFill([
+            'token_version' => $this->token_version + 1,
+            'tokens_invalidated_at' => now(),
+        ])->save();
     }
 
     /**
