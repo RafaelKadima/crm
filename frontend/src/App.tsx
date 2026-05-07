@@ -27,6 +27,10 @@ import { QuickRepliesPage as SupportQuickRepliesPage } from '@/pages/settings/su
 import { AutoRepliesPage } from '@/pages/settings/support/AutoRepliesPage'
 import { StepRepliesPage } from '@/pages/settings/support/StepRepliesPage'
 import { TemplatesPage as SupportTemplatesPage } from '@/pages/settings/support/TemplatesPage'
+import { WhatsAppPage as ChannelsWhatsAppPage } from '@/pages/settings/channels/WhatsAppPage'
+import { InstagramPage as ChannelsInstagramPage } from '@/pages/settings/channels/InstagramPage'
+import { ExternalAIPage } from '@/pages/settings/channels/ExternalAIPage'
+import { WebhooksPage as ChannelsWebhooksPage } from '@/pages/settings/channels/WebhooksPage'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
 import { ProductsPage } from '@/pages/products/Products'
@@ -234,6 +238,13 @@ function AppRoutes() {
           <Route path="auto-replies" element={<AutoRepliesPage />} />
           <Route path="step-replies" element={<StepRepliesPage />} />
           <Route path="templates" element={<SupportTemplatesPage />} />
+        </Route>
+        <Route path="settings/channels" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="whatsapp" replace />} />
+          <Route path="whatsapp" element={<ChannelsWhatsAppPage />} />
+          <Route path="instagram" element={<ChannelsInstagramPage />} />
+          <Route path="external-ai" element={<ExternalAIPage />} />
+          <Route path="webhooks" element={<ChannelsWebhooksPage />} />
         </Route>
         {/* Catch-all para rotas ainda não migradas — usa SettingsPage antigo */}
         <Route path="settings/*" element={<SettingsPage />} />
