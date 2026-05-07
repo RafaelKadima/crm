@@ -17,6 +17,10 @@ import { SettingsLayout } from '@/layouts/SettingsLayout'
 import { ProfilePage } from '@/pages/settings/account/ProfilePage'
 import { SecurityPage } from '@/pages/settings/account/SecurityPage'
 import { NotificationsPage } from '@/pages/settings/account/NotificationsPage'
+import { DetailsPage } from '@/pages/settings/company/DetailsPage'
+import { BrandingPage } from '@/pages/settings/company/BrandingPage'
+import { AppearancePage } from '@/pages/settings/company/AppearancePage'
+import { TeamPage } from '@/pages/settings/company/TeamPage'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
 import { ProductsPage } from '@/pages/products/Products'
@@ -208,6 +212,13 @@ function AppRoutes() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="security" element={<SecurityPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
+        </Route>
+        <Route path="settings/company" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="details" replace />} />
+          <Route path="details" element={<DetailsPage />} />
+          <Route path="branding" element={<BrandingPage />} />
+          <Route path="appearance" element={<AppearancePage />} />
+          <Route path="team" element={<TeamPage />} />
         </Route>
         {/* Catch-all para rotas ainda não migradas — usa SettingsPage antigo */}
         <Route path="settings/*" element={<SettingsPage />} />
