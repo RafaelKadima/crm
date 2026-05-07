@@ -13,6 +13,10 @@ import { TasksPage } from '@/pages/tasks/Tasks'
 import { ReportsPage } from '@/pages/reports/Reports'
 import { ActivityEffectivenessPage } from '@/pages/reports/ActivityEffectivenessPage'
 import { SettingsPage } from '@/pages/settings/Settings'
+import { SettingsLayout } from '@/layouts/SettingsLayout'
+import { ProfilePage } from '@/pages/settings/account/ProfilePage'
+import { SecurityPage } from '@/pages/settings/account/SecurityPage'
+import { NotificationsPage } from '@/pages/settings/account/NotificationsPage'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
 import { ProductsPage } from '@/pages/products/Products'
@@ -198,6 +202,14 @@ function AppRoutes() {
         <Route path="managerial/forecast" element={<ForecastPage />} />
         <Route path="managerial/cohort" element={<ChannelCohortPage />} />
         <Route path="managerial/funnel-mapping" element={<PipelineFunnelMappingPage />} />
+        {/* New Settings Layout (Sprint S0+) — rotas refatoradas usam SettingsLayout */}
+        <Route path="settings/account" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="profile" replace />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="security" element={<SecurityPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+        </Route>
+        {/* Catch-all para rotas ainda não migradas — usa SettingsPage antigo */}
         <Route path="settings/*" element={<SettingsPage />} />
         <Route path="groups" element={<GroupsPage />} />
         <Route path="channels" element={<ChannelsPage />} />

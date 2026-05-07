@@ -52,3 +52,36 @@ export function truncate(str: string, length: number): string {
   return str.slice(0, length) + '...'
 }
 
+/**
+ * Deep equality recursivo. Suporta primitives, arrays, objects (POJO),
+ * Date, null/undefined. NÃO compara funções, Maps, Sets, RegExp —
+ * casos avançados retornam false (conservador).
+ *
+ * Usado por useSettings pra detectar isDirty sem dep externa (lodash).
+ */
+export function isEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true
+  if (a == null || b == null) return a === b
+  if (typeof a !== typeof b) return false
+
+  if (a instanceof Date && b instanceof Date) {
+    return a.getTime() === b.getTime()
+  }
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false
+    return a.every((v, i) => isEqual(v, b[i]))
+  }
+
+  if (typeof a === 'object' && typeof b === 'object') {
+    const ka = Object.keys(a as object)
+    const kb = Object.keys(b as object)
+    if (ka.length !== kb.length) return false
+    return ka.every((k) =>
+      isEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
+    )
+  }
+
+  return false
+}
+
