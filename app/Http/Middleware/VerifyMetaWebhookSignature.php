@@ -70,14 +70,39 @@ class VerifyMetaWebhookSignature
         $appIdsTried = array_values(array_unique(array_merge(...array_column($secrets, 'app_ids'))));
         $labelsTried = array_values(array_unique(array_merge(...array_column($secrets, 'labels'))));
 
+        // Fingerprints do body e da signature pra debug sem vazar secret/payload:
+        // - body_md5: confirma se o body que computamos é o que a Meta assinou
+        //   (se nginx/Laravel modificar o body em trânsito, md5 muda)
+        // - body_first_chars: 80 primeiros chars do body. WhatsApp payloads
+        //   começam com {"object":"whatsapp_business_account","entry":[...].
+        //   Se vier `{"object":` mas sem newline ou com BOM, vemos aqui.
+        // - signature_prefix: 12 chars da signature recebida (sha256= + 4 chars).
+        //   HMAC tem 64 chars hex; 4 chars não vazam secret. Mostrar suficiente
+        //   pra distinguir entre 2 webhooks diferentes (mesmo secret, body
+        //   diferente → signatures diferentes).
+        // - expected_prefixes: o que ESPERÁVAMOS pra cada candidate. Se nenhum
+        //   bate com signature_prefix observado, a Meta está usando OUTRO secret
+        //   (caso BSP/Tech Provider).
+        $expectedPrefixes = array_map(
+            fn ($c) => [
+                'app_ids' => $c['app_ids'],
+                'expected' => substr('sha256=' . hash_hmac('sha256', $body, $c['secret']), 0, 12),
+            ],
+            $secrets,
+        );
+
         app(SecurityIncidentService::class)->record(
             type: SecurityIncidentTypeEnum::INVALID_WEBHOOK_SIGNATURE,
             metadata: [
                 'reason' => 'signature_mismatch',
                 'body_size' => strlen($body),
+                'body_md5' => md5($body),
+                'body_first_chars' => substr($body, 0, 80),
+                'signature_prefix' => substr($signature, 0, 12),
                 'app_ids_tried' => $appIdsTried,
                 'labels_tried' => $labelsTried,
                 'secrets_count' => count($secrets),
+                'expected_prefixes' => $expectedPrefixes,
             ],
         );
 

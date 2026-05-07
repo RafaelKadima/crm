@@ -89,6 +89,15 @@ class VerifyMetaWebhookSignatureTest extends TestCase
             ['regular', 'coexistence'],
             $incident->metadata['labels_tried'],
         );
+        // Fingerprints pra debug sem expor secret/payload completo
+        $this->assertSame(md5($body), $incident->metadata['body_md5']);
+        $this->assertSame(substr($body, 0, 80), $incident->metadata['body_first_chars']);
+        $this->assertSame(substr($sig, 0, 12), $incident->metadata['signature_prefix']);
+        $this->assertCount(2, $incident->metadata['expected_prefixes']);
+        foreach ($incident->metadata['expected_prefixes'] as $entry) {
+            $this->assertSame(12, strlen($entry['expected']));
+            $this->assertStringStartsWith('sha256=', $entry['expected']);
+        }
     }
 
     public function test_header_ausente_aborta_com_incident_de_missing_header(): void
