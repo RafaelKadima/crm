@@ -27,6 +27,13 @@ tmpclaude-*
 /public/build
 /public/hot
 /public/storage
+# Build artifacts copiados pra raíz public/ (Vite gera em frontend/dist;
+# o que está em /public/* na VPS é overflow de tentativas antigas — não
+# é servido pelo nginx atual mas também não atrapalha)
+/public/assets
+/public/index.html
+/public/omnify-favicon.svg
+/public/vite.svg
 /storage/*.key
 /storage/pail
 /vendor

@@ -2,7 +2,7 @@
 # CRM OMNIFY - MAKEFILE
 # ==================================================
 
-.PHONY: help setup deploy build up down restart logs shell migrate
+.PHONY: help setup deploy preflight verify rollback build up down restart logs shell migrate logs-perm logs-perm-cron
 
 # Cores
 GREEN  := $(shell printf '\033[0;32m')
@@ -46,6 +46,7 @@ deploy: ## Deploy/atualização em produção (com healthcheck automático)
 	docker compose up -d
 	docker compose exec -T php php artisan migrate --force
 	docker compose exec -T php php artisan optimize
+	@$(MAKE) logs-perm   # corrige owner de logs criados por exec rodando como root
 	docker compose restart queue scheduler reverb
 	@# Recria do DNS: quando reverb é recriado, o container php mantém o IP antigo
 	@# em cache e broadcasts (ShouldBroadcastNow) falham silenciosamente com cURL 7.
@@ -88,6 +89,13 @@ verify: ## Healthcheck pós-deploy (containers + endpoints + cascata nginx)
 	  -H 'Upgrade: websocket' -H 'Connection: upgrade' \
 	  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Version: 13'); \
 	  if [ "$$CODE" = "101" ]; then echo "  ✅ reverb ($$CODE)"; else echo "  ❌ reverb ($$CODE) — real-time não vai funcionar"; exit 1; fi
+	@echo ""
+	@echo "$(YELLOW)5) Permissão de storage/logs (www-data:www-data — vide DEPLOY-GUIDE seção 15):$(RESET)"
+	@WRONG=$$(find storage/logs -name 'laravel*.log' ! -user www-data 2>/dev/null); \
+	  if [ -n "$$WRONG" ]; then \
+	    echo "  ❌ logs com owner errado (rode 'make logs-perm'):"; \
+	    echo "$$WRONG" | sed 's/^/    /'; exit 1; \
+	  else echo "  ✅ todos www-data:www-data"; fi
 	@echo ""
 	@echo "$(GREEN)✅ Tudo verde!$(RESET)"
 
@@ -188,6 +196,22 @@ frontend-dev: ## Roda frontend em modo dev
 # --------------------------------------------------
 # Manutenção
 # --------------------------------------------------
+logs-perm: ## Corrige owner de storage/logs/* para www-data (vide DEPLOY-GUIDE §15)
+	@# Comandos artisan via `docker compose exec` rodam como root e arquivos
+	@# criados ficam root-owned — PHP-FPM (www-data) não consegue escrever depois.
+	@# Sintoma: HTTP 500 silencioso em rotas que tentam logar (ex.: rejeição HMAC).
+	@chown -R www-data:www-data storage/logs/ 2>/dev/null || \
+	  sudo chown -R www-data:www-data storage/logs/
+	@chmod -R u+rw,g+rw storage/logs/
+	@echo "$(GREEN)✅ storage/logs/ → www-data:www-data$(RESET)"
+
+logs-perm-cron: ## Instala cron diário (3h da manhã) que corrige perms de logs
+	@echo "Adicione ao crontab da VPS (crontab -e):"
+	@echo "  0 3 * * * cd $$(pwd) && chown -R www-data:www-data storage/logs/ >/dev/null 2>&1"
+	@echo ""
+	@echo "Defesa em camadas: o 'make deploy' já chama 'logs-perm' automaticamente."
+	@echo "O cron protege contra criação de logs por outros comandos ad-hoc rodados como root."
+
 clean: ## Remove containers e volumes não utilizados
 	docker system prune -f
 	docker volume prune -f

@@ -1022,25 +1022,20 @@ Sessão de deploy de 3 issues (job `RecalculateQueuePositionsJob` falhando com `
 
 1. **`docker compose exec -T php` roda como root → arquivos criados pertencem a `root:root`, não a `www-data`.** Isso quebra o `daily` logger silenciosamente: quando o handler de excepção tenta logar e o arquivo `storage/logs/laravel-YYYY-MM-DD.log` é root-owned, o write falha, o exception não é tratado e o cliente recebe **HTTP 500** em vez do código real (ex.: 401 do middleware HMAC). Sintoma desta sessão: webhook real funcionava (sig válida → 200), mas qualquer rejeição (sig inválida, sig ausente) virou 500. Tinker direto retornava 401 corretamente — diferença era o user (root no exec vs www-data no PHP-FPM).
 
-   **Diagnose rápida:**
+   **Defesa automatizada (já no Makefile):**
+   - `make deploy` chama `make logs-perm` antes do restart final → garante owner correto após cada deploy
+   - `make verify` passo 5 falha (exit 1) se algum `storage/logs/laravel*.log` não for `www-data:www-data` → não dá pra fechar o terminal sem perceber
+   - `make logs-perm` corrige manualmente quando precisar (ex.: rodou `tinker` ad-hoc)
+
+   **Defesa em camadas (recomendado):** instalar cron diário pra cobrir comandos ad-hoc fora do Makefile:
    ```bash
-   ls -la storage/logs/laravel-*.log
-   # Procurar por owner != www-data
-   ```
-   
-   **Fix imediato:**
-   ```bash
-   chown www-data:www-data storage/logs/laravel-*.log
-   chmod 664 storage/logs/laravel-*.log
+   make logs-perm-cron    # mostra a linha pronta
+   crontab -e             # cola a linha sugerida
    ```
 
-   **Prevenção:** rodar comandos artisan em prod sempre com `--user=www-data`:
+   **Prevenção na fonte:** rodar artisan em prod com `--user=www-data` quando criar arquivos:
    ```bash
    docker compose exec -T --user=www-data php php artisan tinker --execute='...'
-   ```
-   ou `chown` periódico via cron:
-   ```cron
-   0 3 * * * chown -R www-data:www-data /var/www/crm/storage/logs/
    ```
 
 2. **`LOG_LEVEL=debug` em produção faz `laravel.log` explodir.** Estava em `debug` no `.env` da VPS, gerando 228 MB sem rotação. Em prod usar **`LOG_LEVEL=error`** (ou no máximo `warning`). O canal `daily` já existe em `config/logging.php` desde o commit `ba509fd` — basta `LOG_STACK=daily` + `LOG_DAILY_DAYS=14` no `.env` real (o template `.env.production.example` já documenta isso).
