@@ -57,18 +57,22 @@ class RecalculateQueuePositionsJob implements ShouldQueue
 
     protected function processQueue(Queue $queue): void
     {
-        // 1. Atualiza avg_response_time
+        // 1. Atualiza avg_response_time — média dos últimos 50 tickets fechados.
+        // Subquery: pega os 50 mais recentes; outer SELECT calcula a média.
+        // (Não dá pra usar Eloquent ->avg() diretamente porque ele ignora o
+        // SELECT do query builder e gera um novo SELECT AVG(coluna).)
+        $sub = Ticket::query()
+            ->where('tenant_id', $queue->tenant_id)
+            ->where('channel_id', $queue->channel_id)
+            ->where('status', TicketStatusEnum::CLOSED)
+            ->whereNotNull('closed_at')
+            ->whereNotNull('queue_entered_at')
+            ->orderByDesc('closed_at')
+            ->limit(50)
+            ->selectRaw('EXTRACT(EPOCH FROM (closed_at - queue_entered_at)) / 60 AS minutes');
+
         $avgMinutes = (int) round(
-            Ticket::query()
-                ->where('tenant_id', $queue->tenant_id)
-                ->where('channel_id', $queue->channel_id)
-                ->where('status', TicketStatusEnum::CLOSED)
-                ->whereNotNull('closed_at')
-                ->whereNotNull('queue_entered_at')
-                ->orderByDesc('closed_at')
-                ->limit(50)
-                ->select(DB::raw("EXTRACT(EPOCH FROM (closed_at - queue_entered_at)) / 60 AS minutes"))
-                ->avg('minutes') ?? 0
+            (float) (DB::query()->fromSub($sub, 't')->avg('t.minutes') ?? 0)
         );
 
         if ($queue->avg_response_time_minutes !== $avgMinutes) {
