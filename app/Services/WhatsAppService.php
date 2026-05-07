@@ -35,17 +35,49 @@ class WhatsAppService implements WhatsAppProviderInterface
     }
 
     /**
-     * Carrega configurações do canal
+     * Carrega configurações do canal.
+     *
+     * Resolve o access_token na ordem:
+     *   1. MetaIntegration.bm_token         (System User Token permanente)
+     *   2. MetaIntegration.access_token     (OAuth Embedded Signup, renovável)
+     *   3. Channel.config.access_token      (legacy, token estático)
+     *
+     * Mesma lógica do WhatsAppTemplateService — canais legacy ficam
+     * com #3 (e podem expirar), canais via OAuth ficam com #2 (renovado
+     * automaticamente), canais com BM Token configurado pulam tudo e
+     * usam #1 (que é permanente e tem permissões completas).
      */
     public function loadFromChannel(Channel $channel): self
     {
         $config = $channel->config ?? [];
-        
-        $this->phoneNumberId = $config['phone_number_id'] ?? null;
-        $this->accessToken = $config['access_token'] ?? null;
+        $phoneNumberId = $config['phone_number_id'] ?? null;
+
+        $this->phoneNumberId = $phoneNumberId;
         $this->businessAccountId = $config['business_account_id'] ?? null;
+        $this->accessToken = $this->resolveChannelAccessToken($channel, $phoneNumberId);
 
         return $this;
+    }
+
+    protected function resolveChannelAccessToken(Channel $channel, ?string $phoneNumberId): ?string
+    {
+        if ($phoneNumberId) {
+            $integration = \App\Models\MetaIntegration::withoutGlobalScopes()
+                ->where('tenant_id', $channel->tenant_id)
+                ->where('phone_number_id', $phoneNumberId)
+                ->where('status', \App\Enums\MetaIntegrationStatusEnum::ACTIVE)
+                ->first();
+
+            if ($integration && !empty($integration->bm_token)) {
+                return $integration->bm_token;
+            }
+
+            if ($integration && !empty($integration->access_token)) {
+                return $integration->access_token;
+            }
+        }
+
+        return $channel->config['access_token'] ?? null;
     }
 
     /**
