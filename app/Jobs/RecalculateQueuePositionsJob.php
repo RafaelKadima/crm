@@ -57,18 +57,31 @@ class RecalculateQueuePositionsJob implements ShouldQueue
 
     protected function processQueue(Queue $queue): void
     {
-        // 1. Atualiza avg_response_time
+        // 1. Atualiza avg_response_time com base nos últimos 50 fechados.
+        //
+        // Notas:
+        //   - ->select(DB::raw('... AS minutes'))->avg('minutes') NÃO funciona:
+        //     avg($col) reescreve o SELECT inteiro como SELECT AVG($col),
+        //     descartando o select custom e referenciando coluna inexistente.
+        //   - ->orderByDesc(...)->limit(50)->avg(<expr>) também não restringe
+        //     aos últimos 50: ORDER BY é dropado pelo aggregate (sem GROUP BY)
+        //     e o LIMIT acaba aplicado ao result agregado de 1 linha.
+        //   - Solução correta: subquery selecionando os últimos 50 e avg da
+        //     diferença em minutos por cima.
+        $recent = Ticket::query()
+            ->where('tenant_id', $queue->tenant_id)
+            ->where('channel_id', $queue->channel_id)
+            ->where('status', TicketStatusEnum::CLOSED)
+            ->whereNotNull('closed_at')
+            ->whereNotNull('queue_entered_at')
+            ->orderByDesc('closed_at')
+            ->limit(50)
+            ->select(['closed_at', 'queue_entered_at']);
+
         $avgMinutes = (int) round(
-            Ticket::query()
-                ->where('tenant_id', $queue->tenant_id)
-                ->where('channel_id', $queue->channel_id)
-                ->where('status', TicketStatusEnum::CLOSED)
-                ->whereNotNull('closed_at')
-                ->whereNotNull('queue_entered_at')
-                ->orderByDesc('closed_at')
-                ->limit(50)
-                ->select(DB::raw("EXTRACT(EPOCH FROM (closed_at - queue_entered_at)) / 60 AS minutes"))
-                ->avg('minutes') ?? 0
+            DB::query()
+                ->fromSub($recent, 'recent_closed')
+                ->avg(DB::raw('EXTRACT(EPOCH FROM (closed_at - queue_entered_at)) / 60')) ?? 0
         );
 
         if ($queue->avg_response_time_minutes !== $avgMinutes) {
