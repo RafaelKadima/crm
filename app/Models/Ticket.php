@@ -61,6 +61,21 @@ class Ticket extends Model
         ];
     }
 
+    public function isPaused(): bool
+    {
+        return !is_null($this->paused_at);
+    }
+
+    public function pausedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paused_by');
+    }
+
+    public function pauseLogs(): HasMany
+    {
+        return $this->hasMany(TicketPauseLog::class)->orderBy('created_at', 'desc');
+    }
+
     /**
      * Tags polimórficas (compartilha tabela com Lead).
      */
@@ -83,21 +98,6 @@ class Ticket extends Model
     public function transferredFromUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'transferred_from_user_id');
-    }
-
-    public function isPaused(): bool
-    {
-        return !is_null($this->paused_at);
-    }
-
-    public function pausedByUser(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'paused_by');
-    }
-
-    public function pauseLogs(): HasMany
-    {
-        return $this->hasMany(TicketPauseLog::class)->orderBy('created_at', 'desc');
     }
 
     /**
