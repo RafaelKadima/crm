@@ -39,6 +39,9 @@ import { AgentsPage as AiAgentsPage } from '@/pages/settings/ai/AgentsPage'
 import { KnowledgePage as AiKnowledgePage } from '@/pages/settings/ai/KnowledgePage'
 import { GuardrailsPage as AiGuardrailsPage } from '@/pages/settings/ai/GuardrailsPage'
 import { UsagePage as AiUsagePage } from '@/pages/settings/ai/UsagePage'
+import { LinxPage } from '@/pages/settings/integrations/LinxPage'
+import { AnalyticsPage as IntegrationsAnalyticsPage } from '@/pages/settings/integrations/AnalyticsPage'
+import { OthersPage as IntegrationsOthersPage } from '@/pages/settings/integrations/OthersPage'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
 import { ProductsPage } from '@/pages/products/Products'
@@ -267,6 +270,12 @@ function AppRoutes() {
           <Route path="knowledge" element={<AiKnowledgePage />} />
           <Route path="guardrails" element={<AiGuardrailsPage />} />
           <Route path="usage" element={<AiUsagePage />} />
+        </Route>
+        <Route path="settings/integrations" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="linx" replace />} />
+          <Route path="linx" element={<LinxPage />} />
+          <Route path="analytics" element={<IntegrationsAnalyticsPage />} />
+          <Route path="others" element={<IntegrationsOthersPage />} />
         </Route>
         {/* Catch-all para rotas ainda não migradas — usa SettingsPage antigo */}
         <Route path="settings/*" element={<SettingsPage />} />
