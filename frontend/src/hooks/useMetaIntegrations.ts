@@ -18,10 +18,17 @@ export interface MetaIntegration {
   is_coexistence: boolean
   is_expiring_soon: boolean
   needs_reauth: boolean
+  has_bm_token: boolean
+  waba_version: string | null
   scopes: string[] | null
   metadata: Record<string, unknown> | null
   created_at: string
   updated_at: string
+}
+
+export interface UpdateMetaCredentialsPayload {
+  bm_token?: string | null
+  waba_version?: string | null
 }
 
 export interface MetaIntegrationStatus {
@@ -48,6 +55,8 @@ const metaApi = {
   get: (id: string) => api.get<{ success: boolean; data: MetaIntegration }>(`/meta/integrations/${id}`),
   delete: (id: string) => api.delete<{ success: boolean; message: string }>(`/meta/integrations/${id}`),
   refreshToken: (id: string) => api.post<{ success: boolean; message: string; data: Partial<MetaIntegration> }>(`/meta/integrations/${id}/refresh-token`),
+  updateCredentials: (id: string, payload: UpdateMetaCredentialsPayload) =>
+    api.patch<{ success: boolean; message: string; data: { has_bm_token: boolean; waba_version: string | null } }>(`/meta/integrations/${id}/credentials`, payload),
   getTemplates: (id: string, status?: string) => api.get<{ success: boolean; data: MetaTemplate[] }>(`/meta/integrations/${id}/templates`, { params: { status } }),
   syncTemplates: (id: string) => api.post<{ success: boolean; message: string; count: number }>(`/meta/integrations/${id}/templates/sync`),
 }
@@ -143,6 +152,24 @@ export function useRefreshMetaToken() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meta', 'integrations'] })
+    },
+  })
+}
+
+/**
+ * Atualiza credenciais Business Manager (bm_token, waba_version)
+ */
+export function useUpdateMetaCredentials() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: UpdateMetaCredentialsPayload }) => {
+      const response = await metaApi.updateCredentials(id, payload)
+      return response.data
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['meta', 'integrations'] })
+      queryClient.invalidateQueries({ queryKey: ['meta', 'integrations', id] })
     },
   })
 }

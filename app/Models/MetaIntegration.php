@@ -28,6 +28,8 @@ class MetaIntegration extends Model
         'display_phone_number',
         'verified_name',
         'access_token',
+        'bm_token',
+        'waba_version',
         'meta_app_id',
         'expires_at',
         'status',
@@ -47,6 +49,7 @@ class MetaIntegration extends Model
      */
     protected $hidden = [
         'access_token',
+        'bm_token',
     ];
 
     /**
@@ -58,6 +61,7 @@ class MetaIntegration extends Model
     {
         return [
             'access_token' => 'encrypted',
+            'bm_token' => 'encrypted',
             'expires_at' => 'datetime',
             'status' => MetaIntegrationStatusEnum::class,
             'is_coexistence' => 'boolean',

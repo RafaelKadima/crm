@@ -59,6 +59,10 @@ Route::prefix('api/meta')->group(function () {
                 Route::delete('{id}', [MetaAuthController::class, 'destroy'])
                     ->name('destroy');
 
+                // Atualiza credenciais Business Manager (bm_token, waba_version)
+                Route::patch('{id}/credentials', [MetaAuthController::class, 'updateCredentials'])
+                    ->name('credentials.update');
+
                 // Token Management
                 Route::post('{id}/refresh-token', [MetaAuthController::class, 'refreshToken'])
                     ->name('refresh-token');
