@@ -441,7 +441,6 @@ class StepReplyEngine
             return;
         }
 
-<<<<<<< HEAD
         $channel = $ticket->channel;
         if (!$channel || !$ticket->contact?->phone) return;
 
@@ -497,28 +496,15 @@ class StepReplyEngine
 
         // Fallback: texto numerado (sempre funciona, sem dependência de
         // canal/feature support)
-=======
->>>>>>> origin/main
         $lines = [$prompt, ''];
         foreach ($options as $i => $opt) {
             $label = $opt['label'] ?? "Opção " . ($i + 1);
             $value = $opt['value'] ?? ($i + 1);
             $lines[] = "{$value}. {$label}";
         }
-<<<<<<< HEAD
         $text = implode("\n", $lines);
 
         $whatsApp->sendTextMessage($phone, $text);
-=======
-
-        $text = implode("\n", $lines);
-        $channel = $ticket->channel;
-        if (!$channel) return;
-
-        /** @var WhatsAppService $whatsApp */
-        $whatsApp = app(WhatsAppService::class)->loadFromChannel($channel);
-        $whatsApp->sendTextMessage($ticket->contact->phone, $text);
->>>>>>> origin/main
 
         $this->persistOutbound($ticket, $text, [
             'step_reply_execution_id' => $execution->id,
