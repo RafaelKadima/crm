@@ -3,6 +3,7 @@
 use App\Jobs\CalculateKpisJob;
 use App\Jobs\DailyFunnelAggregateJob;
 use App\Jobs\ProcessScheduledTasks;
+use App\Jobs\RecalculateQueuePositionsJob;
 use App\Jobs\Ads\SyncAdMetricsJob;
 use App\Jobs\Ads\ProcessAdsAutomationJob;
 use App\Modules\Meta\Jobs\RefreshMetaTokenJob;
@@ -20,6 +21,9 @@ Artisan::command('inspire', function () {
 
 // Processa tarefas agendadas (lembretes, follow-ups) a cada 5 minutos
 Schedule::job(new ProcessScheduledTasks)->everyFiveMinutes()->withoutOverlapping();
+
+// Recalcula posições visíveis na fila + avg_response_time (1min)
+Schedule::job(new RecalculateQueuePositionsJob)->everyMinute()->withoutOverlapping(2);
 
 // Limpa tokens expirados diariamente
 Schedule::command('sanctum:prune-expired --hours=24')->daily();

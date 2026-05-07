@@ -33,6 +33,9 @@ class Ticket extends Model
         'ia_enabled',
         'ia_disabled_by',
         'ia_disabled_at',
+        'paused_at',
+        'pause_reason',
+        'paused_by',
     ];
 
     /**
@@ -48,7 +51,23 @@ class Ticket extends Model
             'first_viewed_at' => 'datetime',
             'ia_enabled' => 'boolean',
             'ia_disabled_at' => 'datetime',
+            'paused_at' => 'datetime',
         ];
+    }
+
+    public function isPaused(): bool
+    {
+        return !is_null($this->paused_at);
+    }
+
+    public function pausedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paused_by');
+    }
+
+    public function pauseLogs(): HasMany
+    {
+        return $this->hasMany(TicketPauseLog::class)->orderBy('created_at', 'desc');
     }
 
     /**

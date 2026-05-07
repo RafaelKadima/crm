@@ -32,6 +32,10 @@ class Queue extends Model
         'close_message',
         'auto_distribute',
         'is_active',
+        'avg_response_time_minutes',
+        'business_hours',
+        'out_of_hours_message',
+        'respect_business_hours',
     ];
 
     /**
@@ -46,7 +50,56 @@ class Queue extends Model
             'auto_distribute' => 'boolean',
             'is_active' => 'boolean',
             'sdr_disabled' => 'boolean',
+            'business_hours' => 'array',
+            'respect_business_hours' => 'boolean',
+            'avg_response_time_minutes' => 'integer',
         ];
+    }
+
+    /**
+     * Verifica se a fila está aberta no momento informado (default: agora).
+     *
+     * Formato esperado de `business_hours`:
+     *   {
+     *     "monday":    [{"start": "09:00", "end": "18:00"}],
+     *     "tuesday":   [{"start": "09:00", "end": "12:00"}, {"start": "14:00", "end": "18:00"}],
+     *     "saturday":  [{"start": "09:00", "end": "13:00"}],
+     *     "sunday":    []
+     *   }
+     *
+     * Múltiplos slots por dia suportam pausa de almoço, etc. Timezone:
+     * usa `config('app.timezone')` por padrão (America/Sao_Paulo).
+     */
+    public function isOpen(?\Carbon\Carbon $at = null): bool
+    {
+        if (!$this->respect_business_hours) {
+            return true;
+        }
+
+        $hours = $this->business_hours;
+        if (empty($hours)) {
+            return true;
+        }
+
+        $at = $at ?? now();
+        $dayKey = strtolower($at->format('l'));      // monday, tuesday, ...
+        $slots = $hours[$dayKey] ?? [];
+
+        if (empty($slots)) {
+            return false;
+        }
+
+        $current = $at->format('H:i');
+        foreach ($slots as $slot) {
+            if (!isset($slot['start'], $slot['end'])) {
+                continue;
+            }
+            if ($current >= $slot['start'] && $current < $slot['end']) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

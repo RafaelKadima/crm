@@ -21,10 +21,24 @@ class QuickReply extends Model
         'shortcut',
         'content',
         'variables',
+        'media_url',
+        'media_type',
+        'media_filename',
+        'media_mime',
         'is_active',
         'use_count',
         'order',
     ];
+
+    /**
+     * Tipos de mídia suportados pelo WhatsApp Cloud API.
+     */
+    public const MEDIA_TYPES = ['image', 'video', 'audio', 'document'];
+
+    public function hasMedia(): bool
+    {
+        return !empty($this->media_url) && in_array($this->media_type, self::MEDIA_TYPES, true);
+    }
 
     protected function casts(): array
     {

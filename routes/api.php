@@ -362,6 +362,10 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
             Route::put('{ticket}/close', [TicketController::class, 'close']); // Encerrar conversa
             Route::put('{ticket}/reopen', [TicketController::class, 'reopen']); // Reabrir conversa (ação manual do atendente)
             Route::post('{ticket}/open', [TicketController::class, 'markAsOpened']); // Primeira abertura: pending → open
+            // Pause/resume — exige permission tickets_pause (RBAC v2)
+            Route::post('{ticket}/pause', [TicketController::class, 'pause']);
+            Route::post('{ticket}/resume', [TicketController::class, 'resume']);
+            Route::get('{ticket}/pause-history', [TicketController::class, 'pauseHistory']);
             // Toggle IA para atendimento humano
             Route::put('{ticket}/toggle-ia', [TicketController::class, 'toggleIa']); // Toggle IA on/off
             Route::get('{ticket}/ia-status', [TicketController::class, 'iaStatus']); // Status da IA

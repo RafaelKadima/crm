@@ -13,6 +13,7 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
 use App\Services\LeadTransferService;
+use App\Services\TicketPauseService;
 use App\Services\WhatsAppService;
 use App\Services\InstagramService;
 use Illuminate\Http\JsonResponse;
@@ -492,6 +493,60 @@ class TicketController extends Controller
             'message' => $result['message'],
             'ticket' => $result['ticket'],
         ]);
+    }
+
+    /**
+     * Pausa um ticket — atendente registra que está aguardando algo
+     * (cliente, estoque, 3rd party). Ticket continua no status atual,
+     * mas com paused_at != null.
+     */
+    public function pause(Request $request, Ticket $ticket): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->hasPermission('tickets_pause')) {
+            abort(403, 'Sem permissão para pausar tickets.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:255',
+        ]);
+
+        $ticket = app(TicketPauseService::class)->pause($ticket, $user, $validated['reason']);
+
+        return response()->json([
+            'message' => 'Ticket pausado.',
+            'ticket' => $ticket,
+        ]);
+    }
+
+    /**
+     * Retoma um ticket pausado.
+     */
+    public function resume(Request $request, Ticket $ticket): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->hasPermission('tickets_pause')) {
+            abort(403, 'Sem permissão para retomar tickets.');
+        }
+
+        $ticket = app(TicketPauseService::class)->resume($ticket, $user);
+
+        return response()->json([
+            'message' => 'Ticket retomado.',
+            'ticket' => $ticket,
+        ]);
+    }
+
+    /**
+     * Histórico completo de pause/resume do ticket — auditável.
+     */
+    public function pauseHistory(Ticket $ticket): JsonResponse
+    {
+        $logs = $ticket->pauseLogs()->with('user:id,name,email')->get();
+
+        return response()->json(['data' => $logs]);
     }
 
     /**
