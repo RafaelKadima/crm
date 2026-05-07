@@ -92,6 +92,10 @@ return [
         'scopes' => [
             'whatsapp_business_management',
             'whatsapp_business_messaging',
+            // Sem `business_management` o token do Embedded Signup não consegue
+            // operar no Business Manager parent em coexistence — POST
+            // /message_templates volta com (#100). Ver feat/coexistence-templates-bm-token.
+            'business_management',
         ],
 
         // Registry de apps Meta keyed by app_id. Construído a partir das envs acima,
