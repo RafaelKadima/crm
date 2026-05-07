@@ -98,6 +98,99 @@ class WhatsAppService implements WhatsAppProviderInterface
     }
 
     /**
+     * Envia mensagem interativa do tipo `list` (menu nativo do WhatsApp).
+     *
+     * Diferente de texto numerado simples ("1. opção A\n2. opção B"),
+     * este aciona a UI nativa do WhatsApp (chip clicável → drawer com
+     * lista). UX muito melhor pra branches do StepReplyEngine.
+     *
+     * Limitações da Cloud API:
+     *   - máx 10 sections, máx 10 rows total entre todas sections
+     *   - row.id máx 200 chars, row.title máx 24 chars,
+     *     row.description máx 72 chars
+     *   - button text máx 20 chars
+     *
+     * @param  string  $to        telefone E.164
+     * @param  string  $body      texto principal (max 1024 chars)
+     * @param  string  $buttonText texto do botão que abre a lista
+     * @param  array   $rows      [{id, title, description?}, ...]
+     * @param  ?string $header    header opcional (max 60 chars)
+     * @param  ?string $footer    footer opcional (max 60 chars)
+     */
+    public function sendInteractiveList(
+        string $to,
+        string $body,
+        string $buttonText,
+        array $rows,
+        ?string $header = null,
+        ?string $footer = null,
+    ): array {
+        $this->validateConfig();
+
+        if (empty($rows)) {
+            throw new \InvalidArgumentException('Interactive list precisa ter ao menos 1 row.');
+        }
+        if (count($rows) > 10) {
+            throw new \InvalidArgumentException('Interactive list suporta no máx 10 rows.');
+        }
+
+        $interactive = [
+            'type' => 'list',
+            'body' => ['text' => mb_substr($body, 0, 1024)],
+            'action' => [
+                'button' => mb_substr($buttonText, 0, 20),
+                'sections' => [[
+                    'title' => mb_substr($header ?? 'Opções', 0, 24),
+                    'rows' => array_map(function ($r) {
+                        $row = [
+                            'id' => mb_substr((string) ($r['id'] ?? ''), 0, 200),
+                            'title' => mb_substr((string) ($r['title'] ?? ''), 0, 24),
+                        ];
+                        if (!empty($r['description'])) {
+                            $row['description'] = mb_substr((string) $r['description'], 0, 72);
+                        }
+                        return $row;
+                    }, $rows),
+                ]],
+            ],
+        ];
+
+        if ($header) {
+            $interactive['header'] = ['type' => 'text', 'text' => mb_substr($header, 0, 60)];
+        }
+        if ($footer) {
+            $interactive['footer'] = ['text' => mb_substr($footer, 0, 60)];
+        }
+
+        $response = Http::withToken($this->accessToken)
+            ->post("{$this->baseUrl}/{$this->phoneNumberId}/messages", [
+                'messaging_product' => 'whatsapp',
+                'recipient_type' => 'individual',
+                'to' => $this->formatPhoneNumber($to),
+                'type' => 'interactive',
+                'interactive' => $interactive,
+            ]);
+
+        $result = $response->json();
+
+        if (!$response->successful()) {
+            Log::error('WhatsApp send interactive list failed', [
+                'to' => $to,
+                'error' => $result,
+            ]);
+            throw new \Exception($result['error']['message'] ?? 'Erro ao enviar lista interativa');
+        }
+
+        Log::info('WhatsApp interactive list sent', [
+            'to' => $to,
+            'rows_count' => count($rows),
+            'message_id' => $result['messages'][0]['id'] ?? null,
+        ]);
+
+        return $result;
+    }
+
+    /**
      * Envia template de mensagem
      */
     public function sendTemplateMessage(string $to, string $templateName, string $languageCode = 'pt_BR', array $components = []): array

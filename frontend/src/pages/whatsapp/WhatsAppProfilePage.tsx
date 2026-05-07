@@ -47,7 +47,7 @@ export function WhatsAppProfilePage() {
       isActive: true,
     }))
 
-  // Combinar canais WhatsApp ativos com provider_type = 'meta' e que tenham access_token
+  // Combinar canais WhatsApp ativos que tenham access_token
   const channelNumbers: WhatsAppNumber[] = (channels || [])
     .filter(c => c.type === 'whatsapp' && c.is_active && c.config?.access_token)
     .map(c => ({

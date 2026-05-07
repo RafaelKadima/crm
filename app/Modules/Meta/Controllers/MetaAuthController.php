@@ -380,7 +380,6 @@ class MetaAuthController extends Controller
                 $channel = Channel::withoutGlobalScopes()
                     ->where('tenant_id', $tenantId)
                     ->where('type', 'whatsapp')
-                    ->where('provider_type', 'meta')
                     ->whereJsonContains('config->phone_number_id', $integration->phone_number_id)
                     ->first();
 
@@ -393,7 +392,6 @@ class MetaAuthController extends Controller
                         'tenant_id' => $tenantId,
                         'name' => $channelName,
                         'type' => 'whatsapp',
-                        'provider_type' => 'meta',
                         'identifier' => $integration->display_phone_number ?? $integration->phone_number_id,
                         'config' => [
                             'phone_number_id' => $integration->phone_number_id,
