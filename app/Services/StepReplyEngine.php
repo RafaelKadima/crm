@@ -158,7 +158,7 @@ class StepReplyEngine
         $count = 0;
 
         StepReplyExecution::query()
-            ->with('currentStep')
+            ->with(['currentStep', 'ticket'])
             ->where('status', StepReplyExecution::STATUS_RUNNING)
             ->orderBy('last_advanced_at')
             ->chunkById(100, function ($executions) use (&$count) {
@@ -173,13 +173,37 @@ class StepReplyEngine
                         continue;
                     }
 
-                    if ($execution->last_advanced_at->addSeconds($timeout)->isPast()) {
-                        $execution->update([
-                            'status' => StepReplyExecution::STATUS_TIMED_OUT,
-                            'ended_at' => now(),
-                        ]);
-                        $count++;
+                    if (!$execution->last_advanced_at->addSeconds($timeout)->isPast()) {
+                        continue;
                     }
+
+                    // Se o step define `timeout_step_order`, faz jump pra
+                    // esse step em vez de matar a execução. Útil pra
+                    // reminders ("ainda está aí?"), follow-ups, ou
+                    // cancelamento gracioso (jump pra step `end` com mensagem).
+                    $timeoutOrder = (int) ($step->config['timeout_step_order'] ?? 0);
+                    if ($timeoutOrder > 0) {
+                        $target = $this->stepByOrder($step->step_reply_id, $timeoutOrder);
+                        if ($target) {
+                            $execution->update([
+                                'current_step_id' => $target->id,
+                                'last_advanced_at' => now(),
+                            ]);
+                            $ticket = $execution->ticket;
+                            if ($ticket) {
+                                $this->advance($execution->fresh(), $ticket);
+                            }
+                            $count++;
+                            continue;
+                        }
+                    }
+
+                    // Sem fallback configurado — comportamento default: timeout mata o flow
+                    $execution->update([
+                        'status' => StepReplyExecution::STATUS_TIMED_OUT,
+                        'ended_at' => now(),
+                    ]);
+                    $count++;
                 }
             });
 
