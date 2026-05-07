@@ -21,6 +21,12 @@ import { DetailsPage } from '@/pages/settings/company/DetailsPage'
 import { BrandingPage } from '@/pages/settings/company/BrandingPage'
 import { AppearancePage } from '@/pages/settings/company/AppearancePage'
 import { TeamPage } from '@/pages/settings/company/TeamPage'
+import { QueuesPage as SupportQueuesPage } from '@/pages/settings/support/QueuesPage'
+import { TagsPage } from '@/pages/settings/support/TagsPage'
+import { QuickRepliesPage as SupportQuickRepliesPage } from '@/pages/settings/support/QuickRepliesPage'
+import { AutoRepliesPage } from '@/pages/settings/support/AutoRepliesPage'
+import { StepRepliesPage } from '@/pages/settings/support/StepRepliesPage'
+import { TemplatesPage as SupportTemplatesPage } from '@/pages/settings/support/TemplatesPage'
 import { GroupsPage } from '@/pages/group/Groups'
 import { IntegrationsPage } from '@/pages/integrations/Integrations'
 import { ProductsPage } from '@/pages/products/Products'
@@ -219,6 +225,15 @@ function AppRoutes() {
           <Route path="branding" element={<BrandingPage />} />
           <Route path="appearance" element={<AppearancePage />} />
           <Route path="team" element={<TeamPage />} />
+        </Route>
+        <Route path="settings/support" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="queues" replace />} />
+          <Route path="queues" element={<SupportQueuesPage />} />
+          <Route path="tags" element={<TagsPage />} />
+          <Route path="quick-replies" element={<SupportQuickRepliesPage />} />
+          <Route path="auto-replies" element={<AutoRepliesPage />} />
+          <Route path="step-replies" element={<StepRepliesPage />} />
+          <Route path="templates" element={<SupportTemplatesPage />} />
         </Route>
         {/* Catch-all para rotas ainda não migradas — usa SettingsPage antigo */}
         <Route path="settings/*" element={<SettingsPage />} />
