@@ -74,6 +74,19 @@ class MessageQueue:
         if self.redis:
             await self.redis.close()
             self._connected = False
+
+    async def ping(self) -> bool:
+        """Health check: ping do Redis subjacente.
+
+        Usado pelo /health do main.py — retorna True se Redis está
+        respondendo, lança a exceção do redis-py se não. Antes desse método
+        existir, /health chamava `message_queue.ping()` direto e dava
+        AttributeError, derrubando o status pra unhealthy mesmo com worker
+        funcionando (vide ai-service unhealthy 2026-05-07).
+        """
+        if not self.redis:
+            await self.connect()
+        return await self.redis.ping()
     
     def _get_queue_key(self, ticket_id: str) -> str:
         """Retorna a chave da fila para um ticket"""

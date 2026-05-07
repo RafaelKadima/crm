@@ -67,10 +67,17 @@ verify: ## Healthcheck pós-deploy (containers + endpoints + cascata nginx)
 	@RESTARTING=$$(docker compose ps --format '{{.Name}} {{.Status}}' | grep -i 'restarting' || true); \
 	  if [ -n "$$RESTARTING" ]; then echo "  ❌ $$RESTARTING"; exit 1; else echo "  ✅ nenhum"; fi
 	@echo ""
-	@echo "$(YELLOW)2) Containers crítticos UP:$(RESET)"
-	@for c in crm-nginx crm-php crm-ai-service crm-reverb crm-queue; do \
+	@echo "$(YELLOW)2) Containers crítticos UP (e healthy quando expõem healthcheck):$(RESET)"
+	@for c in crm-nginx crm-php crm-ai-service crm-reverb crm-queue crm-redis; do \
 	  STATUS=$$(docker inspect -f '{{.State.Status}}' $$c 2>/dev/null || echo 'missing'); \
-	  if [ "$$STATUS" = "running" ]; then echo "  ✅ $$c"; else echo "  ❌ $$c ($$STATUS)"; exit 1; fi; \
+	  if [ "$$STATUS" != "running" ]; then echo "  ❌ $$c ($$STATUS)"; exit 1; fi; \
+	  HEALTH=$$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' $$c 2>/dev/null); \
+	  case "$$HEALTH" in \
+	    healthy|none) echo "  ✅ $$c";; \
+	    starting)     echo "  ⏳ $$c (health=starting — provavelmente ok em segundos)";; \
+	    unhealthy)    echo "  ❌ $$c (health=unhealthy)"; exit 1;; \
+	    *)            echo "  ⚠️  $$c (health=$$HEALTH)";; \
+	  esac; \
 	done
 	@echo ""
 	@echo "$(YELLOW)3) Endpoints HTTP (rejeita 5xx e 000):$(RESET)"
