@@ -112,6 +112,15 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
         Route::delete('{id}', 'destroy');
     });
 
+    // Step Replies (workflows multi-passo) — CRUD
+    Route::prefix('step-replies')->controller(\App\Http\Controllers\StepReplyController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('{id}', 'show');
+        Route::put('{id}', 'update');
+        Route::delete('{id}', 'destroy');
+    });
+
     // Custom Profiles (RBAC v2) — admin/super_admin only via permission users_manage
     Route::prefix('custom-profiles')->group(function () {
         Route::get('catalog', [\App\Http\Controllers\CustomProfileController::class, 'catalog']);

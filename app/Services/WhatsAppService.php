@@ -657,6 +657,29 @@ class WhatsAppService implements WhatsAppProviderInterface
         }
 
         // =====================
+        // 🔁 STEP REPLY ENGINE — se ticket tem execução running, avança
+        // a máquina de estado. Se ainda não tem mas inbound bate com
+        // trigger keyword, inicia uma nova.
+        // =====================
+        $stepEngine = app(\App\Services\StepReplyEngine::class);
+        $stepConsumed = $stepEngine->handleInbound($ticketMessage, $ticket, $channel);
+
+        if (!$stepConsumed) {
+            $triggeredFlow = $stepEngine->findTriggeredFlow((string) $ticketMessage->message, $ticket, $channel);
+            if ($triggeredFlow) {
+                $stepEngine->start($triggeredFlow, $ticket);
+                $stepConsumed = true;
+            }
+        }
+
+        if ($stepConsumed) {
+            // Mark as read e retorna — fluxo guiado tem prioridade absoluta
+            $this->loadFromChannel($channel);
+            $this->markAsRead($messageId);
+            return $ticketMessage;
+        }
+
+        // =====================
         // ⚡ AUTO-REPLY (keyword-based) — antes de qualquer IA, atalho determinístico
         // Se há match com `skip_ai_after_match=true`, IA não é acionada.
         // =====================
