@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\RoleEnum;
 use App\Traits\Auditable;
 use App\Traits\BelongsToTenant;
+use App\Traits\HasCustomPermissions;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -17,7 +18,7 @@ use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasUuids, Notifiable, BelongsToTenant, Auditable;
+    use HasApiTokens, HasFactory, HasUuids, Notifiable, BelongsToTenant, Auditable, HasCustomPermissions;
 
     /**
      * The attributes that are mass assignable.
@@ -30,6 +31,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'custom_profile_id',
+        'custom_profile_enabled',
         'phone',
         'avatar',
         'is_active',
@@ -74,6 +77,7 @@ class User extends Authenticatable
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',
+            'custom_profile_enabled' => 'boolean',
         ];
     }
 
