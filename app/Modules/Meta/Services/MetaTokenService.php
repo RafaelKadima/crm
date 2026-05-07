@@ -31,10 +31,14 @@ class MetaTokenService
         }
 
         try {
-            $creds = $integration->metaAppCredentials();
+            // Sprint 5 — respeita webhook_origin (own_app vs omnify_oauth).
+            // Pra integrações em modo white-label, usa app credenciado do
+            // Omnify em vez do meta_app_id stored.
+            $creds = app(MetaOAuthService::class)->appCredentialsForIntegration($integration);
         } catch (\RuntimeException $e) {
             Log::error('Meta token refresh: credenciais do app indisponíveis', [
                 'integration_id' => $integration->id,
+                'webhook_origin' => $integration->webhook_origin,
                 'error' => $e->getMessage(),
             ]);
             return false;

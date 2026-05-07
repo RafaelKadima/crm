@@ -18,13 +18,21 @@ use Illuminate\Support\Str;
  *     "location": "global" | "us-central1" | ...,
  *     "agent_id": "<uuid>",
  *     "language_code": "pt-BR",
- *     "service_account_token": "<oauth bearer>"  // já trocado por access_token
+ *
+ *     // Forma RECOMENDADA — JSON inteiro do service account
+ *     // (encrypted via cast Eloquent quando salvo). Refresh
+ *     // automático via JWT exchange com cache 55min.
+ *     "service_account_json": { "client_email": ..., "private_key": ..., "token_uri": ... }
+ *
+ *     // OU forma legacy (deprecated) — token raw já trocado
+ *     // (responsabilidade do operador refrescar em <1h)
+ *     "service_account_token": "ya29.a0..."
  *   }
  *
- * NOTA: a troca de service account JSON → access_token deveria ser feita
- * num job paralelo (token expira a cada 1h). Aqui usamos o token vivo
- * — orquestração de refresh fica pra OAuth proxy refactor (Sprint 5
- * follow-up).
+ * Refresh automático implementado pelo GoogleAuthService:
+ *   - JWT signing manual com RS256 (openssl_sign nativo)
+ *   - Token cacheado no Redis por 55min (5min buffer antes de expirar)
+ *   - Múltiplos channels com mesmo service account compartilham cache
  */
 class DialogflowAdapter implements ExternalAiAdapter
 {
@@ -35,12 +43,15 @@ class DialogflowAdapter implements ExternalAiAdapter
 
     public function sendMessage(Ticket $ticket, string $message, array $config): ExternalAiResponse
     {
-        $required = ['project_id', 'agent_id', 'service_account_token'];
-        foreach ($required as $key) {
-            if (empty($config[$key])) {
-                Log::warning('Dialogflow: missing config', ['missing' => $key, 'ticket' => $ticket->id]);
-                return ExternalAiResponse::empty();
-            }
+        if (empty($config['project_id']) || empty($config['agent_id'])) {
+            Log::warning('Dialogflow: missing project_id ou agent_id', ['ticket' => $ticket->id]);
+            return ExternalAiResponse::empty();
+        }
+
+        $accessToken = app(GoogleAuthService::class)->getDialogflowAccessToken($config);
+        if (!$accessToken) {
+            Log::warning('Dialogflow: failed to obtain access token', ['ticket' => $ticket->id]);
+            return ExternalAiResponse::empty();
         }
 
         $location = $config['location'] ?? 'global';
@@ -57,7 +68,7 @@ class DialogflowAdapter implements ExternalAiAdapter
         );
 
         try {
-            $response = Http::withToken($config['service_account_token'])
+            $response = Http::withToken($accessToken)
                 ->timeout(15)
                 ->post($endpoint, [
                     'queryInput' => [
