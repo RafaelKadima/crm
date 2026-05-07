@@ -1012,3 +1012,97 @@ Antes de deploy de qualquer mudança que toque webhook/templates/Meta:
 - [ ] Após mudança em `subscribeAppToWaba` ou campos novos → re-executar subscribe nos tenants existentes?
 - [ ] Botões de ação têm fallback se o estado ainda não carregou?
 
+---
+
+## 15. Post-Mortem 2026-05-07 — Deploy de fixes (queue avg, HMAC observability, log rotation)
+
+Sessão de deploy de 3 issues (job `RecalculateQueuePositionsJob` falhando com `SQLSTATE[42703]`, observabilidade de HMAC mismatch nos webhooks Meta, `laravel.log` em 237MB sem rotação). O deploy foi bem-sucedido, mas no caminho expôs 4 armadilhas operacionais que valem documentar.
+
+### Aprendizados operacionais
+
+1. **`docker compose exec -T php` roda como root → arquivos criados pertencem a `root:root`, não a `www-data`.** Isso quebra o `daily` logger silenciosamente: quando o handler de excepção tenta logar e o arquivo `storage/logs/laravel-YYYY-MM-DD.log` é root-owned, o write falha, o exception não é tratado e o cliente recebe **HTTP 500** em vez do código real (ex.: 401 do middleware HMAC). Sintoma desta sessão: webhook real funcionava (sig válida → 200), mas qualquer rejeição (sig inválida, sig ausente) virou 500. Tinker direto retornava 401 corretamente — diferença era o user (root no exec vs www-data no PHP-FPM).
+
+   **Diagnose rápida:**
+   ```bash
+   ls -la storage/logs/laravel-*.log
+   # Procurar por owner != www-data
+   ```
+   
+   **Fix imediato:**
+   ```bash
+   chown www-data:www-data storage/logs/laravel-*.log
+   chmod 664 storage/logs/laravel-*.log
+   ```
+
+   **Prevenção:** rodar comandos artisan em prod sempre com `--user=www-data`:
+   ```bash
+   docker compose exec -T --user=www-data php php artisan tinker --execute='...'
+   ```
+   ou `chown` periódico via cron:
+   ```cron
+   0 3 * * * chown -R www-data:www-data /var/www/crm/storage/logs/
+   ```
+
+2. **`LOG_LEVEL=debug` em produção faz `laravel.log` explodir.** Estava em `debug` no `.env` da VPS, gerando 228 MB sem rotação. Em prod usar **`LOG_LEVEL=error`** (ou no máximo `warning`). O canal `daily` já existe em `config/logging.php` desde o commit `ba509fd` — basta `LOG_STACK=daily` + `LOG_DAILY_DAYS=14` no `.env` real (o template `.env.production.example` já documenta isso).
+
+   **Truncar log gigante sem perder dados:**
+   ```bash
+   cp storage/logs/laravel.log storage/logs/laravel.log.pre-rotation.bak
+   truncate -s 0 storage/logs/laravel.log
+   docker compose restart php queue scheduler
+   ```
+
+3. **Stash/pop em deploy preserva mudanças locais não-commitadas — mas `docker compose build` durante stash usa o lockfile sem o que está stashed.** A VPS tinha `composer.json/lock` modificados (laravel/reverb instalado em prod sem PR) e certificados SSL dirty (certbot). Pra desbloquear `git pull origin main`, fiz:
+
+   ```bash
+   git checkout -- frontend/src/pages/channels/Channels.tsx   # idêntico ao remote, descartar
+   git stash push -m 'preserve-reverb-ssl-prod' \
+     composer.json composer.lock \
+     docker/nginx/ssl/fullchain.pem docker/nginx/ssl/privkey.pem
+   make deploy
+   git stash pop
+   docker compose exec -T nginx nginx -s reload   # carregar certs SSL renovados
+   ```
+
+   **Armadilha:** durante o `make deploy`, o `docker compose build` rodou com `composer.lock` SEM Reverb (versão do HEAD), mas o stash pop depois trouxe o lock com Reverb pra disco. Nesse caso, a imagem PHP atual não tem Reverb instalado — só o filesystem do volume. Como o vendor é copiado pelo Dockerfile mas o app code é volume-mounted, o Reverb classes podem aparecer dependendo de onde está o autoload. Se em prod isso causar regressão, **rebuildar após pop**:
+   ```bash
+   docker compose build php queue scheduler reverb
+   docker compose up -d
+   ```
+
+4. **Restart do PHP recria o container e reinicia a cascata DNS do nginx — rede `make deploy` já trata, mas restart manual NÃO.** Esta sessão precisou rodar `docker compose restart php` várias vezes (config:clear, perm fix), e cada um quebrou `api/branding` com 502 até rodar `docker compose restart nginx`. O `make deploy` já documenta isso na seção 8 e faz automático no fim, mas restart ad-hoc não — sempre lembrar:
+   ```bash
+   docker compose restart php       # recriou container, IP novo
+   docker compose restart nginx     # OBRIGATÓRIO depois — limpa DNS cache
+   ```
+
+### Aprendizados de aplicação
+
+5. **Eloquent `->select(DB::raw('… AS alias'))->avg('alias')` NÃO funciona.** O `avg($col)` reescreve o SELECT inteiro como `SELECT AVG($col)` e descarta o `select()` custom — vira SQL com referência à coluna inexistente. Fix: passar a expressão direto pro `avg()`, ou usar subquery quando precisar de `LIMIT`/`ORDER BY` (porque ambos são também dropados por aggregate sem GROUP BY). Padrão correto pra "média dos últimos N":
+   ```php
+   $recent = Ticket::query()
+       ->where(...)
+       ->orderByDesc('closed_at')
+       ->limit(50)
+       ->select(['closed_at', 'queue_entered_at']);
+   
+   DB::query()
+       ->fromSub($recent, 'recent_closed')
+       ->avg(DB::raw('EXTRACT(EPOCH FROM (closed_at - queue_entered_at)) / 60'));
+   ```
+
+6. **Hipótese sobre 3º Meta App "Tech Provider" com secret diferente estava ERRADA.** O secret `40f5a27f...` que aparecia no `.env` como `META_EMBEDDED_APP_SECRET` é o secret correto do app `1404825308002840` (mesmo app usado por embedded e coexistence). Como o registry em `config/services.meta.apps` é keyed por `app_id`, embedded e coexistence apontando pro mesmo ID já compartilhavam o secret — o middleware HMAC sempre tentou. Os 15 mismatches reportados têm outra causa (provavelmente body sendo modificado entre a Meta e o middleware: charset, BOM, ou middleware de transformação). Nova observabilidade do `VerifyMetaWebhookSignature` (`app_ids_tried`/`labels_tried` no incident metadata) vai expor isso na próxima rejeição real.
+
+7. **Logs de incidents só têm valor se identificam *quem* foi tentado.** O middleware antigo gravava `secrets_tried: 2` — opaco, dá pra adivinhar mas não dá pra confirmar. Nova versão grava `app_ids_tried: ['1404825308002840', '2299534190553658']` + `labels_tried: ['embedded', 'regular']`. Se aparecer `[regular]` quando a integration ativa é coexistence, sabemos imediatamente que falta secret. Princípio: nunca logar contadores agregados quando os identificadores cabem na metadata.
+
+### Checklist pra próximo deploy/restart manual
+
+Antes de fechar a sessão SSH:
+
+- [ ] Owner dos arquivos em `storage/logs/` é `www-data:www-data`?
+- [ ] `make verify` passou completo (frontend + api + webhook + reverb)?
+- [ ] Se editou `.env` em prod: `LOG_LEVEL=error` em produção (não debug)?
+- [ ] Se restart manual de algum container: `docker compose restart nginx` depois?
+- [ ] Se rodou comando como root no container: `chown www-data:www-data` nos arquivos criados?
+- [ ] Stash/pop em deploy: rebuildou PHP após pop se composer.lock voltou diferente?
+
