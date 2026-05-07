@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Smartphone,
   Info,
+  KeyRound,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -47,6 +48,7 @@ import {
   type Channel,
 } from '@/hooks/useChannels'
 import { Link } from 'react-router-dom'
+import { BmTokenModal } from '@/components/meta/BmTokenModal'
 
 interface ChannelType {
   id: string
@@ -96,6 +98,7 @@ export function ConnectChannelsPage() {
   ]
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null)
   const [coexistenceMode, setCoexistenceMode] = useState(false)
+  const [bmTokenIntegration, setBmTokenIntegration] = useState<MetaIntegration | null>(null)
 
   // Meta hooks
   const { data: metaStatus, isLoading: loadingStatus } = useMetaStatus()
@@ -465,6 +468,21 @@ export function ConnectChannelsPage() {
                           </Button>
                         )}
 
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setBmTokenIntegration(integration)}
+                          title={
+                            integration.has_bm_token
+                              ? 'BM Token configurado — editar'
+                              : 'Configurar Business Manager Token (necessário em coexistência para criar templates)'
+                          }
+                        >
+                          <KeyRound
+                            className={`h-4 w-4 ${integration.has_bm_token ? 'text-success' : integration.is_coexistence ? 'text-warning' : ''}`}
+                          />
+                        </Button>
+
                         {confirmDisconnect === integration.id ? (
                           <div className="flex items-center gap-2">
                             <Button
@@ -601,6 +619,11 @@ export function ConnectChannelsPage() {
         </>
       )}
 
+      <BmTokenModal
+        integration={bmTokenIntegration}
+        open={!!bmTokenIntegration}
+        onOpenChange={(open) => { if (!open) setBmTokenIntegration(null) }}
+      />
     </div>
   )
 }

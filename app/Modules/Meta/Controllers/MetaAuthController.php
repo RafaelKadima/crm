@@ -113,6 +113,8 @@ class MetaAuthController extends Controller
                 'expires_at',
                 'status',
                 'is_coexistence',
+                'bm_token',
+                'waba_version',
                 'created_at',
                 'updated_at',
             ])
@@ -130,6 +132,8 @@ class MetaAuthController extends Controller
                     'status_label' => $integration->status->label(),
                     'status_color' => $integration->status->color(),
                     'is_coexistence' => $integration->is_coexistence ?? false,
+                    'has_bm_token' => !empty($integration->bm_token),
+                    'waba_version' => $integration->waba_version,
                     'expires_at' => $integration->expires_at?->toIso8601String(),
                     'days_until_expiration' => $integration->daysUntilExpiration(),
                     'is_expiring_soon' => $integration->isExpiringSoon(),
@@ -173,11 +177,73 @@ class MetaAuthController extends Controller
                 'is_expiring_soon' => $integration->isExpiringSoon(),
                 'needs_reauth' => $integration->needsReauth(),
                 'is_coexistence' => $integration->is_coexistence ?? false,
+                'has_bm_token' => !empty($integration->bm_token),
+                'waba_version' => $integration->waba_version,
                 'scopes' => $integration->scopes,
                 'metadata' => $integration->metadata,
                 'token_info' => $tokenInfo,
                 'created_at' => $integration->created_at->toIso8601String(),
                 'updated_at' => $integration->updated_at->toIso8601String(),
+            ],
+        ]);
+    }
+
+    /**
+     * Atualiza credenciais Business Manager por integração.
+     * PATCH /api/meta/integrations/{id}/credentials
+     *
+     * Aceita:
+     *   bm_token        Business Manager System User Token (permanente).
+     *                   Necessário em coexistence pra criar templates.
+     *                   Encrypted no banco. Enviar string vazia ou null
+     *                   apaga o valor.
+     *   waba_version    Versão Graph API por integração (ex: "v22.0").
+     *                   null/vazio usa o default global.
+     */
+    public function updateCredentials(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || !$user->hasPermission('users_manage')) {
+            abort(403, 'Sem permissão para alterar credenciais.');
+        }
+
+        $validated = $request->validate([
+            'bm_token' => 'nullable|string|max:1024',
+            'waba_version' => 'nullable|string|regex:/^v\d+\.\d+$/',
+        ]);
+
+        $integration = MetaIntegration::findOrFail($id);
+
+        $payload = [];
+        if ($request->has('bm_token')) {
+            $payload['bm_token'] = !empty($validated['bm_token']) ? $validated['bm_token'] : null;
+        }
+        if ($request->has('waba_version')) {
+            $payload['waba_version'] = !empty($validated['waba_version']) ? $validated['waba_version'] : null;
+        }
+
+        if (empty($payload)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nenhum campo para atualizar.',
+            ], 422);
+        }
+
+        $integration->update($payload);
+
+        Log::info('Meta integration credentials updated', [
+            'integration_id' => $integration->id,
+            'tenant_id' => $integration->tenant_id,
+            'fields' => array_keys($payload),
+            'has_bm_token' => !empty($integration->bm_token),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Credenciais atualizadas.',
+            'data' => [
+                'has_bm_token' => !empty($integration->bm_token),
+                'waba_version' => $integration->waba_version,
             ],
         ]);
     }

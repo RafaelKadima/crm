@@ -33,9 +33,13 @@ class MetaOAuthService
         $this->coexistenceAppId = config('services.meta.coexistence_app_id');
         $this->coexistenceAppSecret = config('services.meta.coexistence_app_secret');
         $this->redirectUri = config('services.meta.redirect_uri');
+        // Sem `business_management` o token do Embedded Signup não consegue
+        // operar no Business Manager do cliente em coexistence — POST
+        // /message_templates volta com (#100). Pedir os 3 scopes.
         $this->scopes = config('services.meta.scopes', [
             'whatsapp_business_management',
             'whatsapp_business_messaging',
+            'business_management',
         ]);
     }
 

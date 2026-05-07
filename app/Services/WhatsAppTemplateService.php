@@ -34,39 +34,83 @@ class WhatsAppTemplateService
     }
 
     /**
-     * Retorna o access_token mais atual para operar na WABA do canal.
+     * Retorna a MetaIntegration ativa do canal, ou null. Cache por
+     * call-graph: o resolve de token + waba_version + coexistence usa o
+     * mesmo lookup.
      *
-     * Tenants conectados via OAuth (embedded signup, coexistência) têm o token
-     * renovado guardado em `meta_integrations.access_token` — Channel.config
-     * pode ter um token estático antigo ou com escopo limitado (ex.: sem
-     * whatsapp_business_management, o que trava criação de templates com
-     * "(#100) Need permission on either WhatsApp Business Account").
-     *
-     * Preferência: MetaIntegration > Channel.config.
+     * @var array<string, ?\App\Models\MetaIntegration>
      */
-    protected function resolveAccessToken(Channel $channel): ?string
+    protected array $integrationCache = [];
+
+    protected function findIntegration(Channel $channel): ?\App\Models\MetaIntegration
     {
         $config = $channel->config ?? [];
         $phoneNumberId = $config['phone_number_id'] ?? null;
+        if (!$phoneNumberId) return null;
 
-        if ($phoneNumberId) {
-            $integration = \App\Models\MetaIntegration::withoutGlobalScopes()
-                ->where('tenant_id', $channel->tenant_id)
-                ->where('phone_number_id', $phoneNumberId)
-                ->where('status', \App\Enums\MetaIntegrationStatusEnum::ACTIVE)
-                ->first();
-
-            if ($integration && $integration->access_token) {
-                return $integration->access_token;
-            }
+        $key = $channel->tenant_id . ':' . $phoneNumberId;
+        if (array_key_exists($key, $this->integrationCache)) {
+            return $this->integrationCache[$key];
         }
 
+        return $this->integrationCache[$key] = \App\Models\MetaIntegration::withoutGlobalScopes()
+            ->where('tenant_id', $channel->tenant_id)
+            ->where('phone_number_id', $phoneNumberId)
+            ->where('status', \App\Enums\MetaIntegrationStatusEnum::ACTIVE)
+            ->first();
+    }
+
+    /**
+     * Retorna o token correto pra operar templates na WABA do canal.
+     *
+     * Em coexistence, o token do OAuth Embedded Signup vem do app "Tech
+     * Provider" e a Meta restringe operações no Business Manager parent
+     * com (#100). A solução é o admin do tenant gerar um System User
+     * Token permanente em business.facebook.com → Configurações →
+     * Usuários do Sistema, com permissões whatsapp_business_management +
+     * business_management, e colar em meta_integrations.bm_token.
+     *
+     * Preferência:
+     *   1. MetaIntegration.bm_token         (System User permanente, BM-scoped)
+     *   2. MetaIntegration.access_token     (OAuth Embedded Signup, renovável)
+     *   3. Channel.config.access_token      (legacy/manual)
+     */
+    protected function resolveAccessToken(Channel $channel): ?string
+    {
+        $integration = $this->findIntegration($channel);
+
+        if ($integration && !empty($integration->bm_token)) {
+            return $integration->bm_token;
+        }
+
+        if ($integration && !empty($integration->access_token)) {
+            return $integration->access_token;
+        }
+
+        $config = $channel->config ?? [];
         return $config['access_token'] ?? null;
     }
 
     /**
-     * Indica se o canal está em modo coexistência (template via API pode
-     * ter restrições — Meta recomenda criar pelo app do celular).
+     * Resolve a base URL Graph API por canal. WABAs antigas podem estar
+     * em versão diferente da global; permite override via
+     * MetaIntegration.waba_version.
+     */
+    protected function resolveBaseUrl(Channel $channel): string
+    {
+        $integration = $this->findIntegration($channel);
+        $version = $integration?->waba_version;
+
+        if (!empty($version) && preg_match('/^v\d+\.\d+$/', $version)) {
+            return "https://graph.facebook.com/{$version}";
+        }
+
+        return $this->baseUrl;
+    }
+
+    /**
+     * Indica se o canal está em modo coexistência. Usado pra gerar
+     * mensagem de erro mais específica em (#100).
      */
     protected function isCoexistenceChannel(Channel $channel): bool
     {
@@ -79,6 +123,17 @@ class WhatsAppTemplateService
             ->where('phone_number_id', $phoneNumberId)
             ->where('is_coexistence', true)
             ->exists();
+    }
+
+    /**
+     * Indica se o canal já tem bm_token configurado. Usado pra
+     * customizar mensagem de erro: se já tem bm_token e mesmo assim
+     * deu (#100), o token está sem as permissões certas.
+     */
+    protected function hasBmToken(Channel $channel): bool
+    {
+        $integration = $this->findIntegration($channel);
+        return $integration && !empty($integration->bm_token);
     }
 
     // ==========================================
@@ -226,36 +281,53 @@ class WhatsAppTemplateService
             throw new \Exception('Canal não possui WABA ID ou Access Token configurado.');
         }
 
+        $baseUrl = $this->resolveBaseUrl($channel);
+
         $response = Http::withToken($accessToken)
             ->timeout(30)
-            ->post("{$this->baseUrl}/{$wabaId}/message_templates", $payload);
+            ->post("{$baseUrl}/{$wabaId}/message_templates", $payload);
 
         if (!$response->successful()) {
             $error = $response->json();
             $metaMessage = $error['error']['message'] ?? 'Erro desconhecido ao criar template';
             $metaCode = $error['error']['code'] ?? null;
+            $isCoexistence = $this->isCoexistenceChannel($channel);
+            $hasBmToken = $this->hasBmToken($channel);
 
             Log::error('Meta API error creating template', [
                 'status' => $response->status(),
                 'error' => $error,
                 'payload' => $payload,
                 'waba_id' => $wabaId,
-                'is_coexistence' => $this->isCoexistenceChannel($channel),
+                'is_coexistence' => $isCoexistence,
+                'has_bm_token' => $hasBmToken,
+                'base_url' => $baseUrl,
             ]);
 
-            // Tradução de erros mais comuns da Meta para mensagem útil ao operador
             $userMessage = match (true) {
-                // (#100) sem permissão — em coexistência o token do OAuth embedded
-                // não vem com whatsapp_business_management por padrão. Duas saídas:
-                // criar via Business Manager (web) e sincronizar, ou pedir ao admin
-                // pra conceder a permissão ao app no Business Manager.
-                $metaCode === 100 && $this->isCoexistenceChannel($channel) =>
-                    "Contas coexistentes não permitem criar templates via API sem permissão extra. Duas opções:\n\n"
-                    ."1) Crie pelo Meta Business Manager: https://business.facebook.com/wa/manage/message-templates (entre com a conta Meta do cliente, selecione a WABA, crie o template). Depois clique em \"Sincronizar do Meta\" no CRM — ele aparece aqui automaticamente.\n\n"
-                    ."2) Para criar direto pelo CRM, peça ao admin da conta Meta para conceder a permissão \"Gerenciar templates\" (whatsapp_business_management) ao nosso app em business.facebook.com → Configurações → Integrações → Apps.",
+                // (#100) com bm_token configurado — token não tem as permissões certas.
+                // Admin precisa regenerar o System User Token com whatsapp_business_management
+                // + business_management e dar acesso à WABA específica.
+                $metaCode === 100 && $hasBmToken =>
+                    "O Business Manager Token configurado não tem permissão pra criar templates nesta WABA. "
+                    ."Regenere o token em business.facebook.com → Configurações → Usuários do Sistema → "
+                    ."selecione o System User → Gerar Token, marcando os apps com permissões "
+                    ."`whatsapp_business_management` e `business_management`. Depois associe a WABA "
+                    ."{$wabaId} ao System User em Configurações → Contas → Contas do WhatsApp.",
+
+                // (#100) em coexistence sem bm_token — caminho recomendado é configurar bm_token.
+                $metaCode === 100 && $isCoexistence =>
+                    "Em coexistência, o token do OAuth não consegue criar templates via API por restrição da Meta. "
+                    ."Solução: o admin do Business Manager do cliente precisa configurar um Business Manager "
+                    ."Token permanente (System User Token). Em business.facebook.com → Configurações → "
+                    ."Usuários do Sistema → criar/editar System User → Gerar Token com permissões "
+                    ."`whatsapp_business_management` + `business_management`, e associar a WABA {$wabaId} "
+                    ."ao usuário. Depois cole o token em Configurações → Canais → WhatsApp → BM Token.",
 
                 $metaCode === 100 =>
-                    'Token sem permissão `whatsapp_business_management` na WABA. Reconecte o canal via OAuth com permissões completas.',
+                    "Token sem permissão `whatsapp_business_management` ou `business_management` na WABA {$wabaId}. "
+                    ."Reconecte o canal via OAuth (vamos pedir os 3 scopes corretos) ou configure um Business "
+                    ."Manager Token permanente em Configurações → Canais → WhatsApp → BM Token.",
 
                 $metaCode === 2388084 =>
                     'Combinação de botões inválida. Use QUICK_REPLY, URL, PHONE_NUMBER ou COPY_CODE.',
@@ -288,7 +360,8 @@ class WhatsAppTemplateService
             throw new \Exception('Canal não possui WABA ID ou Access Token configurado.');
         }
 
-        $url = "{$this->baseUrl}/{$wabaId}/message_templates";
+        $baseUrl = $this->resolveBaseUrl($channel);
+        $url = "{$baseUrl}/{$wabaId}/message_templates";
         $params = [
             'fields' => 'id,name,status,category,language,components,rejected_reason,quality_score',
             'limit' => 100,
@@ -435,10 +508,12 @@ class WhatsAppTemplateService
             return $template;
         }
 
+        $baseUrl = $this->resolveBaseUrl($channel);
+
         try {
             $response = Http::withToken($accessToken)
                 ->timeout(15)
-                ->get("{$this->baseUrl}/{$template->meta_template_id}", [
+                ->get("{$baseUrl}/{$template->meta_template_id}", [
                     'fields' => 'id,name,status,category,language,rejected_reason,quality_score',
                 ]);
 
@@ -469,10 +544,11 @@ class WhatsAppTemplateService
 
         // Tenta deletar do Meta se existir
         if ($template->meta_template_id && $accessToken && $wabaId) {
+            $baseUrl = $this->resolveBaseUrl($channel);
             try {
                 $response = Http::withToken($accessToken)
                     ->timeout(15)
-                    ->delete("{$this->baseUrl}/{$wabaId}/message_templates", [
+                    ->delete("{$baseUrl}/{$wabaId}/message_templates", [
                         'name' => $template->name,
                     ]);
 
