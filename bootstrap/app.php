@@ -7,6 +7,7 @@ use App\Http\Middleware\InternalApiMiddleware;
 use App\Http\Middleware\ResolveTenant;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SuperAdminMiddleware;
+use App\Http\Middleware\TrackUserSession;
 use App\Http\Middleware\VerifyMetaWebhookSignature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'internal.api' => InternalApiMiddleware::class,
             'meta.signature' => VerifyMetaWebhookSignature::class,
             'token.valid' => EnsureTokenIsValid::class,
+            'session.track' => TrackUserSession::class,
         ]);
         
         // Para APIs, retornar 401 JSON ao invés de redirecionar para login

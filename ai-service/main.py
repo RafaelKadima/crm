@@ -171,8 +171,63 @@ async def root():
 
 @app.get("/health")
 async def health():
-    """Health check"""
-    return {"status": "healthy"}
+    """
+    Health check com checagens reais de dependências.
+
+    Status:
+      healthy   — tudo OK
+      degraded  — alguma checagem opcional falhou (ex: Tavily down,
+                  ainda atende com fallback)
+      unhealthy — dependência crítica fora (Redis ou OpenAI sem key)
+
+    Container healthcheck do docker-compose deve usar status_code:
+    HTTP 200 quando healthy/degraded, HTTP 503 quando unhealthy.
+    """
+    from starlette.responses import JSONResponse
+    import os
+
+    checks = {}
+    has_critical_failure = False
+    has_degraded = False
+
+    # OpenAI key — crítico
+    openai_key = os.getenv("OPENAI_API_KEY", "")
+    checks["openai_key"] = "ok" if openai_key else "missing"
+    if not openai_key:
+        has_critical_failure = True
+
+    # Redis — crítico
+    try:
+        await message_queue.ping()
+        checks["redis"] = "ok"
+    except Exception as exc:  # pragma: no cover
+        checks["redis"] = f"error: {type(exc).__name__}"
+        has_critical_failure = True
+
+    # Tavily (web search) — opcional/degraded
+    checks["tavily_key"] = "ok" if os.getenv("TAVILY_API_KEY") else "missing"
+    if not os.getenv("TAVILY_API_KEY"):
+        has_degraded = True
+
+    # Groq (audio) — opcional/degraded
+    checks["groq_key"] = "ok" if os.getenv("GROQ_API_KEY") else "missing"
+    if not os.getenv("GROQ_API_KEY"):
+        has_degraded = True
+
+    if has_critical_failure:
+        status = "unhealthy"
+        http_code = 503
+    elif has_degraded:
+        status = "degraded"
+        http_code = 200
+    else:
+        status = "healthy"
+        http_code = 200
+
+    return JSONResponse(
+        status_code=http_code,
+        content={"status": status, "checks": checks},
+    )
 
 
 if __name__ == "__main__":
