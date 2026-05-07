@@ -30,6 +30,7 @@ class Channel extends Model
         'ia_workflow_id',
         'sdr_agent_id',
         'config',
+        'external_ai_config',
         'is_active',
         'queue_menu_enabled',
         'queue_menu_header',
@@ -49,6 +50,7 @@ class Channel extends Model
             'type' => ChannelTypeEnum::class,
             'ia_mode' => IaModeEnum::class,
             'config' => 'array',
+            'external_ai_config' => 'array',
             'is_active' => 'boolean',
             'queue_menu_enabled' => 'boolean',
         ];

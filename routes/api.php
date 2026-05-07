@@ -103,6 +103,15 @@ Route::middleware(['auth:api', 'token.valid'])->group(function () {
         Route::delete('{id}', 'destroy');
     });
 
+    // Auto-replies (keyword-based) — CRUD
+    Route::prefix('auto-replies')->controller(\App\Http\Controllers\AutoReplyController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('{id}', 'show');
+        Route::put('{id}', 'update');
+        Route::delete('{id}', 'destroy');
+    });
+
     // Custom Profiles (RBAC v2) — admin/super_admin only via permission users_manage
     Route::prefix('custom-profiles')->group(function () {
         Route::get('catalog', [\App\Http\Controllers\CustomProfileController::class, 'catalog']);
