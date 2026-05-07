@@ -24,9 +24,6 @@ import {
   ExternalLink,
   AlertCircle,
   Zap,
-  QrCode,
-  Wifi,
-  WifiOff,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -41,16 +38,12 @@ import {
   useTestChannelConnection,
   useUpdateChannelIaMode,
   useToggleChannelActive,
-  useInternalStatus,
   channelTypeInfo,
   iaModeInfo,
-  whatsappProviderInfo,
   type Channel,
   type ChannelConfig,
-  type WhatsAppProviderType,
 } from '@/hooks/useChannels'
 import { useSdrAgents } from '@/hooks/useSdrAgents'
-import { QRCodeModal } from '@/components/channels/QRCodeModal'
 
 const channelIcons = {
   whatsapp: MessageSquare,
@@ -67,8 +60,6 @@ export function ChannelsPage() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
   const [isIaModalOpen, setIsIaModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [isQRModalOpen, setIsQRModalOpen] = useState(false)
-  const [qrChannel, setQrChannel] = useState<Channel | null>(null)
   const [showToken, setShowToken] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
@@ -76,7 +67,6 @@ export function ChannelsPage() {
   const [formData, setFormData] = useState({
     name: '',
     type: 'whatsapp' as 'whatsapp' | 'instagram' | 'webchat' | 'other',
-    provider_type: 'meta' as WhatsAppProviderType,
     identifier: '',
     ia_mode: 'none' as 'none' | 'ia_sdr' | 'enterprise',
     ia_workflow_id: '',
@@ -115,11 +105,6 @@ export function ChannelsPage() {
     color: iaModeInfo[mode as keyof typeof iaModeInfo]?.color || 'bg-gray-500',
   })
 
-  const getProviderInfo = (provider: string) => ({
-    label: t(`channelsPage.providers.${provider}`),
-    description: t(`channelsPage.providers.${provider}Desc`),
-  })
-
   // Filter channels
   const filteredChannels = useMemo(() => {
     if (!search) return channels
@@ -137,7 +122,6 @@ export function ChannelsPage() {
     setFormData({
       name: '',
       type: 'whatsapp',
-      provider_type: 'meta',
       identifier: '',
       ia_mode: 'none',
       ia_workflow_id: '',
@@ -160,7 +144,6 @@ export function ChannelsPage() {
     setFormData({
       name: channel.name,
       type: channel.type,
-      provider_type: channel.provider_type || 'meta',
       identifier: channel.identifier,
       ia_mode: channel.ia_mode,
       ia_workflow_id: channel.ia_workflow_id || '',
@@ -176,11 +159,6 @@ export function ChannelsPage() {
     })
     setTestResult(null)
     setIsConfigModalOpen(true)
-  }
-
-  const openQRModal = (channel: Channel) => {
-    setQrChannel(channel)
-    setIsQRModalOpen(true)
   }
 
   const openIaModal = (channel: Channel) => {
@@ -201,10 +179,9 @@ export function ChannelsPage() {
 
   const handleCreateChannel = async () => {
     try {
-      const createdChannel = await createChannel.mutateAsync({
+      await createChannel.mutateAsync({
         name: formData.name,
         type: formData.type,
-        provider_type: formData.type === 'whatsapp' ? formData.provider_type : undefined,
         identifier: formData.identifier,
         ia_mode: formData.ia_mode,
         ia_workflow_id: formData.ia_workflow_id || undefined,
@@ -212,11 +189,6 @@ export function ChannelsPage() {
         is_active: true,
       })
       setIsCreateModalOpen(false)
-
-      if (createdChannel.type === 'whatsapp' && createdChannel.provider_type === 'internal') {
-        setQrChannel(createdChannel)
-        setIsQRModalOpen(true)
-      }
     } catch (error) {
       console.error('Error creating channel:', error)
     }
@@ -406,28 +378,9 @@ export function ChannelsPage() {
                         </div>
                       </div>
 
-                      {/* Type, Provider and IA badges */}
+                      {/* Type and IA badges */}
                       <div className="flex flex-wrap gap-2 mb-4">
                         <Badge variant="outline">{typeInfo.label}</Badge>
-                        {channel.type === 'whatsapp' && channel.provider_type === 'internal' && (
-                          <Badge variant="outline" className="border-orange-500 text-orange-600">
-                            <QrCode className="h-3 w-3 mr-1" />
-                            {t('channelsPage.internal')}
-                          </Badge>
-                        )}
-                        {channel.type === 'whatsapp' && channel.provider_type === 'internal' && (
-                          channel.config?.internal_connected ? (
-                            <Badge className="bg-green-500 text-white">
-                              <Wifi className="h-3 w-3 mr-1" />
-                              {t('channelsPage.connected')}
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-muted-foreground">
-                              <WifiOff className="h-3 w-3 mr-1" />
-                              {t('channelsPage.disconnected')}
-                            </Badge>
-                          )
-                        )}
                         <Badge
                           className={`${iaModeInfo[channel.ia_mode]?.color || 'bg-gray-500'} text-white`}
                         >
@@ -453,17 +406,6 @@ export function ChannelsPage() {
 
                       {/* Actions */}
                       <div className="flex gap-2">
-                        {channel.type === 'whatsapp' && channel.provider_type === 'internal' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openQRModal(channel)}
-                            className={channel.config?.internal_connected ? 'border-green-500 text-green-600' : ''}
-                          >
-                            <QrCode className="h-4 w-4 mr-1" />
-                            {channel.config?.internal_connected ? t('channelsPage.connected') : t('channelsPage.connect')}
-                          </Button>
-                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -544,51 +486,6 @@ export function ChannelsPage() {
                 })}
               </div>
             </div>
-
-            {/* WhatsApp Provider Selection */}
-            {formData.type === 'whatsapp' && (
-              <div className="space-y-3">
-                <label className="text-sm font-medium">{t('channelsPage.createModal.whatsappProvider')}</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {(['meta', 'internal'] as const).map((provider) => {
-                    const info = getProviderInfo(provider)
-                    return (
-                      <button
-                        key={provider}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, provider_type: provider })}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          formData.provider_type === provider
-                            ? 'border-primary bg-primary/5 shadow-sm'
-                            : 'border-border bg-muted/50 hover:bg-muted hover:border-muted-foreground/20'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className={`p-2 rounded-lg ${provider === 'meta' ? 'bg-blue-500' : 'bg-orange-500'} text-white shrink-0`}>
-                            {provider === 'meta' ? <MessageSquare className="h-4 w-4" /> : <QrCode className="h-4 w-4" />}
-                          </div>
-                          <span className="font-medium">{info.label}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{info.description}</p>
-                        <div className="flex gap-2 mt-2">
-                          {whatsappProviderInfo[provider]?.supports_templates && (
-                            <Badge variant="secondary" className="text-xs">Templates</Badge>
-                          )}
-                          {whatsappProviderInfo[provider]?.requires_qr && (
-                            <Badge variant="secondary" className="text-xs">QR Code</Badge>
-                          )}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-                {formData.provider_type === 'internal' && (
-                  <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg">
-                    {t('channelsPage.createModal.internalProviderWarning')}
-                  </p>
-                )}
-              </div>
-            )}
 
             {/* Name */}
             <div className="space-y-2">
@@ -677,8 +574,7 @@ export function ChannelsPage() {
               </motion.div>
             )}
 
-            {/* Advanced API Configuration - Only for Meta provider */}
-            {!(formData.type === 'whatsapp' && formData.provider_type === 'internal') && (
+            {/* Advanced API Configuration */}
             <div className="border-t pt-4">
               <button
                 type="button"
@@ -703,8 +599,8 @@ export function ChannelsPage() {
                     exit={{ opacity: 0, height: 0 }}
                     className="mt-4 space-y-4"
                   >
-                    {/* WhatsApp Config (Meta only) */}
-                    {formData.type === 'whatsapp' && formData.provider_type === 'meta' && (
+                    {/* WhatsApp Config (Meta Cloud API) */}
+                    {formData.type === 'whatsapp' && (
                       <>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -1312,17 +1208,6 @@ export function ChannelsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* QR Code Modal for Internal WhatsApp */}
-      {qrChannel && (
-        <QRCodeModal
-          channel={qrChannel}
-          isOpen={isQRModalOpen}
-          onClose={() => {
-            setIsQRModalOpen(false)
-            setQrChannel(null)
-          }}
-        />
-      )}
     </div>
   )
 }
