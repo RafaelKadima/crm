@@ -76,7 +76,12 @@ class CalculateKpisJob implements ShouldQueue
 
         foreach ($kpis as $kpi) {
             try {
-                $kpiService->calculateKpiValue($kpi, $this->period, $this->periodType);
+                // calculateKpiValue é protected (helper interno do Service).
+                // O método público equivalente é calculate(Kpi, period, periodType)
+                // — constrói dateRange, calcula valor atual + anterior + variação
+                // e persiste em KpiValue. Bug anterior: o Job chamava o helper
+                // interno e falhava com Error: "Call to protected method".
+                $kpiService->calculate($kpi, $this->period, $this->periodType);
             } catch (\Exception $e) {
                 Log::error('Error calculating KPI', [
                     'kpi_id' => $kpi->id,
