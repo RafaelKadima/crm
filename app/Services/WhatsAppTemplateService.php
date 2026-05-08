@@ -304,30 +304,44 @@ class WhatsAppTemplateService
                 'base_url' => $baseUrl,
             ]);
 
+            // (#100) "Need permission on either WhatsApp Business Account or owner/shared business"
+            // — a Meta retorna isso quando o APP não é owner/shared business da WABA, mesmo
+            // que o token tenha o scope correto e o app esteja com `whatsapp_business_management`
+            // aprovado. Em coexistence o owner é o BM do cliente, e o app precisa ser
+            // explicitamente compartilhado lá.
+            $isOwnerSharedError = $metaCode === 100
+                && (str_contains(strtolower($metaMessage), 'owner/shared business')
+                    || str_contains(strtolower($metaMessage), 'shared business')
+                    || str_contains(strtolower($metaMessage), 'owner or shared'));
+
             $userMessage = match (true) {
-                // (#100) com bm_token configurado — token não tem as permissões certas.
-                // Admin precisa regenerar o System User Token com whatsapp_business_management
-                // + business_management e dar acesso à WABA específica.
+                // (#100) owner/shared — caminho mais comum em coexistence.
+                $isOwnerSharedError =>
+                    "O app Omnify ainda não está autorizado a gerenciar a WABA {$wabaId}. "
+                    ."O admin do Business Manager do cliente precisa autorizar o app no BM dele:\n\n"
+                    ."1) Entrar em business.facebook.com com a conta admin do BM do cliente\n"
+                    ."2) Configurações de negócios → Contas → Contas do WhatsApp → selecionar a WABA\n"
+                    ."3) Adicionar pessoas e apps → Adicionar apps → escolher o app Omnify\n"
+                    ."4) Marcar permissões `Gerenciar conta` e `Mensagens` (full access)\n\n"
+                    ."Após autorizar, tente criar o template novamente. "
+                    ."Em coexistence isso normalmente já é concedido durante o Embedded Signup, "
+                    ."mas pode ter sido removido ou expirado.",
+
+                // (#100) genérico com bm_token — System User Token sem permissão correta.
                 $metaCode === 100 && $hasBmToken =>
                     "O Business Manager Token configurado não tem permissão pra criar templates nesta WABA. "
                     ."Regenere o token em business.facebook.com → Configurações → Usuários do Sistema → "
                     ."selecione o System User → Gerar Token, marcando os apps com permissões "
-                    ."`whatsapp_business_management` e `business_management`. Depois associe a WABA "
+                    ."`whatsapp_business_management` + `business_management`. Depois associe a WABA "
                     ."{$wabaId} ao System User em Configurações → Contas → Contas do WhatsApp.",
 
-                // (#100) em coexistence sem bm_token — caminho recomendado é configurar bm_token.
-                $metaCode === 100 && $isCoexistence =>
-                    "Em coexistência, o token do OAuth não consegue criar templates via API por restrição da Meta. "
-                    ."Solução: o admin do Business Manager do cliente precisa configurar um Business Manager "
-                    ."Token permanente (System User Token). Em business.facebook.com → Configurações → "
-                    ."Usuários do Sistema → criar/editar System User → Gerar Token com permissões "
-                    ."`whatsapp_business_management` + `business_management`, e associar a WABA {$wabaId} "
-                    ."ao usuário. Depois cole o token em Configurações → Canais → WhatsApp → BM Token.",
-
+                // (#100) genérico — falta de scope no OAuth ou app sem permissão.
                 $metaCode === 100 =>
-                    "Token sem permissão `whatsapp_business_management` ou `business_management` na WABA {$wabaId}. "
-                    ."Reconecte o canal via OAuth (vamos pedir os 3 scopes corretos) ou configure um Business "
-                    ."Manager Token permanente em Configurações → Canais → WhatsApp → BM Token.",
+                    "Permissão insuficiente pra operar templates na WABA {$wabaId}. "
+                    ."Possíveis causas: (1) o app não tem `whatsapp_business_management` aprovado, "
+                    ."(2) o token OAuth não inclui esse scope (refazer OAuth resolve), "
+                    ."(3) o app ainda não foi autorizado pelo dono da WABA. "
+                    ."Como fallback, configure um Business Manager Token em Settings → Canais → BM Token.",
 
                 $metaCode === 2388084 =>
                     'Combinação de botões inválida. Use QUICK_REPLY, URL, PHONE_NUMBER ou COPY_CODE.',
