@@ -13,10 +13,9 @@ import {
   CheckCircle,
   Save,
   Trash2,
-  ToggleLeft,
-  ToggleRight,
+  Power,
+  Edit,
   Mail,
-  Phone,
   Calendar,
   TrendingUp,
   Plus,
@@ -24,7 +23,17 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react'
-import { useTenant, useUpdateTenant, useUpdateTenantFeatures, usePlans, useFeatures, useModuleFunctions, useCreateSuperAdminUser } from '@/hooks/useSuperAdmin'
+import {
+  useTenant,
+  useUpdateTenant,
+  useUpdateTenantFeatures,
+  usePlans,
+  useFeatures,
+  useModuleFunctions,
+  useCreateSuperAdminUser,
+  useUpdateSuperAdminUser,
+  useDeleteSuperAdminUser,
+} from '@/hooks/useSuperAdmin'
 import { ChevronDown } from 'lucide-react'
 
 export function TenantDetailsPage() {
@@ -38,11 +47,14 @@ export function TenantDetailsPage() {
   const { data: moduleFunctions } = useModuleFunctions()
 
   const createUser = useCreateSuperAdminUser()
+  const updateUser = useUpdateSuperAdminUser()
+  const deleteUser = useDeleteSuperAdminUser()
 
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [activeTab, setActiveTab] = useState<'info' | 'features' | 'users'>('info')
   const [showCreateUserModal, setShowCreateUserModal] = useState(false)
+  const [editingUser, setEditingUser] = useState<any | null>(null)
   const [showPassword, setShowPassword] = useState(false)
 
   const [formData, setFormData] = useState({
@@ -55,6 +67,14 @@ export function TenantDetailsPage() {
   })
 
   const [newUserData, setNewUserData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'vendedor',
+    phone: '',
+  })
+
+  const [editUserData, setEditUserData] = useState({
     name: '',
     email: '',
     password: '',
@@ -218,6 +238,74 @@ export function TenantDetailsPage() {
       setTimeout(() => setSuccess(false), 3000)
     } catch (error: any) {
       const message = error?.response?.data?.message || error?.message || 'Erro ao criar usuário'
+      setError(message)
+    }
+  }
+
+  const openEditUser = (user: any) => {
+    setEditingUser(user)
+    setEditUserData({
+      name: user.name || '',
+      email: user.email || '',
+      password: '',
+      role: user.role || 'vendedor',
+      phone: user.phone || '',
+    })
+  }
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingUser) return
+    setError(null)
+
+    try {
+      const payload: Record<string, any> = {
+        name: editUserData.name,
+        email: editUserData.email,
+        role: editUserData.role,
+        phone: editUserData.phone || null,
+      }
+      if (editUserData.password) {
+        payload.password = editUserData.password
+      }
+
+      await updateUser.mutateAsync({ userId: editingUser.id, data: payload })
+      setEditingUser(null)
+      setSuccess(true)
+      refetch()
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Erro ao atualizar usuário'
+      setError(message)
+    }
+  }
+
+  const handleToggleUserActive = async (user: any) => {
+    setError(null)
+    try {
+      await updateUser.mutateAsync({
+        userId: user.id,
+        data: { is_active: !user.is_active },
+      })
+      refetch()
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Erro ao alterar status do usuário'
+      setError(message)
+    }
+  }
+
+  const handleDeleteUser = async (user: any) => {
+    if (!window.confirm(`Excluir usuário "${user.name}"? Esta ação não pode ser desfeita.`)) {
+      return
+    }
+    setError(null)
+    try {
+      await deleteUser.mutateAsync(user.id)
+      setSuccess(true)
+      refetch()
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Erro ao excluir usuário'
       setError(message)
     }
   }
@@ -670,23 +758,23 @@ export function TenantDetailsPage() {
                   {tenant.users.map((user: any) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-4 bg-accent/30 rounded-lg"
+                      className="flex items-center justify-between p-4 bg-accent/30 rounded-lg gap-3"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                           {user.name?.charAt(0)?.toUpperCase() || 'U'}
                         </div>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground flex items-center gap-2">
-                            <Mail className="w-3 h-3" />
-                            {user.email}
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{user.name}</p>
+                          <p className="text-sm text-muted-foreground flex items-center gap-2 truncate">
+                            <Mail className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{user.email}</span>
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          user.role === 'admin' 
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`hidden sm:inline-block px-2 py-1 rounded text-xs font-medium ${
+                          user.role === 'admin'
                             ? 'bg-purple-500/20 text-purple-400'
                             : user.role === 'gestor'
                             ? 'bg-blue-500/20 text-blue-400'
@@ -694,13 +782,47 @@ export function TenantDetailsPage() {
                         }`}>
                           {user.role}
                         </span>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        <span className={`hidden sm:inline-block px-2 py-1 rounded text-xs font-medium ${
                           user.is_active
                             ? 'bg-green-500/20 text-green-400'
                             : 'bg-red-500/20 text-red-400'
                         }`}>
                           {user.is_active ? 'Ativo' : 'Inativo'}
                         </span>
+
+                        <div className="flex items-center gap-1 ml-2 border-l border-border pl-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditUser(user)}
+                            disabled={updateUser.isPending}
+                            className="p-2 rounded-lg hover:bg-blue-500/20 hover:text-blue-400 transition-colors disabled:opacity-50"
+                            title="Editar usuário"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleUserActive(user)}
+                            disabled={updateUser.isPending || user.is_super_admin}
+                            className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
+                              user.is_active
+                                ? 'hover:bg-red-500/20 text-red-400'
+                                : 'hover:bg-green-500/20 text-green-400'
+                            }`}
+                            title={user.is_active ? 'Desativar' : 'Ativar'}
+                          >
+                            <Power className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={deleteUser.isPending || user.is_super_admin}
+                            className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50"
+                            title={user.is_super_admin ? 'Não é possível excluir super admin' : 'Excluir usuário'}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -848,6 +970,139 @@ export function TenantDetailsPage() {
                       <>
                         <Plus className="w-4 h-4" />
                         Criar Usuário
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Editar Usuário */}
+      <AnimatePresence>
+        {editingUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setEditingUser(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-muted rounded-xl border border-border w-full max-w-md overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Edit className="w-5 h-5 text-blue-400" />
+                  Editar Usuário
+                </h3>
+                <button
+                  onClick={() => setEditingUser(null)}
+                  className="p-1 hover:bg-accent rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateUser} className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-1">Nome *</label>
+                  <input
+                    type="text"
+                    value={editUserData.name}
+                    onChange={(e) => setEditUserData({ ...editUserData, name: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-1">E-mail *</label>
+                  <input
+                    type="email"
+                    value={editUserData.email}
+                    onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-1">
+                    Nova Senha <span className="text-xs">(deixe em branco para manter)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={editUserData.password}
+                      onChange={(e) => setEditUserData({ ...editUserData, password: e.target.value })}
+                      minLength={editUserData.password ? 8 : undefined}
+                      className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none pr-10"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-accent rounded"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-1">Função *</label>
+                  <select
+                    value={editUserData.role}
+                    onChange={(e) => setEditUserData({ ...editUserData, role: e.target.value })}
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="admin">Administrador</option>
+                    <option value="gestor">Gestor</option>
+                    <option value="vendedor">Vendedor</option>
+                    <option value="marketing">Marketing</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-1">Telefone</label>
+                  <input
+                    type="text"
+                    value={editUserData.phone}
+                    onChange={(e) => setEditUserData({ ...editUserData, phone: e.target.value })}
+                    className="w-full px-4 py-2 bg-accent border border-border rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="5511999999999"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingUser(null)}
+                    className="flex-1 px-4 py-2 bg-accent hover:bg-accent rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updateUser.isPending}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {updateUser.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Salvar
                       </>
                     )}
                   </button>

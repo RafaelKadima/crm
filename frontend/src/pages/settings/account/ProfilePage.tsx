@@ -32,7 +32,7 @@ export function ProfilePage() {
       }
     },
     save: async (next) => {
-      const res = await api.put('/users/me', {
+      const res = await api.put('/profile', {
         name: next.name,
         email: next.email,
         phone: next.phone,
@@ -131,12 +131,12 @@ function PasswordChangeCard() {
     }
     setSaving(true)
     try {
-      await api.put('/users/me/password', {
+      await api.post('/profile/change-password', {
         current_password: current,
         new_password: next,
         new_password_confirmation: confirm,
       })
-      toast.success('Senha alterada. Suas outras sessões foram encerradas por segurança.')
+      toast.success('Senha alterada com sucesso.')
       reset()
     } catch (e: any) {
       toast.error(e?.response?.data?.message ?? 'Erro ao alterar senha.')

@@ -391,16 +391,21 @@ class SuperAdminController extends Controller
 
     /**
      * Atualiza um usuário.
+     *
+     * Recebe o ID e resolve sem o TenantScope — super admin precisa enxergar
+     * usuários de qualquer tenant.
      */
-    public function updateUser(Request $request, User $user): JsonResponse
+    public function updateUser(Request $request, string $userId): JsonResponse
     {
+        $user = User::withoutGlobalScopes()->findOrFail($userId);
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'email' => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => 'nullable|string|min:8',
             'role' => 'sometimes|string|in:admin,gestor,vendedor,marketing',
             'phone' => 'nullable|string',
-            'is_active' => 'boolean',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         if (isset($validated['password'])) {
@@ -422,21 +427,23 @@ class SuperAdminController extends Controller
     }
 
     /**
-     * Exclui um usuário.
+     * Exclui um usuário (sem TenantScope — super admin opera cross-tenant).
      */
-    public function deleteUser(User $user): JsonResponse
+    public function deleteUser(string $userId): JsonResponse
     {
+        $user = User::withoutGlobalScopes()->findOrFail($userId);
+
         if ($user->is_super_admin) {
             return response()->json(['error' => 'Não é possível excluir um super admin'], 403);
         }
 
         $tenantId = $user->tenant_id;
-        $userId = $user->id;
+        $deletedUserId = $user->id;
         $email = $user->email;
 
         $user->delete();
 
-        SuperAdminLog::log('user.delete', $tenantId, $userId, ['email' => $email]);
+        SuperAdminLog::log('user.delete', $tenantId, $deletedUserId, ['email' => $email]);
 
         return response()->json(['message' => 'Usuário excluído com sucesso!']);
     }

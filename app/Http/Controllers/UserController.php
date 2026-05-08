@@ -104,11 +104,14 @@ class UserController extends Controller
             'avatar' => 'nullable|url',
             'is_active' => 'sometimes|boolean',
             'is_available_for_leads' => 'sometimes|boolean',
+            'linx_vendedor_id' => 'nullable|string|max:50',
         ]);
 
-        // Apenas admin pode alterar para admin
+        // Apenas admin (ou super admin) pode alterar para admin
         $currentUser = auth()->user();
-        if (isset($validated['role']) && $validated['role'] === 'admin' && $currentUser->role !== RoleEnum::ADMIN) {
+        if (isset($validated['role']) && $validated['role'] === 'admin'
+            && $currentUser->role !== RoleEnum::ADMIN
+            && !$currentUser->isSuperAdmin()) {
             return response()->json([
                 'message' => 'Apenas administradores podem alterar para o cargo de administrador.',
             ], 403);
@@ -210,6 +213,11 @@ class UserController extends Controller
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
             'avatar' => 'nullable|url',
+            // Integração Linx (self-service: o vendedor configura o próprio código)
+            'linx_empresa_id' => 'nullable|string|max:50',
+            'linx_vendedor_id' => 'nullable|string|max:50',
+            'linx_loja_id' => 'nullable|string|max:50',
+            'linx_showroom_id' => 'nullable|string|max:50',
         ]);
 
         $user->update($validated);
