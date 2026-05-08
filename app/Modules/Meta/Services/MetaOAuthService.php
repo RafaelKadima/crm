@@ -601,7 +601,71 @@ class MetaOAuthService
         // Inscreve o app nos webhooks da WABA (obrigatório para receber mensagens)
         $this->subscribeAppToWaba($wabaId, $accessToken);
 
+        // Verifica se o app tem permissão de manage templates na WABA.
+        // Em coexistence o admin do BM precisa marcar "Controle Total" na tela
+        // de seleção de assets do popup; se ele pular ou marcar só "mensagens",
+        // o token sai sem permissão de templates e dá #100 ao criar.
+        $this->verifyAndPersistTemplatePermission($integration, $accessToken);
+
         return $integration;
+    }
+
+    /**
+     * Tenta listar templates da WABA. Sucesso → app tem manage permission.
+     * Falha com #100 → admin do BM não autorizou ou só deu mensagens.
+     * Persiste o status em metadata.template_management_authorized pra UI sinalizar.
+     */
+    protected function verifyAndPersistTemplatePermission(
+        MetaIntegration $integration,
+        string $accessToken
+    ): void {
+        try {
+            $response = \Illuminate\Support\Facades\Http::withToken($accessToken)
+                ->timeout(15)
+                ->get("https://graph.facebook.com/{$this->apiVersion}/{$integration->waba_id}/message_templates", [
+                    'limit' => 1,
+                    'fields' => 'id',
+                ]);
+
+            $authorized = $response->successful();
+            $errorCode = $response->json('error.code');
+            $errorMessage = $response->json('error.message');
+
+            $metadata = $integration->metadata ?? [];
+            $metadata['template_management_authorized'] = $authorized;
+            $metadata['template_permission_check_at'] = now()->toIso8601String();
+            if (!$authorized) {
+                $metadata['template_permission_error'] = [
+                    'code' => $errorCode,
+                    'message' => $errorMessage,
+                ];
+            }
+
+            $integration->update(['metadata' => $metadata]);
+
+            if (!$authorized) {
+                Log::warning('Embedded Signup: app sem permissão de manage templates', [
+                    'integration_id' => $integration->id,
+                    'waba_id' => $integration->waba_id,
+                    'error_code' => $errorCode,
+                    'error_message' => $errorMessage,
+                    'is_coexistence' => $integration->is_coexistence,
+                    'guidance' => 'Admin do BM precisa autorizar app em business.facebook.com → '
+                        . 'Configurações → Contas → WhatsApp Accounts → selecionar WABA → '
+                        . 'Adicionar pessoas e apps → Adicionar app → Controle Total.',
+                ]);
+            } else {
+                Log::info('Embedded Signup: app autorizado a gerenciar templates', [
+                    'integration_id' => $integration->id,
+                    'waba_id' => $integration->waba_id,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Embedded Signup: falha ao verificar permissão de templates', [
+                'integration_id' => $integration->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -692,6 +756,9 @@ class MetaOAuthService
 
         // Inscreve o app nos webhooks da WABA (obrigatório para receber mensagens)
         $this->subscribeAppToWaba($wabaId, $accessToken);
+
+        // Verifica se admin do BM concedeu manage de templates ao app
+        $this->verifyAndPersistTemplatePermission($integration, $accessToken);
 
         return $integration;
     }

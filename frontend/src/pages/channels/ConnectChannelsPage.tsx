@@ -412,6 +412,16 @@ export function ConnectChannelsPage() {
                                 {t('channels.coexistence')}
                               </Badge>
                             )}
+                            {integration.template_management_authorized === false && (
+                              <Badge
+                                variant="outline"
+                                className="flex items-center gap-1 text-xs text-warning border-warning/30 cursor-help"
+                                title="O app Omnify ainda não foi autorizado a gerenciar templates nesta WABA. Clique no ícone da chave pra ver como resolver."
+                              >
+                                <AlertTriangle className="w-3 h-3" />
+                                Templates não autorizados
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                             {integration.display_phone_number && (

@@ -310,19 +310,25 @@ export function useMetaEmbeddedSignup() {
       sessionInfoRef.current = null
 
       try {
-        // Coexistência: featureType = 'whatsapp_business_app_onboarding', sem setup
-        // Padrão: setup vazio
-        // Ref: https://developers.facebook.com/docs/whatsapp/embedded-signup/implementation
+        // Embedded Signup options.
+        //
+        // O ZPRO (referência) sempre passa `setup: {}` mesmo em coexistence —
+        // sem isso o popup às vezes pula a tela de permissões e o app fica
+        // sem acesso de manage à WABA, gerando erro #100 "Need permission on
+        // either WhatsApp Business Account or owner/shared business" depois
+        // que o admin tenta criar template via API.
+        //
+        // Ref ZPRO: configuracoes/sessoes/page.tsx:492-497
+        // Ref Meta: https://developers.facebook.com/docs/whatsapp/embedded-signup/implementation
         const isCoexistence = config.featureType === 'whatsapp_business_app_onboarding'
         const loginOptions: FBLoginOptions = {
           config_id: config.configId,
           response_type: 'code',
           override_default_response_type: true,
           extras: {
+            setup: {},
             sessionInfoVersion: '3',
-            ...(isCoexistence
-              ? { featureType: 'whatsapp_business_app_onboarding' }
-              : { setup: {} }),
+            featureType: isCoexistence ? 'whatsapp_business_app_onboarding' : '',
           },
         }
 

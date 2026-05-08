@@ -20,6 +20,12 @@ export interface MetaIntegration {
   needs_reauth: boolean
   has_bm_token: boolean
   waba_version: string | null
+  /**
+   * null = ainda não verificado (integration legacy ou criada antes do check)
+   * true = OK, app tem permissão de manage templates
+   * false = admin do BM não autorizou — UI deve sinalizar e oferecer caminhos de fix
+   */
+  template_management_authorized: boolean | null
   scopes: string[] | null
   metadata: Record<string, unknown> | null
   created_at: string
