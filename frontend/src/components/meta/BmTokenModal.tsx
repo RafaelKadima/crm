@@ -99,13 +99,33 @@ export function BmTokenModal({ integration, open, onOpenChange }: Props) {
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm space-y-2">
-            <p className="font-medium">Quando usar BM Token</p>
+          <div className="rounded-lg border border-warning/30 bg-warning/5 p-4 text-sm space-y-3">
+            <p className="font-medium">⚡ Tente isto primeiro (gratuito, normalmente resolve)</p>
             <p className="text-muted-foreground">
-              Em <strong>coexistência</strong>, o token do OAuth não consegue criar templates por
-              restrição da Meta (erro #100). A solução é um <strong>System User Token permanente</strong>{' '}
-              gerado no Business Manager do cliente, com permissões{' '}
-              <code className="text-xs bg-background px-1 rounded">whatsapp_business_management</code> e{' '}
+              Se você está vendo erro <code className="text-xs bg-background px-1 rounded">(#100) Need permission on either WhatsApp Business Account or owner/shared business</code>{' '}
+              ao criar template, é porque o app Omnify ainda não foi autorizado a gerenciar a WABA{' '}
+              <code className="text-xs bg-background px-1 rounded">{integration.waba_id}</code> no Business Manager do cliente.
+            </p>
+            <p className="text-muted-foreground">Como autorizar:</p>
+            <ol className="list-decimal list-inside text-muted-foreground space-y-1 ml-2">
+              <li>Entre em <a href="https://business.facebook.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">business.facebook.com</a> com a conta admin do BM do cliente</li>
+              <li>Configurações de negócios → <strong>Contas</strong> → <strong>Contas do WhatsApp</strong> → selecionar a WABA <code className="text-xs">{integration.waba_id}</code></li>
+              <li><strong>Adicionar pessoas e apps</strong> → Adicionar apps → escolher o app Omnify</li>
+              <li>Marcar <strong>Controle total</strong> (Manage account + Send messages)</li>
+              <li>Voltar ao CRM e tentar criar o template novamente</li>
+            </ol>
+            <p className="text-muted-foreground italic">
+              Em coexistência, isso geralmente já é concedido no Embedded Signup, mas pode ter sido
+              removido ou expirado.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm space-y-2">
+            <p className="font-medium">🔑 Alternativa — BM Token (System User Token)</p>
+            <p className="text-muted-foreground">
+              Use isto como <strong>fallback</strong> se autorizar o app não funcionar. É um token{' '}
+              <strong>permanente</strong> gerado no Business Manager do cliente, com permissões{' '}
+              <code className="text-xs bg-background px-1 rounded">whatsapp_business_management</code> +{' '}
               <code className="text-xs bg-background px-1 rounded">business_management</code>.
             </p>
             <p className="text-muted-foreground">Como gerar:</p>
