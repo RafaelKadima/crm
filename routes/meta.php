@@ -63,6 +63,10 @@ Route::prefix('api/meta')->group(function () {
                 Route::patch('{id}/credentials', [MetaAuthController::class, 'updateCredentials'])
                     ->name('credentials.update');
 
+                // Diagnóstico do token + permissões (debug_token + GET templates)
+                Route::post('{id}/diagnose', [MetaAuthController::class, 'diagnoseIntegration'])
+                    ->name('diagnose');
+
                 // Token Management
                 Route::post('{id}/refresh-token', [MetaAuthController::class, 'refreshToken'])
                     ->name('refresh-token');

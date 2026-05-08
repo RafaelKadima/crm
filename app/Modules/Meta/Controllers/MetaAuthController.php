@@ -135,6 +135,7 @@ class MetaAuthController extends Controller
                     'has_bm_token' => !empty($integration->bm_token),
                     'waba_version' => $integration->waba_version,
                     'template_management_authorized' => $integration->metadata['template_management_authorized'] ?? null,
+                    'token_type' => $integration->metadata['token_type'] ?? null,
                     'expires_at' => $integration->expires_at?->toIso8601String(),
                     'days_until_expiration' => $integration->daysUntilExpiration(),
                     'is_expiring_soon' => $integration->isExpiringSoon(),
@@ -181,6 +182,7 @@ class MetaAuthController extends Controller
                 'has_bm_token' => !empty($integration->bm_token),
                 'waba_version' => $integration->waba_version,
                 'template_management_authorized' => $integration->metadata['template_management_authorized'] ?? null,
+                'token_type' => $integration->metadata['token_type'] ?? null,
                 'scopes' => $integration->scopes,
                 'metadata' => $integration->metadata,
                 'token_info' => $tokenInfo,
@@ -188,6 +190,109 @@ class MetaAuthController extends Controller
                 'updated_at' => $integration->updated_at->toIso8601String(),
             ],
         ]);
+    }
+
+    /**
+     * Roda diagnóstico no token + permissões da integração existente.
+     * POST /api/meta/integrations/{id}/diagnose
+     *
+     * Não modifica nada na Meta — só inspeciona o estado atual:
+     *   - debug_token (tipo + scopes do access_token persistido)
+     *   - GET /{waba_id}/message_templates (permissão de manage)
+     * Persiste resultado em metadata e retorna pro caller.
+     *
+     * Útil pra integrations criadas antes do diagnóstico automático
+     * ter sido implementado.
+     */
+    public function diagnoseIntegration(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || !$user->hasPermission('users_manage')) {
+            abort(403, 'Sem permissão para rodar diagnóstico.');
+        }
+
+        $integration = MetaIntegration::findOrFail($id);
+        $token = $integration->bm_token ?: $integration->access_token;
+
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Integração sem token configurado.',
+            ], 422);
+        }
+
+        $flow = $integration->is_coexistence ? 'coexistence' : 'embedded';
+        $debug = $this->oauthService->debugToken($token, $flow);
+
+        $metadata = $integration->metadata ?? [];
+        $metadata['token_type'] = $debug['type'];
+        $metadata['token_scopes'] = $debug['scopes'];
+        $metadata['token_diagnostic_at'] = now()->toIso8601String();
+
+        // Verifica permissão de templates
+        try {
+            $tplResp = \Illuminate\Support\Facades\Http::withToken($token)
+                ->timeout(15)
+                ->get("https://graph.facebook.com/" . config('services.meta.api_version', 'v22.0') . "/{$integration->waba_id}/message_templates", [
+                    'limit' => 1,
+                    'fields' => 'id',
+                ]);
+            $metadata['template_management_authorized'] = $tplResp->successful();
+            if (!$tplResp->successful()) {
+                $metadata['template_permission_error'] = [
+                    'code' => $tplResp->json('error.code'),
+                    'message' => $tplResp->json('error.message'),
+                ];
+            }
+        } catch (\Throwable $e) {
+            $metadata['template_management_authorized'] = false;
+            $metadata['template_permission_error'] = ['message' => $e->getMessage()];
+        }
+
+        $integration->update(['metadata' => $metadata]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'token_type' => $debug['type'],
+                'token_is_bisuat' => $debug['type'] === 'BUSINESS_INTEGRATION_USER',
+                'token_is_valid' => $debug['is_valid'],
+                'token_scopes' => $debug['scopes'],
+                'template_management_authorized' => $metadata['template_management_authorized'],
+                'template_permission_error' => $metadata['template_permission_error'] ?? null,
+                'guidance' => $this->buildDiagnosticGuidance($debug, $metadata),
+            ],
+        ]);
+    }
+
+    protected function buildDiagnosticGuidance(array $debug, array $metadata): array
+    {
+        $guidance = [];
+        $type = $debug['type'] ?? null;
+
+        if ($type !== 'BUSINESS_INTEGRATION_USER' && $type !== 'SYSTEM_USER') {
+            $guidance[] = "Token tipo `{$type}` não é o ideal. Pra coexistence o esperado é "
+                . "BUSINESS_INTEGRATION_USER (BISUAT). Verifique a Configuration ID em "
+                . "developers.facebook.com → app → WhatsApp Business Cloud API → Configurations: "
+                . "ela precisa ter solution_type=Business Integration e listar a WABA + "
+                . "permissions whatsapp_business_management + whatsapp_business_messaging + business_management. "
+                . "Depois reconecte o canal.";
+        }
+
+        if (empty($metadata['template_management_authorized'])) {
+            $code = $metadata['template_permission_error']['code'] ?? null;
+            if ($code === 100) {
+                $guidance[] = "App não tem permissão de manage templates. Reconecte o canal "
+                    . "(o popup vai pedir as permissões corretas) ou autorize manualmente em "
+                    . "business.facebook.com → Contas → WhatsApp → selecionar WABA → "
+                    . "Adicionar pessoas e apps → Adicionar app → Controle Total.";
+            } else {
+                $guidance[] = "Falha ao listar templates da WABA (code {$code}). "
+                    . "Verifique se a WABA ainda existe e se o token não expirou.";
+            }
+        }
+
+        return $guidance;
     }
 
     /**
