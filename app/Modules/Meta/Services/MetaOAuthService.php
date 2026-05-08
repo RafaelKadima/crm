@@ -598,8 +598,16 @@ class MetaOAuthService
             'is_coexistence' => $isCoexistence,
         ]);
 
+        // Diagnóstico: inspecionar o tipo do token. Em Embedded Signup com
+        // Configuration ID corretamente setada como "Business Integration",
+        // o exchange retorna BUSINESS_INTEGRATION_USER (BISUAT). Caso contrário,
+        // retorna USER comum, e nem subscribe nem template create vão funcionar.
+        $this->logTokenDiagnostic($integration, $accessToken, $flow);
+
         // Inscreve o app nos webhooks da WABA (obrigatório para receber mensagens)
-        $this->subscribeAppToWaba($wabaId, $accessToken);
+        // + também é o equivalente programático do "Adicionar app" no BM
+        // — mas só funciona se o token for BISUAT.
+        $this->subscribeAppToWaba($wabaId, $accessToken, $isCoexistence);
 
         // Verifica se o app tem permissão de manage templates na WABA.
         // Em coexistence o admin do BM precisa marcar "Controle Total" na tela
@@ -608,6 +616,43 @@ class MetaOAuthService
         $this->verifyAndPersistTemplatePermission($integration, $accessToken);
 
         return $integration;
+    }
+
+    /**
+     * Loga o tipo + scopes do token recém-obtido pra diagnosticar problemas
+     * de Embedded Signup. Persiste em metadata pra UI poder mostrar.
+     */
+    protected function logTokenDiagnostic(MetaIntegration $integration, string $accessToken, string $flow): void
+    {
+        $debug = $this->debugToken($accessToken, $flow);
+
+        $metadata = $integration->metadata ?? [];
+        $metadata['token_type'] = $debug['type'];
+        $metadata['token_scopes'] = $debug['scopes'];
+        $metadata['token_diagnostic_at'] = now()->toIso8601String();
+        $integration->update(['metadata' => $metadata]);
+
+        $type = $debug['type'] ?? 'UNKNOWN';
+        $isBisuat = $type === 'BUSINESS_INTEGRATION_USER';
+
+        Log::info('Embedded Signup: token diagnostic', [
+            'integration_id' => $integration->id,
+            'token_type' => $type,
+            'scopes' => $debug['scopes'],
+            'is_bisuat' => $isBisuat,
+        ]);
+
+        if (!$isBisuat) {
+            Log::warning('Embedded Signup: token NÃO é BISUAT — Configuration ID provavelmente mal configurada', [
+                'integration_id' => $integration->id,
+                'token_type' => $type,
+                'guidance' => 'Em developers.facebook.com → app → WhatsApp Business Cloud API → Configurations: '
+                    . 'verifique se a Configuration usada (META_CONFIG_ID) está com solution_type="Business Integration" '
+                    . 'e tem assets WhatsApp Business Accounts + permissions whatsapp_business_management '
+                    . '+ whatsapp_business_messaging + business_management. Sem BISUAT, subscribe não vincula '
+                    . 'o app à WABA como shared business e template creation falha com #100.',
+            ]);
+        }
     }
 
     /**
@@ -754,10 +799,9 @@ class MetaOAuthService
             'is_coexistence' => $isCoexistence,
         ]);
 
-        // Inscreve o app nos webhooks da WABA (obrigatório para receber mensagens)
-        $this->subscribeAppToWaba($wabaId, $accessToken);
-
-        // Verifica se admin do BM concedeu manage de templates ao app
+        // Diagnóstico do token + subscribe webhook + verificação de permissão.
+        $this->logTokenDiagnostic($integration, $accessToken, $flow);
+        $this->subscribeAppToWaba($wabaId, $accessToken, $isCoexistence);
         $this->verifyAndPersistTemplatePermission($integration, $accessToken);
 
         return $integration;
@@ -788,15 +832,33 @@ class MetaOAuthService
      * Não lança exceção: se falhar, loga warning para não derrubar o signup.
      * O usuário pode forçar manualmente depois via refresh-token.
      */
-    public function subscribeAppToWaba(string $wabaId, string $accessToken): bool
+    public function subscribeAppToWaba(string $wabaId, string $accessToken, bool $isCoexistence = false): bool
     {
+        // Webhook fields explícitos. Sem isso, em coexistence o Meta às vezes
+        // assina webhooks com fields default (só `messages`), perdendo
+        // smb_message_echoes e history que coexistence precisa.
+        // Ref: https://developers.facebook.com/docs/whatsapp/embedded-signup/onboarding-business-app-users
+        $webhookFields = ['messages', 'message_template_status_update', 'phone_number_quality_update'];
+        if ($isCoexistence) {
+            $webhookFields = array_merge($webhookFields, [
+                'smb_message_echoes',
+                'smb_app_state_sync',
+                'history',
+            ]);
+        }
+
         try {
             $response = Http::withToken($accessToken)
                 ->asJson()
-                ->post("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}/subscribed_apps", new \stdClass());
+                ->post("https://graph.facebook.com/{$this->apiVersion}/{$wabaId}/subscribed_apps", [
+                    'subscribed_fields' => $webhookFields,
+                ]);
 
             if ($response->successful() && ($response->json()['success'] ?? false)) {
-                Log::info('WABA subscribed to webhooks successfully', ['waba_id' => $wabaId]);
+                Log::info('WABA subscribed to webhooks successfully', [
+                    'waba_id' => $wabaId,
+                    'fields' => $webhookFields,
+                ]);
                 return true;
             }
 
@@ -804,6 +866,7 @@ class MetaOAuthService
                 'waba_id' => $wabaId,
                 'status' => $response->status(),
                 'body' => $response->json(),
+                'attempted_fields' => $webhookFields,
             ]);
             return false;
         } catch (\Exception $e) {
@@ -812,6 +875,66 @@ class MetaOAuthService
                 'error' => $e->getMessage(),
             ]);
             return false;
+        }
+    }
+
+    /**
+     * Inspeciona o token via /debug_token e retorna o tipo + scopes.
+     *
+     * Crítico em Embedded Signup: se Configuration ID estiver mal configurada
+     * (não como "Business Integration"), o exchange do code retorna **User
+     * Access Token** comum, em vez do **Business Integration System User
+     * Access Token (BISUAT)** escopado à WABA. Sem BISUAT, mesmo após
+     * subscribed_apps o app não fica como "shared business" da WABA, e
+     * POST /message_templates falha com (#100 owner/shared business).
+     *
+     * Tipos esperados (campo `type` do response):
+     *   - BUSINESS_INTEGRATION_USER  → BISUAT (correto pra coexistence)
+     *   - USER                       → User Token comum (errado em Embedded Signup)
+     *   - SYSTEM_USER                → System User Token (manualmente colado em bm_token)
+     *   - APP                        → App Access Token (errado pra ops de WABA)
+     *
+     * Ref: https://developers.facebook.com/docs/graph-api/reference/v22.0/debug_token
+     *
+     * @return array{type: ?string, scopes: array, app_id: ?string, is_valid: bool, error?: string}
+     */
+    public function debugToken(string $token, string $flow = 'embedded'): array
+    {
+        try {
+            $creds = $this->appCredentialsForFlow($flow);
+            $appAccessToken = "{$creds['app_id']}|{$creds['app_secret']}";
+
+            $response = Http::get("https://graph.facebook.com/{$this->apiVersion}/debug_token", [
+                'input_token' => $token,
+                'access_token' => $appAccessToken,
+            ]);
+
+            if (!$response->successful()) {
+                return [
+                    'type' => null,
+                    'scopes' => [],
+                    'app_id' => null,
+                    'is_valid' => false,
+                    'error' => $response->json('error.message'),
+                ];
+            }
+
+            $data = $response->json('data', []);
+            return [
+                'type' => $data['type'] ?? null,
+                'scopes' => $data['scopes'] ?? [],
+                'app_id' => $data['app_id'] ?? null,
+                'is_valid' => (bool) ($data['is_valid'] ?? false),
+                'granular_scopes' => $data['granular_scopes'] ?? [],
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'type' => null,
+                'scopes' => [],
+                'app_id' => null,
+                'is_valid' => false,
+                'error' => $e->getMessage(),
+            ];
         }
     }
 

@@ -22,6 +22,7 @@ import {
   Smartphone,
   Info,
   KeyRound,
+  Stethoscope,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -34,6 +35,7 @@ import {
   useMetaIntegrations,
   useDisconnectMeta,
   useRefreshMetaToken,
+  useDiagnoseMetaIntegration,
   type MetaIntegration,
 } from '@/hooks/useMetaIntegrations'
 import {
@@ -105,6 +107,7 @@ export function ConnectChannelsPage() {
   const { data: metaIntegrations, isLoading: loadingIntegrations } = useMetaIntegrations()
   const disconnectMutation = useDisconnectMeta()
   const refreshTokenMutation = useRefreshMetaToken()
+  const diagnoseMutation = useDiagnoseMetaIntegration()
 
   // Channel hooks
   const { data: channels = [], isLoading: loadingChannels } = useChannels()
@@ -154,6 +157,22 @@ export function ConnectChannelsPage() {
       toast.success(t('channels.tokenRefreshed'))
     } catch (error: any) {
       toast.error(error.response?.data?.message || t('channels.errorRefreshingToken'))
+    }
+  }
+
+  const handleDiagnose = async (id: string) => {
+    try {
+      const result = await diagnoseMutation.mutateAsync(id)
+      const d = result.data
+      const lines = [
+        `Token: ${d.token_type ?? 'desconhecido'}${d.token_is_bisuat ? ' ✓ BISUAT' : ''}`,
+        `Válido: ${d.token_is_valid ? 'sim' : 'não'}`,
+        `Manage templates: ${d.template_management_authorized ? 'autorizado ✓' : 'NÃO autorizado'}`,
+        ...(d.guidance.length > 0 ? ['', 'Recomendações:', ...d.guidance.map((g) => `• ${g}`)] : []),
+      ]
+      alert(lines.join('\n'))
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Erro ao rodar diagnóstico')
     }
   }
 
@@ -477,6 +496,20 @@ export function ConnectChannelsPage() {
                             )}
                           </Button>
                         )}
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDiagnose(integration.id)}
+                          disabled={diagnoseMutation.isPending}
+                          title="Diagnosticar token + permissões (debug_token + GET templates)"
+                        >
+                          {diagnoseMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Stethoscope className="h-4 w-4" />
+                          )}
+                        </Button>
 
                         <Button
                           variant="ghost"

@@ -26,6 +26,8 @@ export interface MetaIntegration {
    * false = admin do BM não autorizou — UI deve sinalizar e oferecer caminhos de fix
    */
   template_management_authorized: boolean | null
+  /** Tipo do token salvo (debug_token result). USER=problema, BUSINESS_INTEGRATION_USER=ok, SYSTEM_USER=bm_token. */
+  token_type: 'USER' | 'BUSINESS_INTEGRATION_USER' | 'SYSTEM_USER' | 'APP' | string | null
   scopes: string[] | null
   metadata: Record<string, unknown> | null
   created_at: string
@@ -63,6 +65,19 @@ const metaApi = {
   refreshToken: (id: string) => api.post<{ success: boolean; message: string; data: Partial<MetaIntegration> }>(`/meta/integrations/${id}/refresh-token`),
   updateCredentials: (id: string, payload: UpdateMetaCredentialsPayload) =>
     api.patch<{ success: boolean; message: string; data: { has_bm_token: boolean; waba_version: string | null } }>(`/meta/integrations/${id}/credentials`, payload),
+  diagnose: (id: string) =>
+    api.post<{
+      success: boolean
+      data: {
+        token_type: string | null
+        token_is_bisuat: boolean
+        token_is_valid: boolean
+        token_scopes: string[]
+        template_management_authorized: boolean
+        template_permission_error: { code?: number; message?: string } | null
+        guidance: string[]
+      }
+    }>(`/meta/integrations/${id}/diagnose`),
   getTemplates: (id: string, status?: string) => api.get<{ success: boolean; data: MetaTemplate[] }>(`/meta/integrations/${id}/templates`, { params: { status } }),
   syncTemplates: (id: string) => api.post<{ success: boolean; message: string; count: number }>(`/meta/integrations/${id}/templates/sync`),
 }
@@ -158,6 +173,24 @@ export function useRefreshMetaToken() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meta', 'integrations'] })
+    },
+  })
+}
+
+/**
+ * Roda diagnóstico do token + permissões na integração existente
+ */
+export function useDiagnoseMetaIntegration() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await metaApi.diagnose(id)
+      return response.data
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['meta', 'integrations'] })
+      queryClient.invalidateQueries({ queryKey: ['meta', 'integrations', id] })
     },
   })
 }
