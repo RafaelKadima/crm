@@ -307,11 +307,11 @@ class WhatsAppService implements WhatsAppProviderInterface
      * @param bool $asVoiceNote If true and file is audio, converts to OGG OPUS for PTT
      * @return array{media_id: string, converted_path: string, mime_type: string, is_voice_note: bool}
      */
-    public function uploadMedia(string $filePath, string $mimeType, bool $asVoiceNote = false): array
+    public function uploadMedia(string $filePath, string $mimeType, bool $asVoiceNote = false, ?string $diskName = null): array
     {
         $this->validateConfig();
 
-        $disk = \Illuminate\Support\Facades\Storage::disk('media');
+        $disk = \Illuminate\Support\Facades\Storage::disk($diskName ?? 'media');
 
         if (!$disk->exists($filePath)) {
             throw new \Exception("Arquivo não encontrado: {$filePath}");
@@ -422,6 +422,29 @@ class WhatsAppService implements WhatsAppProviderInterface
             'mime_type' => $normalizedMimeType,
             'is_voice_note' => $isVoiceNote, // True if converted to OGG OPUS for PTT
         ];
+    }
+
+    /**
+     * Envia mídia fazendo upload binary direto pro Meta (fluxo
+     * upload→sendById em uma chamada só). Use quando o storage é local
+     * e não há URL pública pro Meta puxar — Meta baixa do nosso server
+     * só funciona se o arquivo estiver acessível via HTTPS sem auth.
+     *
+     * Pra image/document/video, esse fluxo é mais seguro: o arquivo
+     * nunca precisa ficar exposto publicamente.
+     */
+    public function sendMediaFromFile(
+        string $to,
+        string $type,
+        string $diskName,
+        string $filePath,
+        string $mimeType,
+        ?string $fileName = null,
+        ?string $caption = null
+    ): array {
+        $upload = $this->uploadMedia($filePath, $mimeType, asVoiceNote: false, diskName: $diskName);
+
+        return $this->sendMediaById($to, $type, $upload['media_id'], $caption);
     }
 
     /**

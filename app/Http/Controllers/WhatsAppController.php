@@ -392,28 +392,46 @@ class WhatsAppController extends Controller
                     'mime_type' => $voiceResult['mime_type'],
                 ]);
             } else {
-                // Get public URL for the attachment
-                $mediaUrl = $attachment->url;
-                
-                if (!$mediaUrl) {
-                    // Generate temporary URL if needed
-                    $disk = Storage::disk($attachment->storage_disk);
-                    if (config("filesystems.disks.{$attachment->storage_disk}.driver") === 's3') {
-                        $mediaUrl = $disk->temporaryUrl($attachment->file_path, now()->addHour());
-                    } else {
-                        // For local storage, we need a public URL
-                        return response()->json([
-                            'error' => 'Não é possível enviar arquivos do storage local via WhatsApp. Configure um storage S3 compatível.',
-                        ], 400);
-                    }
-                }
+                // Imagem, vídeo, documento: tenta URL pública (S3) primeiro
+                // — Meta baixa direto do storage. Se for local storage, faz
+                // upload binary pro endpoint /media do Meta e envia por
+                // media_id (não exige URL pública).
+                $isS3 = config("filesystems.disks.{$attachment->storage_disk}.driver") === 's3';
 
-                $result = $this->whatsAppService->sendMediaMessage(
-                    $contact->phone,
-                    $mediaType,
-                    $mediaUrl,
-                    $validated['caption'] ?? null
-                );
+                if ($isS3) {
+                    $disk = Storage::disk($attachment->storage_disk);
+                    $mediaUrl = $attachment->url ?: $disk->temporaryUrl(
+                        $attachment->file_path,
+                        now()->addHour()
+                    );
+
+                    $result = $this->whatsAppService->sendMediaMessage(
+                        $contact->phone,
+                        $mediaType,
+                        $mediaUrl,
+                        $validated['caption'] ?? null
+                    );
+                } else {
+                    // Local storage — upload binary direto pra Meta
+                    Log::info('[SEND MEDIA] Local storage — using upload+media_id flow', [
+                        'disk' => $attachment->storage_disk,
+                        'file_path' => $attachment->file_path,
+                    ]);
+
+                    $result = $this->whatsAppService->sendMediaFromFile(
+                        $contact->phone,
+                        $mediaType,
+                        $attachment->storage_disk,
+                        $attachment->file_path,
+                        $attachment->mime_type,
+                        $attachment->file_name,
+                        $validated['caption'] ?? null
+                    );
+
+                    // Sem URL pública pra registrar — preenche com null;
+                    // o download interno via signed route continua funcionando.
+                    $mediaUrl = null;
+                }
             }
 
             // Create message record
