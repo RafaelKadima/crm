@@ -1462,7 +1462,7 @@ class WhatsAppService implements WhatsAppProviderInterface
      */
     protected function extractMessageContent(array $message): string
     {
-        $type = $message['type'];
+        $type = $message['type'] ?? 'unknown';
 
         return match ($type) {
             'text' => $message['text']['body'] ?? '',
@@ -1475,15 +1475,70 @@ class WhatsAppService implements WhatsAppProviderInterface
             'contacts' => '[Contato compartilhado]',
             'interactive' => $this->extractInteractiveContent($message['interactive'] ?? []),
             'button' => $message['button']['text'] ?? '[Botão]',
-            // Edição de mensagem (feature nova do WhatsApp, 2024+). Payload vem
-            // com o novo texto em `edit.body` e referência à mensagem original
-            // em `edit.edited_message_id` (opcional). Mostramos o novo conteúdo
-            // com indicação visual de que foi editado.
+            // Edição de mensagem (feature do WhatsApp, 2024+). Payload tem
+            // o novo texto em `edit.body` e referência à mensagem original.
             'edit' => '✏️ ' . ($message['edit']['body'] ?? $message['edit']['text'] ?? '[mensagem editada]'),
-            // Mensagem deletada pelo remetente
-            'unsupported' => '[mensagem não suportada]',
-            default => "[{$type}]",
+            // Reação emoji em mensagem anterior. UX ideal seria renderizar
+            // o emoji próximo da mensagem original (estilo iMessage), mas por
+            // ora cai como mensagem normal com texto descritivo.
+            'reaction' => ($message['reaction']['emoji'] ?? '👍') . ' reagiu a uma mensagem',
+            // Pedido via catálogo do WhatsApp Business.
+            'order' => '🛒 Pedido com ' . count($message['order']['product_items'] ?? []) . ' item(s)',
+            // Mensagem de sistema (mudou número, etc.). O body já vem pronto.
+            'system' => '⚙️ ' . ($message['system']['body'] ?? '[Mensagem do sistema]'),
+            // Cliente abriu a conversa via clique em ad (Click-to-WhatsApp).
+            'request_welcome' => '👋 Cliente iniciou conversa via anúncio',
+            // Mensagem efêmera (view-once / disappearing).
+            'ephemeral' => '⏱️ ' . ($message['ephemeral']['caption'] ?? '[Mensagem temporária]'),
+            // Meta não conseguiu classificar — geralmente view-once, polls,
+            // ou tipos que o Cloud API ainda não traduz. Logamos pra ter
+            // visibilidade (sem PII, só estrutura) e mostramos algo útil.
+            'unsupported' => $this->handleUnsupportedMessage($message),
+            default => $this->handleUnknownMessageType($type, $message),
         };
+    }
+
+    /**
+     * Lida com mensagens `type: unsupported` enviadas pelo Meta. Loga o
+     * payload de errors (sem corpo da mensagem) pra diagnóstico futuro
+     * e devolve um texto user-friendly.
+     */
+    protected function handleUnsupportedMessage(array $message): string
+    {
+        $errors = $message['errors'] ?? [];
+        $firstError = $errors[0] ?? [];
+
+        Log::warning('WhatsApp unsupported message', [
+            'wamid' => $message['id'] ?? null,
+            'errors' => array_map(fn($e) => [
+                'code' => $e['code'] ?? null,
+                'title' => $e['title'] ?? null,
+                'message' => $e['message'] ?? null,
+            ], $errors),
+            'keys' => array_keys($message),
+        ]);
+
+        $title = $firstError['title'] ?? null;
+        if ($title) {
+            return "📨 Mensagem não suportada: {$title}";
+        }
+
+        return '📨 Mensagem não suportada (provavelmente view-once, enquete ou tipo novo do WhatsApp)';
+    }
+
+    /**
+     * Tipo de mensagem que nosso match não cobre. Loga pra a gente
+     * adicionar handler depois.
+     */
+    protected function handleUnknownMessageType(string $type, array $message): string
+    {
+        Log::warning('WhatsApp unknown message type', [
+            'type' => $type,
+            'wamid' => $message['id'] ?? null,
+            'keys' => array_keys($message),
+        ]);
+
+        return "[Tipo de mensagem: {$type}]";
     }
 
     /**
