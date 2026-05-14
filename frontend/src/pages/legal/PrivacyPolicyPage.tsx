@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Shield, Building2, Database, Share2, Clock, Lock, UserCheck, AlertCircle, Power, FileText, Mail, Globe } from 'lucide-react'
+import { ArrowLeft, Shield, Building2, Database, Share2, Clock, Lock, UserCheck, AlertCircle, Power, FileText, Mail, Globe, Plug, Trash2 } from 'lucide-react'
 
 export function PrivacyPolicyPage() {
   const navigate = useNavigate()
@@ -98,31 +98,117 @@ export function PrivacyPolicyPage() {
               </div>
             </Section>
 
+            {/* 3.1 Dados provenientes das plataformas da Meta */}
+            <Section icon={Plug} title="3.1 Dados provenientes das plataformas da Meta">
+              <p className="mb-4">
+                Quando o usu&aacute;rio ou empresa conecta contas, n&uacute;meros ou ativos relacionados &agrave;s plataformas
+                da Meta, como WhatsApp Business, Facebook, Instagram, Messenger, Meta Business Manager ou WhatsApp
+                Business Account, poderemos tratar dados necess&aacute;rios para habilitar, manter e operar essas
+                integra&ccedil;&otilde;es dentro do OMNIFY HUB.
+              </p>
+              <p className="mb-4">Esses dados podem incluir, conforme a integra&ccedil;&atilde;o utilizada:</p>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>identificadores da conta conectada;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>ID da empresa no Meta Business Manager;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>ID da P&aacute;gina do Facebook;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>ID da conta do WhatsApp Business;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>ID do n&uacute;mero de telefone do WhatsApp Business;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>n&uacute;mero de telefone conectado;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>nome verificado da conta;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>status da conta ou do n&uacute;mero;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>permiss&otilde;es concedidas pelo usu&aacute;rio durante o processo de autentica&ccedil;&atilde;o;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>tokens de acesso ou credenciais t&eacute;cnicas necess&aacute;rias para funcionamento da integra&ccedil;&atilde;o;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>mensagens enviadas e recebidas por meio dos canais conectados, quando esse recurso for utilizado;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>eventos de webhook, registros t&eacute;cnicos, logs de entrega, falha, leitura ou recebimento de mensagens, quando disponibilizados pela API.</span>
+                </li>
+              </ul>
+              <p className="mt-4 text-slate-400">
+                Esses dados s&atilde;o tratados exclusivamente para permitir o funcionamento do CRM, gest&atilde;o de
+                atendimentos, envio e recebimento de mensagens autorizadas, automa&ccedil;&otilde;es configuradas pela
+                pr&oacute;pria empresa usu&aacute;ria, suporte t&eacute;cnico, seguran&ccedil;a, auditoria e melhoria operacional
+                da plataforma.
+              </p>
+            </Section>
+
             {/* 4. Como usamos os dados */}
-            <Section icon={Shield} title="4. Como usamos os dados (finalidades)">
+            <Section icon={Shield} title="4. Como usamos os dados &mdash; finalidades">
               <p className="mb-4">Usamos os dados pessoais para:</p>
               <ul className="space-y-2">
                 <li className="flex items-start gap-3">
                   <span className="text-cyan-400 mt-1">&bull;</span>
-                  <span>Criar e administrar sua conta, autenticar acesso e manter o funcionamento do sistema;</span>
+                  <span>criar e administrar sua conta, autenticar acesso e manter o funcionamento do sistema;</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-cyan-400 mt-1">&bull;</span>
-                  <span>Prestar suporte e atendimento, incluindo an&aacute;lise de erros e melhoria de performance;</span>
+                  <span>prestar suporte e atendimento, incluindo an&aacute;lise de erros e melhoria de performance;</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-cyan-400 mt-1">&bull;</span>
-                  <span>Processar pagamentos, cobran&ccedil;as e obriga&ccedil;&otilde;es relacionadas;</span>
+                  <span>processar pagamentos, cobran&ccedil;as e obriga&ccedil;&otilde;es relacionadas;</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-cyan-400 mt-1">&bull;</span>
-                  <span>Enviar comunica&ccedil;&otilde;es importantes sobre seguran&ccedil;a, mudan&ccedil;as no sistema, atualiza&ccedil;&otilde;es e avisos operacionais;</span>
+                  <span>enviar comunica&ccedil;&otilde;es importantes sobre seguran&ccedil;a, mudan&ccedil;as no sistema, atualiza&ccedil;&otilde;es e avisos operacionais;</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-cyan-400 mt-1">&bull;</span>
-                  <span>Cumprir obriga&ccedil;&otilde;es legais/regulat&oacute;rias e prevenir fraudes/uso indevido.</span>
+                  <span>habilitar e operar integra&ccedil;&otilde;es conectadas pelo usu&aacute;rio ou empresa, incluindo WhatsApp Business, Facebook, Instagram, Messenger e demais recursos autorizados;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>permitir envio e recebimento de mensagens autorizadas por meio das APIs oficiais conectadas;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>organizar atendimentos, hist&oacute;ricos de conversa, contatos, automa&ccedil;&otilde;es e fluxos configurados pela empresa usu&aacute;ria;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>cumprir obriga&ccedil;&otilde;es legais/regulat&oacute;rias e prevenir fraudes, abuso, uso indevido ou acessos n&atilde;o autorizados.</span>
                 </li>
               </ul>
+              <div className="mt-4 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+                <p className="text-cyan-100 text-sm">
+                  O OMNIFY HUB <strong>n&atilde;o utiliza</strong> dados provenientes das plataformas da Meta para venda de
+                  informa&ccedil;&otilde;es, publicidade de terceiros, cria&ccedil;&atilde;o de perfis comerciais externos ou
+                  qualquer finalidade incompat&iacute;vel com a presta&ccedil;&atilde;o do servi&ccedil;o contratado.
+                </p>
+              </div>
             </Section>
 
             {/* 5. Compartilhamento de dados */}
@@ -151,6 +237,20 @@ export function PrivacyPolicyPage() {
               <p className="mt-4 text-slate-400">
                 Sempre que poss&iacute;vel, exigimos que fornecedores tratem os dados com confidencialidade e seguran&ccedil;a compat&iacute;veis.
               </p>
+              <div className="mt-6 p-4 bg-slate-700/40 border-l-4 border-cyan-400 rounded-r-lg space-y-3">
+                <p className="text-slate-200 text-sm">
+                  Dados obtidos por meio das plataformas da Meta, incluindo WhatsApp Business, Facebook, Instagram e
+                  Messenger, <strong>n&atilde;o s&atilde;o vendidos, licenciados ou compartilhados</strong> com terceiros
+                  para fins comerciais, publicit&aacute;rios ou n&atilde;o relacionados &agrave; presta&ccedil;&atilde;o do
+                  servi&ccedil;o.
+                </p>
+                <p className="text-slate-300 text-sm">
+                  O compartilhamento desses dados ocorre apenas quando necess&aacute;rio para operar o servi&ccedil;o,
+                  cumprir obriga&ccedil;&otilde;es legais, manter infraestrutura tecnol&oacute;gica, prestar suporte,
+                  prevenir fraudes ou viabilizar integra&ccedil;&otilde;es autorizadas pelo pr&oacute;prio
+                  usu&aacute;rio/empresa.
+                </p>
+              </div>
             </Section>
 
             {/* 6. Armazenamento e retenção */}
@@ -218,8 +318,68 @@ export function PrivacyPolicyPage() {
               </ul>
             </Section>
 
-            {/* 9. Responsabilidade do usuário */}
-            <Section icon={AlertCircle} title="9. Responsabilidade do usu&aacute;rio">
+            {/* 9. Exclusão de dados do usuário */}
+            <Section icon={Trash2} title="9. Exclus&atilde;o de dados do usu&aacute;rio">
+              <p className="mb-4">
+                O usu&aacute;rio ou empresa pode solicitar a exclus&atilde;o dos seus dados pessoais e dos dados
+                associados &agrave;s integra&ccedil;&otilde;es conectadas ao OMNIFY HUB a qualquer momento.
+              </p>
+              <p className="mb-3 text-slate-300">Para solicitar a exclus&atilde;o, envie um e-mail para:</p>
+              <div className="bg-slate-700/30 rounded-xl p-4 mb-4">
+                <a
+                  href="mailto:omnify@gmail.com?subject=Solicita%C3%A7%C3%A3o%20de%20exclus%C3%A3o%20de%20dados"
+                  className="text-cyan-400 hover:text-cyan-300 transition-colors font-mono text-lg"
+                >
+                  omnify@gmail.com
+                </a>
+              </div>
+              <p className="mb-3">No pedido, informe, quando aplic&aacute;vel:</p>
+              <ul className="space-y-2 mb-4">
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>nome do solicitante;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>e-mail cadastrado na plataforma;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>nome da empresa;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>n&uacute;mero de telefone ou conta conectada;</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-cyan-400 mt-1">&bull;</span>
+                  <span>descri&ccedil;&atilde;o da solicita&ccedil;&atilde;o de exclus&atilde;o.</span>
+                </li>
+              </ul>
+              <p className="text-slate-400 mb-4">
+                Ap&oacute;s o recebimento da solicita&ccedil;&atilde;o, analisaremos o pedido e realizaremos a
+                exclus&atilde;o dos dados pessoais e dos dados de integra&ccedil;&atilde;o vinculados ao usu&aacute;rio
+                ou empresa, exceto quando a reten&ccedil;&atilde;o for necess&aacute;ria para cumprimento de
+                obriga&ccedil;&atilde;o legal, regulat&oacute;ria, seguran&ccedil;a, preven&ccedil;&atilde;o a fraudes,
+                auditoria, defesa de direitos ou cumprimento de contrato.
+              </p>
+              <p className="text-slate-400 mb-4">
+                O usu&aacute;rio tamb&eacute;m pode solicitar a desconex&atilde;o das integra&ccedil;&otilde;es com
+                plataformas da Meta, como WhatsApp Business, Facebook, Instagram e Messenger. Quando uma
+                integra&ccedil;&atilde;o for desconectada, os tokens, permiss&otilde;es e dados t&eacute;cnicos
+                necess&aacute;rios para manter a conex&atilde;o poder&atilde;o ser removidos, desativados ou
+                invalidados.
+              </p>
+              <p className="text-slate-400">
+                Caso o usu&aacute;rio remova o aplicativo por meio das configura&ccedil;&otilde;es das plataformas da
+                Meta e solicite a exclus&atilde;o dos dados, trataremos a solicita&ccedil;&atilde;o conforme os
+                mecanismos disponibilizados pela Meta e/ou conforme solicita&ccedil;&atilde;o enviada aos nossos
+                canais oficiais de contato.
+              </p>
+            </Section>
+
+            {/* 10. Responsabilidade do usuário */}
+            <Section icon={AlertCircle} title="10. Responsabilidade do usu&aacute;rio">
               <p className="mb-4">Voc&ecirc; &eacute; respons&aacute;vel:</p>
               <ul className="space-y-2">
                 <li className="flex items-start gap-3">
@@ -241,8 +401,8 @@ export function PrivacyPolicyPage() {
               </p>
             </Section>
 
-            {/* 10. Encerramento do serviço */}
-            <Section icon={Power} title="10. Encerramento do servi&ccedil;o e acesso">
+            {/* 11. Encerramento do serviço */}
+            <Section icon={Power} title="11. Encerramento do servi&ccedil;o e acesso">
               <p>
                 Podemos, por motivos operacionais, legais ou comerciais, descontinuar funcionalidades ou encerrar a oferta
                 do servi&ccedil;o, observando comunica&ccedil;&otilde;es e obriga&ccedil;&otilde;es aplic&aacute;veis.
@@ -253,16 +413,16 @@ export function PrivacyPolicyPage() {
               </p>
             </Section>
 
-            {/* 11. Alterações desta Política */}
-            <Section icon={FileText} title="11. Altera&ccedil;&otilde;es desta Pol&iacute;tica">
+            {/* 12. Alterações desta Política */}
+            <Section icon={FileText} title="12. Altera&ccedil;&otilde;es desta Pol&iacute;tica">
               <p>
                 Podemos atualizar esta Pol&iacute;tica a qualquer momento. Se houver mudan&ccedil;as relevantes, comunicaremos
                 pelos canais dispon&iacute;veis (ex.: e-mail e avisos no sistema).
               </p>
             </Section>
 
-            {/* 12. Contato */}
-            <Section icon={Mail} title="12. Contato">
+            {/* 13. Contato */}
+            <Section icon={Mail} title="13. Contato">
               <p className="mb-4">
                 Para d&uacute;vidas, solicita&ccedil;&otilde;es ou assuntos de privacidade, fale com a gente:
               </p>
