@@ -7,6 +7,12 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { CreateTemplateModal } from './CreateTemplateModal'
+import { useMetaIntegrations, useMetaStatus, type MetaIntegration } from '@/hooks/useMetaIntegrations'
+import { useFacebookSDK, useMetaEmbeddedSignup } from '@/hooks/useMetaEmbeddedSignup'
+import { TemplateAccessModal } from '@/components/meta/TemplateAccessModal'
+import { BmTokenModal } from '@/components/meta/BmTokenModal'
+import { ShieldAlert, HelpCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import type { WhatsAppTemplate, WhatsAppTemplateCategory, WhatsAppTemplateStatus } from '@/types'
 
 // Ícones inline para não depender de bibliotecas externas
@@ -86,7 +92,20 @@ export function WhatsAppTemplatesPage() {
 
   const { data: channelsData, isLoading: channelsLoading } = useChannels()
 
+  // Estado de permissão de templates vive na MetaIntegration, não no Channel.
+  // Casamos canal → integração por phone_number_id pra avisar o usuário ANTES
+  // de tentar criar (e oferecer o fix sem sair daqui).
+  const { data: metaStatus } = useMetaStatus()
+  const { data: metaIntegrations } = useMetaIntegrations()
+  const appId = metaStatus?.app_id || ''
+  const configId = metaStatus?.config_id || ''
+  const isEmbeddedSignupConfigured = metaStatus?.embedded_signup_configured || false
+  const { isLoaded: isSDKLoaded } = useFacebookSDK(appId)
+  const { startEmbeddedSignup, isProcessing: isEmbeddedProcessing } = useMetaEmbeddedSignup()
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [templateModalIntegration, setTemplateModalIntegration] = useState<MetaIntegration | null>(null)
+  const [bmTokenIntegration, setBmTokenIntegration] = useState<MetaIntegration | null>(null)
   const [selectedChannel, setSelectedChannel] = useState<string>('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedStatus, setSelectedStatus] = useState<string>('')
@@ -150,6 +169,30 @@ export function WhatsAppTemplatesPage() {
   // usa o primeiro. Evita o usuário ficar travado com os botões desabilitados.
   const effectiveChannelId = selectedChannel || whatsAppChannels[0]?.id || ''
   const hasWhatsAppChannel = whatsAppChannels.length > 0
+
+  // Integração Meta do canal que o "Novo Template" vai usar (effectiveChannelId).
+  const effectiveChannel = whatsAppChannels.find((c) => c.id === effectiveChannelId)
+  const effectiveIntegration = useMemo<MetaIntegration | null>(() => {
+    const pid = effectiveChannel?.config?.phone_number_id
+    if (!pid || !metaIntegrations) return null
+    return metaIntegrations.find((i) => i.phone_number_id === pid) ?? null
+  }, [effectiveChannel, metaIntegrations])
+
+  const handleReconnectForTemplates = (integration: MetaIntegration) => {
+    if (!isEmbeddedSignupConfigured) {
+      toast.error('Embedded Signup não configurado no servidor.')
+      return
+    }
+    if (!isSDKLoaded) {
+      toast.error('Aguarde o carregamento do Facebook SDK.')
+      return
+    }
+    startEmbeddedSignup({
+      appId,
+      configId,
+      featureType: integration.is_coexistence ? 'whatsapp_business_app_onboarding' : '',
+    })
+  }
 
   const handleSync = async () => {
     if (!effectiveChannelId) return
@@ -220,6 +263,45 @@ export function WhatsAppTemplatesPage() {
                 ✕
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Aviso de permissão de templates do canal selecionado */}
+        {effectiveIntegration && effectiveIntegration.template_management_authorized !== true && (
+          <div
+            className={`mb-6 p-4 rounded-lg border flex items-start justify-between gap-4 ${
+              effectiveIntegration.template_management_authorized === false
+                ? 'bg-warning/5 border-warning/30'
+                : 'bg-muted/40 border-border'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              {effectiveIntegration.template_management_authorized === false ? (
+                <ShieldAlert className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+              ) : (
+                <HelpCircle className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className="font-medium text-sm">
+                  {effectiveIntegration.template_management_authorized === false
+                    ? 'Este número ainda não pode criar templates'
+                    : 'Permissão de templates não verificada neste número'}
+                </p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {effectiveIntegration.template_management_authorized === false
+                    ? 'O app não foi autorizado a gerenciar templates nesta WABA (#100). Reconecte com "Controle Total" — sem precisar abrir o Business Manager.'
+                    : 'Verifique se este número pode criar templates antes de tentar.'}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setTemplateModalIntegration(effectiveIntegration)}
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+            >
+              {effectiveIntegration.template_management_authorized === false ? 'Resolver' : 'Verificar'}
+            </Button>
           </div>
         )}
 
@@ -509,6 +591,24 @@ export function WhatsAppTemplatesPage() {
             onSuccess={handleTemplateCreated}
           />
         )}
+
+        <TemplateAccessModal
+          integration={templateModalIntegration}
+          open={!!templateModalIntegration}
+          onOpenChange={(open) => { if (!open) setTemplateModalIntegration(null) }}
+          onReconnect={handleReconnectForTemplates}
+          onOpenBmToken={(integration) => {
+            setTemplateModalIntegration(null)
+            setBmTokenIntegration(integration)
+          }}
+          isReconnecting={isEmbeddedProcessing}
+        />
+
+        <BmTokenModal
+          integration={bmTokenIntegration}
+          open={!!bmTokenIntegration}
+          onOpenChange={(open) => { if (!open) setBmTokenIntegration(null) }}
+        />
       </div>
     </div>
   )

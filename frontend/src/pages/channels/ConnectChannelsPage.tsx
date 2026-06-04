@@ -23,6 +23,8 @@ import {
   Info,
   KeyRound,
   Stethoscope,
+  ShieldCheck,
+  HelpCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -35,7 +37,6 @@ import {
   useMetaIntegrations,
   useDisconnectMeta,
   useRefreshMetaToken,
-  useDiagnoseMetaIntegration,
   type MetaIntegration,
 } from '@/hooks/useMetaIntegrations'
 import {
@@ -51,6 +52,7 @@ import {
 } from '@/hooks/useChannels'
 import { Link } from 'react-router-dom'
 import { BmTokenModal } from '@/components/meta/BmTokenModal'
+import { TemplateAccessModal } from '@/components/meta/TemplateAccessModal'
 
 interface ChannelType {
   id: string
@@ -101,13 +103,13 @@ export function ConnectChannelsPage() {
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null)
   const [coexistenceMode, setCoexistenceMode] = useState(false)
   const [bmTokenIntegration, setBmTokenIntegration] = useState<MetaIntegration | null>(null)
+  const [templateModalIntegration, setTemplateModalIntegration] = useState<MetaIntegration | null>(null)
 
   // Meta hooks
   const { data: metaStatus, isLoading: loadingStatus } = useMetaStatus()
   const { data: metaIntegrations, isLoading: loadingIntegrations } = useMetaIntegrations()
   const disconnectMutation = useDisconnectMeta()
   const refreshTokenMutation = useRefreshMetaToken()
-  const diagnoseMutation = useDiagnoseMetaIntegration()
 
   // Channel hooks
   const { data: channels = [], isLoading: loadingChannels } = useChannels()
@@ -160,20 +162,23 @@ export function ConnectChannelsPage() {
     }
   }
 
-  const handleDiagnose = async (id: string) => {
-    try {
-      const result = await diagnoseMutation.mutateAsync(id)
-      const d = result.data
-      const lines = [
-        `Token: ${d.token_type ?? 'desconhecido'}${d.token_is_bisuat ? ' ✓ BISUAT' : ''}`,
-        `Válido: ${d.token_is_valid ? 'sim' : 'não'}`,
-        `Manage templates: ${d.template_management_authorized ? 'autorizado ✓' : 'NÃO autorizado'}`,
-        ...(d.guidance.length > 0 ? ['', 'Recomendações:', ...d.guidance.map((g) => `• ${g}`)] : []),
-      ]
-      alert(lines.join('\n'))
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Erro ao rodar diagnóstico')
+  const handleReconnectForTemplates = (integration: MetaIntegration) => {
+    if (!isEmbeddedSignupConfigured) {
+      toast.error(t('channels.embeddedSignupNotConfigured'))
+      return
     }
+    if (!isSDKLoaded) {
+      toast.error(t('channels.waitingFacebookSdk'))
+      return
+    }
+    // Reconecta o MESMO número (updateOrCreate por tenant+waba/phone no backend).
+    // O popup pede "Controle Total" e, ao concluir, verifyAndPersistTemplatePermission
+    // regrava template_management_authorized — sem precisar abrir o Business Manager.
+    startEmbeddedSignup({
+      appId,
+      configId,
+      featureType: integration.is_coexistence ? 'whatsapp_business_app_onboarding' : '',
+    })
   }
 
   const handleToggleChannel = async (channel: Channel) => {
@@ -228,6 +233,61 @@ export function ConnectChannelsPage() {
       )
     }
     return null
+  }
+
+  // Selo de 3 estados do acesso a templates. Clicar abre a central de permissão
+  // (TemplateAccessModal) que verifica e oferece reconectar / BM Token.
+  //   true  = app pode criar templates (verde)
+  //   false = #100, app não autorizado na WABA (âmbar — acionável)
+  //   null  = nunca verificado (cinza — acionável, roda diagnóstico ao abrir)
+  const getTemplateBadge = (integration: MetaIntegration) => {
+    if (integration.status !== 'active') return null
+    const tma = integration.template_management_authorized
+    const base =
+      'flex items-center gap-1 text-xs cursor-pointer transition-opacity hover:opacity-80'
+
+    if (tma === true) {
+      return (
+        <button
+          type="button"
+          onClick={() => setTemplateModalIntegration(integration)}
+          title="Este número pode criar templates. Clique para detalhes."
+        >
+          <Badge variant="outline" className={`${base} text-success border-success/30`}>
+            <ShieldCheck className="w-3 h-3" />
+            Templates habilitados
+          </Badge>
+        </button>
+      )
+    }
+
+    if (tma === false) {
+      return (
+        <button
+          type="button"
+          onClick={() => setTemplateModalIntegration(integration)}
+          title="O app ainda não pode criar templates nesta WABA. Clique para resolver."
+        >
+          <Badge variant="outline" className={`${base} text-warning border-warning/30`}>
+            <AlertTriangle className="w-3 h-3" />
+            Templates pendentes
+          </Badge>
+        </button>
+      )
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => setTemplateModalIntegration(integration)}
+        title="Status de templates não verificado. Clique para verificar."
+      >
+        <Badge variant="outline" className={`${base} text-muted-foreground border-border`}>
+          <HelpCircle className="w-3 h-3" />
+          Templates: verificar
+        </Badge>
+      </button>
+    )
   }
 
   const isLoading = loadingStatus || loadingIntegrations || loadingChannels
@@ -431,16 +491,7 @@ export function ConnectChannelsPage() {
                                 {t('channels.coexistence')}
                               </Badge>
                             )}
-                            {integration.template_management_authorized === false && (
-                              <Badge
-                                variant="outline"
-                                className="flex items-center gap-1 text-xs text-warning border-warning/30 cursor-help"
-                                title="O app Omnify ainda não foi autorizado a gerenciar templates nesta WABA. Clique no ícone da chave pra ver como resolver."
-                              >
-                                <AlertTriangle className="w-3 h-3" />
-                                Templates não autorizados
-                              </Badge>
-                            )}
+                            {getTemplateBadge(integration)}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                             {integration.display_phone_number && (
@@ -500,15 +551,10 @@ export function ConnectChannelsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDiagnose(integration.id)}
-                          disabled={diagnoseMutation.isPending}
-                          title="Diagnosticar token + permissões (debug_token + GET templates)"
+                          onClick={() => setTemplateModalIntegration(integration)}
+                          title="Verificar criação de templates (token + permissões)"
                         >
-                          {diagnoseMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Stethoscope className="h-4 w-4" />
-                          )}
+                          <Stethoscope className="h-4 w-4" />
                         </Button>
 
                         <Button
@@ -666,6 +712,18 @@ export function ConnectChannelsPage() {
         integration={bmTokenIntegration}
         open={!!bmTokenIntegration}
         onOpenChange={(open) => { if (!open) setBmTokenIntegration(null) }}
+      />
+
+      <TemplateAccessModal
+        integration={templateModalIntegration}
+        open={!!templateModalIntegration}
+        onOpenChange={(open) => { if (!open) setTemplateModalIntegration(null) }}
+        onReconnect={handleReconnectForTemplates}
+        onOpenBmToken={(integration) => {
+          setTemplateModalIntegration(null)
+          setBmTokenIntegration(integration)
+        }}
+        isReconnecting={isEmbeddedProcessing}
       />
     </div>
   )
