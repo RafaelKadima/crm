@@ -9,6 +9,7 @@ use App\Models\KpiValue;
 use App\Models\Lead;
 use App\Models\Team;
 use App\Models\User;
+use App\Scopes\TenantScope;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -651,7 +652,12 @@ class KpiService
         $defaults = Kpi::getDefaultKpis();
 
         foreach ($defaults as $kpiData) {
-            Kpi::firstOrCreate(
+            // Sem withoutGlobalScope, o lookup do firstOrCreate herda o
+            // TenantScope do usuário autenticado (ex.: super admin criando um
+            // tenant cliente), filtrando por um tenant_id diferente do alvo —
+            // o que faz a verificação de existência sempre falhar e quebra a
+            // idempotência. O tenant_id correto é gravado explicitamente abaixo.
+            Kpi::withoutGlobalScope(TenantScope::class)->firstOrCreate(
                 [
                     'tenant_id' => $tenantId,
                     'key' => $kpiData['key'],

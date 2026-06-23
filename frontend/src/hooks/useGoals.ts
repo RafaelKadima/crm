@@ -291,6 +291,8 @@ export function useInitializeDefaultKpis() {
     mutationFn: () => kpiApi.initializeDefaults(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kpis'] })
+      queryClient.invalidateQueries({ queryKey: ['kpi-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['my-kpis'] })
     },
   })
 }

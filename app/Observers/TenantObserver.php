@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Tenant;
 use App\Models\TenantQuota;
+use App\Services\KpiService;
 use Illuminate\Support\Facades\Log;
 
 class TenantObserver
@@ -15,11 +16,28 @@ class TenantObserver
     public function created(Tenant $tenant): void
     {
         TenantQuota::createForTenant($tenant);
-        
+
         Log::info('Tenant created - quota initialized', [
             'tenant_id' => $tenant->id,
             'plan' => $tenant->plan->value,
         ]);
+
+        // Todo tenant nasce com os KPIs padrão do sistema. Sem isto, a aba
+        // "Indicadores (KPIs)" ficava vazia até alguém chamar manualmente
+        // /kpis/initialize-defaults — que não tinha gatilho na interface.
+        // Falha aqui não pode derrubar a criação do tenant (o backfill cobre).
+        try {
+            app(KpiService::class)->initializeDefaultKpis($tenant->id);
+
+            Log::info('Tenant created - default KPIs seeded', [
+                'tenant_id' => $tenant->id,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Tenant created - failed to seed default KPIs', [
+                'tenant_id' => $tenant->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

@@ -20,9 +20,10 @@ import {
   FileEdit,
   Play,
 } from 'lucide-react'
-import { useKprDashboard, useMyKprProgress, useKpiDashboard, useKprs } from '@/hooks/useGoals'
+import { useKprDashboard, useMyKprProgress, useKpiDashboard, useKprs, useInitializeDefaultKpis } from '@/hooks/useGoals'
 import { useAuthStore } from '@/store/authStore'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
 
 export function GoalsDashboard() {
@@ -34,6 +35,14 @@ export function GoalsDashboard() {
   const { data: myProgress, isLoading: loadingMyProgress } = useMyKprProgress()
   const { data: kpis } = useKpiDashboard()
   const { data: allKprs } = useKprs()
+  const initKpis = useInitializeDefaultKpis()
+
+  const handleInitKpis = () => {
+    initKpis.mutate(undefined, {
+      onSuccess: () => toast.success(t('goals.kpisInitialized')),
+      onError: () => toast.error(t('goals.kpisInitializeError')),
+    })
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -322,6 +331,12 @@ export function GoalsDashboard() {
                 <p className="text-muted-foreground mb-4">
                   {t('goals.noKpiConfiguredMessage')}
                 </p>
+                {isAdmin && (
+                  <Button onClick={handleInitKpis} disabled={initKpis.isPending}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    {initKpis.isPending ? t('goals.initializingKpis') : t('goals.initializeKpis')}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
