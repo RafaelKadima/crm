@@ -11,6 +11,7 @@ import { ContactsPage } from '@/pages/contacts/Contacts'
 import { TicketsPage } from '@/pages/tickets/Tickets'
 import { TasksPage } from '@/pages/tasks/Tasks'
 import { ReportsPage } from '@/pages/reports/Reports'
+import { AtendimentoReportPage } from '@/pages/reports/AtendimentoReport'
 import { ActivityEffectivenessPage } from '@/pages/reports/ActivityEffectivenessPage'
 import { SettingsPage } from '@/pages/settings/Settings'
 import { SettingsLayout } from '@/layouts/SettingsLayout'
@@ -222,6 +223,7 @@ function AppRoutes() {
         <Route path="tasks" element={<TasksPage />} />
         <Route path="quick-replies" element={<QuickRepliesPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="reports/atendimento" element={<AtendimentoReportPage />} />
         <Route path="reports/activity-effectiveness" element={<ActivityEffectivenessPage />} />
 
         {/* Suite Gerencial de Funil */}

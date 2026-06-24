@@ -37,6 +37,7 @@ import {
   Plug,
   Megaphone,
   FileText,
+  Headphones,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
@@ -80,6 +81,7 @@ const navEntries: NavEntry[] = [
       { icon: CalendarDays, label: 'nav.appointments', path: '/appointments', feature: 'appointments', featureFunction: 'appointments.list', permission: 'appointments.view' },
       { icon: Clock, label: 'nav.schedule', path: '/schedule', feature: 'appointments', featureFunction: 'appointments.schedule', permission: 'appointments.view' },
       { icon: MessageSquareText, label: 'nav.quickReplies', path: '/quick-replies' },
+      { icon: Headphones, label: 'nav.supportReports', path: '/reports/atendimento', permissions: ['reports.view_own', 'reports.view_all'] },
     ],
   },
 

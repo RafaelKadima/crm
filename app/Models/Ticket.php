@@ -28,6 +28,8 @@ class Ticket extends Model
         'assigned_user_id',
         'status',
         'closed_at',
+        'reopen_count',
+        'reopened_at',
         'first_viewed_at',
         'first_viewer_id',
         'ia_enabled',
@@ -55,6 +57,8 @@ class Ticket extends Model
         return [
             'status' => TicketStatusEnum::class,
             'closed_at' => 'datetime',
+            'reopen_count' => 'integer',
+            'reopened_at' => 'datetime',
             'first_viewed_at' => 'datetime',
             'ia_enabled' => 'boolean',
             'ia_disabled_at' => 'datetime',
@@ -273,6 +277,8 @@ class Ticket extends Model
      */
     public function reopen(): void
     {
+        // reopen_count / reopened_at são preenchidos automaticamente pelo
+        // TicketObserver::updating (cobre todos os caminhos de reabertura).
         $this->update([
             'status' => TicketStatusEnum::OPEN,
             'closed_at' => null,

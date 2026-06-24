@@ -9,6 +9,7 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadImportController;
 use App\Http\Controllers\PipelineController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AtendimentoReportController;
 use App\Http\Controllers\ManagerialFunnelController;
 use App\Http\Controllers\PipelineFunnelMappingController;
 use App\Http\Controllers\LostReasonController;
@@ -514,6 +515,10 @@ Route::middleware(['auth:api', 'token.valid', 'session.track'])->group(function 
             Route::get('productivity', [ReportController::class, 'productivity']);
             Route::get('ia', [ReportController::class, 'ia']);
             Route::get('distribution', [ReportController::class, 'distribution']);
+
+            // Relatórios de Atendimento (suporte): SLA, status/canal/atendente, volume, fila, reabertura
+            Route::get('atendimento/summary', [AtendimentoReportController::class, 'summary']);
+            Route::get('atendimento/time-series', [AtendimentoReportController::class, 'timeSeries']);
         });
 
         // =============================================================================
