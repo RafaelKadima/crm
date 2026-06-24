@@ -54,29 +54,43 @@ class AtendimentoReportController extends Controller
             'count' => (int) ($statusCounts[$s->value] ?? 0),
         ])->values();
 
-        // ---- SLA: tempo de 1ª resposta (1ª msg outbound de um atendente) -------
-        $firstRespSub = DB::table('ticket_messages')
-            ->select('ticket_id', DB::raw('MIN(sent_at) as first_resp'))
+        // ---- SLA: tempo de 1ª resposta -----------------------------------------
+        // Definido como (1ª msg outbound de um atendente) − (1ª msg inbound do
+        // cliente). Ancorar na 1ª mensagem do cliente (e não em created_at) torna
+        // a métrica robusta a tickets importados, onde created_at = data da
+        // importação enquanto as mensagens preservam o sent_at histórico — o que
+        // gerava durações negativas. Exclui durações negativas (artefato).
+        $firstMsgSub = DB::table('ticket_messages')
+            ->select(
+                'ticket_id',
+                DB::raw("MIN(sent_at) FILTER (WHERE direction = 'inbound') as first_in"),
+                DB::raw("MIN(sent_at) FILTER (WHERE direction = 'outbound' AND sender_type = 'user') as first_out")
+            )
             ->where('tenant_id', $tenantId)
-            ->where('direction', 'outbound')
-            ->where('sender_type', 'user')
             ->groupBy('ticket_id');
 
         $firstResponse = DB::table('tickets as t')
-            ->joinSub($firstRespSub, 'fr', 'fr.ticket_id', '=', 't.id')
+            ->joinSub($firstMsgSub, 'fm', 'fm.ticket_id', '=', 't.id')
             ->where('t.tenant_id', $tenantId)
             ->whereBetween('t.created_at', [$from, $to])
             ->when($channelId, fn ($q) => $q->where('t.channel_id', $channelId))
+            ->whereNotNull('fm.first_in')
+            ->whereNotNull('fm.first_out')
+            ->whereColumn('fm.first_out', '>=', 'fm.first_in')
             ->selectRaw(
-                "AVG(EXTRACT(EPOCH FROM (fr.first_resp - t.created_at)) / 60.0) as avg_min,
-                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (fr.first_resp - t.created_at)) / 60.0) as median_min,
+                "AVG(EXTRACT(EPOCH FROM (fm.first_out - fm.first_in)) / 60.0) as avg_min,
+                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (fm.first_out - fm.first_in)) / 60.0) as median_min,
                  COUNT(*) as n"
             )
             ->first();
 
         // ---- SLA: tempo de resolução (closed_at - created_at) ------------------
+        // Exclui durações negativas e outliers > 365 dias (created_at inválido
+        // em dados importados / tickets abandonados) para não distorcer a média.
         $resolution = $scoped()
             ->whereNotNull('closed_at')
+            ->whereColumn('closed_at', '>=', 'created_at')
+            ->whereRaw("closed_at - created_at < interval '365 days'")
             ->selectRaw(
                 "AVG(EXTRACT(EPOCH FROM (closed_at - created_at)) / 60.0) as avg_min,
                  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (closed_at - created_at)) / 60.0) as median_min,
@@ -88,6 +102,8 @@ class AtendimentoReportController extends Controller
         $queueWait = $scoped()
             ->whereNotNull('queue_entered_at')
             ->whereNotNull('first_viewed_at')
+            ->whereColumn('first_viewed_at', '>=', 'queue_entered_at')
+            ->whereRaw("first_viewed_at - queue_entered_at < interval '30 days'")
             ->selectRaw(
                 "AVG(EXTRACT(EPOCH FROM (first_viewed_at - queue_entered_at)) / 60.0) as avg_min,
                  COUNT(*) as n"
@@ -143,7 +159,7 @@ class AtendimentoReportController extends Controller
                 'u.role',
                 DB::raw('COUNT(*) as total'),
                 DB::raw("COUNT(*) FILTER (WHERE t.status = 'closed') as closed"),
-                DB::raw("AVG(EXTRACT(EPOCH FROM (t.closed_at - t.created_at)) / 60.0) FILTER (WHERE t.closed_at IS NOT NULL) as avg_resolution_min")
+                DB::raw("AVG(EXTRACT(EPOCH FROM (t.closed_at - t.created_at)) / 60.0) FILTER (WHERE t.closed_at IS NOT NULL AND t.closed_at >= t.created_at AND t.closed_at - t.created_at < interval '365 days') as avg_resolution_min")
             )
             ->groupBy('t.assigned_user_id', 'u.name', 'u.role')
             ->orderByDesc('total')
