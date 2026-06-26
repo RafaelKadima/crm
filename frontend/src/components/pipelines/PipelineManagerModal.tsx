@@ -94,13 +94,26 @@ export function PipelineManagerModal({
   const selectedPipeline = pipelines?.find((p: Pipeline) => p.id === selectedPipelineId)
   const { data: pipelineUsers } = usePipelineUsers(selectedPipelineId || '')
 
+  // Inicializa a seleção apenas quando o modal abre e ainda não há pipeline
+  // selecionado — e NUNCA durante a criação de um novo pipeline. Sem esses
+  // guards, clicar em "Criar Pipeline" (que zera selectedPipelineId) era
+  // revertido na hora por este efeito, impossibilitando criar um pipeline
+  // novo e travando a troca de pipeline pela sidebar.
   useEffect(() => {
-    if (initialPipelineId && pipelines?.length) {
-      setSelectedPipelineId(initialPipelineId)
-    } else if (pipelines?.length && !selectedPipelineId) {
-      setSelectedPipelineId(pipelines[0].id)
+    if (!isOpen || isCreatingNew || selectedPipelineId || !pipelines?.length) return
+    setSelectedPipelineId(initialPipelineId || pipelines[0].id)
+  }, [isOpen, initialPipelineId, pipelines, selectedPipelineId, isCreatingNew])
+
+  // Ao fechar, limpa o estado transitório para que a próxima abertura
+  // respeite o initialPipelineId e nunca reabra presa no modo "criar novo".
+  useEffect(() => {
+    if (!isOpen) {
+      setIsCreatingNew(false)
+      setSelectedPipelineId(null)
+      setSuccess(null)
+      setError(null)
     }
-  }, [initialPipelineId, pipelines, selectedPipelineId])
+  }, [isOpen])
 
   useEffect(() => {
     if (selectedPipeline) {
@@ -149,7 +162,7 @@ export function PipelineManagerModal({
 
     try {
       if (isCreatingNew) {
-        await createPipeline.mutateAsync({
+        const result = await createPipeline.mutateAsync({
           name,
           description,
           is_public: isPublic,
@@ -159,6 +172,9 @@ export function PipelineManagerModal({
         })
         setSuccess('Pipeline criado com sucesso!')
         setIsCreatingNew(false)
+        // Seleciona o pipeline recém-criado para edição contínua
+        const newId = result?.pipeline?.id
+        if (newId) setSelectedPipelineId(newId)
       } else if (selectedPipelineId) {
         // Salvar metadados do pipeline
         await updatePipeline.mutateAsync({
@@ -434,8 +450,9 @@ export function PipelineManagerModal({
 
                   {isCreatingNew && (
                     <button
-                      className="w-full text-left px-3 py-2 rounded-lg text-sm bg-green-600"
+                      className="w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm bg-primary text-primary-foreground"
                     >
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
                       <span>Novo Pipeline</span>
                     </button>
                   )}
