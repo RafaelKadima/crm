@@ -659,6 +659,49 @@ class TicketController extends Controller
     }
 
     /**
+     * Envia o read receipt (✓✓ azul) ao WhatsApp quando um atendente ABRE a
+     * conversa. O webhook de inbound NÃO marca mais como lida automaticamente,
+     * então "visualizado" passa a refletir leitura humana real.
+     *
+     * Marca a última mensagem inbound como lida — o WhatsApp considera essa e
+     * todas as anteriores como lidas. Idempotente do lado do WhatsApp (re-marcar
+     * é no-op). Uma falha de API nunca quebra a request (fire-and-forget logado).
+     */
+    public function markConversationRead(Ticket $ticket): JsonResponse
+    {
+        $channel = $ticket->channel;
+
+        if (!$channel || !$channel->isWhatsApp()) {
+            return response()->json(['sent' => false, 'reason' => 'not_whatsapp']);
+        }
+
+        $lastInbound = $ticket->messages()
+            ->where('direction', MessageDirectionEnum::INBOUND)
+            ->whereNotNull('wa_message_id')
+            ->orderByDesc('sent_at')
+            ->first();
+
+        if (!$lastInbound) {
+            return response()->json(['sent' => false, 'reason' => 'no_inbound']);
+        }
+
+        $sent = false;
+        try {
+            $service = app(WhatsAppService::class);
+            $service->loadFromChannel($channel);
+            $sent = $service->markAsRead($lastInbound->wa_message_id);
+        } catch (\Throwable $e) {
+            Log::warning('Falha ao enviar read receipt do WhatsApp', [
+                'ticket_id' => $ticket->id,
+                'wa_message_id' => $lastInbound->wa_message_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return response()->json(['sent' => $sent]);
+    }
+
+    /**
      * Busca mensagens do ticket com paginação (lazy load).
      * Retorna as mensagens mais recentes primeiro.
      */

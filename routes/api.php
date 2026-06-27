@@ -393,6 +393,7 @@ Route::middleware(['auth:api', 'token.valid', 'session.track'])->group(function 
             Route::put('{ticket}/close', [TicketController::class, 'close']); // Encerrar conversa
             Route::put('{ticket}/reopen', [TicketController::class, 'reopen']); // Reabrir conversa (ação manual do atendente)
             Route::post('{ticket}/open', [TicketController::class, 'markAsOpened']); // Primeira abertura: pending → open
+            Route::post('{ticket}/read', [TicketController::class, 'markConversationRead']); // Envia read receipt (✓✓ azul) ao abrir a conversa
             // Pause/resume — exige permission tickets_pause (RBAC v2)
             Route::post('{ticket}/pause', [TicketController::class, 'pause']);
             Route::post('{ticket}/resume', [TicketController::class, 'resume']);

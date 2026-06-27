@@ -142,3 +142,17 @@ export function useMarkTicketAsOpened() {
     },
   })
 }
+
+/**
+ * Envia o read receipt (✓✓ azul) ao WhatsApp quando o atendente abre a conversa.
+ * Fire-and-forget: não invalida cache nem bloqueia a navegação. O backend só
+ * envia para canais WhatsApp com mensagem inbound; falha de API é apenas logada.
+ */
+export function useMarkConversationRead() {
+  return useMutation({
+    mutationFn: async (ticketId: string) => {
+      const { data } = await api.post(`/tickets/${ticketId}/read`)
+      return data as { sent: boolean }
+    },
+  })
+}

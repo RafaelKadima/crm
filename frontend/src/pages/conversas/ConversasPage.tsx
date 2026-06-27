@@ -8,7 +8,7 @@ import { useNotificationStore } from '@/store/notificationStore'
 import { useAuthStore } from '@/store/authStore'
 // useTenantMessages moved to MainLayout (global)
 import { useLeads } from '@/hooks/useLeads'
-import { useMarkTicketAsOpened } from '@/hooks/useTicketActions'
+import { useMarkTicketAsOpened, useMarkConversationRead } from '@/hooks/useTicketActions'
 import { ConversationsList } from '@/components/conversas/ConversationsList'
 import { ChatPanel } from '@/components/conversas/ChatPanel'
 import { LeadInfoSidebar } from '@/components/conversas/LeadInfoSidebar'
@@ -22,6 +22,7 @@ export function ConversasPage() {
   const { isInfoSidebarOpen, toggleInfoSidebar } = useConversasStore()
   const markAsRead = useNotificationStore((state) => state.markAsRead)
   const markTicketAsOpened = useMarkTicketAsOpened()
+  const markConversationRead = useMarkConversationRead()
 
   // Ref para controlar se já processamos o lead da URL
   const processedUrlLeadRef = useRef<string | null>(null)
@@ -53,14 +54,17 @@ export function ConversasPage() {
   // Lead ativo (se tiver um selecionado)
   const activeLead = leadsData?.find((lead: Lead) => lead.id === activeLeadId)
 
-  // Transição pending → open: dispara o endpoint de "primeira abertura" se o ticket
-  // mais recente do lead estiver pendente. Idempotente, fire-and-forget — não bloqueia
-  // a navegação. NÃO altera ownership; só status + first_viewed_at/first_viewer_id.
-  const triggerFirstViewIfPending = (lead: Lead) => {
+  // Ao abrir uma conversa: (1) transição pending → open para o SLA de primeira
+  // visualização e (2) envio do read receipt (✓✓ azul) ao WhatsApp — "visualizado"
+  // só quando o atendente realmente abre. Idempotente e fire-and-forget — não
+  // altera ownership nem bloqueia a navegação.
+  const handleConversationOpened = (lead: Lead) => {
     const ticket = lead.tickets?.[0]
-    if (ticket?.id && ticket.status === 'pending') {
+    if (!ticket?.id) return
+    if (ticket.status === 'pending') {
       markTicketAsOpened.mutate(ticket.id)
     }
+    markConversationRead.mutate(ticket.id)
   }
 
   // Se veio da URL com ?lead=xxx, abre essa conversa (apenas uma vez)
@@ -74,7 +78,7 @@ export function ConversasPage() {
         processedUrlLeadRef.current = leadIdFromUrl
         setActiveLead(lead.id, lead.tickets?.[0]?.id || null)
         markAsRead(lead.id)
-        triggerFirstViewIfPending(lead)
+        handleConversationOpened(lead)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,7 +88,7 @@ export function ConversasPage() {
   const handleSelectLead = (lead: Lead) => {
     setActiveLead(lead.id, lead.tickets?.[0]?.id || null)
     markAsRead(lead.id)
-    triggerFirstViewIfPending(lead)
+    handleConversationOpened(lead)
   }
 
   return (

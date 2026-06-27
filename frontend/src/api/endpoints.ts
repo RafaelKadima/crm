@@ -151,6 +151,14 @@ export const ticketsApi = {
    */
   markAsOpened: (id: string) =>
     api.post<{ message: string; ticket: Ticket; changed: boolean }>(`/tickets/${id}/open`),
+
+  /**
+   * Envia o read receipt (✓✓ azul) ao WhatsApp quando o atendente abre a
+   * conversa. O inbound não marca mais como lida automaticamente, então
+   * "visualizado" reflete leitura humana real. Fire-and-forget.
+   */
+  markConversationRead: (id: string) =>
+    api.post<{ sent: boolean }>(`/tickets/${id}/read`),
 }
 
 // =====================

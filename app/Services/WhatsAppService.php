@@ -797,9 +797,8 @@ class WhatsAppService implements WhatsAppProviderInterface
                 // Lead precisa escolher fila - processa menu (independente da IA)
                 $this->handleQueueMenuRouting($ticketMessage, $ticket, $ticket->lead, $channel, $routingService);
 
-                // Mark as read e retorna (menu foi processado)
-                $this->loadFromChannel($channel);
-                $this->markAsRead($messageId);
+                // NÃO marca como lida automaticamente — o ✓✓ azul (visualizado)
+                // só deve ser enviado quando um atendente abrir a conversa.
                 return $ticketMessage;
             }
         }
@@ -821,9 +820,8 @@ class WhatsAppService implements WhatsAppProviderInterface
         }
 
         if ($stepConsumed) {
-            // Mark as read e retorna — fluxo guiado tem prioridade absoluta
-            $this->loadFromChannel($channel);
-            $this->markAsRead($messageId);
+            // Fluxo guiado tem prioridade absoluta. NÃO marca como lida aqui —
+            // o read receipt só deve sair quando um atendente abrir a conversa.
             return $ticketMessage;
         }
 
@@ -870,9 +868,8 @@ class WhatsAppService implements WhatsAppProviderInterface
             }
         }
 
-        // Mark as read
-        $this->loadFromChannel($channel);
-        $this->markAsRead($messageId);
+        // NÃO marca como lida automaticamente: enviar o read receipt aqui fazia
+        // o cliente ver "visualizado" (✓✓ azul) sem ninguém abrir a conversa.
 
         Log::info('WhatsApp message received', [
             'from' => $phoneNumber,

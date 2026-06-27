@@ -15,6 +15,7 @@ import { SaleClosingModal } from '@/components/sales/SaleClosingModal'
 import { useInfiniteLeads, useUpdateLeadStage } from '@/hooks/useLeads'
 import { useBatchStageProgress } from '@/hooks/useStageActivities'
 import { usePipelines, type Pipeline } from '@/hooks/usePipelines'
+import { useMarkConversationRead } from '@/hooks/useTicketActions'
 import { useNotificationStore } from '@/store/notificationStore'
 // useTenantMessages moved to MainLayout (global)
 import { useAuthStore } from '@/store/authStore'
@@ -79,6 +80,7 @@ export function LeadsKanbanPage() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
   const { data: pipelines, isLoading: pipelinesLoading } = usePipelines()
   const updateStageMutation = useUpdateLeadStage()
+  const markConversationRead = useMarkConversationRead()
 
   // Auth store para pegar o tenant_id
   const { user } = useAuthStore()
@@ -299,8 +301,12 @@ export function LeadsKanbanPage() {
   }
 
   const handleLeadClick = (lead: Lead) => {
-    // Mark as read when opening
+    // Mark as read when opening (contador local)
     markAsRead(lead.id)
+
+    // Envia o read receipt (✓✓ azul) ao WhatsApp: visualizado só ao abrir.
+    const ticketId = (lead as any).tickets?.[0]?.id
+    if (ticketId) markConversationRead.mutate(ticketId)
 
     // Abre o modal de chat diretamente no Kanban (não navega para outra página)
     setSelectedLead(lead)
